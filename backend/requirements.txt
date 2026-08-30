@@ -1,0 +1,7 @@
+fastapi[standard]==0.141.1
+uvicorn[standard]==0.52.4
+sqlmodel==0.0.42
+asyncpg==0.31.0
+alembic==1.19.1
+mangum==0.22.0
+python-dotenv==1.2.3
