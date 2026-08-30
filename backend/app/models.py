@@ -1,16 +1,13 @@
 from datetime import datetime, timezone
 
+from pydantic import EmailStr
 from sqlalchemy import DateTime
 from sqlmodel import Field, SQLModel
 
 
 class SubmissionBase(SQLModel):
     name: str = Field(min_length=1, max_length=200)
-    email: str = Field(
-        min_length=3,
-        max_length=255,
-        pattern=r"^[^@\s]+@[^@\s]+\.[^@\s]+$",
-    )
+    email: EmailStr = Field(max_length=255)
     message: str = Field(min_length=1, max_length=2000)
 
 

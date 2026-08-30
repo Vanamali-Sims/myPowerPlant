@@ -1,4 +1,5 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
+from sqlalchemy.exc import OperationalError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db import get_session
@@ -14,6 +15,10 @@ async def submit(
 ) -> Submission:
     row = Submission.model_validate(payload)
     session.add(row)
-    await session.commit()
-    await session.refresh(row)
+    try:
+        await session.commit()
+        await session.refresh(row)
+    except OperationalError as exc:
+        await session.rollback()
+        raise HTTPException(status_code=503, detail="Database unavailable") from exc
     return row
