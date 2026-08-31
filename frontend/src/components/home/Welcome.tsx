@@ -117,11 +117,13 @@ const ARTICLES = [
 ]
 
 type Props = {
+  hasProfile: boolean
   onGetStarted: () => void
+  onViewDashboard: () => void
   onLogoClick: () => void
 }
 
-export function Welcome({ onGetStarted, onLogoClick }: Props) {
+export function Welcome({ hasProfile, onGetStarted, onViewDashboard, onLogoClick }: Props) {
   const [openPopover, setOpenPopover] = useTransientPopover()
 
   return (
@@ -149,9 +151,15 @@ export function Welcome({ onGetStarted, onLogoClick }: Props) {
               clear, ongoing recommendation: whether joining makes sense, and how.
             </p>
             <div className="hero__actions">
-              <Button variant="primary" onClick={onGetStarted}>
-                Get Started
-              </Button>
+              {hasProfile ? (
+                <Button variant="primary" onClick={onViewDashboard}>
+                  View dashboard
+                </Button>
+              ) : (
+                <Button variant="primary" onClick={onGetStarted}>
+                  Get Started
+                </Button>
+              )}
               <span className="popover-anchor">
                 <Button variant="ghost" onClick={() => setOpenPopover('learn-more')}>
                   Learn how VPPs actually work

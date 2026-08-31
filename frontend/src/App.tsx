@@ -13,9 +13,7 @@ type View = 'welcome' | 'setup' | 'profile' | 'dashboard'
 
 function App() {
   const [profile, setProfile] = useState<ProfileData>(loadProfile)
-  const [view, setView] = useState<View>(() =>
-    loadProfile().lastUpdated ? 'profile' : 'welcome',
-  )
+  const [view, setView] = useState<View>('welcome')
   const [notice, setNotice] = useState('')
 
   // Push whatever is already saved locally (e.g. from before backend sync
@@ -94,7 +92,15 @@ function App() {
         </p>
       ) : null}
       {view === 'welcome' ? (
-        <Welcome onGetStarted={startSetup} onLogoClick={goHome} />
+        <Welcome
+          hasProfile={Boolean(profile.lastUpdated)}
+          onGetStarted={startSetup}
+          onViewDashboard={() => {
+            setView('dashboard')
+            setNotice('')
+          }}
+          onLogoClick={goHome}
+        />
       ) : null}
       {view === 'setup' ? (
         <SetupForm

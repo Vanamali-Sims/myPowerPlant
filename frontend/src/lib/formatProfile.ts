@@ -17,7 +17,10 @@ function optionLabel(
   options: { value: string; label: string }[],
   value: string,
 ): string {
-  return options.find((option) => option.value === value)?.label ?? (value || '—')
+  const match = options.find((option) => option.value === value)
+  if (match) return match.label
+  if (value) return value
+  return '—'
 }
 
 export function displayValue(
