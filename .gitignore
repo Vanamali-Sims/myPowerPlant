@@ -11,4 +11,4 @@ dist/
 .ruff_cache/
 .pytest_cache/
 context/
-_wireframes
+_wireframes/
