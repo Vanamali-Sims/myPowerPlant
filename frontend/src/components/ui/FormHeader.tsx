@@ -4,17 +4,23 @@ import { LocationControl } from './LocationControl'
 type Props = {
   postcode: string
   onPostcodeChange: (postcode: string) => void
+  onLogoClick: () => void
 }
 
-export function FormHeader({ postcode, onPostcodeChange }: Props) {
+export function FormHeader({ postcode, onPostcodeChange, onLogoClick }: Props) {
   return (
     <header className="form-header">
-      <div className="brand">
+      <button
+        type="button"
+        className="brand brand--button"
+        onClick={onLogoClick}
+        aria-label="MyPowerPlant home"
+      >
         <span className="brand__mark">
           <BoltIcon width={14} height={14} />
         </span>
         MyPowerPlant
-      </div>
+      </button>
       <LocationControl postcode={postcode} onPostcodeChange={onPostcodeChange} />
     </header>
   )

@@ -1,0 +1,410 @@
+.welcome {
+  display: flex;
+  flex-direction: column;
+}
+
+.welcome__brand {
+  margin: 1.25rem 1.15rem 0;
+}
+
+.band {
+  width: 100%;
+  background: var(--color-bg);
+}
+
+.band--tint {
+  background: var(--color-accent-soft);
+}
+
+.band__inner {
+  width: min(64rem, 100%);
+  margin: 0 auto;
+  padding: 2.5rem 1.15rem;
+}
+
+/* Hero */
+
+.hero {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+.hero__copy {
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+}
+
+.hero__copy h1 {
+  margin: 0.35rem 0 0;
+  font-size: 2.15rem;
+}
+
+.hero__lede {
+  margin: 0;
+  color: var(--color-text-secondary);
+  font-size: 1rem;
+}
+
+.hero__actions {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.5rem;
+  margin-top: 0.4rem;
+}
+
+.hero__actions .ui-btn--primary {
+  width: auto;
+  padding-left: 1.75rem;
+  padding-right: 1.75rem;
+}
+
+.hero__art,
+.mission__art {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.icon-cluster {
+  position: relative;
+  width: 11rem;
+  height: 11rem;
+  border-radius: 50%;
+  background: var(--color-surface);
+  border: 1px solid var(--color-accent-outline);
+  display: grid;
+  place-items: center;
+}
+
+.icon-cluster__main {
+  width: 5.5rem;
+  height: 5.5rem;
+  border-radius: 50%;
+  background: var(--color-accent-soft);
+  color: var(--color-accent);
+  display: grid;
+  place-items: center;
+}
+
+.icon-cluster__badge {
+  position: absolute;
+  width: 3rem;
+  height: 3rem;
+  border-radius: 50%;
+  background: var(--color-sidebar);
+  color: var(--color-surface);
+  display: grid;
+  place-items: center;
+  border: 3px solid var(--color-bg);
+}
+
+.band--tint .icon-cluster__badge {
+  border-color: var(--color-accent-soft);
+}
+
+.icon-cluster__badge--top {
+  top: -0.4rem;
+  right: -0.4rem;
+}
+
+.icon-cluster__badge--bottom {
+  bottom: -0.4rem;
+  left: -0.4rem;
+}
+
+/* Text points (impact band) */
+
+.text-points {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.text-point__title {
+  margin: 0;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  font-family: var(--font-body);
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--color-text-primary);
+}
+
+.text-point__desc {
+  margin: 0.3rem 0 0;
+  font-size: 0.9rem;
+  color: var(--color-text-secondary);
+  max-width: 42rem;
+}
+
+/* Section head + cards */
+
+.section-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1.25rem;
+}
+
+.section-head h2 {
+  margin: 0;
+}
+
+.card-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1rem;
+}
+
+.feature-card,
+.article-card {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.4rem;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-card);
+  padding: 1.25rem 1.25rem 1.4rem;
+  text-align: left;
+}
+
+.article-card {
+  font-family: var(--font-body);
+  color: inherit;
+  text-decoration: none;
+  font-weight: 400;
+}
+
+.feature-card h3,
+.article-card h3 {
+  margin: 0.3rem 0 0;
+  font-family: var(--font-body);
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--color-text-primary);
+}
+
+.article-card p {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--color-text-secondary);
+}
+
+.feature-card__icon {
+  width: 2.4rem;
+  height: 2.4rem;
+  border-radius: 0.6rem;
+  background: var(--color-accent);
+  color: var(--color-surface);
+  display: grid;
+  place-items: center;
+}
+
+.feature-card__desc {
+  margin: 0;
+  font-size: 0.88rem;
+  color: var(--color-text-secondary);
+}
+
+.article-card__source {
+  margin-top: 0.3rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--color-accent);
+}
+
+.article-card:hover {
+  border-color: var(--color-accent-outline);
+}
+
+.article-card:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+}
+
+.status-pill {
+  margin-top: 0.5rem;
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  border-radius: var(--radius-pill);
+  padding: 0.15rem 0.55rem;
+}
+
+.status-pill--available {
+  background: var(--color-success-bg);
+  color: var(--color-success-text);
+}
+
+.status-pill--soon {
+  background: var(--color-muted);
+  color: var(--color-text-secondary);
+}
+
+/* Mission */
+
+.mission {
+  display: flex;
+  flex-direction: column-reverse;
+  gap: 2rem;
+}
+
+.mission__copy {
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+}
+
+.mission__copy h2 {
+  margin: 0;
+}
+
+.mission__copy p {
+  margin: 0;
+  color: var(--color-text-secondary);
+}
+
+/* How it works */
+
+.steps__heading {
+  text-align: center;
+  margin: 0 0 2rem;
+}
+
+.steps {
+  display: flex;
+  flex-direction: column;
+  gap: 1.75rem;
+}
+
+.step {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 0.5rem;
+}
+
+.step__badge {
+  width: 2.6rem;
+  height: 2.6rem;
+  border-radius: 50%;
+  background: var(--color-accent);
+  color: var(--color-surface);
+  display: grid;
+  place-items: center;
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 1.1rem;
+}
+
+.step h3 {
+  margin: 0;
+  font-family: var(--font-body);
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+.step p {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--color-text-secondary);
+  max-width: 22rem;
+}
+
+@media (min-width: 640px) {
+  .card-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .text-points {
+    flex-direction: row;
+  }
+
+  .text-point {
+    flex: 1;
+  }
+}
+
+@media (min-width: 900px) {
+  .band__inner {
+    padding: 4rem 2.4rem;
+  }
+
+  .welcome__brand {
+    display: none;
+  }
+
+  .hero {
+    flex-direction: row;
+    align-items: center;
+    gap: 3rem;
+  }
+
+  .hero__copy {
+    flex: 1.1;
+  }
+
+  .hero__art {
+    flex: 1;
+  }
+
+  .hero__copy h1 {
+    font-size: 2.6rem;
+  }
+
+  .hero__actions {
+    flex-direction: row;
+    align-items: center;
+  }
+
+  .icon-cluster {
+    width: 15rem;
+    height: 15rem;
+  }
+
+  .icon-cluster__main {
+    width: 7rem;
+    height: 7rem;
+  }
+
+  .icon-cluster__badge {
+    width: 3.6rem;
+    height: 3.6rem;
+  }
+
+  .card-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  .mission {
+    flex-direction: row;
+    align-items: center;
+    gap: 3.5rem;
+  }
+
+  .mission__art {
+    flex: 1;
+  }
+
+  .mission__copy {
+    flex: 1.1;
+  }
+
+  .steps {
+    flex-direction: row;
+    align-items: flex-start;
+  }
+
+  .step {
+    flex: 1;
+  }
+}

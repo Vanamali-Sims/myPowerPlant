@@ -521,6 +521,41 @@
   color: var(--color-text-secondary);
 }
 
+.popover-anchor {
+  position: relative;
+}
+
+.popover {
+  position: absolute;
+  z-index: 20;
+  width: 13rem;
+  background: var(--color-surface);
+  color: var(--color-text-primary);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-input);
+  padding: 0.55rem 0.75rem;
+  font-size: 0.78rem;
+  font-weight: 500;
+  line-height: 1.35;
+  text-align: left;
+}
+
+.popover--right {
+  left: calc(100% + 0.6rem);
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+.popover--bottom {
+  top: calc(100% + 0.5rem);
+  left: 0;
+}
+
+.popover--bottom-end {
+  top: calc(100% + 0.5rem);
+  right: 0;
+}
+
 .ui-icon-btn {
   display: inline-flex;
   color: inherit;
@@ -540,6 +575,13 @@
   font-weight: 700;
   font-size: 1rem;
   color: var(--color-text-primary);
+}
+
+.brand--button {
+  border: 0;
+  background: transparent;
+  padding: 0;
+  cursor: pointer;
 }
 
 .brand__mark {

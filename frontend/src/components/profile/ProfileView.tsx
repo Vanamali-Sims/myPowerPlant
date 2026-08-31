@@ -94,9 +94,10 @@ type Props = {
   onSave: (profile: ProfileData) => void
   onReset: () => void
   onLiveChange?: (profile: ProfileData) => void
+  onLogoClick: () => void
 }
 
-export function ProfileView({ profile, onSave, onReset, onLiveChange }: Props) {
+export function ProfileView({ profile, onSave, onReset, onLiveChange, onLogoClick }: Props) {
   const [draft, setDraft] = useState(profile)
   const [editing, setEditing] = useState<SetupStepId | null>(null)
   const [errors, setErrors] = useState<FieldErrors>({})
@@ -158,12 +159,17 @@ export function ProfileView({ profile, onSave, onReset, onLiveChange }: Props) {
   return (
     <div className="profile">
       <header className="profile__top">
-        <div className="brand brand--desktop-hidden">
+        <button
+          type="button"
+          className="brand brand--button brand--desktop-hidden"
+          onClick={onLogoClick}
+          aria-label="MyPowerPlant home"
+        >
           <span className="brand__mark">
             <BoltIcon width={14} height={14} />
           </span>
           MyPowerPlant
-        </div>
+        </button>
         <LocationControl postcode={draft.postcode} onPostcodeChange={(value) => patch('postcode', value)} />
       </header>
 
