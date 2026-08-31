@@ -8,9 +8,9 @@
   gap: 1rem;
   text-align: left;
   padding: 2rem;
-  border-radius: 12px;
-  background: color-mix(in srgb, Canvas 92%, CanvasText 8%);
-  border: 1px solid color-mix(in srgb, CanvasText 12%, transparent);
+  border-radius: var(--radius-card);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
 }
 
 .card h1 {
@@ -20,7 +20,7 @@
 
 .lede {
   margin: 0;
-  color: color-mix(in srgb, CanvasText 70%, transparent);
+  color: var(--color-text-secondary);
 }
 
 label {
@@ -28,6 +28,8 @@ label {
   flex-direction: column;
   gap: 0.4rem;
   font-weight: 600;
+  font-size: 0.875rem;
+  color: var(--color-text-primary);
 }
 
 input,
@@ -35,15 +37,15 @@ textarea {
   font: inherit;
   font-weight: 400;
   padding: 0.65rem 0.75rem;
-  border-radius: 8px;
-  border: 1px solid color-mix(in srgb, CanvasText 18%, transparent);
-  background: Canvas;
-  color: CanvasText;
+  border-radius: var(--radius-input);
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+  color: var(--color-text-primary);
 }
 
 input:focus,
 textarea:focus {
-  outline: 2px solid #646cff;
+  outline: 2px solid var(--color-accent);
   outline-offset: 1px;
 }
 
@@ -55,15 +57,16 @@ button:disabled {
 .banner {
   margin: 0;
   padding: 0.75rem 0.85rem;
-  border-radius: 8px;
+  border-radius: var(--radius-input);
 }
 
 .banner.success {
-  background: color-mix(in srgb, #3d8b40 18%, Canvas);
-  border: 1px solid color-mix(in srgb, #3d8b40 45%, transparent);
+  background: var(--color-success-bg);
+  color: var(--color-success-text);
 }
 
 .banner.error {
-  background: color-mix(in srgb, #c0392b 16%, Canvas);
-  border: 1px solid color-mix(in srgb, #c0392b 45%, transparent);
+  background: #f6e8e6;
+  color: #7a2e24;
+  border: 1px solid #ead3cf;
 }
