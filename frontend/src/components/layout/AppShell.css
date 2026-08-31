@@ -47,6 +47,10 @@
     width: 100%;
   }
 
+  .app-rail__item-wrap {
+    width: 100%;
+  }
+
   .app-rail__item {
     display: flex;
     flex-direction: column;
@@ -63,6 +67,11 @@
     font-size: 0.68rem;
     font-weight: 500;
     cursor: pointer;
+  }
+
+  .app-rail__item.is-unavailable {
+    opacity: 0.55;
+    cursor: not-allowed;
   }
 
   .app-rail__item:hover {

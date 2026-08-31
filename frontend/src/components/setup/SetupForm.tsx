@@ -65,9 +65,10 @@ type Props = {
   onChange: (profile: ProfileData) => void
   onComplete: (profile: ProfileData) => void
   onExit?: () => void
+  onLogoClick: () => void
 }
 
-export function SetupForm({ profile, onChange, onComplete, onExit }: Props) {
+export function SetupForm({ profile, onChange, onComplete, onExit, onLogoClick }: Props) {
   const [stepIndex, setStepIndex] = useState(0)
   const [errors, setErrors] = useState<FieldErrors>({})
   const step = STEPS[stepIndex]
@@ -131,6 +132,7 @@ export function SetupForm({ profile, onChange, onComplete, onExit }: Props) {
       <FormHeader
         postcode={profile.postcode}
         onPostcodeChange={(postcode) => patch('postcode', postcode)}
+        onLogoClick={onLogoClick}
       />
       <StepProgress step={stepIndex + 1} total={total} />
       <div className="setup__intro">
