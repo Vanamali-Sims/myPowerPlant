@@ -42,7 +42,7 @@ const FEATURES: FeatureCard[] = [
     title: 'Your ongoing recommendation',
     description:
       'See whether joining a VPP makes sense for your home, and how — kept up to date as your setup changes.',
-    status: 'soon',
+    status: 'available',
   },
 ]
 

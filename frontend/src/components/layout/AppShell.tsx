@@ -38,7 +38,7 @@ const NAV: {
     id: 'dashboard',
     label: 'Dashboard',
     icon: DashboardIcon,
-    unavailableMessage: 'Dashboard isn’t set up yet.',
+    unavailableMessage: 'Complete setup to view your dashboard.',
   },
 ]
 
@@ -54,7 +54,8 @@ export function AppShell({
   const [openPopover, setOpenPopover] = useTransientPopover()
 
   function isAvailable(id: AppNavId) {
-    return id === 'profile' ? hasProfile : false
+    if (id === 'home') return true
+    return hasProfile
   }
 
   function handleClick(item: (typeof NAV)[number]) {

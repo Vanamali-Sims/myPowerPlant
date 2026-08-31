@@ -584,6 +584,16 @@
   cursor: pointer;
 }
 
+.brand--desktop-hidden {
+  display: flex;
+}
+
+@media (min-width: 900px) {
+  .brand--desktop-hidden {
+    display: none;
+  }
+}
+
 .brand__mark {
   width: 1.7rem;
   height: 1.7rem;
