@@ -1,100 +1,80 @@
-import { useState, type FormEvent } from 'react'
-import { submitForm } from './api'
+import { useState } from 'react'
+import { AppShell, type AppNavId } from './components/layout/AppShell'
+import { ProfileView } from './components/profile/ProfileView'
+import { SetupForm } from './components/setup/SetupForm'
+import { clearStoredProfile, loadProfile, saveProfile } from './lib/profileStorage'
+import { emptyProfile, type ProfileData } from './types/profile'
 import './App.css'
 
-type Status = 'idle' | 'submitting' | 'success' | 'error'
+type View = 'setup' | 'profile'
 
 function App() {
-  const [name, setName] = useState('')
-  const [email, setEmail] = useState('')
-  const [message, setMessage] = useState('')
-  const [status, setStatus] = useState<Status>('idle')
-  const [feedback, setFeedback] = useState('')
+  const [profile, setProfile] = useState<ProfileData>(loadProfile)
+  const [view, setView] = useState<View>(() =>
+    loadProfile().lastUpdated ? 'profile' : 'setup',
+  )
+  const [notice, setNotice] = useState('')
 
-  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault()
-    setStatus('submitting')
-    setFeedback('')
+  function completeSetup(next: ProfileData) {
+    const saved = saveProfile(next)
+    setProfile(saved)
+    setView('profile')
+    setNotice('')
+  }
 
-    const result = await submitForm({ name, email, message })
+  function saveEdits(next: ProfileData) {
+    const saved = saveProfile(next)
+    setProfile(saved)
+  }
 
-    if (result.ok) {
-      setStatus('success')
-      setFeedback(`Saved as submission #${result.data.id}.`)
-      setName('')
-      setEmail('')
-      setMessage('')
+  function resetProfile() {
+    clearStoredProfile()
+    const blank = emptyProfile()
+    setProfile(blank)
+    setView('setup')
+    setNotice('')
+  }
+
+  function goTo(id: AppNavId) {
+    if (id === 'profile') {
+      setView('profile')
+      setNotice('')
       return
     }
-
-    setStatus('error')
-    setFeedback(result.error)
+    setNotice(
+      id === 'home'
+        ? 'Home isn’t set up yet. You can keep using your profile.'
+        : 'Dashboard isn’t set up yet. You can keep using your profile.',
+    )
   }
 
   return (
-    <main className="page">
-      <form className="card" onSubmit={handleSubmit}>
-        <h1>Submit</h1>
-        <p className="lede">
-          Sends a POST to the backend and writes a row to Postgres.
+    <AppShell
+      active={view === 'profile' ? 'profile' : null}
+      postcode={profile.postcode}
+      onNavigate={goTo}
+    >
+      {notice ? (
+        <p className="app-notice" role="status">
+          {notice}
         </p>
-
-        <label>
-          Name
-          <input
-            name="name"
-            type="text"
-            autoComplete="name"
-            required
-            minLength={1}
-            maxLength={200}
-            value={name}
-            onChange={(event) => setName(event.target.value)}
-          />
-        </label>
-
-        <label>
-          Email
-          <input
-            name="email"
-            type="email"
-            autoComplete="email"
-            required
-            maxLength={255}
-            value={email}
-            onChange={(event) => setEmail(event.target.value)}
-          />
-        </label>
-
-        <label>
-          Message
-          <textarea
-            name="message"
-            required
-            minLength={1}
-            maxLength={2000}
-            rows={5}
-            value={message}
-            onChange={(event) => setMessage(event.target.value)}
-          />
-        </label>
-
-        <button type="submit" disabled={status === 'submitting'}>
-          {status === 'submitting' ? 'Sending…' : 'Send'}
-        </button>
-
-        {status === 'success' && (
-          <p className="banner success" role="status">
-            {feedback}
-          </p>
-        )}
-        {status === 'error' && (
-          <p className="banner error" role="alert">
-            {feedback}
-          </p>
-        )}
-      </form>
-    </main>
+      ) : null}
+      {view === 'setup' ? (
+        <SetupForm
+          profile={profile}
+          onChange={setProfile}
+          onComplete={completeSetup}
+        />
+      ) : (
+        <ProfileView
+          key={profile.lastUpdated ?? 'profile'}
+          profile={profile}
+          onSave={saveEdits}
+          onReset={resetProfile}
+          onLiveChange={setProfile}
+        />
+      )}
+    </AppShell>
   )
 }
 

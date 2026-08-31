@@ -1,0 +1,46 @@
+---
+description: MyPowerPlant visual language — match this on every screen; never drift into generic SaaS defaults
+alwaysApply: true
+---
+
+# MyPowerPlant theme
+
+Household VPP advisory. Brand feel: calm, editorial, trustworthy — personal-finance app, not a SaaS dashboard. Warm and human.
+
+Use CSS tokens from `frontend/src/index.css`. Do not invent a second palette or type scale.
+
+## Tokens
+
+- `--color-bg` `#F7F5EF` cream page
+- `--color-surface` `#FFFFFF` cards
+- `--color-sidebar` `#1B1B1B` nav rail + primary buttons
+- `--color-text-primary` `#1A1A1A`
+- `--color-text-secondary` `#6B6B6B` captions, labels, text links
+- `--color-border` `#E4E1D8` 1px borders/dividers (prefer borders over shadows)
+- `--color-accent` `#E38B4A` amber — progress, badges, icon circles only
+- `--color-success-bg` `#E4EEE7` / `--color-success-text` `#2F5D46` sage — reassurance only (never reuse amber for this)
+
+## Type
+
+- Headings (H1/H2, hero): `--font-display` (Lora). Regular/medium, generous line-height. Never sans for large headings.
+- Body, labels, buttons, nav, inputs: `--font-body` (Inter). Regular body; medium/semibold labels and buttons. Never serif for UI text.
+- Eyebrow labels (`STEP 3 OF 5`, `ESTIMATED EARNINGS`): sans, uppercase, letter-spaced, `--color-text-secondary`.
+
+## Shape
+
+- Primary/secondary buttons: fully rounded pills. Primary = near-black fill, white text. Secondary = white + border + dark text.
+- Text links: underlined, secondary color, no background (skip/optional actions).
+- Inputs, cards, toggles: 8–12px radius. Shadows only if existing screens use them — then soft and low-opacity.
+- No heavy shadows, gradients, or glassmorphism. No blue/indigo/purple palette.
+
+## Layout (logged-in)
+
+- Dark ~60–70px icon-only left rail (Profile / Home / Dashboard) + `● Kew, VIC` near the bottom. Header: amber lightning-badge + “MyPowerPlant” wordmark + location pill. Repeat on every logged-in screen.
+- Content: generous whitespace, left-aligned constrained column; supporting cards to the right on wide desktop (Welcome: copy left, earnings card right).
+- Mobile: reviewed frames drop the sidebar. Do not invent a tab bar or drawer — confirm with design first.
+- Icons: simple line/duotone, not filled illustration.
+
+## Product rules
+
+- Copy: plain-language, second person, short sentences. Explain energy jargon. Placeholder copy must match this tone.
+- Every number must visually distinguish **estimate** vs **verified fact** (e.g. “Estimated earnings” vs “Verified for Kew”).

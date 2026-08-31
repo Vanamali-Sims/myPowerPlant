@@ -1,0 +1,50 @@
+.setup {
+  width: min(28.5rem, 100%);
+  margin: 0 auto;
+  padding: 1.25rem 1.15rem 2.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.setup__intro h1 {
+  margin: 0 0 0.45rem;
+  font-size: 2rem;
+}
+
+.setup__intro p {
+  margin: 0;
+  color: var(--color-text-secondary);
+  font-size: 0.95rem;
+}
+
+.setup__fields {
+  display: flex;
+  flex-direction: column;
+  gap: 1.15rem;
+}
+
+.setup-split {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
+  margin-top: 0.45rem;
+}
+
+.setup-secure {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  margin: 0.2rem 0 0;
+  color: var(--color-text-secondary);
+  font-size: 0.78rem;
+  text-align: center;
+}
+
+@media (min-width: 900px) {
+  .setup {
+    width: min(32rem, 100%);
+    padding-top: 2rem;
+  }
+}
