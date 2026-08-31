@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { AppShell, type AppNavId } from './components/layout/AppShell'
+import { DashboardView } from './components/dashboard/DashboardView'
 import { Welcome } from './components/home/Welcome'
 import { ProfileView } from './components/profile/ProfileView'
 import { SetupForm } from './components/setup/SetupForm'
@@ -8,13 +9,11 @@ import { syncProfileToServer } from './lib/profileApi'
 import { emptyProfile, type ProfileData } from './types/profile'
 import './App.css'
 
-type View = 'welcome' | 'setup' | 'profile'
+type View = 'welcome' | 'setup' | 'profile' | 'dashboard'
 
 function App() {
   const [profile, setProfile] = useState<ProfileData>(loadProfile)
-  const [view, setView] = useState<View>(() =>
-    loadProfile().lastUpdated ? 'profile' : 'welcome',
-  )
+  const [view, setView] = useState<View>('welcome')
   const [notice, setNotice] = useState('')
 
   // Push whatever is already saved locally (e.g. from before backend sync
@@ -30,14 +29,14 @@ function App() {
   }
 
   function goHome() {
-    setView(profile.lastUpdated ? 'profile' : 'welcome')
+    setView('welcome')
     setNotice('')
   }
 
   function completeSetup(next: ProfileData) {
     const saved = saveProfile(next)
     setProfile(saved)
-    setView('profile')
+    setView('dashboard')
     setNotice('')
     void syncProfileToServer(saved).then((result) => {
       if (!result.ok) setNotice(`Saved on this device. ${result.error}`)
@@ -61,15 +60,27 @@ function App() {
   }
 
   function goTo(id: AppNavId) {
+    if (id === 'home') {
+      setView('welcome')
+      setNotice('')
+      return
+    }
     if (id === 'profile') {
       setView('profile')
+      setNotice('')
+      return
+    }
+    if (id === 'dashboard' && profile.lastUpdated) {
+      setView('dashboard')
       setNotice('')
     }
   }
 
   return (
     <AppShell
-      active={view === 'profile' ? 'profile' : null}
+      active={
+        view === 'dashboard' ? 'dashboard' : view === 'profile' ? 'profile' : view === 'welcome' ? 'home' : null
+      }
       postcode={profile.postcode}
       hasProfile={Boolean(profile.lastUpdated)}
       onNavigate={goTo}
@@ -81,7 +92,15 @@ function App() {
         </p>
       ) : null}
       {view === 'welcome' ? (
-        <Welcome onGetStarted={startSetup} onLogoClick={goHome} />
+        <Welcome
+          hasProfile={Boolean(profile.lastUpdated)}
+          onGetStarted={startSetup}
+          onViewDashboard={() => {
+            setView('dashboard')
+            setNotice('')
+          }}
+          onLogoClick={goHome}
+        />
       ) : null}
       {view === 'setup' ? (
         <SetupForm
@@ -98,6 +117,20 @@ function App() {
           onSave={saveEdits}
           onReset={resetProfile}
           onLiveChange={setProfile}
+          onLogoClick={goHome}
+          onViewDashboard={() => {
+            setView('dashboard')
+            setNotice('')
+          }}
+        />
+      ) : null}
+      {view === 'dashboard' ? (
+        <DashboardView
+          profile={profile}
+          onEditProfile={() => {
+            setView('profile')
+            setNotice('')
+          }}
           onLogoClick={goHome}
         />
       ) : null}

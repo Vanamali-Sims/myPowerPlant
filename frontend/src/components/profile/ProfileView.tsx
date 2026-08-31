@@ -95,9 +95,17 @@ type Props = {
   onReset: () => void
   onLiveChange?: (profile: ProfileData) => void
   onLogoClick: () => void
+  onViewDashboard: () => void
 }
 
-export function ProfileView({ profile, onSave, onReset, onLiveChange, onLogoClick }: Props) {
+export function ProfileView({
+  profile,
+  onSave,
+  onReset,
+  onLiveChange,
+  onLogoClick,
+  onViewDashboard,
+}: Props) {
   const [draft, setDraft] = useState(profile)
   const [editing, setEditing] = useState<SetupStepId | null>(null)
   const [errors, setErrors] = useState<FieldErrors>({})
@@ -181,9 +189,18 @@ export function ProfileView({ profile, onSave, onReset, onLiveChange, onLogoClic
           </p>
         </div>
 
-        <Callout tone="accent" icon={<CheckIcon />}>
-          Profile last updated: {formatUpdatedAt(profile.lastUpdated)}. Your profile is saved on
-          this device.
+        <Callout
+          tone="accent"
+          icon={<CheckIcon />}
+          title={`Profile last updated: ${formatUpdatedAt(profile.lastUpdated)}`}
+          action={
+            <Button variant="edit" onClick={onViewDashboard}>
+              View dashboard
+            </Button>
+          }
+        >
+          Your profile is saved on this device. The dashboard uses these answers — no need to
+          enter them again.
         </Callout>
 
         <div className="profile__sections">
