@@ -43,18 +43,13 @@ body {
   margin: 0;
   min-width: 320px;
   min-height: 100vh;
-  display: flex;
-  align-items: center;
-  justify-content: center;
   background-color: var(--color-bg);
   color: var(--color-text-primary);
 }
 
 #root {
   width: 100%;
-  display: flex;
-  justify-content: center;
-  padding: 2rem 1rem;
+  min-height: 100vh;
 }
 
 h1,
@@ -71,24 +66,14 @@ a {
   text-decoration: underline;
 }
 
-a:hover {
-  color: var(--color-text-primary);
-}
-
 button {
-  font-family: var(--font-body);
-  font-size: 1rem;
-  font-weight: 600;
-  border-radius: var(--radius-pill);
-  border: 1px solid transparent;
-  padding: 0.7em 1.4em;
-  background-color: var(--color-sidebar);
-  color: var(--color-surface);
-  cursor: pointer;
+  font-family: inherit;
 }
 
 button:focus,
-button:focus-visible {
+button:focus-visible,
+input:focus,
+select:focus {
   outline: 2px solid var(--color-accent);
   outline-offset: 2px;
 }
