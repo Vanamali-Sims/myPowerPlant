@@ -1,10 +1,14 @@
 /**
  * Household energy dashboard: KPI cards, timeframe toggle, and assumptions.
  */
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { HIDDEN_ASSUMPTIONS, KIND_LABELS, TIMEFRAMES } from '../../constants'
 import { locationFromPostcode } from '../../data/profileOptions'
 import { formatUpdatedAt } from '../../lib/formatProfile'
+import {
+  fetchMethodology,
+  type MethodologyBundle,
+} from '../../lib/methodologyApi'
 import {
   buildKpiReport,
   formatAud,
@@ -46,27 +50,54 @@ function KindBadge({ kind }: { kind: ValueKind }) {
  */
 export function DashboardView({ profile, onEditProfile, onLogoClick }: Props) {
   const [timeframe, setTimeframe] = useState<Timeframe>('weekly')
-  const report = useMemo(() => buildKpiReport(profile), [profile])
-  const place = locationFromPostcode(profile.postcode) || report.locationLabel
-  const { weekly } = report
-  const assumptions = report.assumptions.filter((item) => !HIDDEN_ASSUMPTIONS.has(item.title))
+  const [bundle, setBundle] = useState<MethodologyBundle | null>(null)
+  const [loadError, setLoadError] = useState('')
 
-  const kpis = [
-    {
-      eyebrow: 'Estimated energy consumption',
-      value: formatKwh(scaleKwh(weekly.consumptionKwh, timeframe)),
-      kind: report.consumptionKind,
-      icon: BoltIcon,
-      note: 'How much electricity this home is likely using over the selected period.',
-    },
-    {
-      eyebrow: 'Estimated savings',
-      value: formatAud(scaleAud(weekly.savingsAud, timeframe)),
-      kind: 'estimate' as ValueKind,
-      icon: SunIcon,
-      note: 'Potential value from solar you use in the home, plus a typical VPP credit on leftover energy.',
-    },
-  ]
+  useEffect(() => {
+    let cancelled = false
+    void fetchMethodology().then((result) => {
+      if (cancelled) return
+      if (result.ok) {
+        setBundle(result.data)
+        setLoadError('')
+      } else {
+        setLoadError(result.error)
+      }
+    })
+    return () => {
+      cancelled = true
+    }
+  }, [])
+
+  const report = useMemo(
+    () => (bundle ? buildKpiReport(profile, bundle) : null),
+    [bundle, profile],
+  )
+  const place =
+    locationFromPostcode(profile.postcode) || report?.locationLabel || ''
+  const weekly = report?.weekly
+  const assumptions =
+    report?.assumptions.filter((item) => !HIDDEN_ASSUMPTIONS.has(item.title)) ?? []
+
+  const kpis =
+    report && weekly
+    ? [
+        {
+          eyebrow: 'Estimated energy consumption',
+          value: formatKwh(scaleKwh(weekly.consumptionKwh, timeframe)),
+          kind: report.consumptionKind,
+          icon: BoltIcon,
+          note: 'How much electricity this home is likely using over the selected period.',
+        },
+        {
+          eyebrow: 'Estimated savings',
+          value: formatAud(scaleAud(weekly.savingsAud, timeframe)),
+          kind: 'estimate' as ValueKind,
+          icon: SunIcon,
+          note: 'Potential value from solar you use in the home, plus a typical VPP credit on leftover energy.',
+        },
+      ]
+    : []
 
   return (
     <div className="dashboard">
@@ -108,6 +139,17 @@ export function DashboardView({ profile, onEditProfile, onLogoClick }: Props) {
       >
         Change household details and come back — this report updates automatically.
       </Callout>
+
+      {loadError ? (
+        <p className="app-notice" role="status">
+          Dashboard rates could not be loaded. {loadError}
+        </p>
+      ) : null}
+      {!bundle && !loadError ? (
+        <p className="app-notice" role="status">
+          Loading published rates and appliance ratings…
+        </p>
+      ) : null}
 
       <div className="dashboard__time" role="radiogroup" aria-label="Timeframe">
         {TIMEFRAMES.map((option) => (
@@ -174,7 +216,7 @@ export function DashboardView({ profile, onEditProfile, onLogoClick }: Props) {
               </tr>
             </thead>
             <tbody>
-              {report.appliances.map((line) => (
+              {(report?.appliances ?? []).map((line) => (
                 <tr key={line.spec.id}>
                   <td>
                     {line.spec.name}

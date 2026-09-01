@@ -13,13 +13,16 @@ from fastapi.middleware.cors import CORSMiddleware
 from mangum import Mangum
 
 from app.db import engine
-from app.routes import health, profile, submit
+from app.routes import health, methodology, profile, submit
 
 load_dotenv()
 
 CORS_ORIGINS = [
     origin.strip()
-    for origin in os.getenv("CORS_ORIGINS", "http://localhost:5173").split(",")
+    for origin in os.getenv(
+        "CORS_ORIGINS",
+        "http://localhost:5173,http://localhost:5174,http://127.0.0.1:5173,http://127.0.0.1:5174",
+    ).split(",")
     if origin.strip()
 ]
 
@@ -47,6 +50,8 @@ app = FastAPI(title="Form API", lifespan=lifespan)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=CORS_ORIGINS,
+    # Vite hops to 5174+ when 5173 is busy; the browser Origin must still match.
+    allow_origin_regex=r"https?://(localhost|127\.0\.0\.1):\d+",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -55,6 +60,7 @@ app.add_middleware(
 app.include_router(health.router, prefix="/api")
 app.include_router(submit.router, prefix="/api")
 app.include_router(profile.router, prefix="/api")
+app.include_router(methodology.router, prefix="/api")
 
 # Lambda entrypoint (API Gateway). Locally unused — run with:
 #   uvicorn app.main:app --reload
