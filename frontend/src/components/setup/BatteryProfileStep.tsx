@@ -1,6 +1,9 @@
+/**
+ * Wizard step: battery count, reserve percent, age, and model.
+ */
 import type { ProfileData } from '../../types/profile'
 import type { FieldErrors } from '../../lib/validateProfile'
-import { batteryModels } from '../../data/profileOptions'
+import { batteryModels, NOT_SURE_VALUE } from '../../data/profileOptions'
 import { Callout } from '../ui/Callout'
 import { Button } from '../ui/Button'
 import { BulbIcon, QuestionIcon } from '../ui/icons'
@@ -14,6 +17,15 @@ type Props = {
   onChange: <K extends keyof ProfileData>(field: K, value: ProfileData[K]) => void
 }
 
+/**
+ * BatteryProfileStep
+ * @param props.profile - Current answers
+ * @param props.onChange - Patch a single profile field
+ * @returns JSX.Element
+ *
+ * Reserve is the share the VPP must not use — the user stays in control.
+ * Not sure on model falls back to the Kew baseline capacity later.
+ */
 export function BatteryProfileStep({ profile, errors, onChange }: Props) {
   return (
     <>
@@ -55,7 +67,7 @@ export function BatteryProfileStep({ profile, errors, onChange }: Props) {
         placeholder="Search battery brand & model"
         heading="Popular models"
         options={batteryModels}
-        extraOptions={['Not sure']}
+        extraOptions={[NOT_SURE_VALUE]}
         value={profile.batteryModel}
         onChange={(value) => onChange('batteryModel', value)}
         error={errors.batteryModel}
@@ -66,7 +78,7 @@ export function BatteryProfileStep({ profile, errors, onChange }: Props) {
         icon={<QuestionIcon />}
         title="Not sure?"
         action={
-          <Button variant="outline-accent" onClick={() => onChange('batteryModel', 'Not sure')}>
+          <Button variant="outline-accent" onClick={() => onChange('batteryModel', NOT_SURE_VALUE)}>
             Not sure
           </Button>
         }

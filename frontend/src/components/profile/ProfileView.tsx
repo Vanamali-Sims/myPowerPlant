@@ -1,93 +1,20 @@
+/**
+ * Saved-profile review screen with per-section edit and a reset path.
+ */
 import { useState } from 'react'
+import { PROFILE_SECTIONS } from '../../constants'
 import type { ProfileData, SetupStepId } from '../../types/profile'
 import { displayValue, formatUpdatedAt, isBaseline } from '../../lib/formatProfile'
 import { hasErrors, validateStep, type FieldErrors } from '../../lib/validateProfile'
 import { Button } from '../ui/Button'
 import { Callout } from '../ui/Callout'
-import {
-  BarsIcon,
-  BatteryIcon,
-  BoltIcon,
-  CheckIcon,
-  LockIcon,
-  PencilIcon,
-  PeopleIcon,
-  ResetIcon,
-  SunIcon,
-} from '../ui/icons'
+import { BoltIcon, CheckIcon, LockIcon, PencilIcon, ResetIcon } from '../ui/icons'
 import { LocationControl } from '../ui/LocationControl'
 import { BatteryProfileStep } from '../setup/BatteryProfileStep'
 import { EnergyProviderStep } from '../setup/EnergyProviderStep'
 import { HouseholdProfileStep } from '../setup/HouseholdProfileStep'
 import { HouseholdUsageStep } from '../setup/HouseholdUsageStep'
 import { SolarDetailsStep } from '../setup/SolarDetailsStep'
-import './ProfileView.css'
-
-type Section = {
-  id: SetupStepId
-  title: string
-  icon: typeof PeopleIcon
-  fields: { field: keyof ProfileData; label: string }[]
-}
-
-const SECTIONS: Section[] = [
-  {
-    id: 'household',
-    title: 'Household Profile',
-    icon: PeopleIcon,
-    fields: [
-      { field: 'postcode', label: 'Postcode' },
-      { field: 'people', label: 'People in household' },
-      { field: 'rooms', label: 'Total rooms' },
-      { field: 'gas', label: 'Gas' },
-      { field: 'refrigerators', label: 'Refrigerators' },
-      { field: 'dryer', label: 'Clothes dryer' },
-      { field: 'heating', label: 'Home heating' },
-      { field: 'cooling', label: 'Home cooling' },
-      { field: 'hotWater', label: 'Hot water system' },
-    ],
-  },
-  {
-    id: 'usage',
-    title: 'Household Usage',
-    icon: BarsIcon,
-    fields: [
-      { field: 'monthlyBill', label: 'Average monthly electricity bill' },
-      { field: 'monthlyKwh', label: 'Average monthly electricity usage' },
-      { field: 'peakPeriod', label: 'Highest energy-use period' },
-      { field: 'usageLevel', label: 'Energy usage level' },
-      { field: 'wfh', label: 'Work/study from home' },
-    ],
-  },
-  {
-    id: 'solar',
-    title: 'Solar Details',
-    icon: SunIcon,
-    fields: [
-      { field: 'hasSolar', label: 'Solar' },
-      { field: 'solarDirection', label: 'Solar panel direction' },
-      { field: 'panelCount', label: 'Number of panels' },
-      { field: 'panelWatts', label: 'Average power rating' },
-    ],
-  },
-  {
-    id: 'battery',
-    title: 'Battery Profile',
-    icon: BatteryIcon,
-    fields: [
-      { field: 'batteryUnits', label: 'Number of battery units' },
-      { field: 'reservePercent', label: 'Usable capacity preference' },
-      { field: 'batteryAge', label: 'Battery age' },
-      { field: 'batteryModel', label: 'Battery model' },
-    ],
-  },
-  {
-    id: 'provider',
-    title: 'Energy Provider',
-    icon: BoltIcon,
-    fields: [{ field: 'provider', label: 'Current electricity provider' }],
-  },
-]
 
 type Props = {
   profile: ProfileData
@@ -98,6 +25,15 @@ type Props = {
   onViewDashboard: () => void
 }
 
+/**
+ * ProfileView
+ * @param props.profile - Last saved household answers
+ * @param props.onSave - Persist edits to localStorage and the server
+ * @returns JSX.Element
+ *
+ * One section can be edited at a time using the same step components as setup.
+ * Baseline-filled fields get an Estimate badge so they are not treated as facts.
+ */
 export function ProfileView({
   profile,
   onSave,
@@ -145,7 +81,7 @@ export function ProfileView({
         }
     if (hasErrors(stepErrors)) {
       setErrors(stepErrors)
-      const first = SECTIONS.find((section) =>
+      const first = PROFILE_SECTIONS.find((section) =>
         section.fields.some((item) => stepErrors[item.field]),
       )
       if (first) setEditing(first.id)
@@ -204,7 +140,7 @@ export function ProfileView({
         </Callout>
 
         <div className="profile__sections">
-          {SECTIONS.map((section) => {
+          {PROFILE_SECTIONS.map((section) => {
             const Icon = section.icon
             const isEditing = editing === section.id
             return (

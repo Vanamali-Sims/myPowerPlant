@@ -1,8 +1,8 @@
 """create submissions table
 
-Revision ID: 001_create_submissions
+ Revision ID: 001_create_submissions
 Revises:
-Create Date: 2026-08-30
+Create Date: 2026- 08-30
 
 """
 

@@ -1,3 +1,6 @@
+/**
+ * Day-part bar chart comparing household use with solar generation.
+ */
 import type { BalancePeriod, Timeframe } from '../../lib/kpis'
 import { scaleKwh } from '../../lib/kpis'
 
@@ -6,6 +9,15 @@ type Props = {
   timeframe: Timeframe
 }
 
+/**
+ * EnergyBalanceChart
+ * @param props.periods - Morning / afternoon / evening / night balances
+ * @param props.timeframe - Scale applied to kWh before drawing
+ * @returns JSX.Element
+ *
+ * Bar height is relative to the largest period so an empty day still renders.
+ * The max fallback of 1 avoids a divide-by-zero when every value is zero.
+ */
 export function EnergyBalanceChart({ periods, timeframe }: Props) {
   const scaled = periods.map((period) => ({
     ...period,

@@ -1,8 +1,12 @@
+/**
+ * Searchable list for battery models and electricity retailers.
+ */
 import { useMemo, useState } from 'react'
+import { NOT_SURE_VALUE, OTHER_VALUE } from '../../data/profileOptions'
 import { Field } from './Field'
 import { ChevronIcon, QuestionIcon, SearchIcon } from './icons'
 
-const DEFAULT_EXTRA = ['Other', 'Not sure']
+const DEFAULT_EXTRA = [OTHER_VALUE, NOT_SURE_VALUE]
 
 type Props = {
   label: string
@@ -17,6 +21,15 @@ type Props = {
   onChange: (value: string) => void
 }
 
+/**
+ * SearchSelect
+ * @param props.value - Current typed or selected value
+ * @param props.options - Popular items shown when the query is empty
+ * @returns JSX.Element
+ *
+ * Extra options (Other / Not sure) always stay visible under the filtered list.
+ * An exact match shows the full catalogue again so the user can change their mind.
+ */
 export function SearchSelect({
   label,
   hint,
@@ -91,7 +104,7 @@ export function SearchSelect({
                 className={`ui-radio-list__row${value === item ? ' is-selected' : ''}`}
                 onClick={() => choose(item)}
               >
-                {item === 'Not sure' ? <QuestionIcon /> : <span className="ui-radio-list__mark" />}
+                {item === NOT_SURE_VALUE ? <QuestionIcon /> : <span className="ui-radio-list__mark" />}
                 <span className="ui-radio-list__label">{item}</span>
               </button>
             ))}

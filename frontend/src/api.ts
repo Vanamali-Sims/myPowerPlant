@@ -1,4 +1,10 @@
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL
+/**
+ * Contact-form POST helper for /api/submit.
+ *
+ * Unused by the household wizard; kept so the starter submit route still has
+ * a typed client.
+ */
+import { API_BASE_URL, API_PATHS } from './constants/api'
 
 export type SubmissionPayload = {
   name: string
@@ -39,6 +45,14 @@ function errorMessage(status: number, body: unknown): string {
   return `Request failed (${status})`
 }
 
+/**
+ * submitForm
+ * @param payload - Name, email, and message for the contact form
+ * @returns Typed success payload, or a user-facing error string
+ *
+ * Posts JSON to the FastAPI submit route.
+ * Missing VITE_API_BASE_URL is reported instead of calling localhost.
+ */
 export async function submitForm(
   payload: SubmissionPayload,
 ): Promise<ApiResult<SubmissionResponse>> {
@@ -50,7 +64,7 @@ export async function submitForm(
   }
 
   try {
-    const response = await fetch(`${API_BASE_URL}/api/submit`, {
+    const response = await fetch(`${API_BASE_URL}${API_PATHS.submit}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload),

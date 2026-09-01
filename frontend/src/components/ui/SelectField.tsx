@@ -1,3 +1,6 @@
+/**
+ * Native select wrapped in Field, accepting string lists or value/label pairs.
+ */
 import { Field } from './Field'
 
 type Option = { value: string; label: string }
@@ -14,6 +17,15 @@ type Props = {
   suffix?: string
 }
 
+/**
+ * SelectField
+ * @param props.value - Current selection
+ * @param props.options - Strings or { value, label } objects
+ * @returns JSX.Element
+ *
+ * String options use the same text for value and label.
+ * The empty placeholder option stays disabled so the user must pick a value.
+ */
 export function SelectField({
   label,
   hint,

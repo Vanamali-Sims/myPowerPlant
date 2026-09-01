@@ -7,7 +7,7 @@ alwaysApply: true
 
 Household VPP advisory. Brand feel: calm, editorial, trustworthy — personal-finance app, not a SaaS dashboard. Warm and human.
 
-Use CSS tokens from `frontend/src/index.css`. Do not invent a second palette or type scale.
+Use CSS tokens from `frontend/src/styles/index.css`. Do not invent a second palette or type scale.
 
 ## Tokens
 

@@ -1,3 +1,6 @@
+"""
+Household-profile read and upsert keyed by the client-generated household id.
+"""
 from datetime import datetime, timezone
 
 from fastapi import APIRouter, Depends, HTTPException
@@ -17,6 +20,21 @@ async def upsert_profile(
     payload: HouseholdProfileCreate,
     session: AsyncSession = Depends(get_session),
 ) -> HouseholdProfile:
+    """
+    upsert_profile
+
+    Args:
+        household_id: Client-generated household id from the URL.
+        payload: Profile fields from the frontend.
+        session: Request-scoped SQLAlchemy session.
+
+    Returns:
+        HouseholdProfile: The stored row after commit.
+
+    Inserts a new household profile or replaces the existing one.
+    Used by the setup wizard and later profile edits.
+    """
+    # Body and path must agree so a client cannot overwrite another household.
     if payload.household_id != household_id:
         raise HTTPException(status_code=400, detail="household_id mismatch")
 
@@ -46,6 +64,19 @@ async def get_profile(
     household_id: str,
     session: AsyncSession = Depends(get_session),
 ) -> HouseholdProfile:
+    """
+    get_profile
+
+    Args:
+        household_id: Client-generated household id from the URL.
+        session: Request-scoped SQLAlchemy session.
+
+    Returns:
+        HouseholdProfile: The stored row for that household.
+
+    Returns 404 when this browser has never synced a profile.
+    Database outages are 503 so the frontend can keep using localStorage.
+    """
     try:
         row = await session.scalar(
             select(HouseholdProfile).where(HouseholdProfile.household_id == household_id)

@@ -1,3 +1,6 @@
+/**
+ * Horizontal yes/no (or similar) radio group styled as a segmented toggle.
+ */
 import { Field } from './Field'
 
 type Option<T extends string> = { value: T; label: string }
@@ -12,6 +15,15 @@ type Props<T extends string> = {
   onChange: (value: T) => void
 }
 
+/**
+ * SegmentedToggle
+ * @param props.value - Selected option, or empty before a choice
+ * @param props.options - Value/label pairs for the radios
+ * @returns JSX.Element
+ *
+ * Generic over the option value type so yes/no fields stay typed.
+ * Renders as a radiogroup for keyboard and screen-reader support.
+ */
 export function SegmentedToggle<T extends string>({
   label,
   hint,

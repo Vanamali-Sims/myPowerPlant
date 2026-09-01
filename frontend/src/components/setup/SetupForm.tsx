@@ -1,7 +1,11 @@
+/**
+ * Five-step household setup wizard.
+ */
 import { useState } from 'react'
+import { SETUP_STEPS, STEP_FIELDS } from '../../constants'
 import { applyBaseline, markUserFields } from '../../data/baselines'
 import { hasErrors, validateStep, type FieldErrors } from '../../lib/validateProfile'
-import type { ProfileData, SetupStepId } from '../../types/profile'
+import type { ProfileData } from '../../types/profile'
 import { FormActions } from '../ui/FormActions'
 import { FormHeader } from '../ui/FormHeader'
 import { StepProgress } from '../ui/StepProgress'
@@ -10,55 +14,6 @@ import { EnergyProviderStep } from './EnergyProviderStep'
 import { HouseholdProfileStep } from './HouseholdProfileStep'
 import { HouseholdUsageStep } from './HouseholdUsageStep'
 import { SolarDetailsStep } from './SolarDetailsStep'
-import './SetupForm.css'
-
-const STEPS: { id: SetupStepId; title: string; lede: string }[] = [
-  {
-    id: 'household',
-    title: 'Household Profile',
-    lede: 'A set of questions designed to discover personalised energy usage.',
-  },
-  {
-    id: 'usage',
-    title: 'Household Usage',
-    lede: 'Tell us how your household uses electricity so we can personalise your estimate.',
-  },
-  {
-    id: 'solar',
-    title: 'Solar Details',
-    lede: 'Tell us about your solar panel setup so we can estimate your household’s solar generation and personalise your energy insights.',
-  },
-  {
-    id: 'battery',
-    title: 'Battery Profile',
-    lede: 'Tell us about your home battery so we can better estimate how much stored energy may be available for household use and potential VPP participation.',
-  },
-  {
-    id: 'provider',
-    title: 'Energy Provider',
-    lede: 'Tell us about your current electricity provider so we can better understand your existing energy arrangement and provide more relevant VPP insights.',
-  },
-]
-
-const STEP_FIELDS: Record<SetupStepId, (keyof ProfileData)[]> = {
-  household: [
-    'postcode',
-    'people',
-    'rooms',
-    'gas',
-    'refrigerators',
-    'dryer',
-    'dryerWeek',
-    'dryerWeekend',
-    'heating',
-    'cooling',
-    'hotWater',
-  ],
-  usage: ['monthlyBill', 'monthlyKwh', 'peakPeriod', 'usageLevel', 'wfh'],
-  solar: ['hasSolar', 'solarDirection', 'panelCount', 'panelWatts'],
-  battery: ['batteryUnits', 'reservePercent', 'batteryAge', 'batteryModel'],
-  provider: ['provider'],
-}
 
 type Props = {
   profile: ProfileData
@@ -68,15 +23,25 @@ type Props = {
   onLogoClick: () => void
 }
 
+/**
+ * SetupForm
+ * @param props.profile - Current answers
+ * @param props.onComplete - Persist the finished profile and leave the wizard
+ * @returns JSX.Element
+ *
+ * Continue validates the current step; skip fills Kew baselines for that step.
+ * Clearing solar fields when the user says they have no panels avoids stale data.
+ */
 export function SetupForm({ profile, onChange, onComplete, onExit, onLogoClick }: Props) {
   const [stepIndex, setStepIndex] = useState(0)
   const [errors, setErrors] = useState<FieldErrors>({})
-  const step = STEPS[stepIndex]
-  const total = STEPS.length
+  const step = SETUP_STEPS[stepIndex]
+  const total = SETUP_STEPS.length
 
   function patch<K extends keyof ProfileData>(field: K, value: ProfileData[K]) {
     const next: ProfileData = { ...profile, [field]: value }
     if (field === 'hasSolar' && value === 'no') {
+      // Hide-and-clear: leftover panel answers must not survive a “no solar” choice.
       next.solarDirection = ''
       next.panelCount = ''
       next.panelWatts = ''

@@ -1,6 +1,11 @@
+/**
+ * Dev-time assertions for buildKpiReport. Run via `npx tsx src/lib/kpis.selftest.ts`
+ * from the frontend folder when changing the KPI model.
+ */
 import { BASELINE_PROFILE } from '../data/baselines'
 import { emptyProfile, type ProfileData } from '../types/profile'
 import { buildKpiReport, scaleKwh } from './kpis'
+import { seedMethodologyBundle } from './methodologyFixture'
 
 function assert(condition: unknown, message: string) {
   if (!condition) throw new Error(message)
@@ -25,7 +30,8 @@ const baseline: ProfileData = {
   lastUpdated: new Date().toISOString(),
 }
 
-const report = buildKpiReport(baseline)
+const data = seedMethodologyBundle()
+const report = buildKpiReport(baseline, data)
 
 assert(almostEqual(report.weekly.consumptionKwh, 540 / 4), 'billed monthly kWh should drive weekly consumption')
 assert(report.consumptionKind === 'from_you', 'user monthly kWh should be labelled from you')
@@ -48,12 +54,12 @@ assert(
 )
 
 const noSolar: ProfileData = { ...baseline, hasSolar: 'no', panelCount: '', panelWatts: '' }
-const potential = buildKpiReport(noSolar)
+const potential = buildKpiReport(noSolar, data)
 assert(potential.solarIsPotential, 'no solar should show potential')
 assert(potential.weekly.generationKwh > report.weekly.generationKwh, 'typical 6.6 kW potential should exceed 4.8 kW south array')
 
 const edited: ProfileData = { ...baseline, monthlyKwh: '800' }
-const updated = buildKpiReport(edited)
+const updated = buildKpiReport(edited, data)
 assert(updated.weekly.consumptionKwh > report.weekly.consumptionKwh, 'editing usage should change the report')
 
 console.log('kpi self-test passed', {

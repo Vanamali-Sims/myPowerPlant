@@ -1,3 +1,6 @@
+/**
+ * Large choice cards with an icon, title, and short description.
+ */
 import type { ReactNode } from 'react'
 import { Field } from './Field'
 
@@ -16,6 +19,15 @@ type Props<T extends string> = {
   onChange: (value: T) => void
 }
 
+/**
+ * ChoiceList
+ * @param props.value - Selected usage-level (or similar) value
+ * @param props.options - Cards including icon and description
+ * @returns JSX.Element
+ *
+ * Built for the energy-usage-level step where a one-word label is not enough.
+ * Behaves as a radiogroup so only one card can be selected.
+ */
 export function ChoiceList<T extends string>({
   label,
   error,

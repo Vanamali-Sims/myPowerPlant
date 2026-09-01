@@ -1,3 +1,6 @@
+/**
+ * Label, optional info tooltip, error, and hint wrapper for form controls.
+ */
 import type { ReactNode } from 'react'
 import { AlertIcon, InfoIcon } from './icons'
 
@@ -9,6 +12,15 @@ type Props = {
   children: ReactNode
 }
 
+/**
+ * Field
+ * @param props.label - Visible field title
+ * @param props.children - The input, select, or toggle
+ * @returns JSX.Element
+ *
+ * Errors use role="alert" so a failed continue is announced.
+ * Hint text sits under the control and is not shown as the error.
+ */
 export function Field({ label, hint, error, info, children }: Props) {
   return (
     <div className="ui-field">
