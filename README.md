@@ -62,23 +62,6 @@ npm run dev
 
 Open `http://localhost:5173`. The form POSTs to `${VITE_API_BASE_URL}/api/submit`.
 
-## Project layout
-
-```
-.
-├── frontend/                 Vite 8 + React 19.2 + TypeScript
-├── backend/
-│   ├── app/
-│   │   ├── main.py           FastAPI app + Mangum handler
-│   │   ├── models.py         SQLModel tables + request/response schemas
-│   │   ├── db.py             async engine / session (SQLAlchemy 2 + asyncpg)
-│   │   └── routes/
-│   ├── alembic/              migrations (initial submissions table)
-│   ├── requirements.txt
-│   ├── .env.example
-│   └── docker-compose.yml    postgres:16 + named volume
-└── README.md
-```
 
 ## Environment
 

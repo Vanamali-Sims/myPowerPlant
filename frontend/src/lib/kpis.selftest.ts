@@ -1,3 +1,7 @@
+/**
+ * Dev-time assertions for buildKpiReport. Run via `npx tsx src/lib/kpis.selftest.ts`
+ * from the frontend folder when changing the KPI model.
+ */
 import { BASELINE_PROFILE } from '../data/baselines'
 import { emptyProfile, type ProfileData } from '../types/profile'
 import { buildKpiReport, scaleKwh } from './kpis'

@@ -1,3 +1,6 @@
+/**
+ * Client-side view router: welcome, setup, profile, and dashboard.
+ */
 import { useEffect, useState } from 'react'
 import { AppShell, type AppNavId } from './components/layout/AppShell'
 import { DashboardView } from './components/dashboard/DashboardView'
@@ -7,10 +10,16 @@ import { SetupForm } from './components/setup/SetupForm'
 import { clearStoredProfile, loadProfile, saveProfile } from './lib/profileStorage'
 import { syncProfileToServer } from './lib/profileApi'
 import { emptyProfile, type ProfileData } from './types/profile'
-import './App.css'
 
 type View = 'welcome' | 'setup' | 'profile' | 'dashboard'
 
+/**
+ * App
+ * @returns JSX.Element
+ *
+ * Holds the in-memory profile and which screen is showing.
+ * localStorage is written first; the API sync is best-effort and may set a notice.
+ */
 function App() {
   const [profile, setProfile] = useState<ProfileData>(loadProfile)
   const [view, setView] = useState<View>('welcome')

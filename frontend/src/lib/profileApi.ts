@@ -1,7 +1,9 @@
+/**
+ * Best-effort PUT of the household profile to the FastAPI backend.
+ */
+import { API_BASE_URL, API_PATHS } from '../constants/api'
 import type { ProfileData } from '../types/profile'
 import { getHouseholdId } from './householdId'
-
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL
 
 export type ApiResult = { ok: true } | { ok: false; error: string }
 
@@ -38,9 +40,12 @@ function toPayload(profile: ProfileData, householdId: string) {
 }
 
 /**
- * Best-effort sync to the backend. localStorage remains the source of truth
- * for the app itself — this just mirrors the profile server-side so it's
- * available for dashboard calculations later. Failures are non-fatal.
+ * syncProfileToServer
+ * @param profile - Household answers already saved locally
+ * @returns ok: true on a 2xx response, or ok: false with a short error
+ *
+ * localStorage remains the source of truth; this only mirrors the profile.
+ * Failures are non-fatal so a down API never blocks the wizard.
  */
 export async function syncProfileToServer(profile: ProfileData): Promise<ApiResult> {
   if (!API_BASE_URL) {
@@ -50,7 +55,7 @@ export async function syncProfileToServer(profile: ProfileData): Promise<ApiResu
   const householdId = getHouseholdId()
 
   try {
-    const response = await fetch(`${API_BASE_URL}/api/profile/${householdId}`, {
+    const response = await fetch(`${API_BASE_URL}${API_PATHS.profile(householdId)}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(toPayload(profile, householdId)),

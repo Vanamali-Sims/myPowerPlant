@@ -1,19 +1,46 @@
-import { batteryModels, energyProviders } from '../data/profileOptions'
+/**
+ * Per-step validation for the household setup wizard and profile editor.
+ *
+ * Bounds and the Victorian postcode rule live in constants/validation so the
+ * form UI and this file cannot drift apart.
+ */
+import { FIELD_BOUNDS, VIC_POSTCODE } from '../constants/validation'
+import {
+  batteryModels,
+  energyProviders,
+  NOT_SURE_VALUE,
+  OTHER_VALUE,
+} from '../data/profileOptions'
 import type { ProfileData, SetupStepId } from '../types/profile'
 
 export type FieldErrors = Partial<Record<keyof ProfileData, string>>
-
-const VIC_POSTCODE = /^[38]\d{3}$/
 
 function required(value: string, message: string): string | undefined {
   if (!value.trim()) return message
   return undefined
 }
 
+/**
+ * isVictorianPostcode
+ * @param postcode - Raw postcode string from the form
+ * @returns True when the value is a 4-digit Victorian postcode
+ *
+ * Victoria uses 3xxx and 8xxx ranges, so the shared regex starts with 3 or 8.
+ * Used by the wizard and by device geolocation before we accept a result.
+ */
 export function isVictorianPostcode(postcode: string): boolean {
   return VIC_POSTCODE.test(postcode.trim())
 }
 
+/**
+ * validateStep
+ * @param step - Wizard step being checked
+ * @param profile - Current household answers
+ * @returns Field-keyed error messages; empty object if the step is valid
+ *
+ * Checks only the fields that belong to this step.
+ * Bounds and the Victorian postcode rule come from constants/validation.
+ */
 export function validateStep(
   step: SetupStepId,
   profile: ProfileData,
@@ -59,13 +86,25 @@ export function validateStep(
   if (step === 'usage') {
     if (!profile.monthlyBill.trim()) {
       errors.monthlyBill = 'Please enter your average monthly electricity bill.'
-    } else if (!isPositiveNumber(profile.monthlyBill, 1, 5000)) {
-      errors.monthlyBill = 'Enter a typical monthly amount, for example 180.'
+    } else if (
+      !isPositiveNumber(
+        profile.monthlyBill,
+        FIELD_BOUNDS.monthlyBill.min,
+        FIELD_BOUNDS.monthlyBill.max,
+      )
+    ) {
+      errors.monthlyBill = `Enter a typical monthly amount, for example ${FIELD_BOUNDS.monthlyBill.example}.`
     }
     if (!profile.monthlyKwh.trim()) {
       errors.monthlyKwh = 'Please enter your average monthly electricity use.'
-    } else if (!isPositiveNumber(profile.monthlyKwh, 1, 5000)) {
-      errors.monthlyKwh = 'Enter a value in kWh, for example 540.'
+    } else if (
+      !isPositiveNumber(
+        profile.monthlyKwh,
+        FIELD_BOUNDS.monthlyKwh.min,
+        FIELD_BOUNDS.monthlyKwh.max,
+      )
+    ) {
+      errors.monthlyKwh = `Enter a value in kWh, for example ${FIELD_BOUNDS.monthlyKwh.example}.`
     }
     const peak = required(
       profile.peakPeriod,
@@ -95,36 +134,63 @@ export function validateStep(
       if (direction) errors.solarDirection = direction
       if (!profile.panelCount.trim()) {
         errors.panelCount = 'Please enter how many solar panels you have.'
-      } else if (!isPositiveNumber(profile.panelCount, 1, 80)) {
-        errors.panelCount = 'Enter a number of panels between 1 and 80. Example: 12'
+      } else if (
+        !isPositiveNumber(
+          profile.panelCount,
+          FIELD_BOUNDS.panelCount.min,
+          FIELD_BOUNDS.panelCount.max,
+        )
+      ) {
+        errors.panelCount = `Enter a number of panels between ${FIELD_BOUNDS.panelCount.min} and ${FIELD_BOUNDS.panelCount.max}. Example: ${FIELD_BOUNDS.panelCount.example}`
       }
       if (!profile.panelWatts.trim()) {
         errors.panelWatts = 'Please enter a valid average power rating.'
-      } else if (!isPositiveNumber(profile.panelWatts, 50, 500)) {
-        errors.panelWatts = 'Enter a value between 50 W and 500 W. Example: 300'
+      } else if (
+        !isPositiveNumber(
+          profile.panelWatts,
+          FIELD_BOUNDS.panelWatts.min,
+          FIELD_BOUNDS.panelWatts.max,
+        )
+      ) {
+        errors.panelWatts = `Enter a value between ${FIELD_BOUNDS.panelWatts.min} W and ${FIELD_BOUNDS.panelWatts.max} W. Example: ${FIELD_BOUNDS.panelWatts.example}`
       }
     }
   }
 
   if (step === 'battery') {
-    if (profile.batteryUnits < 1 || profile.batteryUnits > 8) {
+    if (
+      profile.batteryUnits < FIELD_BOUNDS.batteryUnits.min ||
+      profile.batteryUnits > FIELD_BOUNDS.batteryUnits.max
+    ) {
       errors.batteryUnits = 'Enter the number of battery units at your property.'
     }
     if (!profile.reservePercent.trim()) {
       errors.reservePercent = 'Please enter the minimum battery level you want to keep.'
-    } else if (!isPositiveNumber(profile.reservePercent, 0, 80)) {
-      errors.reservePercent = 'Enter a percentage between 0 and 80. Example: 20'
+    } else if (
+      !isPositiveNumber(
+        profile.reservePercent,
+        FIELD_BOUNDS.reservePercent.min,
+        FIELD_BOUNDS.reservePercent.max,
+      )
+    ) {
+      errors.reservePercent = `Enter a percentage between ${FIELD_BOUNDS.reservePercent.min} and ${FIELD_BOUNDS.reservePercent.max}. Example: ${FIELD_BOUNDS.reservePercent.example}`
     }
     const age = required(profile.batteryAge, 'Please enter the approximate age of your battery.')
     if (age) {
       errors.batteryAge = age
-    } else if (!isPositiveNumber(profile.batteryAge, 0, 40)) {
-      errors.batteryAge = 'Enter the age in years, for example 2.'
+    } else if (
+      !isPositiveNumber(
+        profile.batteryAge,
+        FIELD_BOUNDS.batteryAge.min,
+        FIELD_BOUNDS.batteryAge.max,
+      )
+    ) {
+      errors.batteryAge = `Enter the age in years, for example ${FIELD_BOUNDS.batteryAge.example}.`
     }
     if (!profile.batteryModel.trim()) {
       errors.batteryModel = 'Please select a model from the list, or choose Not sure.'
     } else if (
-      profile.batteryModel !== 'Not sure' &&
+      profile.batteryModel !== NOT_SURE_VALUE &&
       !batteryModels.includes(profile.batteryModel)
     ) {
       errors.batteryModel =
@@ -136,8 +202,8 @@ export function validateStep(
     if (!profile.provider.trim()) {
       errors.provider = 'Please select your electricity provider, or choose Not sure.'
     } else if (
-      profile.provider !== 'Not sure' &&
-      profile.provider !== 'Other' &&
+      profile.provider !== NOT_SURE_VALUE &&
+      profile.provider !== OTHER_VALUE &&
       !energyProviders.includes(profile.provider)
     ) {
       errors.provider = 'Please select a provider from the list, or choose Not sure.'
@@ -152,6 +218,14 @@ function isPositiveNumber(raw: string, min: number, max: number): boolean {
   return Number.isFinite(n) && n >= min && n <= max
 }
 
+/**
+ * hasErrors
+ * @param errors - Field error map from validateStep
+ * @returns True when at least one field has a message
+ *
+ * Used by the wizard continue button and the profile save path.
+ * An empty object means the current step (or whole profile) is ready.
+ */
 export function hasErrors(errors: FieldErrors): boolean {
   return Object.keys(errors).length > 0
 }

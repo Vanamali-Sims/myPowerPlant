@@ -1,3 +1,6 @@
+/**
+ * Sample Victorian VPP offers used until a live CDR feed is wired.
+ */
 export type VppPlan = {
   id: string
   brand: string

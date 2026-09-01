@@ -1,3 +1,7 @@
+/**
+ * Form option lists, retailer/battery catalogues, and postcode → suburb labels.
+ */
+import { DEFAULT_LOCATION_LABEL, VIC_POSTCODE } from '../constants/validation'
 import type {
   PeakPeriod,
   SolarDirection,
@@ -128,8 +132,16 @@ const postcodeSuburbs: Record<string, string> = {
   '3186': 'Brighton, VIC',
 }
 
+/**
+ * locationFromPostcode
+ * @param postcode - Four-digit Australian postcode
+ * @returns “Suburb, VIC” when known, “VIC” for other Victorian codes, else empty
+ *
+ * Named inner-Melbourne suburbs are listed so the rail and dashboard can
+ * show a place. Other 3xxx/8xxx codes still resolve to the state label.
+ */
 export function locationFromPostcode(postcode: string): string {
   if (postcodeSuburbs[postcode]) return postcodeSuburbs[postcode]
-  if (/^[38]\d{3}$/.test(postcode)) return 'VIC'
+  if (VIC_POSTCODE.test(postcode)) return DEFAULT_LOCATION_LABEL
   return ''
 }

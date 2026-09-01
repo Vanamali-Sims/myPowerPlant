@@ -1,8 +1,15 @@
+/**
+ * Shared hook for “coming soon” and locked-nav popovers that dismiss themselves.
+ */
 import { useEffect, useState } from 'react'
 
 /**
- * Tracks which one of a set of triggers (keyed by id) currently has an
- * inline popover open, auto-dismissing it after `timeoutMs`.
+ * useTransientPopover
+ * @param timeoutMs - How long the popover stays open before closing
+ * @returns A [openId, setOpenId] tuple, same shape as useState
+ *
+ * Only one trigger id can be open at a time. The timer restarts whenever
+ * openId changes so a second click does not leave a stale popover up.
  */
 export function useTransientPopover(timeoutMs = 3000) {
   const [openId, setOpenId] = useState<string | null>(null)

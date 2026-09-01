@@ -1,3 +1,6 @@
+/**
+ * Wizard step: bills, peak period, usage level, and work-from-home.
+ */
 import type { ProfileData } from '../../types/profile'
 import type { FieldErrors } from '../../lib/validateProfile'
 import {
@@ -17,6 +20,15 @@ type Props = {
   onChange: <K extends keyof ProfileData>(field: K, value: ProfileData[K]) => void
 }
 
+/**
+ * HouseholdUsageStep
+ * @param props.profile - Current answers
+ * @param props.onChange - Patch a single profile field
+ * @returns JSX.Element
+ *
+ * Usage-level icons are mapped here because they are presentation, not data.
+ * Bill and kWh stay free text so the user can copy figures from a statement.
+ */
 export function HouseholdUsageStep({ profile, errors, onChange }: Props) {
   return (
     <>

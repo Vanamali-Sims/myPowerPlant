@@ -1,11 +1,14 @@
+/**
+ * Logged-in chrome: dark icon rail, wordmark, and location pill.
+ */
 import type { ReactNode } from 'react'
-import { BoltIcon, DashboardIcon, HomeIcon, ProfileIcon } from '../ui/icons'
-import { Popover } from '../ui/Popover'
+import { DEFAULT_LOCATION_LABEL, NAV, type AppNavId } from '../../constants'
 import { locationFromPostcode } from '../../data/profileOptions'
 import { useTransientPopover } from '../../lib/useTransientPopover'
-import './AppShell.css'
+import { BoltIcon } from '../ui/icons'
+import { Popover } from '../ui/Popover'
 
-export type AppNavId = 'profile' | 'home' | 'dashboard'
+export type { AppNavId }
 
 type Props = {
   active: AppNavId | null
@@ -16,32 +19,15 @@ type Props = {
   children: ReactNode
 }
 
-const NAV: {
-  id: AppNavId
-  label: string
-  icon: typeof ProfileIcon
-  unavailableMessage: string
-}[] = [
-  {
-    id: 'profile',
-    label: 'Profile',
-    icon: ProfileIcon,
-    unavailableMessage: 'Complete setup to view your profile.',
-  },
-  {
-    id: 'home',
-    label: 'Home',
-    icon: HomeIcon,
-    unavailableMessage: 'Home isn’t set up yet.',
-  },
-  {
-    id: 'dashboard',
-    label: 'Dashboard',
-    icon: DashboardIcon,
-    unavailableMessage: 'Complete setup to view your dashboard.',
-  },
-]
-
+/**
+ * AppShell
+ * @param props.active - Which rail item is current, or null during setup
+ * @param props.children - The screen rendered in the main column
+ * @returns JSX.Element
+ *
+ * Profile and Dashboard stay locked until a profile is saved.
+ * Home is always available so the user can leave setup without a dead end.
+ */
 export function AppShell({
   active,
   postcode,
@@ -111,7 +97,7 @@ export function AppShell({
         </nav>
         <span className="app-rail__place">
           <span className="location-pill__dot" />
-          {place || 'VIC'}
+          {place || DEFAULT_LOCATION_LABEL}
         </span>
       </aside>
       <div className="app-shell__main">{children}</div>

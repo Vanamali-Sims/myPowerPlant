@@ -1,3 +1,6 @@
+/**
+ * Vertical radio list with an optional hint under each label.
+ */
 import { Field } from './Field'
 
 type Option<T extends string> = { value: T; label: string; hint?: string }
@@ -11,6 +14,15 @@ type Props<T extends string> = {
   onChange: (value: T) => void
 }
 
+/**
+ * RadioList
+ * @param props.value - Selected option, or empty before a choice
+ * @param props.options - Value, label, and optional time-window hint
+ * @returns JSX.Element
+ *
+ * Used for peak-period questions where a hint like “6pm – 10pm” helps.
+ * Each row is a radio button, not a native input, so styling stays consistent.
+ */
 export function RadioList<T extends string>({
   label,
   error,

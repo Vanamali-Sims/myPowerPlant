@@ -1,3 +1,6 @@
+/**
+ * Labelled text input with optional prefix, suffix, and trailing icon.
+ */
 import type { InputHTMLAttributes, ReactNode } from 'react'
 import { Field } from './Field'
 
@@ -11,6 +14,14 @@ type Props = Omit<InputHTMLAttributes<HTMLInputElement>, 'prefix'> & {
   icon?: ReactNode
 }
 
+/**
+ * TextField
+ * @param props - Native input props plus Field chrome
+ * @returns JSX.Element
+ *
+ * Prefix/suffix sit inside the input so units like $ or % stay attached.
+ * Spreads remaining input attributes through to the native control.
+ */
 export function TextField({
   label,
   hint,

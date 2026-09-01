@@ -1,120 +1,27 @@
+/**
+ * Marketing home page: hero, features, how-it-works, Kew example, and articles.
+ */
+import {
+  FEATURE_STATUS_LABEL,
+  HOW_IT_WORKS,
+  LEARN_MORE_POPOVER,
+  SEE_ALL_POPOVER,
+  WELCOME_ARTICLES,
+  WELCOME_FEATURES,
+  WELCOME_IMPACT_POINTS,
+} from '../../constants'
+import { useTransientPopover } from '../../lib/useTransientPopover'
 import { Button } from '../ui/Button'
 import { Popover } from '../ui/Popover'
 import {
   BatteryIcon,
   BoltIcon,
   CheckIcon,
-  DashboardIcon,
   HomeIcon,
   PeopleIcon,
   ShieldIcon,
   SunIcon,
 } from '../ui/icons'
-import { useTransientPopover } from '../../lib/useTransientPopover'
-import './Welcome.css'
-
-type Status = 'available' | 'soon'
-
-type FeatureCard = {
-  icon: typeof SunIcon
-  title: string
-  description: string
-  status: Status
-}
-
-const FEATURES: FeatureCard[] = [
-  {
-    icon: SunIcon,
-    title: 'Your solar & battery',
-    description:
-      'Tell us about your solar panels and battery — the make, the size, how you use them.',
-    status: 'available',
-  },
-  {
-    icon: BoltIcon,
-    title: 'Your household usage',
-    description:
-      'Add details from your own electricity bills so your recommendation reflects how your home actually uses power.',
-    status: 'available',
-  },
-  {
-    icon: DashboardIcon,
-    title: 'Your ongoing recommendation',
-    description:
-      'See whether joining a VPP makes sense for your home, and how — kept up to date as your setup changes.',
-    status: 'available',
-  },
-]
-
-type ImpactPoint = {
-  title: string
-  description: string
-  estimate?: boolean
-}
-
-const IMPACT_POINTS: ImpactPoint[] = [
-  {
-    title: 'Solar & battery',
-    description:
-      'Matt has a rooftop solar system paired with a home battery — the kind of setup MyPowerPlant is built around.',
-  },
-  {
-    title: 'Battery reserve',
-    description:
-      'He keeps a portion of his battery charge in reserve at all times, balancing backup power with VPP participation.',
-  },
-  {
-    title: 'Potential to save',
-    description:
-      'Depending on his usage and battery size, joining a VPP could lower Matt’s running costs. This isn’t a guaranteed figure — it depends on your own home.',
-    estimate: true,
-  },
-]
-
-const STEPS = [
-  {
-    title: 'Tell us about your home',
-    description:
-      'Answer a short set of questions about your household, usage, solar and battery.',
-  },
-  {
-    title: 'We look at your numbers',
-    description:
-      'MyPowerPlant checks your setup against real assessment criteria, not guesswork.',
-  },
-  {
-    title: 'Get your recommendation',
-    description:
-      'See whether joining a VPP makes sense for you, and how — updated as things change.',
-  },
-]
-
-const ARTICLES = [
-  {
-    tag: 'Basics',
-    title: 'How does a virtual power plant work?',
-    excerpt:
-      'A plain-language explainer from Solar Victoria on what a VPP is and how home batteries take part.',
-    source: 'solar.vic.gov.au',
-    href: 'https://www.solar.vic.gov.au/how-does-virtual-power-plant-work',
-  },
-  {
-    tag: 'Solar & battery',
-    title: 'Is your battery virtual power plant ready?',
-    excerpt:
-      'Solar Victoria on what makes a home battery eligible to join a VPP, and what to check first.',
-    source: 'solar.vic.gov.au',
-    href: 'https://www.solar.vic.gov.au/virtual-power-plant-ready',
-  },
-  {
-    tag: 'Providers & schemes',
-    title: 'Virtual power plants explained',
-    excerpt:
-      'The Clean Energy Regulator on how VPPs fit into the small-scale renewable energy scheme.',
-    source: 'cer.gov.au',
-    href: 'https://cer.gov.au/schemes/renewable-energy-target/small-scale-renewable-energy-scheme/small-scale-renewable-energy-systems/solar-batteries/virtual-power-plants',
-  },
-]
 
 type Props = {
   hasProfile: boolean
@@ -123,6 +30,15 @@ type Props = {
   onLogoClick: () => void
 }
 
+/**
+ * Welcome
+ * @param props.hasProfile - Whether this device already has a saved profile
+ * @param props.onGetStarted - Open the setup wizard
+ * @returns JSX.Element
+ *
+ * Copy and feature lists come from constants/welcome so this file is layout.
+ * The primary button switches to “View dashboard” after setup is complete.
+ */
 export function Welcome({ hasProfile, onGetStarted, onViewDashboard, onLogoClick }: Props) {
   const [openPopover, setOpenPopover] = useTransientPopover()
 
@@ -166,7 +82,7 @@ export function Welcome({ hasProfile, onGetStarted, onViewDashboard, onLogoClick
                 </Button>
                 <Popover
                   open={openPopover === 'learn-more'}
-                  message="A dedicated guide is coming soon — see the linked articles below in the meantime."
+                  message={LEARN_MORE_POPOVER}
                 />
               </span>
             </div>
@@ -197,13 +113,13 @@ export function Welcome({ hasProfile, onGetStarted, onViewDashboard, onLogoClick
               </Button>
               <Popover
                 open={openPopover === 'see-all'}
-                message="The full features list is coming soon."
+                message={SEE_ALL_POPOVER}
                 placement="bottom-end"
               />
             </span>
           </div>
           <div className="card-grid">
-            {FEATURES.map((feature) => {
+            {WELCOME_FEATURES.map((feature) => {
               const Icon = feature.icon
               return (
                 <div key={feature.title} className="feature-card">
@@ -213,7 +129,7 @@ export function Welcome({ hasProfile, onGetStarted, onViewDashboard, onLogoClick
                   <h3>{feature.title}</h3>
                   <p className="feature-card__desc">{feature.description}</p>
                   <span className={`status-pill status-pill--${feature.status}`}>
-                    {feature.status === 'available' ? 'Available now' : 'Coming soon'}
+                    {FEATURE_STATUS_LABEL[feature.status]}
                   </span>
                 </div>
               )
@@ -257,7 +173,7 @@ export function Welcome({ hasProfile, onGetStarted, onViewDashboard, onLogoClick
         <div className="band__inner">
           <h2 className="steps__heading">How it works</h2>
           <div className="steps">
-            {STEPS.map((step, index) => (
+            {HOW_IT_WORKS.map((step, index) => (
               <div key={step.title} className="step">
                 <span className="step__badge">{index + 1}</span>
                 <h3>{step.title}</h3>
@@ -272,7 +188,7 @@ export function Welcome({ hasProfile, onGetStarted, onViewDashboard, onLogoClick
         <div className="band__inner">
           <h2>A worked example: Matt, in Kew VIC</h2>
           <div className="text-points">
-            {IMPACT_POINTS.map((point) => (
+            {WELCOME_IMPACT_POINTS.map((point) => (
               <div key={point.title} className="text-point">
                 <p className="text-point__title">
                   {point.title}
@@ -293,7 +209,7 @@ export function Welcome({ hasProfile, onGetStarted, onViewDashboard, onLogoClick
             <h2>Learn more</h2>
           </div>
           <div className="card-grid">
-            {ARTICLES.map((article) => (
+            {WELCOME_ARTICLES.map((article) => (
               <a
                 key={article.title}
                 className="article-card"

@@ -1,3 +1,9 @@
+"""
+SQLModel tables and request/response shapes for submissions and profiles.
+
+Column max_length values are schema constraints. Change them only with a
+migration — they are not shared frontend constants.
+"""
 from datetime import datetime, timezone
 
 from pydantic import EmailStr

@@ -1,4 +1,8 @@
+/**
+ * Household energy dashboard: KPI cards, timeframe toggle, and assumptions.
+ */
 import { useMemo, useState } from 'react'
+import { HIDDEN_ASSUMPTIONS, KIND_LABELS, TIMEFRAMES } from '../../constants'
 import { locationFromPostcode } from '../../data/profileOptions'
 import { formatUpdatedAt } from '../../lib/formatProfile'
 import {
@@ -14,7 +18,6 @@ import type { ProfileData } from '../../types/profile'
 import { Button } from '../ui/Button'
 import { Callout } from '../ui/Callout'
 import { BoltIcon, SunIcon } from '../ui/icons'
-import './DashboardView.css'
 
 type Props = {
   profile: ProfileData
@@ -22,18 +25,8 @@ type Props = {
   onLogoClick: () => void
 }
 
-const TIMEFRAMES: { value: Timeframe; label: string }[] = [
-  { value: 'daily', label: 'Daily' },
-  { value: 'weekly', label: 'Weekly' },
-  { value: 'monthly', label: 'Monthly' },
-]
-
-const HIDDEN_ASSUMPTIONS = new Set(['Carbon avoided'])
-
 function kindLabel(kind: ValueKind): string {
-  if (kind === 'from_you') return 'From you'
-  if (kind === 'sourced') return 'Sourced terms'
-  return 'Estimate'
+  return KIND_LABELS[kind]
 }
 
 function KindBadge({ kind }: { kind: ValueKind }) {
@@ -42,6 +35,15 @@ function KindBadge({ kind }: { kind: ValueKind }) {
   return <span className={className}>{kindLabel(kind)}</span>
 }
 
+/**
+ * DashboardView
+ * @param props.profile - Saved household answers used to build the KPI report
+ * @param props.onEditProfile - Jump to the profile editor
+ * @returns JSX.Element
+ *
+ * Figures are estimates unless the badge says otherwise.
+ * Carbon avoided is modelled but hidden from the list so it is not oversold.
+ */
 export function DashboardView({ profile, onEditProfile, onLogoClick }: Props) {
   const [timeframe, setTimeframe] = useState<Timeframe>('weekly')
   const report = useMemo(() => buildKpiReport(profile), [profile])

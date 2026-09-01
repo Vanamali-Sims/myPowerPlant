@@ -1,3 +1,9 @@
+/**
+ * Household KPI model: consumption, solar, VPP savings, and transparency notes.
+ *
+ * Numbers are simulated from the saved profile plus published typical ratings.
+ * Nothing here is a live meter reading.
+ */
 import {
   APPLIANCE_DATASET,
   BATTERY_CAPACITY_KWH,
@@ -11,6 +17,27 @@ import {
   VIC_GRID_KG_CO2_PER_KWH,
   type ApplianceSpec,
 } from '../data/appliances'
+import {
+  AIRCON_BASE_HOURS,
+  AIRCON_HOURS_PER_ROOM,
+  AIRCON_MAX_HOURS,
+  BATTERY_SHIFT_FACTOR,
+  CONSUMPTION_SHARE_BASE,
+  CONSUMPTION_SHARE_PEAK,
+  DAYS_PER_WEEK,
+  DEFAULT_PEAK_PERIOD,
+  DISHWASHER_MIN_PEOPLE,
+  EVAPORATIVE_HOURS,
+  HEATER_BASE_HOURS,
+  HEATER_MAX_HOURS,
+  KPI_PERIODS,
+  SOLAR_SHARE,
+  WASHER_MIN_HOURS,
+  WATER_HEATER_HOURS,
+  WEEKS_PER_MONTH,
+  WFH_MONITOR_HOURS,
+} from '../constants/kpiMethodology'
+import { DEFAULT_LOCATION_LABEL, FIELD_BOUNDS } from '../constants/validation'
 import { VPP_PLANS, type VppPlan } from '../data/vppPlans'
 import { locationFromPostcode } from '../data/profileOptions'
 import type { PeakPeriod, ProfileData } from '../types/profile'
@@ -72,31 +99,43 @@ export type KpiReport = {
   assumptions: Assumption[]
 }
 
-const PERIODS: { id: PeakPeriod; label: string; hint: string }[] = [
-  { id: 'morning', label: 'Morning', hint: '6am – 12pm' },
-  { id: 'afternoon', label: 'Afternoon', hint: '12pm – 6pm' },
-  { id: 'evening', label: 'Evening', hint: '6pm – 10pm' },
-  { id: 'night', label: 'Night', hint: '10pm – 6am' },
-]
-
-const SOLAR_SHARE: Record<PeakPeriod, number> = {
-  morning: 0.28,
-  afternoon: 0.55,
-  evening: 0.15,
-  night: 0.02,
-}
-
+/**
+ * parseCount
+ * @param value - Select/option string such as "6+" or "3"
+ * @returns Parsed integer, or 0 when the value is empty or not a number
+ *
+ * The trailing "+" on options like "6+" is stripped so household size still
+ * contributes a usable count to the appliance model.
+ */
 export function parseCount(value: string): number {
   const n = Number.parseInt(String(value).replace('+', ''), 10)
   return Number.isFinite(n) ? n : 0
 }
 
+/**
+ * scaleKwh
+ * @param weekly - Modelled weekly kilowatt-hours
+ * @param timeframe - Daily, weekly, or monthly display period
+ * @returns The same energy scaled to the requested period
+ *
+ * Daily divides by 7. Monthly uses weekly × 4, matching the KPI methodology
+ * rather than a calendar month, so the toggle stays comparable.
+ */
 export function scaleKwh(weekly: number, timeframe: Timeframe): number {
-  if (timeframe === 'daily') return weekly / 7
-  if (timeframe === 'monthly') return weekly * 4
+  if (timeframe === 'daily') return weekly / DAYS_PER_WEEK
+  if (timeframe === 'monthly') return weekly * WEEKS_PER_MONTH
   return weekly
 }
 
+/**
+ * scaleAud
+ * @param weekly - Modelled weekly dollar amount
+ * @param timeframe - Daily, weekly, or monthly display period
+ * @returns The same dollar amount scaled like scaleKwh
+ *
+ * Savings use the same period rule as energy so the two KPI cards stay in
+ * lockstep when the user changes Daily / Weekly / Monthly.
+ */
 export function scaleAud(weekly: number, timeframe: Timeframe): number {
   return scaleKwh(weekly, timeframe)
 }
@@ -132,29 +171,42 @@ function applianceLines(profile: ProfileData): ApplianceLine[] {
   }
 
   add('tv', 1)
-  if (profile.wfh === 'yes') add('monitor', 1, 40, fieldIsUser(profile, 'wfh'))
+  if (profile.wfh === 'yes') add('monitor', 1, WFH_MONITOR_HOURS, fieldIsUser(profile, 'wfh'))
   add(
     'refrigerator',
     fridges || 1,
     APPLIANCE_DATASET.refrigerator.typicalHoursPerWeek,
     fieldIsUser(profile, 'refrigerators'),
   )
-  add('dishwasher', people >= 3 ? 1 : 0)
-  add('washer', 1, Math.max(2, people))
+  // Dishwasher only once the household is large enough to justify a weekly load.
+  add('dishwasher', people >= DISHWASHER_MIN_PEOPLE ? 1 : 0)
+  add('washer', 1, Math.max(WASHER_MIN_HOURS, people))
   if (profile.dryer === 'yes') {
     const cycles = Math.max(dryerWeek + dryerWeekend, 1)
     add('dryer', 1, cycles, fieldIsUser(profile, 'dryer'))
   }
   if (profile.cooling === 'air_conditioning') {
-    add('aircon', 1, Math.min(28, 8 + rooms * 1.5), fieldIsUser(profile, 'cooling'))
+    // Hours grow with rooms, then cap so a large house does not run AC all week.
+    add(
+      'aircon',
+      1,
+      Math.min(AIRCON_MAX_HOURS, AIRCON_BASE_HOURS + rooms * AIRCON_HOURS_PER_ROOM),
+      fieldIsUser(profile, 'cooling'),
+    )
   } else if (profile.cooling === 'evaporative') {
-    add('evaporative', 1, 12, fieldIsUser(profile, 'cooling'))
+    add('evaporative', 1, EVAPORATIVE_HOURS, fieldIsUser(profile, 'cooling'))
   }
   if (profile.heating === 'electric') {
-    add('heater', 1, Math.min(24, 6 + rooms), fieldIsUser(profile, 'heating'))
+    add(
+      'heater',
+      1,
+      Math.min(HEATER_MAX_HOURS, HEATER_BASE_HOURS + rooms),
+      fieldIsUser(profile, 'heating'),
+    )
   }
+  // Gas hot water is not on the electricity model; only electric HW is counted.
   if (profile.hotWater === 'yes' && profile.gas !== 'yes') {
-    add('waterHeater', 1, 8, fieldIsUser(profile, 'hotWater'))
+    add('waterHeater', 1, WATER_HEATER_HOURS, fieldIsUser(profile, 'hotWater'))
   }
 
   return lines
@@ -168,18 +220,19 @@ function weeklySolarKwh(profile: ProfileData, potential: boolean): number {
     : (parseCount(profile.panelCount) * parseCount(profile.panelWatts)) / 1000
   if (kw <= 0) return 0
   const daily = kw * MELBOURNE_PEAK_SUN_HOURS * SOLAR_PERFORMANCE_RATIO * orientation
-  return daily * 7
+  return daily * DAYS_PER_WEEK
 }
 
 function consumptionShares(peak: PeakPeriod | ''): Record<PeakPeriod, number> {
   const shares: Record<PeakPeriod, number> = {
-    morning: 0.2,
-    afternoon: 0.2,
-    evening: 0.2,
-    night: 0.2,
+    morning: CONSUMPTION_SHARE_BASE,
+    afternoon: CONSUMPTION_SHARE_BASE,
+    evening: CONSUMPTION_SHARE_BASE,
+    night: CONSUMPTION_SHARE_BASE,
   }
-  const peakId = peak || 'evening'
-  shares[peakId] = 0.4
+  const peakId = peak || DEFAULT_PEAK_PERIOD
+  // Peak period takes a double share; the other three stay at the base weight.
+  shares[peakId] = CONSUMPTION_SHARE_PEAK
   return shares
 }
 
@@ -187,7 +240,11 @@ function batteryUsableKwh(profile: ProfileData): number {
   const units = Math.max(profile.batteryUnits || 0, 0)
   if (units <= 0) return 0
   const capacity = BATTERY_CAPACITY_KWH[profile.batteryModel] ?? DEFAULT_BATTERY_KWH
-  const reserve = Math.min(Math.max(parseCount(profile.reservePercent), 0), 80) / 100
+  const reserve =
+    Math.min(
+      Math.max(parseCount(profile.reservePercent), FIELD_BOUNDS.reservePercent.min),
+      FIELD_BOUNDS.reservePercent.max,
+    ) / 100
   return units * capacity * (1 - reserve)
 }
 
@@ -223,12 +280,20 @@ function weeklySavingsFrom(
   return selfConsumed * retail + distributed * exportRate
 }
 
+/**
+ * buildKpiReport
+ * @param profile - Saved household answers, including fieldSources
+ * @returns Consumption, generation, savings, appliance lines, and assumptions
+ *
+ * Prefers billed monthly kWh when present; otherwise sums typical appliances.
+ * Solar, battery shift, and VPP credits are estimates — never live telemetry.
+ */
 export function buildKpiReport(profile: ProfileData): KpiReport {
   const appliances = applianceLines(profile)
   const modelledWeekly = appliances.reduce((sum, line) => sum + line.weeklyKwh, 0)
   const billedMonthly = Number.parseFloat(profile.monthlyKwh)
   const hasBilled = billedMonthly > 0
-  const consumptionWeekly = hasBilled ? billedMonthly / 4 : modelledWeekly
+  const consumptionWeekly = hasBilled ? billedMonthly / WEEKS_PER_MONTH : modelledWeekly
   const consumptionKind: ValueKind = hasBilled
     ? fieldIsUser(profile, 'monthlyKwh')
       ? 'from_you'
@@ -240,7 +305,7 @@ export function buildKpiReport(profile: ProfileData): KpiReport {
   const generationWeekly = weeklySolarKwh(profile, solarIsPotential)
 
   const shares = consumptionShares(profile.peakPeriod)
-  const periods: BalancePeriod[] = PERIODS.map((period) => ({
+  const periods: BalancePeriod[] = KPI_PERIODS.map((period) => ({
     ...period,
     consumptionKwh: consumptionWeekly * shares[period.id],
     generationKwh: generationWeekly * SOLAR_SHARE[period.id],
@@ -250,7 +315,12 @@ export function buildKpiReport(profile: ProfileData): KpiReport {
   const selfConsumedRaw = Math.min(generationWeekly, consumptionWeekly * daytimeShare)
   const leftoverExport = Math.max(0, generationWeekly - selfConsumedRaw)
   const usableBattery = batteryUsableKwh(profile)
-  const shifted = Math.min(usableBattery, leftoverExport * 0.5, consumptionWeekly * shares.evening)
+  // Battery can only shift part of leftover export into evening — not all of it.
+  const shifted = Math.min(
+    usableBattery,
+    leftoverExport * BATTERY_SHIFT_FACTOR,
+    consumptionWeekly * shares.evening,
+  )
   const selfConsumed = selfConsumedRaw + shifted
   const energyDistributed = Math.max(0, generationWeekly - selfConsumed)
   const surplus = Math.max(0, generationWeekly - consumptionWeekly)
@@ -327,7 +397,7 @@ export function buildKpiReport(profile: ProfileData): KpiReport {
   ]
 
   return {
-    locationLabel: place || 'VIC',
+    locationLabel: place || DEFAULT_LOCATION_LABEL,
     hasSolar,
     solarIsPotential,
     consumptionKind,
@@ -353,17 +423,41 @@ export function buildKpiReport(profile: ProfileData): KpiReport {
   }
 }
 
+/**
+ * formatKwh
+ * @param value - Kilowatt-hours to display
+ * @returns Rounded string with a kWh suffix
+ *
+ * Larger totals drop decimals so the KPI cards stay readable.
+ * Small totals keep two decimals so a daily view does not look like zero.
+ */
 export function formatKwh(value: number): string {
   if (value >= 100) return `${Math.round(value)} kWh`
   if (value >= 10) return `${value.toFixed(1)} kWh`
   return `${value.toFixed(2)} kWh`
 }
 
+/**
+ * formatAud
+ * @param value - Dollar amount to display
+ * @returns Currency string with a leading $
+ *
+ * Ten dollars and above round to a whole dollar for the savings card.
+ * Smaller amounts keep cents so a daily view still shows a figure.
+ */
 export function formatAud(value: number): string {
   const rounded = Math.abs(value) >= 10 ? value.toFixed(0) : value.toFixed(2)
   return `$${rounded}`
 }
 
+/**
+ * formatKg
+ * @param value - Kilograms of CO2-e
+ * @returns Rounded string with a kg suffix
+ *
+ * Kept for the carbon line if it is shown again later.
+ * Rounding matches the energy formatters so the report looks consistent.
+ */
 export function formatKg(value: number): string {
   if (value >= 10) return `${Math.round(value)} kg`
   return `${value.toFixed(1)} kg`

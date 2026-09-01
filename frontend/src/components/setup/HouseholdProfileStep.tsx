@@ -1,3 +1,7 @@
+/**
+ * Wizard step: people, rooms, appliances, heating, and cooling.
+ */
+import { FIELD_BOUNDS } from '../../constants/validation'
 import type { ProfileData } from '../../types/profile'
 import type { FieldErrors } from '../../lib/validateProfile'
 import {
@@ -21,6 +25,15 @@ type Props = {
   onChange: <K extends keyof ProfileData>(field: K, value: ProfileData[K]) => void
 }
 
+/**
+ * HouseholdProfileStep
+ * @param props.profile - Current answers
+ * @param props.onChange - Patch a single profile field
+ * @returns JSX.Element
+ *
+ * Dryer frequency fields only appear when the household has a dryer.
+ * Postcode length is taken from FIELD_BOUNDS so it matches validation.
+ */
 export function HouseholdProfileStep({ profile, errors, onChange }: Props) {
   return (
     <>
@@ -28,7 +41,7 @@ export function HouseholdProfileStep({ profile, errors, onChange }: Props) {
         label="What is your postcode?"
         placeholder="Enter postcode"
         inputMode="numeric"
-        maxLength={4}
+        maxLength={FIELD_BOUNDS.postcodeLength}
         value={profile.postcode}
         onChange={(event) => onChange('postcode', event.target.value)}
         error={errors.postcode}

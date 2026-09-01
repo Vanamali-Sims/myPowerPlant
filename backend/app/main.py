@@ -1,3 +1,9 @@
+"""
+FastAPI application entry for local uvicorn and AWS Lambda (Mangum).
+
+CORS origins come from CORS_ORIGINS so the same code can allow Vite locally
+and the Amplify origin in production.
+"""
 import os
 from contextlib import asynccontextmanager
 
@@ -20,6 +26,18 @@ CORS_ORIGINS = [
 
 @asynccontextmanager
 async def lifespan(_app: FastAPI):
+    """
+    lifespan
+
+    Args:
+        _app: FastAPI instance supplied by the framework.
+
+    Yields:
+        None while the process is serving requests.
+
+    Startup is empty because the engine is created at import time.
+    Shutdown disposes the SQLAlchemy pool so Lambda freezes a clean process.
+    """
     yield
     await engine.dispose()
 

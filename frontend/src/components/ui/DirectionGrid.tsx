@@ -1,3 +1,6 @@
+/**
+ * Compass grid for rooftop solar facing direction, plus a Not sure row.
+ */
 import type { SolarDirection } from '../../types/profile'
 import { solarDirections } from '../../data/profileOptions'
 import { Field } from './Field'
@@ -11,6 +14,15 @@ type Props = {
   onChange: (value: SolarDirection) => void
 }
 
+/**
+ * DirectionGrid
+ * @param props.value - Selected compass point or not_sure
+ * @param props.onChange - Called when the user picks a direction
+ * @returns JSX.Element
+ *
+ * Compass labels come from solarDirections so they stay in one place.
+ * Not sure is a wide row because it is not a compass point.
+ */
 export function DirectionGrid({ label, error, info, value, onChange }: Props) {
   return (
     <Field label={label} error={error} info={info}>
