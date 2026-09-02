@@ -65,8 +65,8 @@ assert(
   'daily = weekly / 7',
 )
 assert(
-  almostEqual(scaleKwh(report.weekly.consumptionKwh, 'monthly'), report.weekly.consumptionKwh * 4),
-  'monthly = weekly * 4',
+  almostEqual(scaleKwh(report.weekly.consumptionKwh, 'fortnightly'), report.weekly.consumptionKwh * 2),
+  'fortnightly = weekly * 2',
 )
 
 // Published hours from context/Appliance_Usage_Reference.docx reach the model.

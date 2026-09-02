@@ -4,7 +4,12 @@
  * Numbers are simulated from the saved profile plus published typical ratings
  * loaded from GET /api/methodology. Nothing here is a live meter reading.
  */
-import { DAYS_PER_WEEK, DEFAULT_PEAK_PERIOD, WEEKS_PER_MONTH } from '../constants/kpiMethodology'
+import {
+  DAYS_PER_WEEK,
+  DEFAULT_PEAK_PERIOD,
+  WEEKS_PER_FORTNIGHT,
+  WEEKS_PER_MONTH,
+} from '../constants/kpiMethodology'
 import { DEFAULT_LOCATION_LABEL, FIELD_BOUNDS } from '../constants/validation'
 import { locationFromPostcode } from '../data/profileOptions'
 import { currentSeason, SEASON_LABELS, type Season } from './season'
@@ -15,7 +20,7 @@ import type {
   VppPlan,
 } from './methodologyApi'
 
-export type Timeframe = 'daily' | 'weekly' | 'monthly'
+export type Timeframe = 'daily' | 'weekly' | 'fortnightly'
 
 export type ValueKind = 'estimate' | 'from_you' | 'sourced'
 
@@ -65,6 +70,8 @@ export type KpiReport = {
     surplusKwh: number
     energyDistributedKwh: number
     savingsAud: number
+    /** (generation − consumption) × retail rate. Negative when the home uses more than it makes. */
+    netEnergyValueAud: number
     carbonAvoidedKg: number
   }
   appliances: ApplianceLine[]
@@ -94,12 +101,12 @@ export function parseCount(value: string): number {
  * @param timeframe - Daily, weekly, or monthly display period
  * @returns The same quantity scaled to the requested period
  *
- * Daily divides by 7. Monthly uses weekly × 4, matching the KPI methodology
- * rather than a calendar month, so the toggle stays comparable.
+ * Daily divides by 7. Fortnightly uses weekly × 2, so the toggle stays a
+ * simple multiple of the modelled week rather than a calendar month.
  */
 export function scaleWeekly(weekly: number, timeframe: Timeframe): number {
   if (timeframe === 'daily') return weekly / DAYS_PER_WEEK
-  if (timeframe === 'monthly') return weekly * WEEKS_PER_MONTH
+  if (timeframe === 'fortnightly') return weekly * WEEKS_PER_FORTNIGHT
   return weekly
 }
 
@@ -381,6 +388,9 @@ export function buildKpiReport(
   }))
 
   const headline = matchedPlans.find((item) => item.isRecommended) ?? recommended
+  // Headline savings shown on the card: value of what you make against what you
+  // use, at your retail rate. Negative means the home draws more than it makes.
+  const netEnergyValueAud = (generationWeekly - consumptionWeekly) * rate
   const carbonAvoidedKg = energyDistributed * data.methodology.vicGridKgCo2PerKwh
   const place = locationFromPostcode(profile.postcode)
   const m = data.methodology
@@ -437,7 +447,7 @@ export function buildKpiReport(
     },
     {
       title: 'Timeframes',
-      detail: 'Daily = weekly ÷ 7. Weekly is the modelled week. Monthly = weekly × 4, as specified in the KPI methodology.',
+      detail: 'Daily = weekly ÷ 7. Weekly is the modelled week. Fortnightly = weekly × 2.',
       kind: 'sourced',
     },
   ]
@@ -457,6 +467,7 @@ export function buildKpiReport(
       surplusKwh: surplus,
       energyDistributedKwh: energyDistributed,
       savingsAud: headline.weeklySavings,
+      netEnergyValueAud,
       carbonAvoidedKg,
     },
     appliances,
@@ -491,10 +502,12 @@ export function formatKwh(value: number): string {
  *
  * Ten dollars and above round to a whole dollar for the savings card.
  * Smaller amounts keep cents so a daily view still shows a figure.
+ * The sign sits before the dollar symbol so negatives read as "-$73".
  */
 export function formatAud(value: number): string {
-  const rounded = Math.abs(value) >= 10 ? value.toFixed(0) : value.toFixed(2)
-  return `$${rounded}`
+  const abs = Math.abs(value)
+  const rounded = abs >= 10 ? abs.toFixed(0) : abs.toFixed(2)
+  return `${value < 0 ? '-' : ''}$${rounded}`
 }
 
 /**

@@ -3,7 +3,7 @@
  */
 import { useEffect, useMemo, useState } from 'react'
 import { KIND_LABELS, TIMEFRAMES } from '../../constants'
-import { locationFromPostcode } from '../../data/profileOptions'
+import { coordsFromPostcode, locationFromPostcode } from '../../data/profileOptions'
 import { formatUpdatedAt } from '../../lib/formatProfile'
 import {
   fetchMethodology,
@@ -14,28 +14,20 @@ import {
   formatAud,
   formatKg,
   formatKwh,
+  parseCount,
   scaleAud,
   scaleKwh,
   scaleWeekly,
-  type PlanComparison,
   type Timeframe,
   type ValueKind,
 } from '../../lib/kpis'
 import { SEASON_LABELS } from '../../lib/season'
-import { buildTypicalDay } from '../../lib/typicalDay'
 import type { ProfileData } from '../../types/profile'
 import { Button } from '../ui/Button'
 import { Callout } from '../ui/Callout'
-import { EnergyBalanceChart } from './EnergyBalanceChart'
-import { TypicalDayChart } from './TypicalDayChart'
-import {
-  BoltIcon,
-  BulbIcon,
-  HomeIcon,
-  LeafIcon,
-  PlugIcon,
-  SunIcon,
-} from '../ui/icons'
+import { ConsumptionDonut } from './ConsumptionDonut'
+import { SolarForecastChart } from './SolarForecastChart'
+import { BoltIcon, BulbIcon, LeafIcon } from '../ui/icons'
 
 type Props = {
   profile: ProfileData
@@ -58,64 +50,6 @@ function KindBadge({ kind }: { kind: ValueKind }) {
 }
 
 /**
- * PlanTile
- * @param props.item - One VPP plan with its modelled weekly saving
- * @param props.timeframe - Scale applied to the saving before display
- * @returns JSX.Element
- *
- * Sign-up bonus and lock-in are shown but deliberately left out of the saving
- * figure, so a long contract cannot look cheaper than it is.
- */
-function PlanTile({ item, timeframe }: { item: PlanComparison; timeframe: Timeframe }) {
-  const { plan } = item
-  const classes = [
-    'plan-tile',
-    item.isRecommended ? 'is-recommended' : '',
-    item.isCurrent ? 'is-current' : '',
-  ]
-    .filter(Boolean)
-    .join(' ')
-
-  return (
-    <article className={classes}>
-      <div className="plan-tile__tags">
-        {item.isRecommended ? (
-          <span className="kpi-badge kpi-badge--sourced">Best for you</span>
-        ) : null}
-        {item.isCurrent ? (
-          <span className="kpi-badge kpi-badge--fact">Your current provider</span>
-        ) : null}
-      </div>
-      <h3>{plan.name}</h3>
-      <p className="plan-tile__brand">{plan.brand}</p>
-      <ul className="plan-terms">
-        <li>
-          <span>Estimated savings</span>
-          <strong>{formatAud(scaleAud(item.weeklySavings, timeframe))}</strong>
-        </li>
-        <li>
-          <span>Credit for energy you send out</span>
-          <strong>${plan.exportRate.toFixed(2)} / kWh</strong>
-        </li>
-        <li>
-          <span>Lock-in</span>
-          <strong>{plan.lockInMonths ? `${plan.lockInMonths} months` : 'None'}</strong>
-        </li>
-        <li>
-          <span>Sign-up bonus</span>
-          <strong>{plan.signupBonus ? formatAud(plan.signupBonus) : 'None'}</strong>
-        </li>
-      </ul>
-      <p className="plan-tile__brand">{plan.dispatchNote}</p>
-      <a className="dashboard-link" href={plan.href} target="_blank" rel="noreferrer">
-        Read the plan terms
-      </a>
-      <p className="plan-tile__brand">{plan.sourceLabel}</p>
-    </article>
-  )
-}
-
-/**
  * DashboardView
  * @param props.profile - Saved household answers used to build the KPI report
  * @param props.onEditProfile - Jump to the profile editor
@@ -128,7 +62,6 @@ export function DashboardView({ profile, onEditProfile, onLogoClick }: Props) {
   const [timeframe, setTimeframe] = useState<Timeframe>('weekly')
   const [bundle, setBundle] = useState<MethodologyBundle | null>(null)
   const [loadError, setLoadError] = useState('')
-  const [activeHour, setActiveHour] = useState(13)
 
   useEffect(() => {
     let cancelled = false
@@ -150,13 +83,29 @@ export function DashboardView({ profile, onEditProfile, onLogoClick }: Props) {
     () => (bundle ? buildKpiReport(profile, bundle) : null),
     [bundle, profile],
   )
-  const dayPoints = useMemo(
-    () => (report ? buildTypicalDay(report.periods) : []),
-    [report],
-  )
   const place =
     locationFromPostcode(profile.postcode) || report?.locationLabel || ''
   const weekly = report?.weekly
+
+  const solarInputs = useMemo(() => {
+    if (!bundle) return null
+    const systemKw =
+      report && !report.solarIsPotential
+        ? (parseCount(profile.panelCount) * parseCount(profile.panelWatts)) / 1000
+        : bundle.methodology.typicalPotentialKw
+    const orientationFactor =
+      bundle.orientationFactors[profile.solarDirection] ??
+      bundle.orientationFactors.not_sure ??
+      1
+    const { lat, lon } = coordsFromPostcode(profile.postcode)
+    return {
+      lat,
+      lon,
+      systemKw,
+      orientationFactor,
+      performanceRatio: bundle.methodology.solarPerformanceRatio,
+    }
+  }, [bundle, report, profile.panelCount, profile.panelWatts, profile.solarDirection, profile.postcode])
 
   const kpis =
     report && weekly
@@ -170,33 +119,13 @@ export function DashboardView({ profile, onEditProfile, onLogoClick }: Props) {
           },
           {
             eyebrow: 'Estimated savings',
-            value: formatAud(scaleAud(weekly.savingsAud, timeframe)),
+            value: formatAud(scaleAud(weekly.netEnergyValueAud, timeframe)),
             kind: 'estimate' as ValueKind,
             icon: BulbIcon,
-            note: 'Potential value from solar you use in the home, plus a typical VPP credit on leftover energy.',
-          },
-          {
-            eyebrow: report.solarIsPotential ? 'Solar potential' : 'Solar generation',
-            value: formatKwh(scaleKwh(weekly.generationKwh, timeframe)),
-            kind: 'estimate' as ValueKind,
-            icon: SunIcon,
-            note: report.solarIsPotential
-              ? 'What a typical roof array could make here. You told us this home has no solar yet.'
-              : 'What your panels are likely to make, adjusted for roof direction.',
-          },
-          {
-            eyebrow: 'Solar you use at home',
-            value: formatKwh(scaleKwh(weekly.selfConsumedKwh, timeframe)),
-            kind: 'estimate' as ValueKind,
-            icon: HomeIcon,
-            note: 'Solar used the moment it is made, plus what a battery shifts into the evening. This is the part that avoids buying power.',
-          },
-          {
-            eyebrow: 'Sent out to the grid',
-            value: formatKwh(scaleKwh(weekly.energyDistributedKwh, timeframe)),
-            kind: 'estimate' as ValueKind,
-            icon: PlugIcon,
-            note: 'Solar left over after the home is supplied. This is what a VPP pays you a credit on.',
+            note:
+              weekly.netEnergyValueAud >= 0
+                ? 'Value of the solar you make against what the home uses, at your retail rate.'
+                : 'Your home is modelled to use more energy than it makes, so this is the extra cost at your retail rate.',
           },
           {
             eyebrow: 'Carbon avoided',
@@ -222,32 +151,11 @@ export function DashboardView({ profile, onEditProfile, onLogoClick }: Props) {
           </span>
           MyPowerPlant
         </button>
-        <span className="location-pill">
-          <span className="location-pill__dot" />
-          {place}
-        </span>
       </header>
 
       <div className="dashboard__intro">
-        <p className="eyebrow">Key insights · {place}</p>
         <h1>Your household energy picture</h1>
-        <p>
-          Estimated consumption and savings, modelled from your saved profile. No meter or IoT
-          device is connected.
-        </p>
       </div>
-
-      <Callout
-        tone="accent"
-        title={`Report generated from your profile · ${formatUpdatedAt(profile.lastUpdated)}`}
-        action={
-          <Button variant="edit" onClick={onEditProfile}>
-            Edit profile
-          </Button>
-        }
-      >
-        Change household details and come back — this report updates automatically.
-      </Callout>
 
       {loadError ? (
         <p className="app-notice" role="status">
@@ -297,57 +205,33 @@ export function DashboardView({ profile, onEditProfile, onLogoClick }: Props) {
       {report && weekly ? (
         <div className="dashboard__split">
           <section className="dashboard-card">
-            <p className="eyebrow">A typical day</p>
-            <h2>When your solar runs ahead of the house</h2>
+            <p className="eyebrow">Where your energy goes</p>
+            <h2>Energy consumption breakdown</h2>
             <p className="dashboard-card__lede">
-              The shaded band is your leftover window — the hours a VPP would draw from. Select an
-              hour to read the numbers.
+              Modelled use by appliance for the selected period. Hover a slice for its share.
             </p>
-            <TypicalDayChart
-              points={dayPoints}
-              activeHour={activeHour}
-              onSelectHour={setActiveHour}
-            />
+            <ConsumptionDonut appliances={report.appliances} timeframe={timeframe} />
           </section>
 
           <section className="dashboard-card">
-            <p className="eyebrow">Across the day</p>
-            <h2>Use against solar</h2>
-            <EnergyBalanceChart periods={report.periods} timeframe={timeframe} />
-            <dl className="balance-stats">
-              <div>
-                <dt>Solar beyond total use</dt>
-                <dd>{formatKwh(scaleKwh(weekly.surplusKwh, timeframe))}</dd>
-              </div>
-              <div>
-                <dt>Retail rate used</dt>
-                <dd>
-                  ${report.retailRate.toFixed(2)} / kWh
-                  <KindBadge kind={report.retailRateKind} />
-                </dd>
-              </div>
-            </dl>
+            <p className="eyebrow">
+              {report.solarIsPotential ? 'Solar potential' : 'Solar generation'} · weather forecast
+            </p>
+            <h2>Predicted solar generation</h2>
+            <p className="dashboard-card__lede">
+              How much your panels are likely to make, from the predicted sunlight for your area,
+              your panel size, and roof direction.
+            </p>
+            {solarInputs ? (
+              <SolarForecastChart
+                inputs={solarInputs}
+                view={timeframe}
+                isPotential={report.solarIsPotential}
+                placeLabel={place}
+              />
+            ) : null}
           </section>
         </div>
-      ) : null}
-
-      {report ? (
-        <section className="dashboard-card">
-          <p className="eyebrow">VPP plans</p>
-          <h2>What each plan would be worth to you</h2>
-          <p className="dashboard-card__lede">
-            {report.currentPlan
-              ? `Compared with ${report.currentPlan.plan.name}, your current plan. `
-              : 'You have not told us your current plan, so every plan is listed. '}
-            Savings use the same retail rate and leftover energy for every plan, so the only thing
-            changing is the export credit.
-          </p>
-          <div className="plan-grid">
-            {report.matchedPlans.map((item) => (
-              <PlanTile key={item.plan.id} item={item} timeframe={timeframe} />
-            ))}
-          </div>
-        </section>
       ) : null}
 
       <section className="dashboard-card" id="transparency">
@@ -405,6 +289,24 @@ export function DashboardView({ profile, onEditProfile, onLogoClick }: Props) {
           </table>
         </div>
       </section>
+
+      <footer className="dashboard__footer">
+        <span className="location-pill">
+          <span className="location-pill__dot" />
+          {place}
+        </span>
+        <Callout
+          tone="accent"
+          title={`Report generated from your profile · ${formatUpdatedAt(profile.lastUpdated)}`}
+          action={
+            <Button variant="edit" onClick={onEditProfile}>
+              Edit profile
+            </Button>
+          }
+        >
+          Change household details and come back — this report updates automatically.
+        </Callout>
+      </footer>
     </div>
   )
 }
