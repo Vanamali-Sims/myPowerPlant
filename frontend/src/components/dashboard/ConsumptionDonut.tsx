@@ -21,14 +21,16 @@ const SLICE_COLORS = [
   '#C9772F',
   '#8FB09B',
   '#6B6B6B',
-  '#E8C9A8',
-  '#3A3A3A',
-  '#B5A98F',
-  '#F0C7A0',
 ]
 
+/** Neutral tone for the grouped "Other" slice. */
+const OTHER_COLOR = '#CDC6B7'
+
+/** Show at most this many named slices; the rest fold into "Other". */
+const MAX_SLICES = 6
+
 const R = 70
-const STROKE = 34
+const STROKE = 30
 const CIRCUMFERENCE = 2 * Math.PI * R
 
 /**
@@ -38,7 +40,8 @@ const CIRCUMFERENCE = 2 * Math.PI * R
  * @returns JSX.Element
  *
  * Slices are appliance weekly kWh scaled to the timeframe, largest first.
- * Out-of-season lines (0 kWh) are dropped so the ring only shows real use.
+ * Out-of-season lines (0 kWh) are dropped, and everything past the top few is
+ * folded into a single "Other" slice so the ring and legend stay readable.
  */
 export function ConsumptionDonut({ appliances, timeframe }: Props) {
   const slices = useMemo(() => {
@@ -50,20 +53,34 @@ export function ConsumptionDonut({ appliances, timeframe }: Props) {
       }))
       .filter((line) => line.kwh > 0)
       .sort((a, b) => b.kwh - a.kwh)
-    const total = scaled.reduce((sum, line) => sum + line.kwh, 0)
+
+    // Keep the top slices named; fold the long tail into one "Other" slice.
+    const grouped =
+      scaled.length > MAX_SLICES
+        ? [
+            ...scaled.slice(0, MAX_SLICES - 1),
+            {
+              id: 'other',
+              name: 'Other',
+              kwh: scaled.slice(MAX_SLICES - 1).reduce((sum, line) => sum + line.kwh, 0),
+            },
+          ]
+        : scaled
+
+    const total = grouped.reduce((sum, line) => sum + line.kwh, 0)
     const fractionOf = (kwh: number) => (total > 0 ? kwh / total : 0)
     return {
       total,
-      items: scaled.map((line, index) => {
+      items: grouped.map((line, index) => {
         const fraction = fractionOf(line.kwh)
         // Offset is the sum of every earlier slice, computed without mutation.
-        const priorFraction = scaled
+        const priorFraction = grouped
           .slice(0, index)
           .reduce((sum, earlier) => sum + fractionOf(earlier.kwh), 0)
         return {
           ...line,
           fraction,
-          color: SLICE_COLORS[index % SLICE_COLORS.length],
+          color: line.id === 'other' ? OTHER_COLOR : SLICE_COLORS[index % SLICE_COLORS.length],
           dash: fraction * CIRCUMFERENCE,
           gap: CIRCUMFERENCE - fraction * CIRCUMFERENCE,
           dashOffset: -priorFraction * CIRCUMFERENCE,
@@ -118,7 +135,8 @@ export function ConsumptionDonut({ appliances, timeframe }: Props) {
             <span className="donut__swatch" style={{ background: slice.color }} />
             <span className="donut__name">{slice.name}</span>
             <span className="donut__value">
-              {formatKwh(slice.kwh)} · {Math.round(slice.fraction * 100)}%
+              <strong>{formatKwh(slice.kwh)}</strong>
+              <span className="donut__pct">{Math.round(slice.fraction * 100)}%</span>
             </span>
           </li>
         ))}

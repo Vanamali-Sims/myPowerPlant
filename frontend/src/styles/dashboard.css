@@ -56,6 +56,11 @@
   padding: 1.15rem 1.2rem 1.25rem;
 }
 
+/* Compact top cards: numbers first, minimal chrome. */
+.kpi-card {
+  padding: 0.8rem 0.95rem 0.85rem;
+}
+
 .kpi-card__icon,
 .dashboard-card__icon {
   width: 2.2rem;
@@ -68,26 +73,38 @@
   margin-bottom: 0.75rem;
 }
 
+.kpi-card__icon {
+  width: 1.65rem;
+  height: 1.65rem;
+  border-radius: 0.45rem;
+  margin-bottom: 0.4rem;
+}
+
+.kpi-card__icon svg {
+  width: 0.95rem;
+  height: 0.95rem;
+}
+
 .kpi-card .eyebrow,
 .dashboard-card .eyebrow {
   margin: 0;
 }
 
 .kpi-card__value {
-  margin: 0.35rem 0 0.4rem;
+  margin: 0.1rem 0 0;
   font-family: var(--font-display);
-  font-size: 1.85rem;
+  font-size: 1.5rem;
   font-weight: 500;
-  line-height: 1.2;
+  line-height: 1.15;
   display: flex;
   align-items: center;
   flex-wrap: wrap;
-  gap: 0.5rem;
+  gap: 0.4rem;
 }
 
 .kpi-card__note {
-  margin: 0;
-  font-size: 0.85rem;
+  margin: 0.2rem 0 0;
+  font-size: 0.76rem;
   color: var(--color-text-secondary);
 }
 
@@ -162,7 +179,7 @@
 
 .donut__svg {
   width: 100%;
-  max-width: 15rem;
+  max-width: 12.5rem;
   height: auto;
   margin: 0 auto;
   display: block;
@@ -194,27 +211,50 @@
   padding: 0;
   display: flex;
   flex-direction: column;
-  gap: 0.45rem;
+  gap: 0.4rem;
 }
 
 .donut__legend li {
   display: grid;
-  grid-template-columns: auto 1fr auto;
+  grid-template-columns: auto minmax(0, 1fr) auto;
   align-items: center;
-  gap: 0.55rem;
-  font-size: 0.85rem;
+  gap: 0.5rem;
+  font-size: 0.82rem;
 }
 
 .donut__swatch {
   width: 0.7rem;
   height: 0.7rem;
   border-radius: 3px;
+  flex-shrink: 0;
+}
+
+.donut__name {
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .donut__value {
-  color: var(--color-text-secondary);
-  font-size: 0.8rem;
+  display: flex;
+  align-items: baseline;
+  justify-content: flex-end;
+  gap: 0.4rem;
   white-space: nowrap;
+}
+
+.donut__value strong {
+  color: var(--color-text-primary);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.donut__pct {
+  color: var(--color-text-secondary);
+  font-size: 0.75rem;
+  min-width: 2.1rem;
+  text-align: right;
 }
 
 .forecast {

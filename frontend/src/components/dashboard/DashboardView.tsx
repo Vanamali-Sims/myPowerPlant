@@ -111,28 +111,26 @@ export function DashboardView({ profile, onEditProfile, onLogoClick }: Props) {
     report && weekly
       ? [
           {
-            eyebrow: 'Estimated energy consumption',
+            eyebrow: 'Energy use',
             value: formatKwh(scaleKwh(weekly.consumptionKwh, timeframe)),
             kind: report.consumptionKind,
             icon: BoltIcon,
-            note: 'How much electricity this home is likely using over the selected period.',
+            note: '',
           },
           {
-            eyebrow: 'Estimated savings',
+            eyebrow: weekly.netEnergyValueAud >= 0 ? 'Estimated savings' : 'Net energy cost',
             value: formatAud(scaleAud(weekly.netEnergyValueAud, timeframe)),
             kind: 'estimate' as ValueKind,
             icon: BulbIcon,
             note:
-              weekly.netEnergyValueAud >= 0
-                ? 'Value of the solar you make against what the home uses, at your retail rate.'
-                : 'Your home is modelled to use more energy than it makes, so this is the extra cost at your retail rate.',
+              weekly.netEnergyValueAud >= 0 ? '' : 'Home uses more than it makes',
           },
           {
             eyebrow: 'Carbon avoided',
             value: formatKg(scaleWeekly(weekly.carbonAvoidedKg, timeframe)),
             kind: 'estimate' as ValueKind,
             icon: LeafIcon,
-            note: 'Grid emissions displaced by the energy you send out. An estimate, not a certificate.',
+            note: '',
           },
         ]
       : []
@@ -196,7 +194,7 @@ export function DashboardView({ profile, onEditProfile, onLogoClick }: Props) {
                 {card.value}
                 <KindBadge kind={card.kind} />
               </p>
-              <p className="kpi-card__note">{card.note}</p>
+              {card.note ? <p className="kpi-card__note">{card.note}</p> : null}
             </article>
           )
         })}
@@ -207,9 +205,6 @@ export function DashboardView({ profile, onEditProfile, onLogoClick }: Props) {
           <section className="dashboard-card">
             <p className="eyebrow">Where your energy goes</p>
             <h2>Energy consumption breakdown</h2>
-            <p className="dashboard-card__lede">
-              Modelled use by appliance for the selected period. Hover a slice for its share.
-            </p>
             <ConsumptionDonut appliances={report.appliances} timeframe={timeframe} />
           </section>
 
@@ -218,10 +213,6 @@ export function DashboardView({ profile, onEditProfile, onLogoClick }: Props) {
               {report.solarIsPotential ? 'Solar potential' : 'Solar generation'} · weather forecast
             </p>
             <h2>Predicted solar generation</h2>
-            <p className="dashboard-card__lede">
-              How much your panels are likely to make, from the predicted sunlight for your area,
-              your panel size, and roof direction.
-            </p>
             {solarInputs ? (
               <SolarForecastChart
                 inputs={solarInputs}
