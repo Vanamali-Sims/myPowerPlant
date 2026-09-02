@@ -81,6 +81,12 @@ export function displayValue(
       return value ? `${value}%` : '—'
     case 'batteryAge':
       return value ? `${value} years` : '—'
+    case 'tvHoursPerWeek':
+    case 'airconHoursPerWeek':
+      return value ? `${value} hrs / week` : 'Typical estimate used'
+    case 'washerCyclesPerWeek':
+    case 'dishwasherCyclesPerWeek':
+      return value ? `${value} cycles / week` : 'Typical estimate used'
     case 'fieldSources':
     case 'lastUpdated':
       return '—'

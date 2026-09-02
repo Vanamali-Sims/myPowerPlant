@@ -37,11 +37,15 @@ export type ProfileData = {
   rooms: string
   gas: YesNoNotSure | ''
   refrigerators: string
+  tvHoursPerWeek: string
+  washerCyclesPerWeek: string
+  dishwasherCyclesPerWeek: string
   dryer: YesNoNotSure | ''
   dryerWeek: string
   dryerWeekend: string
   heating: string
   cooling: string
+  airconHoursPerWeek: string
   hotWater: YesNoNotSure | ''
 
   monthlyBill: string
@@ -79,11 +83,15 @@ export const emptyProfile = (): ProfileData => ({
   rooms: '',
   gas: '',
   refrigerators: '',
+  tvHoursPerWeek: '',
+  washerCyclesPerWeek: '',
+  dishwasherCyclesPerWeek: '',
   dryer: '',
   dryerWeek: '',
   dryerWeekend: '',
   heating: '',
   cooling: '',
+  airconHoursPerWeek: '',
   hotWater: '',
   monthlyBill: '',
   monthlyKwh: '',
