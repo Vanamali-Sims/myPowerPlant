@@ -96,13 +96,44 @@ class HouseholdProfileRead(HouseholdProfileBase):
 
 
 class Appliance(SQLModel, table=True):
+    """
+    One published usage figure per appliance.
+
+    hours_per_week is the reference weekly figure. usage_basis says how it was
+    derived, so the KPI engine knows when a household answer may replace it:
+    per_cycle and per_person rows scale, daily_average and always_on do not.
+
+    power_kw is the average draw while the appliance is in use, not a nameplate
+    rating — compressors and elements cycle, so nameplate held over every hour
+    of use overstates them badly.
+    """
+
     __tablename__ = "appliances"
 
     id: str = Field(max_length=40, primary_key=True)
     category: str = Field(max_length=40)
     name: str = Field(max_length=80)
     power_kw: float
-    typical_hours_per_week: float
+    power_basis: str = Field(max_length=200)
+    hours_per_week: float
+    usage_basis: str = Field(max_length=20)
+    season_basis: str = Field(max_length=20, foreign_key="seasonal_factors.basis")
+    hours_per_cycle: float | None = None
+    cycles_per_week: float | None = None
+    reported_metric: str = Field(max_length=200)
+    source_label: str = Field(max_length=200)
+
+
+class SeasonalFactor(SQLModel, table=True):
+    """Share of the reference weekly hours that applies in each AU season."""
+
+    __tablename__ = "seasonal_factors"
+
+    basis: str = Field(max_length=20, primary_key=True)
+    summer: float
+    autumn: float
+    winter: float
+    spring: float
 
 
 class BatteryModel(SQLModel, table=True):
@@ -144,15 +175,6 @@ class Methodology(SQLModel, table=True):
     consumption_share_base: float
     consumption_share_peak: float
     dishwasher_min_people: int
-    wfh_monitor_hours: float
-    washer_min_hours: float
-    aircon_base_hours: float
-    aircon_hours_per_room: float
-    aircon_max_hours: float
-    evaporative_hours: float
-    heater_base_hours: float
-    heater_max_hours: float
-    water_heater_hours: float
 
 
 class VppPlan(SQLModel, table=True):

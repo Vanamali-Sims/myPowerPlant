@@ -232,6 +232,110 @@
   color: var(--color-text-secondary);
 }
 
+.day-chart {
+  margin: 0;
+}
+
+.day-chart__legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  font-size: 0.75rem;
+  color: var(--color-text-secondary);
+  margin-bottom: 0.6rem;
+}
+
+.day-chart__legend span {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.day-chart__swatch {
+  width: 0.7rem;
+  height: 0.7rem;
+  border-radius: 2px;
+}
+
+.day-chart__swatch--load {
+  background: var(--color-sidebar);
+}
+
+.day-chart__swatch--solar {
+  background: var(--color-accent);
+}
+
+.day-chart__swatch--leftover {
+  background: var(--color-accent-soft);
+  border: 1px solid var(--color-accent-outline);
+}
+
+.day-chart__svg {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+.day-chart__grid {
+  stroke: var(--color-border);
+  stroke-width: 1;
+}
+
+.day-chart__leftover {
+  fill: var(--color-accent-soft);
+  stroke: none;
+}
+
+.day-chart__line {
+  fill: none;
+  stroke-width: 2;
+  stroke-linecap: round;
+}
+
+.day-chart__line--load {
+  stroke: var(--color-sidebar);
+}
+
+.day-chart__line--solar {
+  stroke: var(--color-accent);
+}
+
+.day-chart__peak line {
+  stroke: var(--color-accent-outline);
+  stroke-dasharray: 3 3;
+}
+
+.day-chart__peak circle {
+  fill: var(--color-accent);
+}
+
+.day-chart__playhead {
+  stroke: var(--color-text-secondary);
+  stroke-width: 1;
+}
+
+.day-chart__tick {
+  fill: var(--color-text-secondary);
+  font-size: 0.7rem;
+  text-anchor: middle;
+}
+
+.day-chart__hit {
+  fill: transparent;
+  cursor: pointer;
+}
+
+.day-chart__readout {
+  margin-top: 0.6rem;
+  font-size: 0.82rem;
+  color: var(--color-text-secondary);
+}
+
+.day-chart__readout strong {
+  color: var(--color-text-primary);
+  margin-right: 0.5rem;
+}
+
 .balance-stats {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -382,6 +486,12 @@
 
 .appliance-table .kpi-badge {
   margin-left: 0.4rem;
+}
+
+.appliance-table__source {
+  color: var(--color-text-secondary);
+  min-width: 16rem;
+  line-height: 1.45;
 }
 
 @media (min-width: 900px) {

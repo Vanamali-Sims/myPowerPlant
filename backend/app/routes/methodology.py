@@ -12,6 +12,7 @@ from app.models import (
     BatteryModel,
     Methodology,
     PeakPeriod,
+    SeasonalFactor,
     SolarOrientationFactor,
     VppPlan,
     VppPlanBattery,
@@ -31,8 +32,9 @@ async def get_methodology(
         session: Request-scoped SQLAlchemy session.
 
     Returns:
-        dict: Seeded appliances, battery capacities, solar factors, periods,
-        methodology scalars, and VPP plans with compatible batteries.
+        dict: Seeded appliances with their published usage metrics, seasonal
+        factors, battery capacities, solar factors, periods, methodology
+        scalars, and VPP plans with compatible batteries.
 
     Used by the dashboard so KPI numbers come from Postgres, not frontend
     constants. A missing seed row is 404; a down database is 503.
@@ -50,6 +52,9 @@ async def get_methodology(
         ).all()
         periods = (
             await session.scalars(select(PeakPeriod).order_by(PeakPeriod.sort_order))
+        ).all()
+        seasons = (
+            await session.scalars(select(SeasonalFactor).order_by(SeasonalFactor.basis))
         ).all()
         plans = (await session.scalars(select(VppPlan).order_by(VppPlan.brand))).all()
         links = (await session.scalars(select(VppPlanBattery))).all()
@@ -75,15 +80,6 @@ async def get_methodology(
             "consumption_share_base": methodology.consumption_share_base,
             "consumption_share_peak": methodology.consumption_share_peak,
             "dishwasher_min_people": methodology.dishwasher_min_people,
-            "wfh_monitor_hours": methodology.wfh_monitor_hours,
-            "washer_min_hours": methodology.washer_min_hours,
-            "aircon_base_hours": methodology.aircon_base_hours,
-            "aircon_hours_per_room": methodology.aircon_hours_per_room,
-            "aircon_max_hours": methodology.aircon_max_hours,
-            "evaporative_hours": methodology.evaporative_hours,
-            "heater_base_hours": methodology.heater_base_hours,
-            "heater_max_hours": methodology.heater_max_hours,
-            "water_heater_hours": methodology.water_heater_hours,
         },
         "appliances": [
             {
@@ -91,9 +87,26 @@ async def get_methodology(
                 "category": row.category,
                 "name": row.name,
                 "power_kw": row.power_kw,
-                "typical_hours_per_week": row.typical_hours_per_week,
+                "power_basis": row.power_basis,
+                "hours_per_week": row.hours_per_week,
+                "usage_basis": row.usage_basis,
+                "season_basis": row.season_basis,
+                "hours_per_cycle": row.hours_per_cycle,
+                "cycles_per_week": row.cycles_per_week,
+                "reported_metric": row.reported_metric,
+                "source_label": row.source_label,
             }
             for row in appliances
+        ],
+        "seasonal_factors": [
+            {
+                "basis": row.basis,
+                "summer": row.summer,
+                "autumn": row.autumn,
+                "winter": row.winter,
+                "spring": row.spring,
+            }
+            for row in seasons
         ],
         "battery_models": [
             {

@@ -2,6 +2,7 @@
  * Fetch KPI lookup data from Postgres via GET /api/methodology.
  */
 import { API_BASE_URL, API_PATHS } from '../constants/api'
+import type { Season } from './season'
 import type { PeakPeriod } from '../types/profile'
 
 export type ApplianceCategory =
@@ -10,13 +11,30 @@ export type ApplianceCategory =
   | 'Laundry'
   | 'Heating / Cooling'
 
+/** How the published weekly hours were derived, and whether they can scale. */
+export type UsageBasis = 'daily_average' | 'per_cycle' | 'per_person' | 'always_on'
+
+export type SeasonBasis = 'year_round' | 'summer_peak' | 'winter_peak'
+
 export type ApplianceSpec = {
   id: string
   category: ApplianceCategory
   name: string
+  /** Average draw while in use, not a nameplate rating. */
   powerKw: number
-  typicalHoursPerWeek: number
+  powerBasis: string
+  hoursPerWeek: number
+  usageBasis: UsageBasis
+  seasonBasis: SeasonBasis
+  hoursPerCycle: number | null
+  cyclesPerWeek: number | null
+  reportedMetric: string
+  sourceLabel: string
 }
+
+export type SeasonalFactorRow = {
+  basis: SeasonBasis
+} & Record<Season, number>
 
 export type VppPlan = {
   id: string
@@ -42,15 +60,6 @@ export type MethodologyScalars = {
   consumptionShareBase: number
   consumptionSharePeak: number
   dishwasherMinPeople: number
-  wfhMonitorHours: number
-  washerMinHours: number
-  airconBaseHours: number
-  airconHoursPerRoom: number
-  airconMaxHours: number
-  evaporativeHours: number
-  heaterBaseHours: number
-  heaterMaxHours: number
-  waterHeaterHours: number
 }
 
 export type PeakPeriodRow = {
@@ -70,6 +79,7 @@ export type BatteryModelRow = {
 export type MethodologyBundle = {
   methodology: MethodologyScalars
   appliances: Record<string, ApplianceSpec>
+  seasonalFactors: Record<SeasonBasis, Record<Season, number>>
   batteryModels: BatteryModelRow[]
   orientationFactors: Record<string, number>
   peakPeriods: PeakPeriodRow[]
@@ -91,15 +101,6 @@ type ApiMethodology = {
   consumption_share_base: number
   consumption_share_peak: number
   dishwasher_min_people: number
-  wfh_monitor_hours: number
-  washer_min_hours: number
-  aircon_base_hours: number
-  aircon_hours_per_room: number
-  aircon_max_hours: number
-  evaporative_hours: number
-  heater_base_hours: number
-  heater_max_hours: number
-  water_heater_hours: number
 }
 
 type ApiPayload = {
@@ -109,8 +110,16 @@ type ApiPayload = {
     category: ApplianceCategory
     name: string
     power_kw: number
-    typical_hours_per_week: number
+    power_basis: string
+    hours_per_week: number
+    usage_basis: UsageBasis
+    season_basis: SeasonBasis
+    hours_per_cycle: number | null
+    cycles_per_week: number | null
+    reported_metric: string
+    source_label: string
   }[]
+  seasonal_factors: ({ basis: SeasonBasis } & Record<Season, number>)[]
   battery_models: { name: string; usable_kwh: number; is_default: boolean }[]
   orientation_factors: { direction: string; factor: number }[]
   peak_periods: {
@@ -150,7 +159,23 @@ export function mapMethodologyPayload(raw: ApiPayload): MethodologyBundle {
       category: row.category,
       name: row.name,
       powerKw: row.power_kw,
-      typicalHoursPerWeek: row.typical_hours_per_week,
+      powerBasis: row.power_basis,
+      hoursPerWeek: row.hours_per_week,
+      usageBasis: row.usage_basis,
+      seasonBasis: row.season_basis,
+      hoursPerCycle: row.hours_per_cycle,
+      cyclesPerWeek: row.cycles_per_week,
+      reportedMetric: row.reported_metric,
+      sourceLabel: row.source_label,
+    }
+  }
+  const seasonalFactors = {} as Record<SeasonBasis, Record<Season, number>>
+  for (const row of raw.seasonal_factors) {
+    seasonalFactors[row.basis] = {
+      summer: row.summer,
+      autumn: row.autumn,
+      winter: row.winter,
+      spring: row.spring,
     }
   }
   const orientationFactors: Record<string, number> = {}
@@ -169,17 +194,9 @@ export function mapMethodologyPayload(raw: ApiPayload): MethodologyBundle {
       consumptionShareBase: raw.methodology.consumption_share_base,
       consumptionSharePeak: raw.methodology.consumption_share_peak,
       dishwasherMinPeople: raw.methodology.dishwasher_min_people,
-      wfhMonitorHours: raw.methodology.wfh_monitor_hours,
-      washerMinHours: raw.methodology.washer_min_hours,
-      airconBaseHours: raw.methodology.aircon_base_hours,
-      airconHoursPerRoom: raw.methodology.aircon_hours_per_room,
-      airconMaxHours: raw.methodology.aircon_max_hours,
-      evaporativeHours: raw.methodology.evaporative_hours,
-      heaterBaseHours: raw.methodology.heater_base_hours,
-      heaterMaxHours: raw.methodology.heater_max_hours,
-      waterHeaterHours: raw.methodology.water_heater_hours,
     },
     appliances,
+    seasonalFactors,
     batteryModels: raw.battery_models.map((row) => ({
       name: row.name,
       usableKwh: row.usable_kwh,

@@ -7,6 +7,7 @@
 import { DAYS_PER_WEEK, DEFAULT_PEAK_PERIOD, WEEKS_PER_MONTH } from '../constants/kpiMethodology'
 import { DEFAULT_LOCATION_LABEL, FIELD_BOUNDS } from '../constants/validation'
 import { locationFromPostcode } from '../data/profileOptions'
+import { currentSeason, SEASON_LABELS, type Season } from './season'
 import type { PeakPeriod, ProfileData } from '../types/profile'
 import type {
   ApplianceSpec,
@@ -21,7 +22,9 @@ export type ValueKind = 'estimate' | 'from_you' | 'sourced'
 export type ApplianceLine = {
   spec: ApplianceSpec
   units: number
+  /** Reference hours after the household answer and the seasonal factor. */
   hoursPerWeek: number
+  seasonFactor: number
   weeklyKwh: number
   fromYou: boolean
 }
@@ -49,6 +52,7 @@ export type PlanComparison = {
 
 export type KpiReport = {
   locationLabel: string
+  season: Season
   hasSolar: boolean
   solarIsPotential: boolean
   consumptionKind: ValueKind
@@ -85,55 +89,74 @@ export function parseCount(value: string): number {
 }
 
 /**
- * scaleKwh
- * @param weekly - Modelled weekly kilowatt-hours
+ * scaleWeekly
+ * @param weekly - Any modelled weekly quantity
  * @param timeframe - Daily, weekly, or monthly display period
- * @returns The same energy scaled to the requested period
+ * @returns The same quantity scaled to the requested period
  *
  * Daily divides by 7. Monthly uses weekly × 4, matching the KPI methodology
  * rather than a calendar month, so the toggle stays comparable.
  */
-export function scaleKwh(weekly: number, timeframe: Timeframe): number {
+export function scaleWeekly(weekly: number, timeframe: Timeframe): number {
   if (timeframe === 'daily') return weekly / DAYS_PER_WEEK
   if (timeframe === 'monthly') return weekly * WEEKS_PER_MONTH
   return weekly
 }
 
-/**
- * scaleAud
- * @param weekly - Modelled weekly dollar amount
- * @param timeframe - Daily, weekly, or monthly display period
- * @returns The same dollar amount scaled like scaleKwh
- *
- * Savings use the same period rule as energy so the two KPI cards stay in
- * lockstep when the user changes Daily / Weekly / Monthly.
- */
+/** Kilowatt-hours on the timeframe toggle. */
+export function scaleKwh(weekly: number, timeframe: Timeframe): number {
+  return scaleWeekly(weekly, timeframe)
+}
+
+/** Dollars on the timeframe toggle, so money and energy stay in lockstep. */
 export function scaleAud(weekly: number, timeframe: Timeframe): number {
-  return scaleKwh(weekly, timeframe)
+  return scaleWeekly(weekly, timeframe)
 }
 
 function fieldIsUser(profile: ProfileData, field: keyof ProfileData): boolean {
   return profile.fieldSources[field] === 'user'
 }
 
-function applianceLines(profile: ProfileData, data: MethodologyBundle): ApplianceLine[] {
+/**
+ * dryerHoursPerWeek
+ * @param spec - Clothes dryer row, whose hoursPerWeek is a per-person figure
+ * @param cycles - Loads a week the household reported, or 0 if unanswered
+ * @param people - Household size, at least 1
+ * @returns Weekly runtime hours for the dryer
+ *
+ * The saved dryer counts beat the published average, so they win when present.
+ * The fallback scales by household size because the source figure was reported
+ * per person, from a 2.5-person household.
+ */
+function dryerHoursPerWeek(spec: ApplianceSpec, cycles: number, people: number): number {
+  if (cycles > 0 && spec.hoursPerCycle) return cycles * spec.hoursPerCycle
+  return spec.hoursPerWeek * people
+}
+
+function applianceLines(
+  profile: ProfileData,
+  data: MethodologyBundle,
+  season: Season,
+): ApplianceLine[] {
   const { methodology, appliances } = data
   const people = Math.max(parseCount(profile.people), 1)
-  const rooms = Math.max(parseCount(profile.rooms), 1)
   const fridges = Math.max(parseCount(profile.refrigerators), 0)
-  const dryerWeek = parseCount(profile.dryerWeek)
-  const dryerWeekend = parseCount(profile.dryerWeekend)
+  const dryerCycles = parseCount(profile.dryerWeek) + parseCount(profile.dryerWeekend)
   const lines: ApplianceLine[] = []
 
   function add(id: string, units: number, hours?: number, fromYou = false) {
     if (units <= 0) return
     const spec = appliances[id]
     if (!spec) return
-    const hoursPerWeek = hours ?? spec.typicalHoursPerWeek
+    // Heating and cooling figures are surveyed in their peak season, so they
+    // are scaled down (to nothing, out of season) rather than charged all year.
+    const seasonFactor = data.seasonalFactors[spec.seasonBasis]?.[season] ?? 1
+    const hoursPerWeek = (hours ?? spec.hoursPerWeek) * seasonFactor
     lines.push({
       spec,
       units,
       hoursPerWeek,
+      seasonFactor,
       weeklyKwh: units * spec.powerKw * hoursPerWeek,
       fromYou,
     })
@@ -141,46 +164,33 @@ function applianceLines(profile: ProfileData, data: MethodologyBundle): Applianc
 
   add('tv', 1)
   if (profile.wfh === 'yes') {
-    add('monitor', 1, methodology.wfhMonitorHours, fieldIsUser(profile, 'wfh'))
+    add('monitor', 1, undefined, fieldIsUser(profile, 'wfh'))
   }
-  add(
-    'refrigerator',
-    fridges || 1,
-    appliances.refrigerator?.typicalHoursPerWeek,
-    fieldIsUser(profile, 'refrigerators'),
-  )
+  add('refrigerator', fridges || 1, undefined, fieldIsUser(profile, 'refrigerators'))
   // Dishwasher only once the household is large enough to justify a weekly load.
   add('dishwasher', people >= methodology.dishwasherMinPeople ? 1 : 0)
-  add('washer', 1, Math.max(methodology.washerMinHours, people))
+  add('washer', 1)
   if (profile.dryer === 'yes') {
-    const cycles = Math.max(dryerWeek + dryerWeekend, 1)
-    add('dryer', 1, cycles, fieldIsUser(profile, 'dryer'))
+    const spec = appliances.dryer
+    add(
+      'dryer',
+      1,
+      spec ? dryerHoursPerWeek(spec, dryerCycles, people) : undefined,
+      dryerCycles > 0 &&
+        (fieldIsUser(profile, 'dryerWeek') || fieldIsUser(profile, 'dryerWeekend')),
+    )
   }
   if (profile.cooling === 'air_conditioning') {
-    // Hours grow with rooms, then cap so a large house does not run AC all week.
-    add(
-      'aircon',
-      1,
-      Math.min(
-        methodology.airconMaxHours,
-        methodology.airconBaseHours + rooms * methodology.airconHoursPerRoom,
-      ),
-      fieldIsUser(profile, 'cooling'),
-    )
+    add('aircon', 1, undefined, fieldIsUser(profile, 'cooling'))
   } else if (profile.cooling === 'evaporative') {
-    add('evaporative', 1, methodology.evaporativeHours, fieldIsUser(profile, 'cooling'))
+    add('evaporative', 1, undefined, fieldIsUser(profile, 'cooling'))
   }
   if (profile.heating === 'electric') {
-    add(
-      'heater',
-      1,
-      Math.min(methodology.heaterMaxHours, methodology.heaterBaseHours + rooms),
-      fieldIsUser(profile, 'heating'),
-    )
+    add('heater', 1, undefined, fieldIsUser(profile, 'heating'))
   }
   // Gas hot water is not on the electricity model; only electric HW is counted.
   if (profile.hotWater === 'yes' && profile.gas !== 'yes') {
-    add('waterHeater', 1, methodology.waterHeaterHours, fieldIsUser(profile, 'hotWater'))
+    add('waterHeater', 1, undefined, fieldIsUser(profile, 'hotWater'))
   }
 
   return lines
@@ -275,16 +285,40 @@ function weeklySavingsFrom(
 }
 
 /**
+ * seasonalNote
+ * @param lines - Appliance lines already scaled for the season
+ * @param season - Australian season the report was built for
+ * @returns Plain-language explanation for the transparency list
+ */
+function seasonalNote(lines: ApplianceLine[], season: Season): string {
+  const label = SEASON_LABELS[season].toLowerCase()
+  const seasonal = lines.filter((line) => line.spec.seasonBasis !== 'year_round')
+  if (!seasonal.length) {
+    return `It is ${label}. Nothing in your profile heats or cools with electricity, so there is no seasonal adjustment.`
+  }
+  const parts = seasonal.map(
+    (line) => `${line.spec.name.toLowerCase()} at ${Math.round(line.seasonFactor * 100)}%`,
+  )
+  return `Heating and cooling are surveyed in the season people use them most, so we scale them to the time of year. It is ${label}, so we count ${parts.join(' and ')} of the published hours.`
+}
+
+/**
  * buildKpiReport
  * @param profile - Saved household answers, including fieldSources
  * @param data - Appliances, rates, and VPP plans from GET /api/methodology
+ * @param now - Day to read the season from; defaults to today
  * @returns Consumption, generation, savings, appliance lines, and assumptions
  *
  * Prefers billed monthly kWh when present; otherwise sums typical appliances.
  * Solar, battery shift, and VPP credits are estimates — never live telemetry.
  */
-export function buildKpiReport(profile: ProfileData, data: MethodologyBundle): KpiReport {
-  const appliances = applianceLines(profile, data)
+export function buildKpiReport(
+  profile: ProfileData,
+  data: MethodologyBundle,
+  now: Date = new Date(),
+): KpiReport {
+  const season = currentSeason(now)
+  const appliances = applianceLines(profile, data, season)
   const modelledWeekly = appliances.reduce((sum, line) => sum + line.weeklyKwh, 0)
   const billedMonthly = Number.parseFloat(profile.monthlyKwh)
   const hasBilled = billedMonthly > 0
@@ -360,9 +394,20 @@ export function buildKpiReport(profile: ProfileData, data: MethodologyBundle): K
       kind: consumptionKind,
     },
     {
-      title: 'Appliance ratings',
+      title: 'Appliance hours',
       detail:
-        'Power (kW) comes from a typical-appliance dataset, not a meter. Hours use your dryer counts and work-from-home answer where we have them; otherwise typical hours.',
+        'Weekly hours come from published Australian usage surveys, listed against each appliance below. Your dryer counts replace the published average when you have saved them.',
+      kind: 'sourced',
+    },
+    {
+      title: `Season (${SEASON_LABELS[season]})`,
+      detail: seasonalNote(appliances, season),
+      kind: 'estimate',
+    },
+    {
+      title: 'Appliance power ratings',
+      detail:
+        'Power (kW) is a typical rating, not a meter reading. The refrigerator uses the average draw its energy label implies, because it cycles on and off all day rather than running flat out.',
       kind: 'estimate',
     },
     {
@@ -399,6 +444,7 @@ export function buildKpiReport(profile: ProfileData, data: MethodologyBundle): K
 
   return {
     locationLabel: place || DEFAULT_LOCATION_LABEL,
+    season,
     hasSolar,
     solarIsPotential,
     consumptionKind,

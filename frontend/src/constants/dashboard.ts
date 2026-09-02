@@ -12,8 +12,6 @@ export const TIMEFRAMES: { value: Timeframe; label: string }[] = [
   { value: 'monthly', label: 'Monthly' },
 ]
 
-export const HIDDEN_ASSUMPTIONS = new Set(['Carbon avoided'])
-
 export const KIND_LABELS: Record<ValueKind, string> = {
   from_you: 'From you',
   sourced: 'Sourced terms',

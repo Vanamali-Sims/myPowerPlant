@@ -1,8 +1,8 @@
 /**
- * Household energy dashboard: KPI cards, timeframe toggle, and assumptions.
+ * Household energy dashboard: KPI cards, charts, plan comparison, and workings.
  */
 import { useEffect, useMemo, useState } from 'react'
-import { HIDDEN_ASSUMPTIONS, KIND_LABELS, TIMEFRAMES } from '../../constants'
+import { KIND_LABELS, TIMEFRAMES } from '../../constants'
 import { locationFromPostcode } from '../../data/profileOptions'
 import { formatUpdatedAt } from '../../lib/formatProfile'
 import {
@@ -12,16 +12,30 @@ import {
 import {
   buildKpiReport,
   formatAud,
+  formatKg,
   formatKwh,
   scaleAud,
   scaleKwh,
+  scaleWeekly,
+  type PlanComparison,
   type Timeframe,
   type ValueKind,
 } from '../../lib/kpis'
+import { SEASON_LABELS } from '../../lib/season'
+import { buildTypicalDay } from '../../lib/typicalDay'
 import type { ProfileData } from '../../types/profile'
 import { Button } from '../ui/Button'
 import { Callout } from '../ui/Callout'
-import { BoltIcon, SunIcon } from '../ui/icons'
+import { EnergyBalanceChart } from './EnergyBalanceChart'
+import { TypicalDayChart } from './TypicalDayChart'
+import {
+  BoltIcon,
+  BulbIcon,
+  HomeIcon,
+  LeafIcon,
+  PlugIcon,
+  SunIcon,
+} from '../ui/icons'
 
 type Props = {
   profile: ProfileData
@@ -35,8 +49,70 @@ function kindLabel(kind: ValueKind): string {
 
 function KindBadge({ kind }: { kind: ValueKind }) {
   const className =
-    kind === 'from_you' ? 'kpi-badge kpi-badge--fact' : 'kpi-badge kpi-badge--estimate'
+    kind === 'from_you'
+      ? 'kpi-badge kpi-badge--fact'
+      : kind === 'sourced'
+        ? 'kpi-badge kpi-badge--sourced'
+        : 'kpi-badge kpi-badge--estimate'
   return <span className={className}>{kindLabel(kind)}</span>
+}
+
+/**
+ * PlanTile
+ * @param props.item - One VPP plan with its modelled weekly saving
+ * @param props.timeframe - Scale applied to the saving before display
+ * @returns JSX.Element
+ *
+ * Sign-up bonus and lock-in are shown but deliberately left out of the saving
+ * figure, so a long contract cannot look cheaper than it is.
+ */
+function PlanTile({ item, timeframe }: { item: PlanComparison; timeframe: Timeframe }) {
+  const { plan } = item
+  const classes = [
+    'plan-tile',
+    item.isRecommended ? 'is-recommended' : '',
+    item.isCurrent ? 'is-current' : '',
+  ]
+    .filter(Boolean)
+    .join(' ')
+
+  return (
+    <article className={classes}>
+      <div className="plan-tile__tags">
+        {item.isRecommended ? (
+          <span className="kpi-badge kpi-badge--sourced">Best for you</span>
+        ) : null}
+        {item.isCurrent ? (
+          <span className="kpi-badge kpi-badge--fact">Your current provider</span>
+        ) : null}
+      </div>
+      <h3>{plan.name}</h3>
+      <p className="plan-tile__brand">{plan.brand}</p>
+      <ul className="plan-terms">
+        <li>
+          <span>Estimated savings</span>
+          <strong>{formatAud(scaleAud(item.weeklySavings, timeframe))}</strong>
+        </li>
+        <li>
+          <span>Credit for energy you send out</span>
+          <strong>${plan.exportRate.toFixed(2)} / kWh</strong>
+        </li>
+        <li>
+          <span>Lock-in</span>
+          <strong>{plan.lockInMonths ? `${plan.lockInMonths} months` : 'None'}</strong>
+        </li>
+        <li>
+          <span>Sign-up bonus</span>
+          <strong>{plan.signupBonus ? formatAud(plan.signupBonus) : 'None'}</strong>
+        </li>
+      </ul>
+      <p className="plan-tile__brand">{plan.dispatchNote}</p>
+      <a className="dashboard-link" href={plan.href} target="_blank" rel="noreferrer">
+        Read the plan terms
+      </a>
+      <p className="plan-tile__brand">{plan.sourceLabel}</p>
+    </article>
+  )
 }
 
 /**
@@ -45,13 +121,14 @@ function KindBadge({ kind }: { kind: ValueKind }) {
  * @param props.onEditProfile - Jump to the profile editor
  * @returns JSX.Element
  *
- * Figures are estimates unless the badge says otherwise.
- * Carbon avoided is modelled but hidden from the list so it is not oversold.
+ * Figures are estimates unless the badge says otherwise. Every number the
+ * model produces is shown somewhere on this page, including the workings.
  */
 export function DashboardView({ profile, onEditProfile, onLogoClick }: Props) {
   const [timeframe, setTimeframe] = useState<Timeframe>('weekly')
   const [bundle, setBundle] = useState<MethodologyBundle | null>(null)
   const [loadError, setLoadError] = useState('')
+  const [activeHour, setActiveHour] = useState(13)
 
   useEffect(() => {
     let cancelled = false
@@ -73,31 +150,63 @@ export function DashboardView({ profile, onEditProfile, onLogoClick }: Props) {
     () => (bundle ? buildKpiReport(profile, bundle) : null),
     [bundle, profile],
   )
+  const dayPoints = useMemo(
+    () => (report ? buildTypicalDay(report.periods) : []),
+    [report],
+  )
   const place =
     locationFromPostcode(profile.postcode) || report?.locationLabel || ''
   const weekly = report?.weekly
-  const assumptions =
-    report?.assumptions.filter((item) => !HIDDEN_ASSUMPTIONS.has(item.title)) ?? []
 
   const kpis =
     report && weekly
-    ? [
-        {
-          eyebrow: 'Estimated energy consumption',
-          value: formatKwh(scaleKwh(weekly.consumptionKwh, timeframe)),
-          kind: report.consumptionKind,
-          icon: BoltIcon,
-          note: 'How much electricity this home is likely using over the selected period.',
-        },
-        {
-          eyebrow: 'Estimated savings',
-          value: formatAud(scaleAud(weekly.savingsAud, timeframe)),
-          kind: 'estimate' as ValueKind,
-          icon: SunIcon,
-          note: 'Potential value from solar you use in the home, plus a typical VPP credit on leftover energy.',
-        },
-      ]
-    : []
+      ? [
+          {
+            eyebrow: 'Estimated energy consumption',
+            value: formatKwh(scaleKwh(weekly.consumptionKwh, timeframe)),
+            kind: report.consumptionKind,
+            icon: BoltIcon,
+            note: 'How much electricity this home is likely using over the selected period.',
+          },
+          {
+            eyebrow: 'Estimated savings',
+            value: formatAud(scaleAud(weekly.savingsAud, timeframe)),
+            kind: 'estimate' as ValueKind,
+            icon: BulbIcon,
+            note: 'Potential value from solar you use in the home, plus a typical VPP credit on leftover energy.',
+          },
+          {
+            eyebrow: report.solarIsPotential ? 'Solar potential' : 'Solar generation',
+            value: formatKwh(scaleKwh(weekly.generationKwh, timeframe)),
+            kind: 'estimate' as ValueKind,
+            icon: SunIcon,
+            note: report.solarIsPotential
+              ? 'What a typical roof array could make here. You told us this home has no solar yet.'
+              : 'What your panels are likely to make, adjusted for roof direction.',
+          },
+          {
+            eyebrow: 'Solar you use at home',
+            value: formatKwh(scaleKwh(weekly.selfConsumedKwh, timeframe)),
+            kind: 'estimate' as ValueKind,
+            icon: HomeIcon,
+            note: 'Solar used the moment it is made, plus what a battery shifts into the evening. This is the part that avoids buying power.',
+          },
+          {
+            eyebrow: 'Sent out to the grid',
+            value: formatKwh(scaleKwh(weekly.energyDistributedKwh, timeframe)),
+            kind: 'estimate' as ValueKind,
+            icon: PlugIcon,
+            note: 'Solar left over after the home is supplied. This is what a VPP pays you a credit on.',
+          },
+          {
+            eyebrow: 'Carbon avoided',
+            value: formatKg(scaleWeekly(weekly.carbonAvoidedKg, timeframe)),
+            kind: 'estimate' as ValueKind,
+            icon: LeafIcon,
+            note: 'Grid emissions displaced by the energy you send out. An estimate, not a certificate.',
+          },
+        ]
+      : []
 
   return (
     <div className="dashboard">
@@ -185,6 +294,62 @@ export function DashboardView({ profile, onEditProfile, onLogoClick }: Props) {
         })}
       </section>
 
+      {report && weekly ? (
+        <div className="dashboard__split">
+          <section className="dashboard-card">
+            <p className="eyebrow">A typical day</p>
+            <h2>When your solar runs ahead of the house</h2>
+            <p className="dashboard-card__lede">
+              The shaded band is your leftover window — the hours a VPP would draw from. Select an
+              hour to read the numbers.
+            </p>
+            <TypicalDayChart
+              points={dayPoints}
+              activeHour={activeHour}
+              onSelectHour={setActiveHour}
+            />
+          </section>
+
+          <section className="dashboard-card">
+            <p className="eyebrow">Across the day</p>
+            <h2>Use against solar</h2>
+            <EnergyBalanceChart periods={report.periods} timeframe={timeframe} />
+            <dl className="balance-stats">
+              <div>
+                <dt>Solar beyond total use</dt>
+                <dd>{formatKwh(scaleKwh(weekly.surplusKwh, timeframe))}</dd>
+              </div>
+              <div>
+                <dt>Retail rate used</dt>
+                <dd>
+                  ${report.retailRate.toFixed(2)} / kWh
+                  <KindBadge kind={report.retailRateKind} />
+                </dd>
+              </div>
+            </dl>
+          </section>
+        </div>
+      ) : null}
+
+      {report ? (
+        <section className="dashboard-card">
+          <p className="eyebrow">VPP plans</p>
+          <h2>What each plan would be worth to you</h2>
+          <p className="dashboard-card__lede">
+            {report.currentPlan
+              ? `Compared with ${report.currentPlan.plan.name}, your current plan. `
+              : 'You have not told us your current plan, so every plan is listed. '}
+            Savings use the same retail rate and leftover energy for every plan, so the only thing
+            changing is the export credit.
+          </p>
+          <div className="plan-grid">
+            {report.matchedPlans.map((item) => (
+              <PlanTile key={item.plan.id} item={item} timeframe={timeframe} />
+            ))}
+          </div>
+        </section>
+      ) : null}
+
       <section className="dashboard-card" id="transparency">
         <p className="eyebrow">Transparency</p>
         <h2>How these dashboard results were calculated</h2>
@@ -193,7 +358,7 @@ export function DashboardView({ profile, onEditProfile, onLogoClick }: Props) {
           here is a live meter reading.
         </p>
         <ol className="assumption-list">
-          {assumptions.map((item) => (
+          {(report?.assumptions ?? []).map((item) => (
             <li key={item.title}>
               <div className="assumption-list__title">
                 {item.title}
@@ -203,7 +368,9 @@ export function DashboardView({ profile, onEditProfile, onLogoClick }: Props) {
             </li>
           ))}
         </ol>
-        <h3 className="assumption-list__sub">Appliance model this period</h3>
+        <h3 className="assumption-list__sub">
+          Appliance model this period{report ? ` · ${SEASON_LABELS[report.season]}` : ''}
+        </h3>
         <div className="appliance-table-wrap">
           <table className="appliance-table">
             <thead>
@@ -213,6 +380,7 @@ export function DashboardView({ profile, onEditProfile, onLogoClick }: Props) {
                 <th>kW</th>
                 <th>Hours / week</th>
                 <th>kWh / week</th>
+                <th>Where the hours come from</th>
               </tr>
             </thead>
             <tbody>
@@ -223,9 +391,14 @@ export function DashboardView({ profile, onEditProfile, onLogoClick }: Props) {
                     {line.fromYou ? <KindBadge kind="from_you" /> : <KindBadge kind="estimate" />}
                   </td>
                   <td>{line.units}</td>
-                  <td>{line.spec.powerKw}</td>
-                  <td>{line.hoursPerWeek.toFixed(0)}</td>
+                  <td title={line.spec.powerBasis}>{line.spec.powerKw}</td>
+                  <td>{line.hoursPerWeek.toFixed(1)}</td>
                   <td>{line.weeklyKwh.toFixed(1)}</td>
+                  <td className="appliance-table__source">
+                    {line.seasonFactor === 0
+                      ? 'Out of season — not counted this time of year.'
+                      : `${line.spec.reportedMetric} · ${line.spec.sourceLabel}`}
+                  </td>
                 </tr>
               ))}
             </tbody>
