@@ -13,7 +13,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from mangum import Mangum
 
 from app.db import engine
-from app.routes import health, methodology, profile, submit
+from app.routes import health, methodology
 
 load_dotenv()
 
@@ -58,8 +58,6 @@ app.add_middleware(
 )
 
 app.include_router(health.router, prefix="/api")
-app.include_router(submit.router, prefix="/api")
-app.include_router(profile.router, prefix="/api")
 app.include_router(methodology.router, prefix="/api")
 
 # Lambda entrypoint (API Gateway). Locally unused — run with:
