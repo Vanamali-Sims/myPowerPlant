@@ -2,24 +2,21 @@
 
 Dashboard KPI cards are modelled in `frontend/src/lib/kpis.ts` (`buildKpiReport`). Lookup rates, appliance ratings, and VPP plans come from `GET /api/methodology` (Postgres, seeded by Alembic `003` and `004`). Nothing is a live meter reading.
 
-Every quantity the model produces is shown on the page: six KPI cards, two charts, a VPP plan comparison, and the transparency section.
+The dashboard shows three KPI cards, two charts (an appliance-consumption donut and a weather-driven solar-generation line), and the transparency section, all driven by a single timeframe filter. The VPP plan comparison is still computed but is no longer rendered on the dashboard.
 
 ---
 
 ## Cards on the dashboard
 
-All six scale the same way — daily = weekly ÷ 7, weekly = as modelled, monthly = weekly × 4.
+All three scale the same way — daily = weekly ÷ 7, weekly = as modelled, fortnightly = weekly × 2. The one timeframe filter (Daily / Weekly / Fortnightly) also drives the two charts.
 
 | Card | Source field | Badge kind |
 | --- | --- | --- |
 | Estimated energy consumption | `weekly.consumptionKwh` | `from_you` if billed monthly kWh was user-entered; otherwise `estimate` |
-| Estimated savings | `weekly.savingsAud` | Always `estimate` |
-| Solar generation / Solar potential | `weekly.generationKwh` | `estimate` |
-| Solar you use at home | `weekly.selfConsumedKwh` | `estimate` |
-| Sent out to the grid | `weekly.energyDistributedKwh` | `estimate` |
+| Estimated savings | `weekly.netEnergyValueAud` | Always `estimate` |
 | Carbon avoided | `weekly.carbonAvoidedKg` | `estimate` |
 
-`weekly.surplusKwh` and the retail rate appear under the day-part chart rather than as cards.
+`weekly.generationKwh`, `selfConsumedKwh`, `energyDistributedKwh`, and `surplusKwh` are still computed (they drive the charts, the savings, and the VPP plan comparison) but no longer have their own cards. `weekly.savingsAud` is the best VPP plan's weekly saving, used by the plan tiles rather than the savings card.
 
 Display rounding:
 
@@ -29,7 +26,7 @@ Display rounding:
 | `formatAud` | \|value\| ≥ $10 → whole dollars; else 2 decimals |
 | `formatKg` | ≥ 10 → whole kg; else 1 decimal |
 
-`scaleWeekly` is the single scaling primitive; `scaleKwh` and `scaleAud` are named aliases so money and energy stay in lockstep. Constants: `DAYS_PER_WEEK = 7`, `WEEKS_PER_MONTH = 4` (`frontend/src/constants/kpiMethodology.ts`).
+`scaleWeekly` is the single scaling primitive; `scaleKwh` and `scaleAud` are named aliases so money and energy stay in lockstep. Constants: `DAYS_PER_WEEK = 7`, `WEEKS_PER_FORTNIGHT = 2` (`frontend/src/constants/kpiMethodology.ts`). `WEEKS_PER_MONTH = 4` is still used to convert a billed *monthly* kWh figure into a modelled week, but is no longer a display timeframe.
 
 ---
 
@@ -37,10 +34,20 @@ Display rounding:
 
 | Chart | Input | What it does |
 | --- | --- | --- |
-| `TypicalDayChart` | `buildTypicalDay(report.periods)` | 24 hourly points of load against solar, with the leftover window shaded |
-| `EnergyBalanceChart` | `report.periods` | Day-part bars of use against solar |
+| `ConsumptionDonut` | `report.appliances` | Donut of modelled weekly kWh per appliance (scaled to the timeframe), largest slice first, out-of-season lines dropped |
+| `SolarForecastChart` | Open-Meteo forecast + `solarInputs` | Line of predicted solar generation with daily / weekly / fortnightly views |
 
-`buildTypicalDay` only reshapes energy — the hourly totals add back to the modelled week ÷ 7. Load is spread evenly across each day-part's hours. Solar is reshaped onto a half-sine daylight curve (6am–8pm, crest at 1pm) instead of the period shares, because an even spread would draw generation at 2am. The night period's 0.02 solar share therefore affects the day-part bars but not the hourly line.
+### Solar generation forecast
+
+`SolarForecastChart` fetches predicted shortwave irradiance from Open-Meteo (free, keyless) for the household's coordinates (`coordsFromPostcode`, defaulting to Melbourne CBD), then converts irradiance to kWh with the household's array size and derates:
+
+| View | Data | Formula per point |
+| --- | --- | --- |
+| Daily | hourly `shortwave_radiation` (W/m²) for the first forecast day | `(W/m² ÷ 1000) × systemKw × performanceRatio × orientation` |
+| Weekly | daily `shortwave_radiation_sum` (MJ/m²), next 7 days | `(MJ/m² ÷ 3.6) × systemKw × performanceRatio × orientation` |
+| Fortnightly | same daily series, next 14 days | same as weekly |
+
+`systemKw` is `(panelCount × panelWatts) / 1000` when the home has solar, otherwise `typicalPotentialKw` (6.6). `orientation` is the same `solar_orientation_factors` derate used for the modelled generation, and `performanceRatio` is the seeded `0.8`. Open-Meteo forecasts at most 16 days ahead, so the fortnightly view is the longest honest horizon.
 
 ---
 
@@ -120,9 +127,17 @@ Shoulder seasons keep half the peak hours — an estimate, not a sourced figure.
 
 ---
 
-## Savings card (full chain)
+## Savings card
 
-Savings are **not** billed dollars. They are modelled as avoided retail cost of self-consumed solar, plus a VPP export credit on leftover generation.
+The **savings card** shows the net value of what the home makes against what it uses, at the retail rate:
+
+`netEnergyValueAud = (G − C) × R`
+
+where `G` is weekly generation, `C` is weekly consumption, and `R` is the retail rate. This is **negative** when the home uses more than it makes (the common case for a small array), and the card copy switches to an "extra cost" wording in that case. `formatAud` prints the sign before the dollar symbol, e.g. `-$24`.
+
+### VPP plan tiles (`savingsAud`)
+
+The plan comparison tiles use a separate, VPP-specific chain (still computed on the report as `weekly.savingsAud`), because their point is to compare export credits:
 
 | Step | Symbol | Formula |
 | --- | --- | --- |
@@ -137,9 +152,7 @@ Savings are **not** billed dollars. They are modelled as avoided retail cost of 
 | 9. Energy distributed | `D` | `max(0, G − S)` |
 | 10. Retail rate | `R` | See retail rate |
 | 11. Plan weekly savings | — | `S × R + D × plan.exportRate` for each compatible VPP plan |
-| 12. Headline savings | `savingsAud` | Highest savings among plans that are **not** the current provider; if none, the top plan overall |
-
-`surplusKwh = max(0, G − C)` is shown under the day-part chart, not as a card, because it overlaps with energy distributed.
+| 12. Headline `savingsAud` | `savingsAud` | Highest savings among plans that are **not** the current provider; if none, the top plan overall |
 
 Carbon avoided is `D × vicGridKgCo2PerKwh`. It has its own card and its own transparency row — the old `HIDDEN_ASSUMPTIONS` filter is gone.
 
@@ -260,9 +273,10 @@ Alembic `004` dropped the room- and people-derived hour scalars (`wfhMonitorHour
 | --- | --- |
 | Engine (`buildKpiReport`, scaling, formatters) | `frontend/src/lib/kpis.ts` |
 | Australian season from a date | `frontend/src/lib/season.ts` |
-| Hourly load-vs-solar curve | `frontend/src/lib/typicalDay.ts` |
+| Weather solar forecast (Open-Meteo) | `frontend/src/lib/solarForecast.ts` |
+| Postcode → coordinates for the forecast | `frontend/src/data/profileOptions.ts` (`coordsFromPostcode`) |
 | Cards, charts, plan tiles, timeframe toggle | `frontend/src/components/dashboard/DashboardView.tsx` |
-| Day-part bars / hourly line | `frontend/src/components/dashboard/EnergyBalanceChart.tsx`, `TypicalDayChart.tsx` |
+| Appliance donut / solar forecast line | `frontend/src/components/dashboard/ConsumptionDonut.tsx`, `SolarForecastChart.tsx` |
 | Days / weeks constants | `frontend/src/constants/kpiMethodology.ts` |
 | Timeframes and kind labels | `frontend/src/constants/dashboard.ts` |
 | API client + types | `frontend/src/lib/methodologyApi.ts` |
