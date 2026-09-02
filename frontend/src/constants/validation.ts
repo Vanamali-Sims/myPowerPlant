@@ -18,6 +18,15 @@ export const FIELD_BOUNDS = {
   batteryAge: { min: 0, max: 40, example: 2 },
   batteryUnits: { min: 1, max: 8 },
   postcodeLength: 4,
+  people: { min: 1, max: 15, example: 3 },
+  rooms: { min: 1, max: 20, example: 6 },
+  refrigerators: { min: 0, max: 10, example: 2 },
+  dryerWeek: { min: 0, max: 10, example: 2 },
+  dryerWeekend: { min: 0, max: 6, example: 1 },
+  tvHoursPerWeek: { min: 0, max: 168, example: 17 },
+  washerCyclesPerWeek: { min: 0, max: 21, example: 4 },
+  dishwasherCyclesPerWeek: { min: 0, max: 21, example: 6 },
+  airconHoursPerWeek: { min: 0, max: 168, example: 42 },
 } as const
 
 export const DEFAULT_BATTERY_UNITS = FIELD_BOUNDS.batteryUnits.min

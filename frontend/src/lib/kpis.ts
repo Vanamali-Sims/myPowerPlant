@@ -140,6 +140,19 @@ function dryerHoursPerWeek(spec: ApplianceSpec, cycles: number, people: number):
   return spec.hoursPerWeek * people
 }
 
+/**
+ * parseOptionalCount
+ * @param raw - A field the wizard lets the user leave blank
+ * @returns null when left blank (published estimate applies), else the count
+ *
+ * These fields are validated on entry, so any non-blank value here is already
+ * a real number within its field's bounds — this only decides skip vs answer.
+ */
+function parseOptionalCount(raw: string): number | null {
+  if (!raw.trim()) return null
+  return parseCount(raw)
+}
+
 function applianceLines(
   profile: ProfileData,
   data: MethodologyBundle,
@@ -169,14 +182,42 @@ function applianceLines(
     })
   }
 
-  add('tv', 1)
+  const tvHours = parseOptionalCount(profile.tvHoursPerWeek)
+  if (tvHours === null) {
+    add('tv', 1)
+  } else if (tvHours > 0) {
+    add('tv', 1, tvHours, fieldIsUser(profile, 'tvHoursPerWeek'))
+  }
+
   if (profile.wfh === 'yes') {
     add('monitor', 1, undefined, fieldIsUser(profile, 'wfh'))
   }
-  add('refrigerator', fridges || 1, undefined, fieldIsUser(profile, 'refrigerators'))
-  // Dishwasher only once the household is large enough to justify a weekly load.
-  add('dishwasher', people >= methodology.dishwasherMinPeople ? 1 : 0)
-  add('washer', 1)
+
+  // refrigerators is a required field — an explicit 0 excludes it via add()'s units<=0 check.
+  add('refrigerator', fridges, undefined, fieldIsUser(profile, 'refrigerators'))
+
+  const washerCycles = parseOptionalCount(profile.washerCyclesPerWeek)
+  const washerSpec = appliances.washer
+  if (washerCycles === null) {
+    add('washer', 1)
+  } else if (washerCycles > 0) {
+    const hours = washerSpec?.hoursPerCycle ? washerCycles * washerSpec.hoursPerCycle : undefined
+    add('washer', 1, hours, fieldIsUser(profile, 'washerCyclesPerWeek'))
+  }
+
+  const dishwasherCycles = parseOptionalCount(profile.dishwasherCyclesPerWeek)
+  const dishwasherSpec = appliances.dishwasher
+  if (dishwasherCycles === null) {
+    // No answer: fall back to the previous heuristic — large enough households
+    // justify a weekly load.
+    add('dishwasher', people >= methodology.dishwasherMinPeople ? 1 : 0)
+  } else if (dishwasherCycles > 0) {
+    const hours = dishwasherSpec?.hoursPerCycle
+      ? dishwasherCycles * dishwasherSpec.hoursPerCycle
+      : undefined
+    add('dishwasher', 1, hours, fieldIsUser(profile, 'dishwasherCyclesPerWeek'))
+  }
+
   if (profile.dryer === 'yes') {
     const spec = appliances.dryer
     add(
@@ -188,7 +229,12 @@ function applianceLines(
     )
   }
   if (profile.cooling === 'air_conditioning') {
-    add('aircon', 1, undefined, fieldIsUser(profile, 'cooling'))
+    const aircHours = parseOptionalCount(profile.airconHoursPerWeek)
+    if (aircHours === null) {
+      add('aircon', 1, undefined, fieldIsUser(profile, 'cooling'))
+    } else if (aircHours > 0) {
+      add('aircon', 1, aircHours, fieldIsUser(profile, 'airconHoursPerWeek'))
+    }
   } else if (profile.cooling === 'evaporative') {
     add('evaporative', 1, undefined, fieldIsUser(profile, 'cooling'))
   }

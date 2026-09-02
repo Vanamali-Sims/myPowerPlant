@@ -53,29 +53,81 @@ export function validateStep(
     } else if (!isVictorianPostcode(profile.postcode)) {
       errors.postcode = 'Please enter a valid Victorian postcode (4 digits).'
     }
-    const people = required(profile.people, 'Please select how many people live in your house.')
-    if (people) errors.people = people
-    const rooms = required(profile.rooms, 'Please select how many rooms you have.')
-    if (rooms) errors.rooms = rooms
+    if (!profile.people.trim()) {
+      errors.people = 'Please enter how many people live in your house.'
+    } else if (!isPositiveNumber(profile.people, FIELD_BOUNDS.people.min, FIELD_BOUNDS.people.max)) {
+      errors.people = `Enter a number between ${FIELD_BOUNDS.people.min} and ${FIELD_BOUNDS.people.max}. Example: ${FIELD_BOUNDS.people.example}`
+    }
+    if (!profile.rooms.trim()) {
+      errors.rooms = 'Please enter how many rooms you have.'
+    } else if (!isPositiveNumber(profile.rooms, FIELD_BOUNDS.rooms.min, FIELD_BOUNDS.rooms.max)) {
+      errors.rooms = `Enter a number between ${FIELD_BOUNDS.rooms.min} and ${FIELD_BOUNDS.rooms.max}. Example: ${FIELD_BOUNDS.rooms.example}`
+    }
     const gas = required(profile.gas, 'Please tell us whether you have gas.')
     if (gas) errors.gas = gas
-    const fridges = required(
-      profile.refrigerators,
-      'Please select how many refrigerators you own.',
+    if (!profile.refrigerators.trim()) {
+      errors.refrigerators = 'Please enter how many refrigerators you own. Enter 0 if you have none.'
+    } else if (
+      !isPositiveNumber(profile.refrigerators, FIELD_BOUNDS.refrigerators.min, FIELD_BOUNDS.refrigerators.max)
+    ) {
+      errors.refrigerators = `Enter a number between ${FIELD_BOUNDS.refrigerators.min} and ${FIELD_BOUNDS.refrigerators.max}. Example: ${FIELD_BOUNDS.refrigerators.example}`
+    }
+    const tvHours = optionalNumberError(
+      profile.tvHoursPerWeek,
+      FIELD_BOUNDS.tvHoursPerWeek.min,
+      FIELD_BOUNDS.tvHoursPerWeek.max,
+      FIELD_BOUNDS.tvHoursPerWeek.example,
     )
-    if (fridges) errors.refrigerators = fridges
+    if (tvHours) errors.tvHoursPerWeek = tvHours
+    const washerCycles = optionalNumberError(
+      profile.washerCyclesPerWeek,
+      FIELD_BOUNDS.washerCyclesPerWeek.min,
+      FIELD_BOUNDS.washerCyclesPerWeek.max,
+      FIELD_BOUNDS.washerCyclesPerWeek.example,
+    )
+    if (washerCycles) errors.washerCyclesPerWeek = washerCycles
+    const dishwasherCycles = optionalNumberError(
+      profile.dishwasherCyclesPerWeek,
+      FIELD_BOUNDS.dishwasherCyclesPerWeek.min,
+      FIELD_BOUNDS.dishwasherCyclesPerWeek.max,
+      FIELD_BOUNDS.dishwasherCyclesPerWeek.example,
+    )
+    if (dishwasherCycles) errors.dishwasherCyclesPerWeek = dishwasherCycles
     const dryer = required(profile.dryer, 'Please tell us whether you have a clothes dryer.')
     if (dryer) errors.dryer = dryer
     if (profile.dryer === 'yes') {
-      const week = required(profile.dryerWeek, 'Please enter weekday dryer use.')
-      if (week) errors.dryerWeek = week
-      const weekend = required(profile.dryerWeekend, 'Please enter weekend dryer use.')
-      if (weekend) errors.dryerWeekend = weekend
+      if (!profile.dryerWeek.trim()) {
+        errors.dryerWeek = 'Please enter weekday dryer use.'
+      } else if (
+        !isPositiveNumber(profile.dryerWeek, FIELD_BOUNDS.dryerWeek.min, FIELD_BOUNDS.dryerWeek.max)
+      ) {
+        errors.dryerWeek = `Enter a number between ${FIELD_BOUNDS.dryerWeek.min} and ${FIELD_BOUNDS.dryerWeek.max}. Example: ${FIELD_BOUNDS.dryerWeek.example}`
+      }
+      if (!profile.dryerWeekend.trim()) {
+        errors.dryerWeekend = 'Please enter weekend dryer use.'
+      } else if (
+        !isPositiveNumber(
+          profile.dryerWeekend,
+          FIELD_BOUNDS.dryerWeekend.min,
+          FIELD_BOUNDS.dryerWeekend.max,
+        )
+      ) {
+        errors.dryerWeekend = `Enter a number between ${FIELD_BOUNDS.dryerWeekend.min} and ${FIELD_BOUNDS.dryerWeekend.max}. Example: ${FIELD_BOUNDS.dryerWeekend.example}`
+      }
     }
     const heating = required(profile.heating, 'Please select how you heat your home.')
     if (heating) errors.heating = heating
     const cooling = required(profile.cooling, 'Please select how you cool your home.')
     if (cooling) errors.cooling = cooling
+    if (profile.cooling === 'air_conditioning') {
+      const aircon = optionalNumberError(
+        profile.airconHoursPerWeek,
+        FIELD_BOUNDS.airconHoursPerWeek.min,
+        FIELD_BOUNDS.airconHoursPerWeek.max,
+        FIELD_BOUNDS.airconHoursPerWeek.example,
+      )
+      if (aircon) errors.airconHoursPerWeek = aircon
+    }
     const hotWater = required(
       profile.hotWater,
       'Please tell us whether you have a hot water system.',
@@ -216,6 +268,22 @@ export function validateStep(
 function isPositiveNumber(raw: string, min: number, max: number): boolean {
   const n = Number(raw)
   return Number.isFinite(n) && n >= min && n <= max
+}
+
+/**
+ * optionalNumberError
+ * @returns An error message, or undefined when blank (baseline applies) or in range
+ *
+ * These fields may be left blank to fall back to a published estimate, but a
+ * value that is present must still be a real, sensible number — not silently
+ * ignored — so a typo like "500" fridges cannot pass through unnoticed.
+ */
+function optionalNumberError(raw: string, min: number, max: number, example: number): string | undefined {
+  if (!raw.trim()) return undefined
+  if (!isPositiveNumber(raw, min, max)) {
+    return `Enter a number between ${min} and ${max}, or leave blank for a typical estimate. Example: ${example}`
+  }
+  return undefined
 }
 
 /**

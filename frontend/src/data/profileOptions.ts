@@ -10,14 +10,6 @@ import type {
   YesNoNotSure,
 } from '../types/profile'
 
-export const peopleOptions = ['1', '2', '3', '4', '5', '6+']
-
-export const roomOptions = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10+']
-
-export const fridgeOptions = ['0', '1', '2', '3', '4+']
-
-export const dryerUseOptions = ['0', '1', '2', '3', '4', '5', '6', '7']
-
 export const heatingOptions = [
   { value: 'electric', label: 'Electric (Reverse cycle / Heat pump)' },
   { value: 'gas', label: 'Gas (Ducted / Gas heater)' },
