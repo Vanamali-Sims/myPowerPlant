@@ -16,3 +16,6 @@ export const API_PATHS = {
 export const GEOCODE_ENDPOINT = 'https://api.bigdatacloud.net/data/reverse-geocode-client'
 
 export const GEO_TIMEOUT_MS = 12000
+
+/** Free, keyless solar-irradiance forecast used by the solar generation chart. */
+export const WEATHER_FORECAST_ENDPOINT = 'https://api.open-meteo.com/v1/forecast'

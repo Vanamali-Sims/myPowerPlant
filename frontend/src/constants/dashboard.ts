@@ -9,10 +9,8 @@ import type { Timeframe, ValueKind } from '../lib/kpis'
 export const TIMEFRAMES: { value: Timeframe; label: string }[] = [
   { value: 'daily', label: 'Daily' },
   { value: 'weekly', label: 'Weekly' },
-  { value: 'monthly', label: 'Monthly' },
+  { value: 'fortnightly', label: 'Fortnightly' },
 ]
-
-export const HIDDEN_ASSUMPTIONS = new Set(['Carbon avoided'])
 
 export const KIND_LABELS: Record<ValueKind, string> = {
   from_you: 'From you',

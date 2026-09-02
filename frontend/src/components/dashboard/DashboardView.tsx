@@ -1,9 +1,9 @@
 /**
- * Household energy dashboard: KPI cards, timeframe toggle, and assumptions.
+ * Household energy dashboard: KPI cards, charts, plan comparison, and workings.
  */
 import { useEffect, useMemo, useState } from 'react'
-import { HIDDEN_ASSUMPTIONS, KIND_LABELS, TIMEFRAMES } from '../../constants'
-import { locationFromPostcode } from '../../data/profileOptions'
+import { KIND_LABELS, TIMEFRAMES } from '../../constants'
+import { coordsFromPostcode, locationFromPostcode } from '../../data/profileOptions'
 import { formatUpdatedAt } from '../../lib/formatProfile'
 import {
   fetchMethodology,
@@ -12,16 +12,22 @@ import {
 import {
   buildKpiReport,
   formatAud,
+  formatKg,
   formatKwh,
+  parseCount,
   scaleAud,
   scaleKwh,
+  scaleWeekly,
   type Timeframe,
   type ValueKind,
 } from '../../lib/kpis'
+import { SEASON_LABELS } from '../../lib/season'
 import type { ProfileData } from '../../types/profile'
 import { Button } from '../ui/Button'
 import { Callout } from '../ui/Callout'
-import { BoltIcon, SunIcon } from '../ui/icons'
+import { ConsumptionDonut } from './ConsumptionDonut'
+import { SolarForecastChart } from './SolarForecastChart'
+import { BoltIcon, BulbIcon, LeafIcon } from '../ui/icons'
 
 type Props = {
   profile: ProfileData
@@ -35,7 +41,11 @@ function kindLabel(kind: ValueKind): string {
 
 function KindBadge({ kind }: { kind: ValueKind }) {
   const className =
-    kind === 'from_you' ? 'kpi-badge kpi-badge--fact' : 'kpi-badge kpi-badge--estimate'
+    kind === 'from_you'
+      ? 'kpi-badge kpi-badge--fact'
+      : kind === 'sourced'
+        ? 'kpi-badge kpi-badge--sourced'
+        : 'kpi-badge kpi-badge--estimate'
   return <span className={className}>{kindLabel(kind)}</span>
 }
 
@@ -45,8 +55,8 @@ function KindBadge({ kind }: { kind: ValueKind }) {
  * @param props.onEditProfile - Jump to the profile editor
  * @returns JSX.Element
  *
- * Figures are estimates unless the badge says otherwise.
- * Carbon avoided is modelled but hidden from the list so it is not oversold.
+ * Figures are estimates unless the badge says otherwise. Every number the
+ * model produces is shown somewhere on this page, including the workings.
  */
 export function DashboardView({ profile, onEditProfile, onLogoClick }: Props) {
   const [timeframe, setTimeframe] = useState<Timeframe>('weekly')
@@ -76,28 +86,54 @@ export function DashboardView({ profile, onEditProfile, onLogoClick }: Props) {
   const place =
     locationFromPostcode(profile.postcode) || report?.locationLabel || ''
   const weekly = report?.weekly
-  const assumptions =
-    report?.assumptions.filter((item) => !HIDDEN_ASSUMPTIONS.has(item.title)) ?? []
+
+  const solarInputs = useMemo(() => {
+    if (!bundle) return null
+    const systemKw =
+      report && !report.solarIsPotential
+        ? (parseCount(profile.panelCount) * parseCount(profile.panelWatts)) / 1000
+        : bundle.methodology.typicalPotentialKw
+    const orientationFactor =
+      bundle.orientationFactors[profile.solarDirection] ??
+      bundle.orientationFactors.not_sure ??
+      1
+    const { lat, lon } = coordsFromPostcode(profile.postcode)
+    return {
+      lat,
+      lon,
+      systemKw,
+      orientationFactor,
+      performanceRatio: bundle.methodology.solarPerformanceRatio,
+    }
+  }, [bundle, report, profile.panelCount, profile.panelWatts, profile.solarDirection, profile.postcode])
 
   const kpis =
     report && weekly
-    ? [
-        {
-          eyebrow: 'Estimated energy consumption',
-          value: formatKwh(scaleKwh(weekly.consumptionKwh, timeframe)),
-          kind: report.consumptionKind,
-          icon: BoltIcon,
-          note: 'How much electricity this home is likely using over the selected period.',
-        },
-        {
-          eyebrow: 'Estimated savings',
-          value: formatAud(scaleAud(weekly.savingsAud, timeframe)),
-          kind: 'estimate' as ValueKind,
-          icon: SunIcon,
-          note: 'Potential value from solar you use in the home, plus a typical VPP credit on leftover energy.',
-        },
-      ]
-    : []
+      ? [
+          {
+            eyebrow: 'Energy use',
+            value: formatKwh(scaleKwh(weekly.consumptionKwh, timeframe)),
+            kind: report.consumptionKind,
+            icon: BoltIcon,
+            note: '',
+          },
+          {
+            eyebrow: weekly.netEnergyValueAud >= 0 ? 'Estimated savings' : 'Net energy cost',
+            value: formatAud(scaleAud(weekly.netEnergyValueAud, timeframe)),
+            kind: 'estimate' as ValueKind,
+            icon: BulbIcon,
+            note:
+              weekly.netEnergyValueAud >= 0 ? '' : 'Home uses more than it makes',
+          },
+          {
+            eyebrow: 'Carbon avoided',
+            value: formatKg(scaleWeekly(weekly.carbonAvoidedKg, timeframe)),
+            kind: 'estimate' as ValueKind,
+            icon: LeafIcon,
+            note: '',
+          },
+        ]
+      : []
 
   return (
     <div className="dashboard">
@@ -113,32 +149,11 @@ export function DashboardView({ profile, onEditProfile, onLogoClick }: Props) {
           </span>
           MyPowerPlant
         </button>
-        <span className="location-pill">
-          <span className="location-pill__dot" />
-          {place}
-        </span>
       </header>
 
       <div className="dashboard__intro">
-        <p className="eyebrow">Key insights · {place}</p>
         <h1>Your household energy picture</h1>
-        <p>
-          Estimated consumption and savings, modelled from your saved profile. No meter or IoT
-          device is connected.
-        </p>
       </div>
-
-      <Callout
-        tone="accent"
-        title={`Report generated from your profile · ${formatUpdatedAt(profile.lastUpdated)}`}
-        action={
-          <Button variant="edit" onClick={onEditProfile}>
-            Edit profile
-          </Button>
-        }
-      >
-        Change household details and come back — this report updates automatically.
-      </Callout>
 
       {loadError ? (
         <p className="app-notice" role="status">
@@ -179,11 +194,36 @@ export function DashboardView({ profile, onEditProfile, onLogoClick }: Props) {
                 {card.value}
                 <KindBadge kind={card.kind} />
               </p>
-              <p className="kpi-card__note">{card.note}</p>
+              {card.note ? <p className="kpi-card__note">{card.note}</p> : null}
             </article>
           )
         })}
       </section>
+
+      {report && weekly ? (
+        <div className="dashboard__split">
+          <section className="dashboard-card">
+            <p className="eyebrow">Where your energy goes</p>
+            <h2>Energy consumption breakdown</h2>
+            <ConsumptionDonut appliances={report.appliances} timeframe={timeframe} />
+          </section>
+
+          <section className="dashboard-card">
+            <p className="eyebrow">
+              {report.solarIsPotential ? 'Solar potential' : 'Solar generation'} · weather forecast
+            </p>
+            <h2>Predicted solar generation</h2>
+            {solarInputs ? (
+              <SolarForecastChart
+                inputs={solarInputs}
+                view={timeframe}
+                isPotential={report.solarIsPotential}
+                placeLabel={place}
+              />
+            ) : null}
+          </section>
+        </div>
+      ) : null}
 
       <section className="dashboard-card" id="transparency">
         <p className="eyebrow">Transparency</p>
@@ -193,7 +233,7 @@ export function DashboardView({ profile, onEditProfile, onLogoClick }: Props) {
           here is a live meter reading.
         </p>
         <ol className="assumption-list">
-          {assumptions.map((item) => (
+          {(report?.assumptions ?? []).map((item) => (
             <li key={item.title}>
               <div className="assumption-list__title">
                 {item.title}
@@ -203,7 +243,9 @@ export function DashboardView({ profile, onEditProfile, onLogoClick }: Props) {
             </li>
           ))}
         </ol>
-        <h3 className="assumption-list__sub">Appliance model this period</h3>
+        <h3 className="assumption-list__sub">
+          Appliance model this period{report ? ` · ${SEASON_LABELS[report.season]}` : ''}
+        </h3>
         <div className="appliance-table-wrap">
           <table className="appliance-table">
             <thead>
@@ -213,6 +255,7 @@ export function DashboardView({ profile, onEditProfile, onLogoClick }: Props) {
                 <th>kW</th>
                 <th>Hours / week</th>
                 <th>kWh / week</th>
+                <th>Where the hours come from</th>
               </tr>
             </thead>
             <tbody>
@@ -223,15 +266,38 @@ export function DashboardView({ profile, onEditProfile, onLogoClick }: Props) {
                     {line.fromYou ? <KindBadge kind="from_you" /> : <KindBadge kind="estimate" />}
                   </td>
                   <td>{line.units}</td>
-                  <td>{line.spec.powerKw}</td>
-                  <td>{line.hoursPerWeek.toFixed(0)}</td>
+                  <td title={line.spec.powerBasis}>{line.spec.powerKw}</td>
+                  <td>{line.hoursPerWeek.toFixed(1)}</td>
                   <td>{line.weeklyKwh.toFixed(1)}</td>
+                  <td className="appliance-table__source">
+                    {line.seasonFactor === 0
+                      ? 'Out of season — not counted this time of year.'
+                      : `${line.spec.reportedMetric} · ${line.spec.sourceLabel}`}
+                  </td>
                 </tr>
               ))}
             </tbody>
           </table>
         </div>
       </section>
+
+      <footer className="dashboard__footer">
+        <span className="location-pill">
+          <span className="location-pill__dot" />
+          {place}
+        </span>
+        <Callout
+          tone="accent"
+          title={`Report generated from your profile · ${formatUpdatedAt(profile.lastUpdated)}`}
+          action={
+            <Button variant="edit" onClick={onEditProfile}>
+              Edit profile
+            </Button>
+          }
+        >
+          Change household details and come back — this report updates automatically.
+        </Callout>
+      </footer>
     </div>
   )
 }

@@ -145,3 +145,34 @@ export function locationFromPostcode(postcode: string): string {
   if (VIC_POSTCODE.test(postcode)) return DEFAULT_LOCATION_LABEL
   return ''
 }
+
+export type LatLon = { lat: number; lon: number }
+
+/** Melbourne CBD — the fallback point for the solar forecast lookup. */
+const MELBOURNE: LatLon = { lat: -37.8136, lon: 144.9631 }
+
+/** Approximate coordinates for the named inner-Melbourne suburbs above. */
+const postcodeCoords: Record<string, LatLon> = {
+  '3000': { lat: -37.8136, lon: 144.9631 },
+  '3002': { lat: -37.8159, lon: 144.9873 },
+  '3053': { lat: -37.8, lon: 144.967 },
+  '3065': { lat: -37.8, lon: 144.978 },
+  '3101': { lat: -37.806, lon: 145.031 },
+  '3121': { lat: -37.819, lon: 144.999 },
+  '3124': { lat: -37.842, lon: 145.058 },
+  '3141': { lat: -37.838, lon: 144.993 },
+  '3182': { lat: -37.867, lon: 144.981 },
+  '3186': { lat: -37.906, lon: 144.998 },
+}
+
+/**
+ * coordsFromPostcode
+ * @param postcode - Four-digit Australian postcode
+ * @returns Latitude/longitude for the weather lookup, defaulting to Melbourne
+ *
+ * The forecast only needs a suburb-level point, so any Victorian postcode we
+ * do not have mapped falls back to the Melbourne CBD coordinate.
+ */
+export function coordsFromPostcode(postcode: string): LatLon {
+  return postcodeCoords[postcode] ?? MELBOURNE
+}
