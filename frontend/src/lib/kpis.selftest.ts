@@ -175,15 +175,18 @@ assert(
 )
 
 const noTariff = buildKpiReport({ ...baseline, monthlyBill: '', monthlyKwh: '' }, data, SEP)
-assert(noTariff.retailRate === null, 'missing bill figures must not invent a retail rate')
-assert(noTariff.retailRateKind === 'unavailable', 'missing tariff is unavailable, not an estimate')
-assert(noTariff.weekly.savingsAud === null, 'dollar savings must not use a default tariff')
-assert(noTariff.weekly.netEnergyValueAud === null, 'net energy value must not use a default tariff')
-const retailAssumption = noTariff.assumptions.find((item) => item.title === 'Retail electricity rate')
-assert(retailAssumption?.kind === 'unavailable', 'transparency row must say unavailable')
 assert(
-  !retailAssumption?.detail.includes('0.32'),
-  'transparency must not quote the default 0.32 retail rate',
+  almostEqual(noTariff.retailRate, data.methodology.defaultRetailRate),
+  'missing bill figures fall back to the typical Victorian retail rate',
+)
+assert(noTariff.retailRateKind === 'estimate', 'fallback tariff is an estimate')
+assert(noTariff.weekly.savingsAud != null, 'dollar savings still show with the default tariff')
+assert(noTariff.weekly.netEnergyValueAud != null, 'net energy value still shows with the default tariff')
+const retailAssumption = noTariff.assumptions.find((item) => item.title === 'Retail electricity rate')
+assert(retailAssumption?.kind === 'estimate', 'transparency row must label the fallback as an estimate')
+assert(
+  retailAssumption?.detail.includes('0.32'),
+  'transparency should say the typical Victorian rate was used',
 )
 
 const injected: ProfileData = {

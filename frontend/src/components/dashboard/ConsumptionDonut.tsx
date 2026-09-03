@@ -22,9 +22,48 @@ const SLICE_COLORS = [
 /** Show at most this many named slices; the rest fold into "Other". */
 const MAX_SLICES = 6
 
-const R = 70
-const STROKE = 30
-const CIRCUMFERENCE = 2 * Math.PI * R
+const CX = 100
+const CY = 100
+const INNER = 54
+const OUTER = 86
+const OUTER_ACTIVE = 90
+
+/**
+ * ringSector
+ * @param inner - Hole radius
+ * @param outer - Outer radius
+ * @param start - Start angle in radians (0 = 3 o’clock, clockwise)
+ * @param end - End angle in radians
+ * @returns SVG path for an open annular sector (not a closed circle stroke)
+ *
+ * Stroked `<circle>` dashes close at 12 o’clock and SVG miter-joins that seam,
+ * which draws a hook into the hole. A filled sector path has a clean inner edge.
+ */
+function ringSector(inner: number, outer: number, start: number, end: number): string {
+  const sweep = Math.min(Math.max(end - start, 0), Math.PI * 2 - 1e-6)
+  if (sweep <= 0) return ''
+  const endA = start + sweep
+  const large = sweep > Math.PI ? 1 : 0
+  const at = (radius: number, angle: number) => [
+    CX + radius * Math.cos(angle),
+    CY + radius * Math.sin(angle),
+  ]
+  const [ox0, oy0] = at(outer, start)
+  const [ox1, oy1] = at(outer, endA)
+  const [ix1, iy1] = at(inner, endA)
+  const [ix0, iy0] = at(inner, start)
+  return [
+    `M ${ox0} ${oy0}`,
+    `A ${outer} ${outer} 0 ${large} 1 ${ox1} ${oy1}`,
+    `L ${ix1} ${iy1}`,
+    `A ${inner} ${inner} 0 ${large} 0 ${ix0} ${iy0}`,
+    'Z',
+  ].join(' ')
+}
+
+function fullRing(inner: number, outer: number): string {
+  return `${ringSector(inner, outer, -Math.PI / 2, Math.PI / 2)} ${ringSector(inner, outer, Math.PI / 2, (Math.PI * 3) / 2)}`
+}
 
 /**
  * ConsumptionDonut
@@ -70,17 +109,18 @@ export function ConsumptionDonut({ appliances, timeframe }: Props) {
       total,
       items: grouped.map((line, index) => {
         const fraction = fractionOf(line.kwh)
-        // Offset is the sum of every earlier slice, computed without mutation.
         const priorFraction = grouped
           .slice(0, index)
           .reduce((sum, earlier) => sum + fractionOf(earlier.kwh), 0)
+        // Start at 12 o’clock and sweep clockwise.
+        const start = -Math.PI / 2 + priorFraction * Math.PI * 2
+        const end = start + fraction * Math.PI * 2 + 0.006
         return {
           ...line,
           fraction,
           color: SLICE_COLORS[index % SLICE_COLORS.length],
-          dash: fraction * CIRCUMFERENCE,
-          gap: CIRCUMFERENCE - fraction * CIRCUMFERENCE,
-          dashOffset: -priorFraction * CIRCUMFERENCE,
+          start,
+          end,
         }
       }),
     }
@@ -101,35 +141,27 @@ export function ConsumptionDonut({ appliances, timeframe }: Props) {
           role="img"
           aria-label="Energy consumption broken down by appliance. Hover or focus a slice for kWh and share."
         >
-          <g transform="rotate(-90 100 100)">
-            <circle cx="100" cy="100" r={R} className="donut__track" strokeWidth={STROKE} />
-            {slices.items.map((slice) => {
-              const isActive = activeId === slice.id
-              const isDim = activeId !== null && !isActive
-              return (
-                <circle
-                  key={slice.id}
-                  className={`donut__slice${isActive ? ' is-active' : ''}${isDim ? ' is-dim' : ''}`}
-                  cx="100"
-                  cy="100"
-                  r={R}
-                  fill="none"
-                  stroke={slice.color}
-                  strokeWidth={isActive ? STROKE + 4 : STROKE}
-                  strokeDasharray={`${slice.dash} ${slice.gap}`}
-                  strokeDashoffset={slice.dashOffset}
-                  tabIndex={0}
-                  role="img"
-                  aria-label={`${slice.name}: ${formatKwh(slice.kwh)}, ${Math.round(slice.fraction * 100)} percent`}
-                  onPointerEnter={() => setActiveId(slice.id)}
-                  onPointerLeave={() => setActiveId(null)}
-                  onFocus={() => setActiveId(slice.id)}
-                  onBlur={() => setActiveId(null)}
-                />
-              )
-            })}
-          </g>
-          <text x="100" y="94" className="donut__total">
+          <path className="donut__track" d={fullRing(INNER, OUTER)} />
+          {slices.items.map((slice) => {
+            const isActive = activeId === slice.id
+            const isDim = activeId !== null && !isActive
+            return (
+              <path
+                key={slice.id}
+                className={`donut__slice${isActive ? ' is-active' : ''}${isDim ? ' is-dim' : ''}`}
+                d={ringSector(INNER, isActive ? OUTER_ACTIVE : OUTER, slice.start, slice.end)}
+                fill={slice.color}
+                tabIndex={0}
+                role="img"
+                aria-label={`${slice.name}: ${formatKwh(slice.kwh)}, ${Math.round(slice.fraction * 100)} percent`}
+                onPointerEnter={() => setActiveId(slice.id)}
+                onPointerLeave={() => setActiveId(null)}
+                onFocus={() => setActiveId(slice.id)}
+                onBlur={() => setActiveId(null)}
+              />
+            )
+          })}
+          <text x="100" y="96" className="donut__total">
             {formatKwh(active ? active.kwh : slices.total)}
           </text>
           <text x="100" y="114" className="donut__total-label">

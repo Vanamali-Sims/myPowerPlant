@@ -119,33 +119,12 @@ export function DashboardView({ profile, onEditProfile, onLogoClick }: Props) {
             signed: undefined,
           },
           {
-            eyebrow:
-              weekly.netEnergyValueAud == null
-                ? 'Estimated savings'
-                : weekly.netEnergyValueAud >= 0
-                  ? 'Estimated savings'
-                  : 'Net energy cost',
-            value:
-              weekly.netEnergyValueAud == null
-                ? 'Unavailable'
-                : formatAud(scaleAud(weekly.netEnergyValueAud, timeframe)),
-            kind:
-              weekly.netEnergyValueAud == null
-                ? ('unavailable' as ValueKind)
-                : ('estimate' as ValueKind),
+            eyebrow: weekly.netEnergyValueAud >= 0 ? 'Estimated savings' : 'Net energy cost',
+            value: formatAud(scaleAud(weekly.netEnergyValueAud, timeframe)),
+            kind: 'estimate' as ValueKind,
             icon: BulbIcon,
-            signed:
-              weekly.netEnergyValueAud == null
-                ? undefined
-                : weekly.netEnergyValueAud >= 0
-                  ? 'surplus'
-                  : 'deficit',
-            note:
-              weekly.netEnergyValueAud == null
-                ? 'We do not fill in a typical tariff.'
-                : weekly.netEnergyValueAud >= 0
-                  ? ''
-                  : 'Home uses more than it makes',
+            signed: weekly.netEnergyValueAud >= 0 ? 'surplus' : 'deficit',
+            note: weekly.netEnergyValueAud >= 0 ? '' : 'Home uses more than it makes',
           },
           {
             eyebrow: 'Carbon avoided',

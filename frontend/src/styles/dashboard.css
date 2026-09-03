@@ -193,34 +193,30 @@
 }
 
 .donut {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 1rem;
+  display: flex;
   align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 1.5rem;
 }
 
 .donut__plot {
   position: relative;
-  display: grid;
-  justify-items: center;
+  flex: 0 0 auto;
 }
 
 .donut__svg {
-  width: 100%;
-  max-width: 12.5rem;
+  width: 13rem;
   height: auto;
-  margin: 0 auto;
   display: block;
-  overflow: visible;
 }
 
 .donut__track {
-  fill: none;
-  stroke: var(--surface-sunken);
+  fill: var(--surface-sunken);
+  stroke: none;
 }
 
 .donut__slice {
-  pointer-events: stroke;
   cursor: pointer;
   outline: none;
   transition: opacity 0.15s ease;
@@ -252,6 +248,8 @@
   display: flex;
   flex-direction: column;
   gap: 0.15rem;
+  flex: 0 1 11.5rem;
+  min-width: 0;
 }
 
 .donut__legend-item {
@@ -474,10 +472,6 @@
   .dashboard__split {
     grid-template-columns: 1fr 1fr;
     align-items: start;
-  }
-
-  .donut {
-    grid-template-columns: auto 1fr;
   }
 
   .plan-grid {
