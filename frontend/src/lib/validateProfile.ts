@@ -142,17 +142,6 @@ export function validateStep(
     ) {
       errors.monthlyBill = `Enter a typical monthly amount, for example ${FIELD_BOUNDS.monthlyBill.example}.`
     }
-    if (!profile.monthlyKwh.trim()) {
-      errors.monthlyKwh = 'Please enter your average monthly electricity use.'
-    } else if (
-      !isPositiveNumber(
-        profile.monthlyKwh,
-        FIELD_BOUNDS.monthlyKwh.min,
-        FIELD_BOUNDS.monthlyKwh.max,
-      )
-    ) {
-      errors.monthlyKwh = `Enter a value in kWh, for example ${FIELD_BOUNDS.monthlyKwh.example}.`
-    }
     const peak = required(
       profile.peakPeriod,
       'Please select when you use the most energy.',

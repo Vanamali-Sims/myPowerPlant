@@ -1,8 +1,7 @@
 /**
  * Dashboard display config: timeframes, assumption filters, and value-kind labels.
  *
- * KPI numbers are computed in lib/kpis; this file only holds how they are
- * labelled and which transparency rows stay hidden.
+ * KPI numbers are computed in lib/kpis; this file only holds how they are labelled.
  */
 import type { Timeframe, ValueKind } from '../lib/kpis'
 

@@ -27,7 +27,7 @@ type Props = {
  * @returns JSX.Element
  *
  * Usage-level icons are mapped here because they are presentation, not data.
- * Bill and kWh accept digits (and a decimal) only so letters cannot be typed first.
+ * The bill field accepts digits (and a decimal) only so letters cannot be typed first.
  */
 export function HouseholdUsageStep({ profile, errors, onChange }: Props) {
   return (
@@ -42,16 +42,6 @@ export function HouseholdUsageStep({ profile, errors, onChange }: Props) {
         value={profile.monthlyBill}
         onChange={(event) => onChange('monthlyBill', event.target.value)}
         error={errors.monthlyBill}
-      />
-      <TextField
-        label="How much electricity do you use?"
-        placeholder="Enter amount"
-        inputMode="decimal"
-        numeric="decimal"
-        suffix="kWh"
-        value={profile.monthlyKwh}
-        onChange={(event) => onChange('monthlyKwh', event.target.value)}
-        error={errors.monthlyKwh}
       />
       <RadioList
         label="What time of day do you use the most energy?"

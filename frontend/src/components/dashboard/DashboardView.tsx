@@ -1,5 +1,5 @@
 /**
- * Household energy dashboard: KPI cards, charts, plan comparison, and workings.
+ * Household energy dashboard: KPI cards, charts, and a short profile footer.
  */
 import { useEffect, useMemo, useState } from 'react'
 import { KIND_LABELS, TIMEFRAMES } from '../../constants'
@@ -21,7 +21,6 @@ import {
   type Timeframe,
   type ValueKind,
 } from '../../lib/kpis'
-import { SEASON_LABELS } from '../../lib/season'
 import type { ProfileData } from '../../types/profile'
 import { Button } from '../ui/Button'
 import { Callout } from '../ui/Callout'
@@ -57,8 +56,7 @@ function KindBadge({ kind }: { kind: ValueKind }) {
  * @param props.onEditProfile - Jump to the profile editor
  * @returns JSX.Element
  *
- * Figures are estimates unless the badge says otherwise. Every number the
- * model produces is shown somewhere on this page, including the workings.
+ * Figures are estimates unless the badge says otherwise.
  */
 export function DashboardView({ profile, onEditProfile, onLogoClick }: Props) {
   const [timeframe, setTimeframe] = useState<Timeframe>('weekly')
@@ -144,7 +142,7 @@ export function DashboardView({ profile, onEditProfile, onLogoClick }: Props) {
                   : 'deficit',
             note:
               weekly.netEnergyValueAud == null
-                ? 'Add your monthly bill and kWh on your profile. We do not fill in a typical tariff.'
+                ? 'We do not fill in a typical tariff.'
                 : weekly.netEnergyValueAud >= 0
                   ? ''
                   : 'Home uses more than it makes',
@@ -256,67 +254,7 @@ export function DashboardView({ profile, onEditProfile, onLogoClick }: Props) {
         </div>
       ) : null}
 
-      <section className="dashboard-card" id="transparency">
-        <p className="eyebrow">Transparency</p>
-        <h2>How these dashboard results were calculated</h2>
-        <p className="dashboard-card__lede">
-          Every figure is simulated from what you told us, plus published typical ratings. Nothing
-          here is a live meter reading.
-        </p>
-        <ol className="assumption-list">
-          {(report?.assumptions ?? []).map((item) => (
-            <li key={item.title}>
-              <div className="assumption-list__title">
-                {item.title}
-                <KindBadge kind={item.kind} />
-              </div>
-              <p>{item.detail}</p>
-            </li>
-          ))}
-        </ol>
-        <h3 className="assumption-list__sub">
-          Appliance model this period{report ? ` · ${SEASON_LABELS[report.season]}` : ''}
-        </h3>
-        <div className="appliance-table-wrap">
-          <table className="appliance-table">
-            <thead>
-              <tr>
-                <th>Appliance</th>
-                <th>Units</th>
-                <th>kW</th>
-                <th>Hours / week</th>
-                <th>kWh / week</th>
-                <th>Where the hours come from</th>
-              </tr>
-            </thead>
-            <tbody>
-              {(report?.appliances ?? []).map((line) => (
-                <tr key={line.spec.id}>
-                  <td>
-                    {line.spec.name}
-                    {line.fromYou ? <KindBadge kind="from_you" /> : <KindBadge kind="estimate" />}
-                  </td>
-                  <td>{line.units}</td>
-                  <td title={line.spec.powerBasis}>{line.spec.powerKw}</td>
-                  <td>{line.hoursPerWeek.toFixed(1)}</td>
-                  <td>{line.weeklyKwh.toFixed(1)}</td>
-                  <td className="appliance-table__source">
-                    {line.seasonFactor === 0
-                      ? 'Out of season — not counted this time of year.'
-                      : `${line.spec.reportedMetric} · ${line.spec.sourceLabel}`}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </section>
-
       <footer className="dashboard__footer">
-        <span className="location-pill">
-          <span className="location-pill__dot" />
-          {place}
-        </span>
         <Callout
           tone="accent"
           title={`Report generated from your profile · ${formatUpdatedAt(profile.lastUpdated)}`}
