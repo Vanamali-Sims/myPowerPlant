@@ -1,8 +1,9 @@
 /**
- * Frontend API base URL, path helpers, and the public geocode endpoint.
+ * Frontend API base URL, path helpers, and public weather endpoint.
  *
  * VITE_API_BASE_URL stays an env var; this file is the only place the rest of
- * the app should read it from.
+ * the app should read it from. Device location is resolved on-device — there
+ * is no third-party geocode host here.
  */
 
 export const API_BASE_URL = import.meta.env?.VITE_API_BASE_URL as string | undefined
@@ -10,8 +11,6 @@ export const API_BASE_URL = import.meta.env?.VITE_API_BASE_URL as string | undef
 export const API_PATHS = {
   methodology: '/api/methodology',
 } as const
-
-export const GEOCODE_ENDPOINT = 'https://api.bigdatacloud.net/data/reverse-geocode-client'
 
 export const GEO_TIMEOUT_MS = 12000
 

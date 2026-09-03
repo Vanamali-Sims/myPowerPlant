@@ -114,14 +114,24 @@ export const NOT_SURE_VALUE = 'Not sure'
 const postcodeSuburbs: Record<string, string> = {
   '3000': 'Melbourne, VIC',
   '3002': 'East Melbourne, VIC',
+  '3030': 'Werribee, VIC',
   '3053': 'Carlton, VIC',
   '3065': 'Fitzroy, VIC',
   '3101': 'Kew, VIC',
   '3121': 'Richmond, VIC',
   '3124': 'Camberwell, VIC',
   '3141': 'South Yarra, VIC',
+  '3175': 'Dandenong, VIC',
   '3182': 'St Kilda, VIC',
   '3186': 'Brighton, VIC',
+  '3199': 'Frankston, VIC',
+  '3220': 'Geelong, VIC',
+  '3280': 'Warrnambool, VIC',
+  '3350': 'Ballarat, VIC',
+  '3500': 'Mildura, VIC',
+  '3550': 'Bendigo, VIC',
+  '3630': 'Shepparton, VIC',
+  '3844': 'Traralgon, VIC',
 }
 
 /**
@@ -129,7 +139,7 @@ const postcodeSuburbs: Record<string, string> = {
  * @param postcode - Four-digit Australian postcode
  * @returns “Suburb, VIC” when known, “VIC” for other Victorian codes, else empty
  *
- * Named inner-Melbourne suburbs are listed so the rail and dashboard can
+ * Named Victorian suburbs are listed so the rail and dashboard can
  * show a place. Other 3xxx/8xxx codes still resolve to the state label.
  */
 export function locationFromPostcode(postcode: string): string {
@@ -143,18 +153,64 @@ export type LatLon = { lat: number; lon: number }
 /** Melbourne CBD — the fallback point for the solar forecast lookup. */
 const MELBOURNE: LatLon = { lat: -37.8136, lon: 144.9631 }
 
-/** Approximate coordinates for the named inner-Melbourne suburbs above. */
+/** Approximate coordinates for the named Victorian suburbs above. */
 const postcodeCoords: Record<string, LatLon> = {
   '3000': { lat: -37.8136, lon: 144.9631 },
   '3002': { lat: -37.8159, lon: 144.9873 },
+  '3030': { lat: -37.9, lon: 144.661 },
   '3053': { lat: -37.8, lon: 144.967 },
   '3065': { lat: -37.8, lon: 144.978 },
   '3101': { lat: -37.806, lon: 145.031 },
   '3121': { lat: -37.819, lon: 144.999 },
   '3124': { lat: -37.842, lon: 145.058 },
   '3141': { lat: -37.838, lon: 144.993 },
+  '3175': { lat: -37.987, lon: 145.215 },
   '3182': { lat: -37.867, lon: 144.981 },
   '3186': { lat: -37.906, lon: 144.998 },
+  '3199': { lat: -38.141, lon: 145.123 },
+  '3220': { lat: -38.1499, lon: 144.3617 },
+  '3280': { lat: -38.381, lon: 142.488 },
+  '3350': { lat: -37.5622, lon: 143.8503 },
+  '3500': { lat: -34.1854, lon: 142.1625 },
+  '3550': { lat: -36.757, lon: 144.2794 },
+  '3630': { lat: -36.377, lon: 145.399 },
+  '3844': { lat: -38.195, lon: 146.54 },
+}
+
+const EARTH_RADIUS_KM = 6371
+
+function toRad(degrees: number): number {
+  return (degrees * Math.PI) / 180
+}
+
+function haversineKm(from: LatLon, to: LatLon): number {
+  const dLat = toRad(to.lat - from.lat)
+  const dLon = toRad(to.lon - from.lon)
+  const lat1 = toRad(from.lat)
+  const lat2 = toRad(to.lat)
+  const h =
+    Math.sin(dLat / 2) ** 2 + Math.cos(lat1) * Math.cos(lat2) * Math.sin(dLon / 2) ** 2
+  return EARTH_RADIUS_KM * 2 * Math.asin(Math.min(1, Math.sqrt(h)))
+}
+
+/**
+ * nearestMappedPostcode
+ * @param lat - Device latitude
+ * @param lon - Device longitude
+ * @param maxKm - Ignore mapped suburbs further than this
+ * @returns The closest mapped Victorian postcode, or null when none are close
+ *
+ * Runs entirely on-device. GPS is never sent to a geocoder.
+ */
+export function nearestMappedPostcode(lat: number, lon: number, maxKm: number): string | null {
+  const here: LatLon = { lat, lon }
+  let best: { postcode: string; km: number } | null = null
+  for (const [postcode, point] of Object.entries(postcodeCoords)) {
+    const km = haversineKm(here, point)
+    if (!best || km < best.km) best = { postcode, km }
+  }
+  if (!best || best.km > maxKm) return null
+  return best.postcode
 }
 
 /**

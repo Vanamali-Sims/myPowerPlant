@@ -45,7 +45,9 @@ function KindBadge({ kind }: { kind: ValueKind }) {
       ? 'kpi-badge kpi-badge--fact'
       : kind === 'sourced'
         ? 'kpi-badge kpi-badge--sourced'
-        : 'kpi-badge kpi-badge--estimate'
+        : kind === 'sample'
+          ? 'kpi-badge kpi-badge--sample'
+          : 'kpi-badge kpi-badge--estimate'
   return <span className={className}>{kindLabel(kind)}</span>
 }
 
@@ -162,7 +164,7 @@ export function DashboardView({ profile, onEditProfile, onLogoClick }: Props) {
       ) : null}
       {!bundle && !loadError ? (
         <p className="app-notice" role="status">
-          Loading published rates and appliance ratings…
+          Loading rates and appliance ratings…
         </p>
       ) : null}
 

@@ -22,7 +22,7 @@ import type {
 
 export type Timeframe = 'daily' | 'weekly' | 'fortnightly'
 
-export type ValueKind = 'estimate' | 'from_you' | 'sourced'
+export type ValueKind = 'estimate' | 'from_you' | 'sourced' | 'sample'
 
 export type ApplianceLine = {
   spec: ApplianceSpec
@@ -501,8 +501,8 @@ export function buildKpiReport(
     },
     {
       title: 'VPP credit',
-      detail: `Matched plan “${headline.plan.name}” credits $${headline.plan.exportRate.toFixed(2)} / kWh on energy sent to the grid. Standard feed-in without a VPP is about $${m.defaultFeedInRate.toFixed(2)}.`,
-      kind: 'sourced',
+      detail: `Matched plan “${headline.plan.name}” uses a sample export rate of $${headline.plan.exportRate.toFixed(2)} / kWh. These are CDR-shaped placeholders, not a live plan feed. Standard feed-in without a VPP is about $${m.defaultFeedInRate.toFixed(2)}.`,
+      kind: 'sample',
     },
     {
       title: 'Carbon avoided',
@@ -512,7 +512,7 @@ export function buildKpiReport(
     {
       title: 'Timeframes',
       detail: 'Daily = weekly ÷ 7. Weekly is the modelled week. Fortnightly = weekly × 2.',
-      kind: 'sourced',
+      kind: 'estimate',
     },
   ]
 

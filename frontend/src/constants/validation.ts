@@ -9,6 +9,32 @@ export const VIC_POSTCODE = /^[38]\d{3}$/
 
 export const DEFAULT_LOCATION_LABEL = 'VIC'
 
+/** Approximate mainland Victoria box used to reject GPS outside the state. */
+export const VIC_BOUNDS = {
+  latMin: -39.2,
+  latMax: -33.98,
+  lonMin: 140.96,
+  lonMax: 149.98,
+} as const
+
+/** Snap “use my location” to a mapped suburb only when GPS is this close. */
+export const GEO_MAX_MATCH_KM = 25
+
+/**
+ * isInVictoria
+ * @param lat - WGS84 latitude
+ * @param lon - WGS84 longitude
+ * @returns True when the point sits inside the mainland Victoria box
+ */
+export function isInVictoria(lat: number, lon: number): boolean {
+  return (
+    lat >= VIC_BOUNDS.latMin &&
+    lat <= VIC_BOUNDS.latMax &&
+    lon >= VIC_BOUNDS.lonMin &&
+    lon <= VIC_BOUNDS.lonMax
+  )
+}
+
 export const FIELD_BOUNDS = {
   monthlyBill: { min: 1, max: 5000, example: 180 },
   monthlyKwh: { min: 1, max: 5000, example: 540 },

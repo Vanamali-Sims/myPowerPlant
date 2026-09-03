@@ -3,6 +3,7 @@
  * from the frontend folder when changing the KPI model.
  */
 import { BASELINE_PROFILE } from '../data/baselines'
+import { nearestMappedPostcode } from '../data/profileOptions'
 import { emptyProfile, type ProfileData } from '../types/profile'
 import { buildKpiReport, scaleKwh, type KpiReport } from './kpis'
 import { seedMethodologyBundle } from './methodologyFixture'
@@ -140,6 +141,30 @@ const negativeBattery = buildKpiReport({ ...baseline, batteryUnits: -5 }, data, 
 assert(
   negativeBattery.weekly.savingsAud <= report.weekly.savingsAud + 0.05,
   'negative battery_units must not increase savings',
+)
+
+assert(
+  nearestMappedPostcode(-37.806, 145.031, 25) === '3101',
+  'Kew GPS should snap to 3101 on-device',
+)
+assert(
+  nearestMappedPostcode(-33.8688, 151.2093, 25) === null,
+  'Sydney GPS must not snap to a Victorian suburb',
+)
+assert(
+  nearestMappedPostcode(-37.56, 143.85, 25) === '3350',
+  'Ballarat GPS should snap to 3350 on-device',
+)
+
+const vppAssumption = report.assumptions.find((item) => item.title === 'VPP credit')
+assert(vppAssumption?.kind === 'sample', 'sample VPP rates must not be labelled sourced')
+assert(
+  vppAssumption?.detail.includes('placeholder'),
+  'VPP credit copy must say the rates are placeholders',
+)
+assert(
+  report.assumptions.find((item) => item.title === 'Timeframes')?.kind === 'estimate',
+  'timeframe arithmetic is not sourced plan terms',
 )
 
 console.log('kpi self-test passed', {

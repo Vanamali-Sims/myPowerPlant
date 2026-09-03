@@ -64,7 +64,7 @@ export function LocationControl({ postcode, onPostcodeChange }: Props) {
           onClick={() => void locateMe()}
           disabled={locating}
           aria-label="Use my location"
-          title="Use my location"
+          title="Use my location (stays on this device)"
         >
           <PinIcon width={14} height={14} />
         </button>

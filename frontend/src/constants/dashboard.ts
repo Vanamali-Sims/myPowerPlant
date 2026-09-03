@@ -16,4 +16,5 @@ export const KIND_LABELS: Record<ValueKind, string> = {
   from_you: 'From you',
   sourced: 'Sourced terms',
   estimate: 'Estimate',
+  sample: 'Sample terms',
 }
