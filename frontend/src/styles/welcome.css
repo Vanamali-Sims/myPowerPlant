@@ -9,11 +9,21 @@
 
 .band {
   width: 100%;
-  background: var(--color-bg);
+  background: var(--canvas);
 }
 
-.band--tint {
-  background: var(--color-accent-soft);
+.band--deep {
+  background: var(--surface-deep);
+  color: var(--on-deep);
+}
+
+.band--deep h1,
+.band--deep h2 {
+  color: var(--on-deep);
+}
+
+.band--deep .eyebrow {
+  color: var(--on-deep-muted);
 }
 
 .band__inner {
@@ -43,8 +53,13 @@
 
 .hero__lede {
   margin: 0;
-  color: var(--color-text-secondary);
+  color: var(--ink-secondary);
   font-size: 1rem;
+}
+
+.band--deep .hero__lede,
+.band--deep .mission__copy p {
+  color: var(--on-deep);
 }
 
 .hero__actions {
@@ -61,6 +76,11 @@
   padding-right: 1.75rem;
 }
 
+.band--deep .ui-btn--ghost {
+  color: var(--on-deep);
+  text-decoration-color: var(--euc-400);
+}
+
 .hero__art,
 .mission__art {
   display: flex;
@@ -73,8 +93,8 @@
   width: 11rem;
   height: 11rem;
   border-radius: 50%;
-  background: var(--color-surface);
-  border: 1px solid var(--color-accent-outline);
+  background: var(--euc-800);
+  border: 1px solid var(--euc-400);
   display: grid;
   place-items: center;
 }
@@ -83,8 +103,8 @@
   width: 5.5rem;
   height: 5.5rem;
   border-radius: 50%;
-  background: var(--color-accent-soft);
-  color: var(--color-accent);
+  background: transparent;
+  color: var(--on-deep);
   display: grid;
   place-items: center;
 }
@@ -94,15 +114,16 @@
   width: 3rem;
   height: 3rem;
   border-radius: 50%;
-  background: var(--color-sidebar);
-  color: var(--color-surface);
+  background: var(--terra-600);
+  color: var(--on-primary);
   display: grid;
   place-items: center;
-  border: 3px solid var(--color-bg);
+  border: 3px solid var(--surface-deep);
 }
 
-.band--tint .icon-cluster__badge {
-  border-color: var(--color-accent-soft);
+.mission .icon-cluster__badge--bottom {
+  background: var(--euc-400);
+  color: var(--on-primary);
 }
 
 .icon-cluster__badge--top {
@@ -132,13 +153,13 @@
   font-family: var(--font-body);
   font-size: 1rem;
   font-weight: 700;
-  color: var(--color-text-primary);
+  color: var(--ink);
 }
 
 .text-point__desc {
   margin: 0.3rem 0 0;
   font-size: 0.9rem;
-  color: var(--color-text-secondary);
+  color: var(--ink-secondary);
   max-width: 42rem;
 }
 
@@ -168,8 +189,8 @@
   flex-direction: column;
   align-items: flex-start;
   gap: 0.4rem;
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
+  background: var(--surface);
+  border: 0.5px solid var(--border);
   border-radius: var(--radius-card);
   padding: 1.25rem 1.25rem 1.4rem;
   text-align: left;
@@ -188,21 +209,21 @@
   font-family: var(--font-body);
   font-size: 1rem;
   font-weight: 700;
-  color: var(--color-text-primary);
+  color: var(--ink);
 }
 
 .article-card p {
   margin: 0;
   font-size: 0.85rem;
-  color: var(--color-text-secondary);
+  color: var(--ink-secondary);
 }
 
 .feature-card__icon {
   width: 2.4rem;
   height: 2.4rem;
   border-radius: 0.6rem;
-  background: var(--color-accent);
-  color: var(--color-surface);
+  background: var(--euc-600);
+  color: var(--on-primary);
   display: grid;
   place-items: center;
 }
@@ -210,22 +231,22 @@
 .feature-card__desc {
   margin: 0;
   font-size: 0.88rem;
-  color: var(--color-text-secondary);
+  color: var(--ink-secondary);
 }
 
 .article-card__source {
   margin-top: 0.3rem;
   font-size: 0.75rem;
   font-weight: 600;
-  color: var(--color-accent);
+  color: var(--euc-600);
 }
 
 .article-card:hover {
-  border-color: var(--color-accent-outline);
+  border-color: var(--border-strong);
 }
 
 .article-card:focus-visible {
-  outline: 2px solid var(--color-accent);
+  outline: 2px solid var(--focus-ring);
   outline-offset: 2px;
 }
 
@@ -240,13 +261,13 @@
 }
 
 .status-pill--available {
-  background: var(--color-success-bg);
-  color: var(--color-success-text);
+  background: var(--euc-50);
+  color: var(--euc-800);
 }
 
 .status-pill--soon {
-  background: var(--color-muted);
-  color: var(--color-text-secondary);
+  background: var(--surface-sunken);
+  color: var(--ink-secondary);
 }
 
 /* Mission */
@@ -269,7 +290,7 @@
 
 .mission__copy p {
   margin: 0;
-  color: var(--color-text-secondary);
+  color: var(--ink-secondary);
 }
 
 /* How it works */
@@ -297,8 +318,8 @@
   width: 2.6rem;
   height: 2.6rem;
   border-radius: 50%;
-  background: var(--color-accent);
-  color: var(--color-surface);
+  background: var(--euc-600);
+  color: var(--on-primary);
   display: grid;
   place-items: center;
   font-family: var(--font-display);
@@ -316,7 +337,7 @@
 .step p {
   margin: 0;
   font-size: 0.85rem;
-  color: var(--color-text-secondary);
+  color: var(--ink-secondary);
   max-width: 22rem;
 }
 

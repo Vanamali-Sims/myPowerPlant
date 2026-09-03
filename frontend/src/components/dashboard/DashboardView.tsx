@@ -118,6 +118,7 @@ export function DashboardView({ profile, onEditProfile, onLogoClick }: Props) {
             kind: report.consumptionKind,
             icon: BoltIcon,
             note: '',
+            signed: undefined,
           },
           {
             eyebrow:
@@ -135,6 +136,12 @@ export function DashboardView({ profile, onEditProfile, onLogoClick }: Props) {
                 ? ('unavailable' as ValueKind)
                 : ('estimate' as ValueKind),
             icon: BulbIcon,
+            signed:
+              weekly.netEnergyValueAud == null
+                ? undefined
+                : weekly.netEnergyValueAud >= 0
+                  ? 'surplus'
+                  : 'deficit',
             note:
               weekly.netEnergyValueAud == null
                 ? 'Add your monthly bill and kWh on your profile. We do not fill in a typical tariff.'
@@ -148,6 +155,7 @@ export function DashboardView({ profile, onEditProfile, onLogoClick }: Props) {
             kind: 'estimate' as ValueKind,
             icon: LeafIcon,
             note: '',
+            signed: undefined,
           },
         ]
       : []
@@ -207,7 +215,13 @@ export function DashboardView({ profile, onEditProfile, onLogoClick }: Props) {
                 <Icon />
               </span>
               <p className="eyebrow">{card.eyebrow}</p>
-              <p className="kpi-card__value">
+              <p
+                className={
+                  card.signed
+                    ? `kpi-card__value kpi-card__value--${card.signed}`
+                    : 'kpi-card__value'
+                }
+              >
                 {card.value}
                 <KindBadge kind={card.kind} />
               </p>

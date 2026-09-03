@@ -145,7 +145,16 @@ export function SolarForecastChart({ inputs, view, isPotential, placeLabel }: Pr
 
             {points.map((point, index) => (
               <g key={`${point.label}-${index}`}>
-                <circle cx={geometry.xs[index]} cy={geometry.ys[index]} r="2.5" className="forecast__dot">
+                <circle
+                  cx={geometry.xs[index]}
+                  cy={geometry.ys[index]}
+                  r="2.5"
+                  className={
+                    point.label === peak.label && point.kwh === peak.kwh
+                      ? 'forecast__dot forecast__dot--peak'
+                      : 'forecast__dot'
+                  }
+                >
                   <title>
                     {point.label}: {formatKwh(point.kwh)}
                   </title>
@@ -163,7 +172,7 @@ export function SolarForecastChart({ inputs, view, isPotential, placeLabel }: Pr
             <span>
               <strong>{formatKwh(total)}</strong> forecast {view === 'daily' ? 'today' : `over ${points.length} days`}
             </span>
-            <span>
+            <span className="forecast__peak">
               Peak {peak.label ? `${peak.label} · ` : ''}
               {formatKwh(peak.kwh)}
             </span>

@@ -9,22 +9,15 @@ type Props = {
   timeframe: Timeframe
 }
 
-/**
- * Warm, on-brand ramp built from the theme tokens (sidebar dark, amber, sage,
- * and their tints) so many appliance slices stay distinguishable without
- * introducing a second palette.
- */
+/** Alternate eucalypt / terracotta families, descending share order. */
 const SLICE_COLORS = [
-  '#1B1B1B',
-  '#E38B4A',
-  '#2F5D46',
-  '#C9772F',
-  '#8FB09B',
-  '#6B6B6B',
+  'var(--chart-1)',
+  'var(--chart-2)',
+  'var(--chart-3)',
+  'var(--chart-4)',
+  'var(--chart-5)',
+  'var(--chart-6)',
 ]
-
-/** Neutral tone for the grouped "Other" slice. */
-const OTHER_COLOR = '#CDC6B7'
 
 /** Show at most this many named slices; the rest fold into "Other". */
 const MAX_SLICES = 6
@@ -80,7 +73,7 @@ export function ConsumptionDonut({ appliances, timeframe }: Props) {
         return {
           ...line,
           fraction,
-          color: line.id === 'other' ? OTHER_COLOR : SLICE_COLORS[index % SLICE_COLORS.length],
+          color: SLICE_COLORS[index % SLICE_COLORS.length],
           dash: fraction * CIRCUMFERENCE,
           gap: CIRCUMFERENCE - fraction * CIRCUMFERENCE,
           dashOffset: -priorFraction * CIRCUMFERENCE,

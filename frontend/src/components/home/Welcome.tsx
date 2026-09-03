@@ -56,7 +56,7 @@ export function Welcome({ hasProfile, onGetStarted, onViewDashboard, onLogoClick
         MyPowerPlant
       </button>
 
-      <section className="band band--tint">
+      <section className="band band--deep">
         <div className="band__inner hero">
           <div className="hero__copy">
             <p className="eyebrow">For homes with solar and battery</p>
@@ -138,7 +138,7 @@ export function Welcome({ hasProfile, onGetStarted, onViewDashboard, onLogoClick
         </div>
       </section>
 
-      <section className="band band--tint">
+      <section className="band band--deep">
         <div className="band__inner mission">
           <div className="mission__art" aria-hidden="true">
             <div className="icon-cluster">
@@ -184,7 +184,7 @@ export function Welcome({ hasProfile, onGetStarted, onViewDashboard, onLogoClick
         </div>
       </section>
 
-      <section className="band band--tint">
+      <section className="band">
         <div className="band__inner">
           <h2>A worked example: Matt, in Kew VIC</h2>
           <div className="text-points">
