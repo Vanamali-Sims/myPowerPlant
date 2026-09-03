@@ -111,6 +111,34 @@ export const energyProviders = [
 export const OTHER_VALUE = 'Other'
 export const NOT_SURE_VALUE = 'Not sure'
 
+const ALLOWED_BATTERY_MODELS: readonly string[] = [...batteryModels, NOT_SURE_VALUE]
+const ALLOWED_PROVIDERS: readonly string[] = [
+  ...energyProviders,
+  OTHER_VALUE,
+  NOT_SURE_VALUE,
+]
+
+/**
+ * isAllowedBatteryModel
+ * @param value - Stored or typed battery model
+ * @returns True when the value is in the catalogue or Not sure
+ *
+ * SearchSelect and localStorage sanitise to this list so a script payload
+ * cannot persist as batteryModel.
+ */
+export function isAllowedBatteryModel(value: string): boolean {
+  return ALLOWED_BATTERY_MODELS.includes(value)
+}
+
+/**
+ * isAllowedProvider
+ * @param value - Stored or typed electricity retailer
+ * @returns True when the value is a listed retailer, Other, or Not sure
+ */
+export function isAllowedProvider(value: string): boolean {
+  return ALLOWED_PROVIDERS.includes(value)
+}
+
 const postcodeSuburbs: Record<string, string> = {
   '3000': 'Melbourne, VIC',
   '3002': 'East Melbourne, VIC',

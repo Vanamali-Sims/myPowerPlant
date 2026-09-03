@@ -51,6 +51,7 @@ export function SolarDetailsStep({ profile, errors, onChange }: Props) {
             label="How many solar panels do you have?"
             placeholder="Enter number"
             inputMode="numeric"
+            numeric="integer"
             suffix="panels"
             value={profile.panelCount}
             onChange={(event) => onChange('panelCount', event.target.value)}
@@ -61,6 +62,7 @@ export function SolarDetailsStep({ profile, errors, onChange }: Props) {
             label="What is the average power rating of each panel?"
             placeholder="Enter power rating"
             inputMode="numeric"
+            numeric="integer"
             suffix="W (watts)"
             value={profile.panelWatts}
             onChange={(event) => onChange('panelWatts', event.target.value)}

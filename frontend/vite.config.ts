@@ -1,7 +1,7 @@
-import { defineConfig, loadEnv, type Plugin, type ViteDevServer } from 'vite'
+import { defineConfig, loadEnv, type Plugin, type PreviewServer, type ViteDevServer } from 'vite'
 import react from '@vitejs/plugin-react'
 
-function applyHeaders(server: ViteDevServer, csp: string) {
+function applyHeaders(server: ViteDevServer | PreviewServer, csp: string) {
   server.middlewares.use((_req, res, next) => {
     res.setHeader('X-Content-Type-Options', 'nosniff')
     res.setHeader('X-Frame-Options', 'DENY')

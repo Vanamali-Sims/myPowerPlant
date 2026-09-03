@@ -9,6 +9,7 @@ import {
   FIELD_BOUNDS,
   clampNumber,
 } from '../constants/validation'
+import { isAllowedBatteryModel, isAllowedProvider } from '../data/profileOptions'
 import { emptyProfile, type FieldSource, type ProfileData } from '../types/profile'
 
 const CONTROL_CHARS = /[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/g
@@ -108,6 +109,8 @@ function sanitiseProfile(parsed: Partial<ProfileData>): ProfileData {
   }
 
   next.batteryUnits = sanitiseBatteryUnits(parsed.batteryUnits)
+  next.batteryModel = isAllowedBatteryModel(next.batteryModel) ? next.batteryModel : ''
+  next.provider = isAllowedProvider(next.provider) ? next.provider : ''
   next.fieldSources = sanitiseFieldSources(parsed.fieldSources)
   next.lastUpdated = sanitiseLastUpdated(parsed.lastUpdated)
   return next

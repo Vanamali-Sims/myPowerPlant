@@ -27,7 +27,7 @@ type Props = {
  * @returns JSX.Element
  *
  * Usage-level icons are mapped here because they are presentation, not data.
- * Bill and kWh stay free text so the user can copy figures from a statement.
+ * Bill and kWh accept digits (and a decimal) only so letters cannot be typed first.
  */
 export function HouseholdUsageStep({ profile, errors, onChange }: Props) {
   return (
@@ -36,6 +36,7 @@ export function HouseholdUsageStep({ profile, errors, onChange }: Props) {
         label="Average monthly electricity bill?"
         placeholder="Enter amount"
         inputMode="decimal"
+        numeric="decimal"
         prefix="$"
         suffix="AUD"
         value={profile.monthlyBill}
@@ -46,6 +47,7 @@ export function HouseholdUsageStep({ profile, errors, onChange }: Props) {
         label="How much electricity do you use?"
         placeholder="Enter amount"
         inputMode="decimal"
+        numeric="decimal"
         suffix="kWh"
         value={profile.monthlyKwh}
         onChange={(event) => onChange('monthlyKwh', event.target.value)}

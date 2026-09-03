@@ -5,12 +5,7 @@
  * form UI and this file cannot drift apart.
  */
 import { FIELD_BOUNDS, VIC_POSTCODE } from '../constants/validation'
-import {
-  batteryModels,
-  energyProviders,
-  NOT_SURE_VALUE,
-  OTHER_VALUE,
-} from '../data/profileOptions'
+import { isAllowedBatteryModel, isAllowedProvider } from '../data/profileOptions'
 import type { ProfileData, SetupStepId } from '../types/profile'
 
 export type FieldErrors = Partial<Record<keyof ProfileData, string>>
@@ -241,10 +236,7 @@ export function validateStep(
     }
     if (!profile.batteryModel.trim()) {
       errors.batteryModel = 'Please select a model from the list, or choose Not sure.'
-    } else if (
-      profile.batteryModel !== NOT_SURE_VALUE &&
-      !batteryModels.includes(profile.batteryModel)
-    ) {
+    } else if (!isAllowedBatteryModel(profile.batteryModel)) {
       errors.batteryModel =
         'Battery model not found. Please select a model from the list. If you can’t find your model, choose “Not sure”.'
     }
@@ -253,11 +245,7 @@ export function validateStep(
   if (step === 'provider') {
     if (!profile.provider.trim()) {
       errors.provider = 'Please select your electricity provider, or choose Not sure.'
-    } else if (
-      profile.provider !== NOT_SURE_VALUE &&
-      profile.provider !== OTHER_VALUE &&
-      !energyProviders.includes(profile.provider)
-    ) {
+    } else if (!isAllowedProvider(profile.provider)) {
       errors.provider = 'Please select a provider from the list, or choose Not sure.'
     }
   }

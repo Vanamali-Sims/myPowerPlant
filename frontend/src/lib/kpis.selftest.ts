@@ -10,7 +10,7 @@ import { seedMethodologyBundle } from './methodologyFixture'
 import { currentSeason } from './season'
 import { buildTypicalDay, leftoverHours } from './typicalDay'
 
-function assert(condition: unknown, message: string) {
+function assert(condition: unknown, message: string): asserts condition {
   if (!condition) throw new Error(message)
 }
 
@@ -61,6 +61,8 @@ assert(!report.appliances.some((line) => line.spec.id === 'waterHeater'), 'gas h
 assert(report.currentPlan?.plan.brand === 'AGL Energy', 'current provider should match AGL')
 assert(report.matchedPlans.length >= 1, 'at least one matched plan')
 assert(report.recommended.weeklySavings > 0, 'recommended plan should have a savings figure')
+assert(report.weekly.savingsAud != null, 'baseline bill figures should produce a dollar amount')
+assert(report.weekly.netEnergyValueAud != null, 'baseline bill figures should produce a net energy value')
 assert(
   almostEqual(scaleKwh(report.weekly.consumptionKwh, 'daily'), report.weekly.consumptionKwh / 7),
   'daily = weekly / 7',
@@ -133,11 +135,16 @@ const atMaxBattery: ProfileData = { ...baseline, batteryUnits: 8 }
 const absurdBattery: ProfileData = { ...baseline, batteryUnits: 999 }
 const atMaxSavings = buildKpiReport(atMaxBattery, data, JAN).weekly.savingsAud
 const absurdSavings = buildKpiReport(absurdBattery, data, JAN).weekly.savingsAud
+assert(atMaxSavings != null && absurdSavings != null, 'priced profiles should keep dollar savings')
 assert(
   almostEqual(absurdSavings, atMaxSavings),
   'battery_units above the form max must not inflate savings',
 )
 const negativeBattery = buildKpiReport({ ...baseline, batteryUnits: -5 }, data, JAN)
+assert(
+  report.weekly.savingsAud != null && negativeBattery.weekly.savingsAud != null,
+  'priced battery cases should keep dollar savings',
+)
 assert(
   negativeBattery.weekly.savingsAud <= report.weekly.savingsAud + 0.05,
   'negative battery_units must not increase savings',
@@ -167,12 +174,37 @@ assert(
   'timeframe arithmetic is not sourced plan terms',
 )
 
+const noTariff = buildKpiReport({ ...baseline, monthlyBill: '', monthlyKwh: '' }, data, SEP)
+assert(noTariff.retailRate === null, 'missing bill figures must not invent a retail rate')
+assert(noTariff.retailRateKind === 'unavailable', 'missing tariff is unavailable, not an estimate')
+assert(noTariff.weekly.savingsAud === null, 'dollar savings must not use a default tariff')
+assert(noTariff.weekly.netEnergyValueAud === null, 'net energy value must not use a default tariff')
+const retailAssumption = noTariff.assumptions.find((item) => item.title === 'Retail electricity rate')
+assert(retailAssumption?.kind === 'unavailable', 'transparency row must say unavailable')
+assert(
+  !retailAssumption?.detail.includes('0.32'),
+  'transparency must not quote the default 0.32 retail rate',
+)
+
+const injected: ProfileData = {
+  ...baseline,
+  batteryModel: '<script>alert(1)</script>',
+  provider: '<img src=x onerror=alert(1)>',
+}
+const injectedReport = buildKpiReport(injected, data, JAN)
+assert(injectedReport.currentPlan === null, 'a script payload must not match a current VPP brand')
+assert(
+  !JSON.stringify(injectedReport).includes('<script>') &&
+    !JSON.stringify(injectedReport).includes('onerror'),
+  'user-controlled battery/provider text must not be echoed into the KPI report',
+)
+
 console.log('kpi self-test passed', {
   seasonToday: currentSeason(),
   weeklyKwh: report.weekly.consumptionKwh.toFixed(1),
   modelledWeeklyKwh: modelled.weekly.consumptionKwh.toFixed(1),
   generation: report.weekly.generationKwh.toFixed(1),
-  savings: report.weekly.savingsAud.toFixed(2),
+  savings: report.weekly.savingsAud?.toFixed(2),
   distributed: report.weekly.energyDistributedKwh.toFixed(1),
   carbonKg: report.weekly.carbonAvoidedKg.toFixed(1),
   leftoverWindowHours: leftoverHours(day).length,

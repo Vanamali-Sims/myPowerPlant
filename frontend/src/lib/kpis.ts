@@ -22,7 +22,7 @@ import type {
 
 export type Timeframe = 'daily' | 'weekly' | 'fortnightly'
 
-export type ValueKind = 'estimate' | 'from_you' | 'sourced' | 'sample'
+export type ValueKind = 'estimate' | 'from_you' | 'sourced' | 'sample' | 'unavailable'
 
 export type ApplianceLine = {
   spec: ApplianceSpec
@@ -61,7 +61,7 @@ export type KpiReport = {
   hasSolar: boolean
   solarIsPotential: boolean
   consumptionKind: ValueKind
-  retailRate: number
+  retailRate: number | null
   retailRateKind: ValueKind
   weekly: {
     consumptionKwh: number
@@ -69,9 +69,10 @@ export type KpiReport = {
     selfConsumedKwh: number
     surplusKwh: number
     energyDistributedKwh: number
-    savingsAud: number
-    /** (generation − consumption) × retail rate. Negative when the home uses more than it makes. */
-    netEnergyValueAud: number
+    /** Null when no retail tariff could be sourced (R4 / §8.2). */
+    savingsAud: number | null
+    /** (generation − consumption) × retail rate. Null without a tariff. */
+    netEnergyValueAud: number | null
     carbonAvoidedKg: number
   }
   appliances: ApplianceLine[]
@@ -317,8 +318,7 @@ function batteryUsableKwh(profile: ProfileData, data: MethodologyBundle): number
 
 function retailRate(
   profile: ProfileData,
-  data: MethodologyBundle,
-): { rate: number; kind: ValueKind } {
+): { rate: number | null; kind: ValueKind } {
   const rawBill = Number.parseFloat(profile.monthlyBill)
   const rawKwh = Number.parseFloat(profile.monthlyKwh)
   const bill = clampNumber(rawBill, FIELD_BOUNDS.monthlyBill.min, FIELD_BOUNDS.monthlyBill.max)
@@ -332,11 +332,14 @@ function retailRate(
           : 'estimate',
     }
   }
-  return { rate: data.methodology.defaultRetailRate, kind: 'estimate' }
+  // R4 / §8.2: a missing tariff is unavailable — never a typical Victorian rate.
+  return { rate: null, kind: 'unavailable' }
 }
 
 function compatiblePlans(profile: ProfileData, data: MethodologyBundle): VppPlan[] {
-  const model = profile.batteryModel
+  const model = data.batteryModels.some((row) => row.name === profile.batteryModel)
+    ? profile.batteryModel
+    : ''
   const matches = data.vppPlans.filter(
     (plan) => !model || plan.compatibleBatteries.includes(model),
   )
@@ -427,13 +430,20 @@ export function buildKpiReport(
   const energyDistributed = Math.max(0, generationWeekly - selfConsumed)
   const surplus = Math.max(0, generationWeekly - consumptionWeekly)
 
-  const { rate, kind: retailRateKind } = retailRate(profile, data)
+  const { rate, kind: retailRateKind } = retailRate(profile)
   const plans = compatiblePlans(profile, data)
-  const currentBrand = profile.provider
+  const knownBrands = new Set(data.vppPlans.map((plan) => plan.brand))
+  const currentBrand = knownBrands.has(profile.provider) ? profile.provider : ''
+  const pricedRate = rate ?? 0
   const comparisons: PlanComparison[] = plans
     .map((plan) => ({
       plan,
-      weeklySavings: weeklySavingsFrom(selfConsumed, energyDistributed, rate, plan.exportRate),
+      weeklySavings: weeklySavingsFrom(
+        selfConsumed,
+        energyDistributed,
+        pricedRate,
+        plan.exportRate,
+      ),
       isCurrent: Boolean(currentBrand) && plan.brand === currentBrand,
       isRecommended: false,
     }))
@@ -453,8 +463,9 @@ export function buildKpiReport(
 
   const headline = matchedPlans.find((item) => item.isRecommended) ?? recommended
   // Headline savings shown on the card: value of what you make against what you
-  // use, at your retail rate. Negative means the home draws more than it makes.
-  const netEnergyValueAud = (generationWeekly - consumptionWeekly) * rate
+  // use, at your retail rate. Absent when R4 forbids substituting a tariff.
+  const netEnergyValueAud =
+    rate == null ? null : (generationWeekly - consumptionWeekly) * rate
   const carbonAvoidedKg = energyDistributed * data.methodology.vicGridKgCo2PerKwh
   const place = locationFromPostcode(profile.postcode)
   const m = data.methodology
@@ -494,9 +505,11 @@ export function buildKpiReport(
     {
       title: 'Retail electricity rate',
       detail:
-        retailRateKind === 'from_you'
-          ? `Taken from your monthly bill ÷ monthly kWh ($${rate.toFixed(2)} / kWh).`
-          : `No complete bill figures, so we used a typical Victorian retail rate of $${m.defaultRetailRate.toFixed(2)} / kWh.`,
+        rate == null
+          ? 'No complete bill figures were saved, so the retail rate is unavailable. Dollar figures are not filled in with a typical Victorian tariff.'
+          : retailRateKind === 'from_you'
+            ? `Taken from your monthly bill ÷ monthly kWh ($${rate.toFixed(2)} / kWh).`
+            : `Taken from the saved monthly bill ÷ monthly kWh ($${rate.toFixed(2)} / kWh).`,
       kind: retailRateKind,
     },
     {
@@ -530,7 +543,7 @@ export function buildKpiReport(
       selfConsumedKwh: selfConsumed,
       surplusKwh: surplus,
       energyDistributedKwh: energyDistributed,
-      savingsAud: headline.weeklySavings,
+      savingsAud: rate == null ? null : headline.weeklySavings,
       netEnergyValueAud,
       carbonAvoidedKg,
     },

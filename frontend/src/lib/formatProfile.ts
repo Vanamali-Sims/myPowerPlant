@@ -4,6 +4,8 @@
 import {
   coolingOptions,
   heatingOptions,
+  isAllowedBatteryModel,
+  isAllowedProvider,
   NOT_SURE_VALUE,
   peakPeriodOptions,
   usageLevelOptions,
@@ -81,6 +83,10 @@ export function displayValue(
       return value ? `${value}%` : '—'
     case 'batteryAge':
       return value ? `${value} years` : '—'
+    case 'batteryModel':
+      return typeof value === 'string' && isAllowedBatteryModel(value) ? value : '—'
+    case 'provider':
+      return typeof value === 'string' && isAllowedProvider(value) ? value : '—'
     case 'tvHoursPerWeek':
     case 'airconHoursPerWeek':
       return value ? `${value} hrs / week` : 'Typical estimate used'

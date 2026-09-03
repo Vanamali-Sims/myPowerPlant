@@ -39,16 +39,16 @@ function kindLabel(kind: ValueKind): string {
   return KIND_LABELS[kind]
 }
 
+function kindClass(kind: ValueKind): string {
+  if (kind === 'from_you') return 'kpi-badge kpi-badge--fact'
+  if (kind === 'sourced') return 'kpi-badge kpi-badge--sourced'
+  if (kind === 'sample') return 'kpi-badge kpi-badge--sample'
+  if (kind === 'unavailable') return 'kpi-badge kpi-badge--unavailable'
+  return 'kpi-badge kpi-badge--estimate'
+}
+
 function KindBadge({ kind }: { kind: ValueKind }) {
-  const className =
-    kind === 'from_you'
-      ? 'kpi-badge kpi-badge--fact'
-      : kind === 'sourced'
-        ? 'kpi-badge kpi-badge--sourced'
-        : kind === 'sample'
-          ? 'kpi-badge kpi-badge--sample'
-          : 'kpi-badge kpi-badge--estimate'
-  return <span className={className}>{kindLabel(kind)}</span>
+  return <span className={kindClass(kind)}>{kindLabel(kind)}</span>
 }
 
 /**
@@ -120,12 +120,27 @@ export function DashboardView({ profile, onEditProfile, onLogoClick }: Props) {
             note: '',
           },
           {
-            eyebrow: weekly.netEnergyValueAud >= 0 ? 'Estimated savings' : 'Net energy cost',
-            value: formatAud(scaleAud(weekly.netEnergyValueAud, timeframe)),
-            kind: 'estimate' as ValueKind,
+            eyebrow:
+              weekly.netEnergyValueAud == null
+                ? 'Estimated savings'
+                : weekly.netEnergyValueAud >= 0
+                  ? 'Estimated savings'
+                  : 'Net energy cost',
+            value:
+              weekly.netEnergyValueAud == null
+                ? 'Unavailable'
+                : formatAud(scaleAud(weekly.netEnergyValueAud, timeframe)),
+            kind:
+              weekly.netEnergyValueAud == null
+                ? ('unavailable' as ValueKind)
+                : ('estimate' as ValueKind),
             icon: BulbIcon,
             note:
-              weekly.netEnergyValueAud >= 0 ? '' : 'Home uses more than it makes',
+              weekly.netEnergyValueAud == null
+                ? 'Add your monthly bill and kWh on your profile. We do not fill in a typical tariff.'
+                : weekly.netEnergyValueAud >= 0
+                  ? ''
+                  : 'Home uses more than it makes',
           },
           {
             eyebrow: 'Carbon avoided',
