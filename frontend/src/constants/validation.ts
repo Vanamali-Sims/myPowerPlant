@@ -31,3 +31,15 @@ export const FIELD_BOUNDS = {
 
 export const DEFAULT_BATTERY_UNITS = FIELD_BOUNDS.batteryUnits.min
 export const DEFAULT_RESERVE_PERCENT = String(FIELD_BOUNDS.reservePercent.example)
+
+/**
+ * clampNumber
+ * @param value - Candidate number, possibly NaN or infinite
+ * @param min - Inclusive lower bound
+ * @param max - Inclusive upper bound
+ * @returns value pinned into [min, max], or min when the input is not finite
+ */
+export function clampNumber(value: number, min: number, max: number): number {
+  if (!Number.isFinite(value)) return min
+  return Math.min(Math.max(value, min), max)
+}

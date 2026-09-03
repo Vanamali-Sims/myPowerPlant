@@ -70,3 +70,15 @@ variable "neon_database_url" {
   type        = string
   sensitive   = true
 }
+
+variable "api_throttling_rate_limit" {
+  description = "API Gateway steady-state requests per second (R13 denial-of-wallet cap)."
+  type        = number
+  default     = 10
+}
+
+variable "api_throttling_burst_limit" {
+  description = "API Gateway token-bucket burst above the steady-state rate."
+  type        = number
+  default     = 40
+}

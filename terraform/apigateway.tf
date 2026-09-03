@@ -23,6 +23,13 @@ resource "aws_apigatewayv2_stage" "backend" {
   api_id      = aws_apigatewayv2_api.backend.id
   name        = "$default"
   auto_deploy = true
+
+  # Wallet cap for unauthenticated GETs (health + methodology). HTTP APIs
+  # have no WAF on the free path; this is the account-level throttle.
+  default_route_settings {
+    throttling_rate_limit  = var.api_throttling_rate_limit
+    throttling_burst_limit = var.api_throttling_burst_limit
+  }
 }
 
 resource "aws_lambda_permission" "apigateway" {

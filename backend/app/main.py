@@ -16,6 +16,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from mangum import Mangum
 
 from app.db import engine
+from app.rate_limit import RateLimitMiddleware
 from app.routes import health, methodology
 
 load_dotenv()
@@ -72,6 +73,7 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+app.add_middleware(RateLimitMiddleware)
 
 app.include_router(health.router, prefix="/api")
 app.include_router(methodology.router, prefix="/api")

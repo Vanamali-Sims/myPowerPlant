@@ -28,7 +28,7 @@ type Props = {
 /**
  * ProfileView
  * @param props.profile - Last saved household answers
- * @param props.onSave - Persist edits to localStorage and the server
+ * @param props.onSave - Persist edits to localStorage
  * @returns JSX.Element
  *
  * One section can be edited at a time using the same step components as setup.

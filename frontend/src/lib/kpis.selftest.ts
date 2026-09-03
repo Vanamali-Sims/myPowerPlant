@@ -128,6 +128,20 @@ const edited: ProfileData = { ...baseline, monthlyKwh: '800' }
 const updated = buildKpiReport(edited, data, JAN)
 assert(updated.weekly.consumptionKwh > report.weekly.consumptionKwh, 'editing usage should change the report')
 
+const atMaxBattery: ProfileData = { ...baseline, batteryUnits: 8 }
+const absurdBattery: ProfileData = { ...baseline, batteryUnits: 999 }
+const atMaxSavings = buildKpiReport(atMaxBattery, data, JAN).weekly.savingsAud
+const absurdSavings = buildKpiReport(absurdBattery, data, JAN).weekly.savingsAud
+assert(
+  almostEqual(absurdSavings, atMaxSavings),
+  'battery_units above the form max must not inflate savings',
+)
+const negativeBattery = buildKpiReport({ ...baseline, batteryUnits: -5 }, data, JAN)
+assert(
+  negativeBattery.weekly.savingsAud <= report.weekly.savingsAud + 0.05,
+  'negative battery_units must not increase savings',
+)
+
 console.log('kpi self-test passed', {
   seasonToday: currentSeason(),
   weeklyKwh: report.weekly.consumptionKwh.toFixed(1),
