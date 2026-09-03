@@ -16,7 +16,9 @@ from fastapi.middleware.cors import CORSMiddleware
 from mangum import Mangum
 
 from app.db import engine
+from app.rate_limit import RateLimitMiddleware
 from app.routes import health, methodology
+from app.security_headers import SecurityHeadersMiddleware
 
 load_dotenv()
 
@@ -64,14 +66,20 @@ async def lifespan(_app: FastAPI):
 
 app = FastAPI(title="Form API", lifespan=lifespan)
 
+# Innermost first. Last add_middleware call is outermost on the request.
+# Rate limit stays inside CORS so OPTIONS preflight is not counted and 429
+# still gets Access-Control-Allow-Origin. Security headers wrap everything.
+app.add_middleware(RateLimitMiddleware)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=CORS_ORIGINS,
     allow_origin_regex=CORS_ORIGIN_REGEX,
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    # No cookies, sessions, or Authorization header — do not advertise credentials.
+    allow_credentials=False,
+    allow_methods=["GET", "HEAD", "OPTIONS"],
+    allow_headers=["Accept", "Content-Type"],
 )
+app.add_middleware(SecurityHeadersMiddleware)
 
 app.include_router(health.router, prefix="/api")
 app.include_router(methodology.router, prefix="/api")

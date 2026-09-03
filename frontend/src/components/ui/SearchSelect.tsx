@@ -1,7 +1,7 @@
 /**
  * Searchable list for battery models and electricity retailers.
  */
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { NOT_SURE_VALUE, OTHER_VALUE } from '../../data/profileOptions'
 import { Field } from './Field'
 import { ChevronIcon, QuestionIcon, SearchIcon } from './icons'
@@ -23,12 +23,12 @@ type Props = {
 
 /**
  * SearchSelect
- * @param props.value - Current typed or selected value
+ * @param props.value - Current selected catalogue value (never free text)
  * @param props.options - Popular items shown when the query is empty
  * @returns JSX.Element
  *
  * Extra options (Other / Not sure) always stay visible under the filtered list.
- * An exact match shows the full catalogue again so the user can change their mind.
+ * The input may show a search query; only a catalogue match is written back.
  */
 export function SearchSelect({
   label,
@@ -43,19 +43,37 @@ export function SearchSelect({
   onChange,
 }: Props) {
   const [open, setOpen] = useState(false)
+  const [query, setQuery] = useState(value)
+
+  useEffect(() => {
+    setQuery(value)
+  }, [value])
+
+  const catalogue = useMemo(() => [...options, ...extraOptions], [extraOptions, options])
 
   const filtered = useMemo(() => {
-    const q = value.trim().toLowerCase()
-    const exactMatch =
-      options.some((item) => item.toLowerCase() === q) ||
-      extraOptions.some((item) => item.toLowerCase() === q)
+    const q = query.trim().toLowerCase()
+    const exactMatch = catalogue.some((item) => item.toLowerCase() === q)
     if (!q || exactMatch) return options
     return options.filter((item) => item.toLowerCase().includes(q))
-  }, [extraOptions, options, value])
+  }, [catalogue, options, query])
 
-  function choose(next: string) {
+  function commit(next: string) {
     onChange(next)
+    setQuery(next)
     setOpen(false)
+  }
+
+  function onQuery(next: string) {
+    setQuery(next)
+    setOpen(true)
+    const trimmed = next.trim()
+    if (!trimmed) {
+      onChange('')
+      return
+    }
+    const match = catalogue.find((item) => item.toLowerCase() === trimmed.toLowerCase())
+    if (match) onChange(match)
   }
 
   return (
@@ -65,13 +83,16 @@ export function SearchSelect({
           <SearchIcon />
           <input
             className="ui-search__input"
-            value={value}
+            value={query}
             placeholder={placeholder}
-            onChange={(event) => {
-              onChange(event.target.value)
-              setOpen(true)
-            }}
+            onChange={(event) => onQuery(event.target.value)}
             onFocus={() => setOpen(true)}
+            onBlur={() => {
+              window.setTimeout(() => {
+                setQuery(value)
+                setOpen(false)
+              }, 120)
+            }}
             aria-invalid={Boolean(error)}
             autoComplete="off"
           />
@@ -89,7 +110,8 @@ export function SearchSelect({
                 role="option"
                 aria-selected={value === item}
                 className={`ui-radio-list__row${value === item ? ' is-selected' : ''}`}
-                onClick={() => choose(item)}
+                onMouseDown={(event) => event.preventDefault()}
+                onClick={() => commit(item)}
               >
                 <span className="ui-radio-list__mark" />
                 <span className="ui-radio-list__label">{item}</span>
@@ -102,7 +124,8 @@ export function SearchSelect({
                 role="option"
                 aria-selected={value === item}
                 className={`ui-radio-list__row${value === item ? ' is-selected' : ''}`}
-                onClick={() => choose(item)}
+                onMouseDown={(event) => event.preventDefault()}
+                onClick={() => commit(item)}
               >
                 {item === NOT_SURE_VALUE ? <QuestionIcon /> : <span className="ui-radio-list__mark" />}
                 <span className="ui-radio-list__label">{item}</span>

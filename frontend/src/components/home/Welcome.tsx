@@ -4,7 +4,6 @@
 import {
   FEATURE_STATUS_LABEL,
   HOW_IT_WORKS,
-  LEARN_MORE_POPOVER,
   SEE_ALL_POPOVER,
   WELCOME_ARTICLES,
   WELCOME_FEATURES,
@@ -13,15 +12,8 @@ import {
 import { useTransientPopover } from '../../lib/useTransientPopover'
 import { Button } from '../ui/Button'
 import { Popover } from '../ui/Popover'
-import {
-  BatteryIcon,
-  BoltIcon,
-  CheckIcon,
-  HomeIcon,
-  PeopleIcon,
-  ShieldIcon,
-  SunIcon,
-} from '../ui/icons'
+import { HeroHouse } from './HeroHouse'
+import { BoltIcon } from '../ui/icons'
 
 type Props = {
   hasProfile: boolean
@@ -56,7 +48,7 @@ export function Welcome({ hasProfile, onGetStarted, onViewDashboard, onLogoClick
         MyPowerPlant
       </button>
 
-      <section className="band band--tint">
+      <section className="band band--deep">
         <div className="band__inner hero">
           <div className="hero__copy">
             <p className="eyebrow">For homes with solar and battery</p>
@@ -76,29 +68,10 @@ export function Welcome({ hasProfile, onGetStarted, onViewDashboard, onLogoClick
                   Get Started
                 </Button>
               )}
-              <span className="popover-anchor">
-                <Button variant="ghost" onClick={() => setOpenPopover('learn-more')}>
-                  Learn how VPPs actually work
-                </Button>
-                <Popover
-                  open={openPopover === 'learn-more'}
-                  message={LEARN_MORE_POPOVER}
-                />
-              </span>
             </div>
           </div>
           <div className="hero__art" aria-hidden="true">
-            <div className="icon-cluster">
-              <span className="icon-cluster__main">
-                <HomeIcon width={40} height={40} />
-              </span>
-              <span className="icon-cluster__badge icon-cluster__badge--top">
-                <SunIcon width={20} height={20} />
-              </span>
-              <span className="icon-cluster__badge icon-cluster__badge--bottom">
-                <BatteryIcon width={20} height={20} />
-              </span>
-            </div>
+            <HeroHouse />
           </div>
         </div>
       </section>
@@ -138,37 +111,6 @@ export function Welcome({ hasProfile, onGetStarted, onViewDashboard, onLogoClick
         </div>
       </section>
 
-      <section className="band band--tint">
-        <div className="band__inner mission">
-          <div className="mission__art" aria-hidden="true">
-            <div className="icon-cluster">
-              <span className="icon-cluster__main">
-                <ShieldIcon width={40} height={40} />
-              </span>
-              <span className="icon-cluster__badge icon-cluster__badge--top">
-                <CheckIcon width={20} height={20} />
-              </span>
-              <span className="icon-cluster__badge icon-cluster__badge--bottom">
-                <PeopleIcon width={20} height={20} />
-              </span>
-            </div>
-          </div>
-          <div className="mission__copy">
-            <h2>Why we built MyPowerPlant</h2>
-            <p>
-              Most households decide whether to join a VPP based on anecdote, a friend’s
-              experience, or a single flashy ad. We think that’s backwards.
-            </p>
-            <p>
-              MyPowerPlant replaces guesswork with evidence — using your actual solar, battery
-              and usage to give you a straight answer, and to keep giving you one as things
-              change. This isn’t a directory to compare plans. It’s an ongoing, personal
-              recommendation for your home.
-            </p>
-          </div>
-        </div>
-      </section>
-
       <section className="band">
         <div className="band__inner">
           <h2 className="steps__heading">How it works</h2>
@@ -184,7 +126,7 @@ export function Welcome({ hasProfile, onGetStarted, onViewDashboard, onLogoClick
         </div>
       </section>
 
-      <section className="band band--tint">
+      <section className="band">
         <div className="band__inner">
           <h2>A worked example: Matt, in Kew VIC</h2>
           <div className="text-points">

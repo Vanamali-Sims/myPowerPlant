@@ -1,34 +1,30 @@
 /**
  * Browser geolocation helper used by the postcode “use my location” control.
  *
- * Reverse-geocodes via a public client API, then rejects anything that is not
- * a Victorian postcode so the wizard stays in-scope.
+ * GPS stays on this device. The nearest mapped Victorian postcode is chosen
+ * from the in-app suburb table — nothing is sent to a reverse-geocode host.
  */
-import { GEO_TIMEOUT_MS, GEOCODE_ENDPOINT } from '../constants/api'
+import { GEO_TIMEOUT_MS } from '../constants/api'
+import { GEO_MAX_MATCH_KM, isInVictoria } from '../constants/validation'
+import { nearestMappedPostcode } from '../data/profileOptions'
 import { isVictorianPostcode } from './validateProfile'
-
-type GeoResult = {
-  postcode?: string
-}
 
 /**
  * postcodeFromDevice
  * @returns A 4-digit Victorian postcode from the device location
  *
- * Asks the browser for a coarse position, then looks up the postcode.
+ * Asks the browser for a coarse position, then snaps to a known suburb.
  * High accuracy is off so the prompt is faster and less battery-heavy.
  */
 export async function postcodeFromDevice(): Promise<string> {
   const position = await readPosition()
-  const url = `${GEOCODE_ENDPOINT}?latitude=${position.coords.latitude}&longitude=${position.coords.longitude}&localityLanguage=en`
-  const response = await fetch(url)
-  if (!response.ok) {
-    throw new Error('We couldn’t read that location. Please enter your postcode.')
-  }
-  const data = (await response.json()) as GeoResult
-  const postcode = (data.postcode ?? '').replace(/\s/g, '')
-  if (!isVictorianPostcode(postcode)) {
+  const { latitude, longitude } = position.coords
+  if (!isInVictoria(latitude, longitude)) {
     throw new Error('Please enter a Victorian postcode, or try again from Victoria.')
+  }
+  const postcode = nearestMappedPostcode(latitude, longitude, GEO_MAX_MATCH_KM)
+  if (!postcode || !isVictorianPostcode(postcode)) {
+    throw new Error('We found you in Victoria. Enter your postcode to continue.')
   }
   return postcode
 }

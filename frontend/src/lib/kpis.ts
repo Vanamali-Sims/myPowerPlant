@@ -10,7 +10,7 @@ import {
   WEEKS_PER_FORTNIGHT,
   WEEKS_PER_MONTH,
 } from '../constants/kpiMethodology'
-import { DEFAULT_LOCATION_LABEL, FIELD_BOUNDS } from '../constants/validation'
+import { DEFAULT_LOCATION_LABEL, FIELD_BOUNDS, clampNumber } from '../constants/validation'
 import { locationFromPostcode } from '../data/profileOptions'
 import { currentSeason, SEASON_LABELS, type Season } from './season'
 import type { PeakPeriod, ProfileData } from '../types/profile'
@@ -22,7 +22,7 @@ import type {
 
 export type Timeframe = 'daily' | 'weekly' | 'fortnightly'
 
-export type ValueKind = 'estimate' | 'from_you' | 'sourced'
+export type ValueKind = 'estimate' | 'from_you' | 'sourced' | 'sample' | 'unavailable'
 
 export type ApplianceLine = {
   spec: ApplianceSpec
@@ -70,7 +70,7 @@ export type KpiReport = {
     surplusKwh: number
     energyDistributedKwh: number
     savingsAud: number
-    /** (generation − consumption) × retail rate. Negative when the home uses more than it makes. */
+    /** (generation − consumption) × retail rate. */
     netEnergyValueAud: number
     carbonAvoidedKg: number
   }
@@ -143,14 +143,12 @@ function dryerHoursPerWeek(spec: ApplianceSpec, cycles: number, people: number):
 /**
  * parseOptionalCount
  * @param raw - A field the wizard lets the user leave blank
- * @returns null when left blank (published estimate applies), else the count
- *
- * These fields are validated on entry, so any non-blank value here is already
- * a real number within its field's bounds — this only decides skip vs answer.
+ * @param bounds - Inclusive min/max so a tampered localStorage value cannot inflate KPIs
+ * @returns null when left blank (published estimate applies), else the count clamped to bounds
  */
-function parseOptionalCount(raw: string): number | null {
+function parseOptionalCount(raw: string, bounds: { min: number; max: number }): number | null {
   if (!raw.trim()) return null
-  return parseCount(raw)
+  return clampNumber(parseCount(raw), bounds.min, bounds.max)
 }
 
 function applianceLines(
@@ -159,9 +157,19 @@ function applianceLines(
   season: Season,
 ): ApplianceLine[] {
   const { methodology, appliances } = data
-  const people = Math.max(parseCount(profile.people), 1)
-  const fridges = Math.max(parseCount(profile.refrigerators), 0)
-  const dryerCycles = parseCount(profile.dryerWeek) + parseCount(profile.dryerWeekend)
+  const people = clampNumber(parseCount(profile.people), FIELD_BOUNDS.people.min, FIELD_BOUNDS.people.max)
+  const fridges = clampNumber(
+    parseCount(profile.refrigerators),
+    FIELD_BOUNDS.refrigerators.min,
+    FIELD_BOUNDS.refrigerators.max,
+  )
+  const dryerCycles =
+    clampNumber(parseCount(profile.dryerWeek), FIELD_BOUNDS.dryerWeek.min, FIELD_BOUNDS.dryerWeek.max) +
+    clampNumber(
+      parseCount(profile.dryerWeekend),
+      FIELD_BOUNDS.dryerWeekend.min,
+      FIELD_BOUNDS.dryerWeekend.max,
+    )
   const lines: ApplianceLine[] = []
 
   function add(id: string, units: number, hours?: number, fromYou = false) {
@@ -182,7 +190,7 @@ function applianceLines(
     })
   }
 
-  const tvHours = parseOptionalCount(profile.tvHoursPerWeek)
+  const tvHours = parseOptionalCount(profile.tvHoursPerWeek, FIELD_BOUNDS.tvHoursPerWeek)
   if (tvHours === null) {
     add('tv', 1)
   } else if (tvHours > 0) {
@@ -196,7 +204,7 @@ function applianceLines(
   // refrigerators is a required field — an explicit 0 excludes it via add()'s units<=0 check.
   add('refrigerator', fridges, undefined, fieldIsUser(profile, 'refrigerators'))
 
-  const washerCycles = parseOptionalCount(profile.washerCyclesPerWeek)
+  const washerCycles = parseOptionalCount(profile.washerCyclesPerWeek, FIELD_BOUNDS.washerCyclesPerWeek)
   const washerSpec = appliances.washer
   if (washerCycles === null) {
     add('washer', 1)
@@ -205,7 +213,10 @@ function applianceLines(
     add('washer', 1, hours, fieldIsUser(profile, 'washerCyclesPerWeek'))
   }
 
-  const dishwasherCycles = parseOptionalCount(profile.dishwasherCyclesPerWeek)
+  const dishwasherCycles = parseOptionalCount(
+    profile.dishwasherCyclesPerWeek,
+    FIELD_BOUNDS.dishwasherCyclesPerWeek,
+  )
   const dishwasherSpec = appliances.dishwasher
   if (dishwasherCycles === null) {
     // No answer: fall back to the previous heuristic — large enough households
@@ -229,7 +240,7 @@ function applianceLines(
     )
   }
   if (profile.cooling === 'air_conditioning') {
-    const aircHours = parseOptionalCount(profile.airconHoursPerWeek)
+    const aircHours = parseOptionalCount(profile.airconHoursPerWeek, FIELD_BOUNDS.airconHoursPerWeek)
     if (aircHours === null) {
       add('aircon', 1, undefined, fieldIsUser(profile, 'cooling'))
     } else if (aircHours > 0) {
@@ -260,7 +271,9 @@ function weeklySolarKwh(
     1
   const kw = potential
     ? data.methodology.typicalPotentialKw
-    : (parseCount(profile.panelCount) * parseCount(profile.panelWatts)) / 1000
+    : (clampNumber(parseCount(profile.panelCount), FIELD_BOUNDS.panelCount.min, FIELD_BOUNDS.panelCount.max) *
+        clampNumber(parseCount(profile.panelWatts), FIELD_BOUNDS.panelWatts.min, FIELD_BOUNDS.panelWatts.max)) /
+      1000
   if (kw <= 0) return 0
   const daily =
     kw *
@@ -288,7 +301,7 @@ function consumptionShares(
 }
 
 function batteryUsableKwh(profile: ProfileData, data: MethodologyBundle): number {
-  const units = Math.max(profile.batteryUnits || 0, 0)
+  const units = clampNumber(profile.batteryUnits || 0, 0, FIELD_BOUNDS.batteryUnits.max)
   if (units <= 0) return 0
   const match = data.batteryModels.find((row) => row.name === profile.batteryModel)
   const fallback =
@@ -304,11 +317,13 @@ function batteryUsableKwh(profile: ProfileData, data: MethodologyBundle): number
 
 function retailRate(
   profile: ProfileData,
-  data: MethodologyBundle,
+  defaultRate: number,
 ): { rate: number; kind: ValueKind } {
-  const bill = Number.parseFloat(profile.monthlyBill)
-  const kwh = Number.parseFloat(profile.monthlyKwh)
-  if (bill > 0 && kwh > 0) {
+  const rawBill = Number.parseFloat(profile.monthlyBill)
+  const rawKwh = Number.parseFloat(profile.monthlyKwh)
+  const bill = clampNumber(rawBill, FIELD_BOUNDS.monthlyBill.min, FIELD_BOUNDS.monthlyBill.max)
+  const kwh = clampNumber(rawKwh, FIELD_BOUNDS.monthlyKwh.min, FIELD_BOUNDS.monthlyKwh.max)
+  if (rawBill > 0 && rawKwh > 0) {
     return {
       rate: bill / kwh,
       kind:
@@ -317,11 +332,13 @@ function retailRate(
           : 'estimate',
     }
   }
-  return { rate: data.methodology.defaultRetailRate, kind: 'estimate' }
+  return { rate: defaultRate, kind: 'estimate' }
 }
 
 function compatiblePlans(profile: ProfileData, data: MethodologyBundle): VppPlan[] {
-  const model = profile.batteryModel
+  const model = data.batteryModels.some((row) => row.name === profile.batteryModel)
+    ? profile.batteryModel
+    : ''
   const matches = data.vppPlans.filter(
     (plan) => !model || plan.compatibleBatteries.includes(model),
   )
@@ -373,8 +390,11 @@ export function buildKpiReport(
   const season = currentSeason(now)
   const appliances = applianceLines(profile, data, season)
   const modelledWeekly = appliances.reduce((sum, line) => sum + line.weeklyKwh, 0)
-  const billedMonthly = Number.parseFloat(profile.monthlyKwh)
-  const hasBilled = billedMonthly > 0
+  const billedMonthlyRaw = Number.parseFloat(profile.monthlyKwh)
+  const hasBilled = billedMonthlyRaw > 0
+  const billedMonthly = hasBilled
+    ? clampNumber(billedMonthlyRaw, FIELD_BOUNDS.monthlyKwh.min, FIELD_BOUNDS.monthlyKwh.max)
+    : billedMonthlyRaw
   const consumptionWeekly = hasBilled ? billedMonthly / WEEKS_PER_MONTH : modelledWeekly
   const consumptionKind: ValueKind = hasBilled
     ? fieldIsUser(profile, 'monthlyKwh')
@@ -409,13 +429,19 @@ export function buildKpiReport(
   const energyDistributed = Math.max(0, generationWeekly - selfConsumed)
   const surplus = Math.max(0, generationWeekly - consumptionWeekly)
 
-  const { rate, kind: retailRateKind } = retailRate(profile, data)
+  const { rate, kind: retailRateKind } = retailRate(profile, data.methodology.defaultRetailRate)
   const plans = compatiblePlans(profile, data)
-  const currentBrand = profile.provider
+  const knownBrands = new Set(data.vppPlans.map((plan) => plan.brand))
+  const currentBrand = knownBrands.has(profile.provider) ? profile.provider : ''
   const comparisons: PlanComparison[] = plans
     .map((plan) => ({
       plan,
-      weeklySavings: weeklySavingsFrom(selfConsumed, energyDistributed, rate, plan.exportRate),
+      weeklySavings: weeklySavingsFrom(
+        selfConsumed,
+        energyDistributed,
+        rate,
+        plan.exportRate,
+      ),
       isCurrent: Boolean(currentBrand) && plan.brand === currentBrand,
       isRecommended: false,
     }))
@@ -434,9 +460,9 @@ export function buildKpiReport(
   }))
 
   const headline = matchedPlans.find((item) => item.isRecommended) ?? recommended
-  // Headline savings shown on the card: value of what you make against what you
-  // use, at your retail rate. Negative means the home draws more than it makes.
   const netEnergyValueAud = (generationWeekly - consumptionWeekly) * rate
+  const hasDerivedRate =
+    Number.parseFloat(profile.monthlyBill) > 0 && Number.parseFloat(profile.monthlyKwh) > 0
   const carbonAvoidedKg = energyDistributed * data.methodology.vicGridKgCo2PerKwh
   const place = locationFromPostcode(profile.postcode)
   const m = data.methodology
@@ -478,13 +504,15 @@ export function buildKpiReport(
       detail:
         retailRateKind === 'from_you'
           ? `Taken from your monthly bill ÷ monthly kWh ($${rate.toFixed(2)} / kWh).`
-          : `No complete bill figures, so we used a typical Victorian retail rate of $${m.defaultRetailRate.toFixed(2)} / kWh.`,
+          : hasDerivedRate
+            ? `Taken from the saved monthly bill ÷ monthly kWh ($${rate.toFixed(2)} / kWh).`
+            : `No complete bill figures were saved, so we used a typical Victorian retail rate of $${rate.toFixed(2)} / kWh.`,
       kind: retailRateKind,
     },
     {
       title: 'VPP credit',
-      detail: `Matched plan “${headline.plan.name}” credits $${headline.plan.exportRate.toFixed(2)} / kWh on energy sent to the grid. Standard feed-in without a VPP is about $${m.defaultFeedInRate.toFixed(2)}.`,
-      kind: 'sourced',
+      detail: `Matched plan “${headline.plan.name}” uses a sample export rate of $${headline.plan.exportRate.toFixed(2)} / kWh. These are CDR-shaped placeholders, not a live plan feed. Standard feed-in without a VPP is about $${m.defaultFeedInRate.toFixed(2)}.`,
+      kind: 'sample',
     },
     {
       title: 'Carbon avoided',
@@ -494,7 +522,7 @@ export function buildKpiReport(
     {
       title: 'Timeframes',
       detail: 'Daily = weekly ÷ 7. Weekly is the modelled week. Fortnightly = weekly × 2.',
-      kind: 'sourced',
+      kind: 'estimate',
     },
   ]
 

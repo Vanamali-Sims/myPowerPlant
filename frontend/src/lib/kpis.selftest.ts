@@ -3,13 +3,14 @@
  * from the frontend folder when changing the KPI model.
  */
 import { BASELINE_PROFILE } from '../data/baselines'
+import { nearestMappedPostcode } from '../data/profileOptions'
 import { emptyProfile, type ProfileData } from '../types/profile'
 import { buildKpiReport, scaleKwh, type KpiReport } from './kpis'
 import { seedMethodologyBundle } from './methodologyFixture'
 import { currentSeason } from './season'
 import { buildTypicalDay, leftoverHours } from './typicalDay'
 
-function assert(condition: unknown, message: string) {
+function assert(condition: unknown, message: string): asserts condition {
   if (!condition) throw new Error(message)
 }
 
@@ -60,6 +61,8 @@ assert(!report.appliances.some((line) => line.spec.id === 'waterHeater'), 'gas h
 assert(report.currentPlan?.plan.brand === 'AGL Energy', 'current provider should match AGL')
 assert(report.matchedPlans.length >= 1, 'at least one matched plan')
 assert(report.recommended.weeklySavings > 0, 'recommended plan should have a savings figure')
+assert(report.weekly.savingsAud != null, 'baseline bill figures should produce a dollar amount')
+assert(report.weekly.netEnergyValueAud != null, 'baseline bill figures should produce a net energy value')
 assert(
   almostEqual(scaleKwh(report.weekly.consumptionKwh, 'daily'), report.weekly.consumptionKwh / 7),
   'daily = weekly / 7',
@@ -128,12 +131,83 @@ const edited: ProfileData = { ...baseline, monthlyKwh: '800' }
 const updated = buildKpiReport(edited, data, JAN)
 assert(updated.weekly.consumptionKwh > report.weekly.consumptionKwh, 'editing usage should change the report')
 
+const atMaxBattery: ProfileData = { ...baseline, batteryUnits: 8 }
+const absurdBattery: ProfileData = { ...baseline, batteryUnits: 999 }
+const atMaxSavings = buildKpiReport(atMaxBattery, data, JAN).weekly.savingsAud
+const absurdSavings = buildKpiReport(absurdBattery, data, JAN).weekly.savingsAud
+assert(atMaxSavings != null && absurdSavings != null, 'priced profiles should keep dollar savings')
+assert(
+  almostEqual(absurdSavings, atMaxSavings),
+  'battery_units above the form max must not inflate savings',
+)
+const negativeBattery = buildKpiReport({ ...baseline, batteryUnits: -5 }, data, JAN)
+assert(
+  report.weekly.savingsAud != null && negativeBattery.weekly.savingsAud != null,
+  'priced battery cases should keep dollar savings',
+)
+assert(
+  negativeBattery.weekly.savingsAud <= report.weekly.savingsAud + 0.05,
+  'negative battery_units must not increase savings',
+)
+
+assert(
+  nearestMappedPostcode(-37.806, 145.031, 25) === '3101',
+  'Kew GPS should snap to 3101 on-device',
+)
+assert(
+  nearestMappedPostcode(-33.8688, 151.2093, 25) === null,
+  'Sydney GPS must not snap to a Victorian suburb',
+)
+assert(
+  nearestMappedPostcode(-37.56, 143.85, 25) === '3350',
+  'Ballarat GPS should snap to 3350 on-device',
+)
+
+const vppAssumption = report.assumptions.find((item) => item.title === 'VPP credit')
+assert(vppAssumption?.kind === 'sample', 'sample VPP rates must not be labelled sourced')
+assert(
+  vppAssumption?.detail.includes('placeholder'),
+  'VPP credit copy must say the rates are placeholders',
+)
+assert(
+  report.assumptions.find((item) => item.title === 'Timeframes')?.kind === 'estimate',
+  'timeframe arithmetic is not sourced plan terms',
+)
+
+const noTariff = buildKpiReport({ ...baseline, monthlyBill: '', monthlyKwh: '' }, data, SEP)
+assert(
+  almostEqual(noTariff.retailRate, data.methodology.defaultRetailRate),
+  'missing bill figures fall back to the typical Victorian retail rate',
+)
+assert(noTariff.retailRateKind === 'estimate', 'fallback tariff is an estimate')
+assert(noTariff.weekly.savingsAud != null, 'dollar savings still show with the default tariff')
+assert(noTariff.weekly.netEnergyValueAud != null, 'net energy value still shows with the default tariff')
+const retailAssumption = noTariff.assumptions.find((item) => item.title === 'Retail electricity rate')
+assert(retailAssumption?.kind === 'estimate', 'transparency row must label the fallback as an estimate')
+assert(
+  retailAssumption?.detail.includes('0.32'),
+  'transparency should say the typical Victorian rate was used',
+)
+
+const injected: ProfileData = {
+  ...baseline,
+  batteryModel: '<script>alert(1)</script>',
+  provider: '<img src=x onerror=alert(1)>',
+}
+const injectedReport = buildKpiReport(injected, data, JAN)
+assert(injectedReport.currentPlan === null, 'a script payload must not match a current VPP brand')
+assert(
+  !JSON.stringify(injectedReport).includes('<script>') &&
+    !JSON.stringify(injectedReport).includes('onerror'),
+  'user-controlled battery/provider text must not be echoed into the KPI report',
+)
+
 console.log('kpi self-test passed', {
   seasonToday: currentSeason(),
   weeklyKwh: report.weekly.consumptionKwh.toFixed(1),
   modelledWeeklyKwh: modelled.weekly.consumptionKwh.toFixed(1),
   generation: report.weekly.generationKwh.toFixed(1),
-  savings: report.weekly.savingsAud.toFixed(2),
+  savings: report.weekly.savingsAud?.toFixed(2),
   distributed: report.weekly.energyDistributedKwh.toFixed(1),
   carbonKg: report.weekly.carbonAvoidedKg.toFixed(1),
   leftoverWindowHours: leftoverHours(day).length,

@@ -131,7 +131,4 @@ export const FEATURE_STATUS_LABEL: Record<FeatureStatus, string> = {
   soon: 'Coming soon',
 }
 
-export const LEARN_MORE_POPOVER =
-  'A dedicated guide is coming soon — see the linked articles below in the meantime.'
-
 export const SEE_ALL_POPOVER = 'The full features list is coming soon.'

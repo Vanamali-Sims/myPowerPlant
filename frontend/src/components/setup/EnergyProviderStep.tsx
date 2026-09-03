@@ -1,6 +1,7 @@
 /**
  * Wizard step: current electricity retailer.
  */
+import { DEVICE_STORAGE_NOTE } from '../../constants'
 import type { ProfileData } from '../../types/profile'
 import type { FieldErrors } from '../../lib/validateProfile'
 import { energyProviders, NOT_SURE_VALUE, OTHER_VALUE } from '../../data/profileOptions'
@@ -53,7 +54,7 @@ export function EnergyProviderStep({ profile, errors, onChange }: Props) {
       </Callout>
       <p className="setup-secure">
         <LockIcon width={14} height={14} />
-        Your information is secure and used only to generate your personalised energy insights.
+        {DEVICE_STORAGE_NOTE}
       </p>
     </>
   )

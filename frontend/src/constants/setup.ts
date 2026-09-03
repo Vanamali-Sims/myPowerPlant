@@ -77,7 +77,7 @@ export const STEP_FIELDS: Record<SetupStepId, (keyof ProfileData)[]> = {
     'airconHoursPerWeek',
     'hotWater',
   ],
-  usage: ['monthlyBill', 'monthlyKwh', 'peakPeriod', 'usageLevel', 'wfh'],
+  usage: ['monthlyBill', 'peakPeriod', 'usageLevel', 'wfh'],
   solar: ['hasSolar', 'solarDirection', 'panelCount', 'panelWatts'],
   battery: ['batteryUnits', 'reservePercent', 'batteryAge', 'batteryModel'],
   provider: ['provider'],
@@ -110,7 +110,6 @@ export const PROFILE_SECTIONS: ProfileSection[] = [
     icon: BarsIcon,
     fields: [
       { field: 'monthlyBill', label: 'Average monthly electricity bill' },
-      { field: 'monthlyKwh', label: 'Average monthly electricity usage' },
       { field: 'peakPeriod', label: 'Highest energy-use period' },
       { field: 'usageLevel', label: 'Energy usage level' },
       { field: 'wfh', label: 'Work/study from home' },

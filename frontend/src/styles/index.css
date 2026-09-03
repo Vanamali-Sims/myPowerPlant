@@ -1,26 +1,11 @@
+@import "./tokens.css";
+
 :root {
-  --color-bg: #f7f5ef;
-  --color-surface: #ffffff;
-  --color-sidebar: #1b1b1b;
-  --color-text-primary: #1a1a1a;
-  --color-text-secondary: #6b6b6b;
-  --color-border: #e4e1d8;
-  --color-accent: #e38b4a;
-  --color-success-bg: #e4eee7;
-  --color-success-text: #2f5d46;
-
-  --font-display: "Lora", "Source Serif 4", Georgia, serif;
-  --font-body: "Inter", system-ui, sans-serif;
-
-  --radius-pill: 999px;
-  --radius-card: 12px;
-  --radius-input: 10px;
-
   font-family: var(--font-body);
   line-height: 1.5;
   font-weight: 400;
-  color: var(--color-text-primary);
-  background-color: var(--color-bg);
+  color: var(--ink);
+  background-color: var(--canvas);
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
@@ -43,8 +28,8 @@ body {
   margin: 0;
   min-width: 320px;
   min-height: 100vh;
-  background-color: var(--color-bg);
-  color: var(--color-text-primary);
+  background-color: var(--canvas);
+  color: var(--ink);
 }
 
 #root {
@@ -57,12 +42,12 @@ h2 {
   font-family: var(--font-display);
   font-weight: 500;
   line-height: 1.25;
-  color: var(--color-text-primary);
+  color: var(--ink);
 }
 
 a {
   font-weight: 500;
-  color: var(--color-text-secondary);
+  color: var(--ink-secondary);
   text-decoration: underline;
 }
 
@@ -70,11 +55,21 @@ button {
   font-family: inherit;
 }
 
+a:focus,
+a:focus-visible,
 button:focus,
 button:focus-visible,
 input:focus,
-select:focus {
-  outline: 2px solid var(--color-accent);
+input:focus-visible,
+select:focus,
+select:focus-visible,
+textarea:focus,
+textarea:focus-visible,
+[role="radio"]:focus,
+[role="radio"]:focus-visible,
+[role="button"]:focus,
+[role="button"]:focus-visible {
+  outline: 2px solid var(--focus-ring);
   outline-offset: 2px;
 }
 
@@ -84,5 +79,5 @@ select:focus {
   font-weight: 600;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: var(--color-text-secondary);
+  color: var(--ink-muted);
 }

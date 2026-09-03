@@ -2,7 +2,7 @@
  * Saved-profile review screen with per-section edit and a reset path.
  */
 import { useState } from 'react'
-import { PROFILE_SECTIONS } from '../../constants'
+import { PROFILE_SECTIONS, DEVICE_STORAGE_NOTE } from '../../constants'
 import type { ProfileData, SetupStepId } from '../../types/profile'
 import { displayValue, formatUpdatedAt, isBaseline } from '../../lib/formatProfile'
 import { hasErrors, validateStep, type FieldErrors } from '../../lib/validateProfile'
@@ -28,7 +28,7 @@ type Props = {
 /**
  * ProfileView
  * @param props.profile - Last saved household answers
- * @param props.onSave - Persist edits to localStorage and the server
+ * @param props.onSave - Persist edits to localStorage
  * @returns JSX.Element
  *
  * One section can be edited at a time using the same step components as setup.
@@ -214,7 +214,7 @@ export function ProfileView({
               <ResetIcon width={15} height={15} />
               Reset Profile
             </Button>
-            <p>This will clear all your answers and return to the start.</p>
+            <p>This clears every answer on this device. There is no server copy to delete.</p>
           </div>
           <div className="profile__action">
             <Button variant="secondary" onClick={cancel}>
@@ -241,12 +241,13 @@ export function ProfileView({
             }
           >
             This clears every answer on this device. You can fill the form again afterwards.
+            We do not keep a server copy.
           </Callout>
         ) : null}
 
         <p className="setup-secure">
           <LockIcon width={14} height={14} />
-          Your information is secure and used only to generate your personalised energy insights.
+          {DEVICE_STORAGE_NOTE}
         </p>
     </div>
   )

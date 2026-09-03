@@ -42,6 +42,7 @@ export function BatteryProfileStep({ profile, errors, onChange }: Props) {
         hint="This is the minimum battery level you prefer to keep for your own use."
         info="VPPs only use energy above this reserve. You stay in control."
         inputMode="numeric"
+        numeric="integer"
         suffix="%"
         value={profile.reservePercent}
         onChange={(event) => onChange('reservePercent', event.target.value)}
@@ -55,6 +56,7 @@ export function BatteryProfileStep({ profile, errors, onChange }: Props) {
         hint="Enter the approximate age of your battery in years."
         placeholder="e.g. 2"
         inputMode="decimal"
+        numeric="decimal"
         suffix="years"
         value={profile.batteryAge}
         onChange={(event) => onChange('batteryAge', event.target.value)}
