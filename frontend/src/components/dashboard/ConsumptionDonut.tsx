@@ -35,7 +35,8 @@ const CIRCUMFERENCE = 2 * Math.PI * R
  * Slices are appliance weekly kWh scaled to the timeframe, largest first.
  * Out-of-season lines (0 kWh) are dropped, and everything past the top few is
  * folded into a single "Other" slice so the ring and legend stay readable.
- * kWh and share sit on hover, not beside the legend.
+ * Hover a slice or legend row to show that appliance’s kWh and share in the
+ * centre; the legend is names only.
  */
 export function ConsumptionDonut({ appliances, timeframe }: Props) {
   const [activeId, setActiveId] = useState<string | null>(null)
@@ -151,12 +152,6 @@ export function ConsumptionDonut({ appliances, timeframe }: Props) {
             >
               <span className="donut__swatch" style={{ background: slice.color }} />
               <span className="donut__name">{slice.name}</span>
-              {activeId === slice.id ? (
-                <span className="donut__value">
-                  <strong>{formatKwh(slice.kwh)}</strong>
-                  <span className="donut__pct">{Math.round(slice.fraction * 100)}%</span>
-                </span>
-              ) : null}
             </button>
           </li>
         ))}

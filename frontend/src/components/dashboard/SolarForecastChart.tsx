@@ -28,8 +28,8 @@ const VIEW_UNIT: Record<ForecastView, string> = {
 }
 
 const W = 840
-const H = 260
-const PAD = { top: 18, right: 18, bottom: 34, left: 44 }
+const H = 268
+const PAD = { top: 28, right: 18, bottom: 34, left: 52 }
 
 function smoothPath(xs: number[], ys: number[]): string {
   if (!xs.length) return ''
@@ -61,6 +61,24 @@ function viewBoxX(event: ReactPointerEvent<SVGSVGElement>): number {
   return point.matrixTransform(ctm.inverse()).x
 }
 
+/** Round the plot ceiling so Y ticks land on readable kWh steps. */
+function yAxis(max: number): { top: number; ticks: number[] } {
+  if (max <= 0) return { top: 1, ticks: [0, 1] }
+  const exp = Math.floor(Math.log10(max))
+  const mag = 10 ** exp
+  const fraction = max / mag
+  const niceFrac = fraction <= 1 ? 1 : fraction <= 2 ? 2 : fraction <= 2.5 ? 2.5 : fraction <= 5 ? 5 : 10
+  const top = niceFrac * mag
+  const step = top / 4
+  return { top, ticks: [0, step, step * 2, step * 3, top] }
+}
+
+function formatAxisTick(value: number): string {
+  if (value === 0) return '0'
+  if (value >= 10 || Number.isInteger(value)) return String(Number(value.toFixed(1)))
+  return value.toFixed(1)
+}
+
 /**
  * SolarForecastChart
  * @param props.inputs - Location plus array size and derates for the estimate
@@ -69,12 +87,13 @@ function viewBoxX(event: ReactPointerEvent<SVGSVGElement>): number {
  *
  * Fetches predicted irradiance once per location/array change. The range
  * (hourly day curve vs daily totals over 1–2 weeks) follows the shared filter.
- * Point kWh and the Open-Meteo source sit on hover, not as static copy.
+ * Point kWh follows the pointer as a tooltip. Peak stays marked on the line.
  */
 export function SolarForecastChart({ inputs, view, isPotential, placeLabel }: Props) {
   const [forecast, setForecast] = useState<SolarForecast | null>(null)
   const [error, setError] = useState('')
   const [hoverIndex, setHoverIndex] = useState<number | null>(null)
+  const [pointer, setPointer] = useState<{ x: number; y: number; flip: boolean } | null>(null)
 
   const { lat, lon, systemKw, orientationFactor, performanceRatio } = inputs
 
@@ -106,19 +125,18 @@ export function SolarForecastChart({ inputs, view, isPotential, placeLabel }: Pr
 
   const geometry = useMemo(() => {
     if (points.length < 2) return null
-    const max = Math.max(...points.map((point) => point.kwh), 0.1)
+    const { top, ticks } = yAxis(Math.max(...points.map((point) => point.kwh), 0.1))
     const plotW = W - PAD.left - PAD.right
     const plotH = H - PAD.top - PAD.bottom
     const xFor = (index: number) => PAD.left + (index / (points.length - 1)) * plotW
-    const yFor = (value: number) => PAD.top + plotH - (value / max) * plotH
+    const yFor = (value: number) => PAD.top + plotH - (value / top) * plotH
     const xs = points.map((_point, index) => xFor(index))
     const ys = points.map((point) => yFor(point.kwh))
     const line = smoothPath(xs, ys)
     const area = `${line} L ${xs[xs.length - 1]} ${PAD.top + plotH} L ${xs[0]} ${PAD.top + plotH} Z`
-    return { max, xs, ys, line, area, plotH }
+    return { top, ticks, xs, ys, line, area, plotH, plotW }
   }, [points])
 
-  const total = points.reduce((sum, point) => sum + point.kwh, 0)
   const peak = points.reduce(
     (best, point) => (point.kwh > best.kwh ? point : best),
     { label: '', kwh: 0 },
@@ -128,6 +146,9 @@ export function SolarForecastChart({ inputs, view, isPotential, placeLabel }: Pr
   const tickEvery = points.length > 8 ? Math.ceil(points.length / 7) : 1
   const hover = hoverIndex !== null ? points[hoverIndex] : null
   const hoverX = hoverIndex !== null && geometry ? geometry.xs[hoverIndex] : null
+  const isPeakHover = Boolean(
+    hover && peak.label && hover.label === peak.label && hover.kwh === peak.kwh,
+  )
 
   const sourceNote = [
     isPotential ? 'Potential for a typical roof.' : '',
@@ -148,7 +169,19 @@ export function SolarForecastChart({ inputs, view, isPotential, placeLabel }: Pr
         nearest = index
       }
     })
+    const plot = event.currentTarget.parentElement
+    const rect = plot?.getBoundingClientRect() ?? event.currentTarget.getBoundingClientRect()
     setHoverIndex(nearest)
+    setPointer({
+      x: event.clientX - rect.left,
+      y: event.clientY - rect.top,
+      flip: event.clientX - rect.left > rect.width * 0.62,
+    })
+  }
+
+  function clearHover() {
+    setHoverIndex(null)
+    setPointer(null)
   }
 
   return (
@@ -164,23 +197,37 @@ export function SolarForecastChart({ inputs, view, isPotential, placeLabel }: Pr
               className="forecast__svg"
               viewBox={`0 0 ${W} ${H}`}
               role="img"
-              aria-label={`Predicted solar generation, ${VIEW_UNIT[view]}. Hover the line for each point and the source.`}
+              aria-label={`Predicted solar generation, ${VIEW_UNIT[view]}. Hover the line for each point.`}
               onPointerMove={handlePointerMove}
-              onPointerLeave={() => setHoverIndex(null)}
+              onPointerLeave={clearHover}
             >
-              {[0.25, 0.5, 0.75, 1].map((frac) => {
-                const y = PAD.top + geometry.plotH - frac * geometry.plotH
+              {geometry.ticks.map((tick) => {
+                const y = PAD.top + geometry.plotH - (tick / geometry.top) * geometry.plotH
                 return (
-                  <line
-                    key={frac}
-                    x1={PAD.left}
-                    x2={W - PAD.right}
-                    y1={y}
-                    y2={y}
-                    className="forecast__grid"
-                  />
+                  <g key={tick}>
+                    <line
+                      x1={PAD.left}
+                      x2={W - PAD.right}
+                      y1={y}
+                      y2={y}
+                      className="forecast__grid"
+                    />
+                    <text x={PAD.left - 8} y={y + 4} className="forecast__y-tick">
+                      {formatAxisTick(tick)}
+                    </text>
+                  </g>
                 )
               })}
+              <line
+                x1={PAD.left}
+                x2={PAD.left}
+                y1={PAD.top}
+                y2={PAD.top + geometry.plotH}
+                className="forecast__axis"
+              />
+              <text x={PAD.left - 8} y={PAD.top - 10} className="forecast__y-unit">
+                kWh
+              </text>
 
               <path d={geometry.area} className="forecast__area" />
               <path d={geometry.line} className="forecast__line" />
@@ -222,29 +269,18 @@ export function SolarForecastChart({ inputs, view, isPotential, placeLabel }: Pr
                 height={geometry.plotH}
               />
             </svg>
+            {hover && pointer ? (
+              <div
+                className={`forecast__tooltip${isPeakHover ? ' is-peak' : ''}${pointer.flip ? ' is-flip' : ''}`}
+                style={{ left: pointer.x, top: pointer.y }}
+                role="status"
+              >
+                {isPeakHover ? 'Peak · ' : ''}
+                {hover.label} · {formatKwh(hover.kwh)}
+              </div>
+            ) : null}
           </div>
-
-          <figcaption className="forecast__readout">
-            {hover ? (
-              <span>
-                <strong>{hover.label}</strong> · {formatKwh(hover.kwh)}
-              </span>
-            ) : (
-              <span>
-                <strong>{formatKwh(total)}</strong> forecast{' '}
-                {view === 'daily' ? 'today' : `over ${points.length} days`}
-              </span>
-            )}
-            <span className="forecast__peak">
-              Peak {peak.label ? `${peak.label} · ` : ''}
-              {formatKwh(peak.kwh)}
-            </span>
-          </figcaption>
-          {hover ? (
-            <p className="forecast__source" role="status">
-              {sourceNote}
-            </p>
-          ) : null}
+          <p className="forecast__source">{sourceNote}</p>
         </>
       ) : (
         <p className="dashboard-card__lede">Not enough forecast data to draw a line yet.</p>
