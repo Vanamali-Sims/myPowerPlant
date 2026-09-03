@@ -12,6 +12,7 @@ dist/
 .pytest_cache/
 context/
 _wireframes/
+.cursor/
 
 # Terraform state holds resolved resource values, including the Neon
 # connection string passed via neon_database_url -- never commit it.
