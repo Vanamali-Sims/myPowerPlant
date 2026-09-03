@@ -57,8 +57,7 @@
   font-size: 1rem;
 }
 
-.band--deep .hero__lede,
-.band--deep .mission__copy p {
+.band--deep .hero__lede {
   color: var(--on-deep);
 }
 
@@ -76,64 +75,136 @@
   padding-right: 1.75rem;
 }
 
-.band--deep .ui-btn--ghost {
-  color: var(--on-deep);
-  text-decoration-color: var(--euc-400);
-}
-
-.hero__art,
-.mission__art {
+.hero__art {
   display: flex;
   align-items: center;
   justify-content: center;
 }
 
-.icon-cluster {
+/* Hero isometric house — token fills, depth from overlapping planes */
+
+.hero-house {
+  width: 100%;
+  max-width: 22rem;
+  margin: 0 auto;
+}
+
+.hero-house__stage {
   position: relative;
-  width: 11rem;
-  height: 11rem;
-  border-radius: 50%;
-  background: var(--euc-800);
-  border: 1px solid var(--euc-400);
-  display: grid;
-  place-items: center;
+  width: 100%;
 }
 
-.icon-cluster__main {
-  width: 5.5rem;
-  height: 5.5rem;
-  border-radius: 50%;
-  background: transparent;
-  color: var(--on-deep);
-  display: grid;
-  place-items: center;
+.hero-house__svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  overflow: visible;
 }
 
-.icon-cluster__badge {
+.hero-house__face {
+  stroke: var(--euc-900);
+  stroke-width: 0.85;
+  stroke-linejoin: miter;
+  transition: fill 0.15s ease, stroke 0.15s ease;
+}
+
+.hero-house__face--far {
+  fill: var(--euc-800);
+}
+
+.hero-house__face--mid {
+  fill: var(--euc-600);
+}
+
+.hero-house__face--side {
+  fill: var(--euc-800);
+}
+
+.hero-house__face--front {
+  fill: var(--euc-400);
+}
+
+.hero-house__face--roof-back {
+  fill: var(--euc-800);
+}
+
+.hero-house__face--solar {
+  fill: var(--euc-600);
+}
+
+.hero-house__face--solar:hover {
+  fill: var(--euc-400);
+}
+
+.hero-house__face--battery {
+  fill: var(--euc-800);
+}
+
+.hero-house__face--battery:hover {
+  fill: var(--euc-600);
+  stroke: var(--terra-600);
+  stroke-width: 1.35;
+}
+
+.hero-house__door {
+  fill: var(--euc-800);
+  stroke: var(--euc-900);
+  stroke-width: 0.7;
+  pointer-events: none;
+}
+
+.hero-house__window {
+  fill: var(--euc-200);
+  stroke: var(--euc-900);
+  stroke-width: 0.7;
+  pointer-events: none;
+}
+
+.hero-house__panel {
+  fill: var(--euc-200);
+  pointer-events: none;
+}
+
+.hero-house__link {
+  stroke: var(--euc-400);
+  stroke-width: 1.6;
+  fill: none;
+  stroke-linecap: round;
+}
+
+.hero-house__node {
+  fill: var(--euc-400);
+  stroke: var(--euc-900);
+  stroke-width: 0.6;
+}
+
+.hero-house__badge {
   position: absolute;
-  width: 3rem;
-  height: 3rem;
+  width: 2rem;
+  height: 2rem;
   border-radius: 50%;
   background: var(--terra-600);
   color: var(--on-primary);
   display: grid;
   place-items: center;
-  border: 3px solid var(--surface-deep);
+  border: 2px solid var(--surface-deep);
+  pointer-events: none;
 }
 
-.mission .icon-cluster__badge--bottom {
-  background: var(--euc-400);
-  color: var(--on-primary);
+.hero-house__badge--sun {
+  top: 12%;
+  left: 26%;
 }
 
-.icon-cluster__badge--top {
-  top: -0.4rem;
-  right: -0.4rem;
+.hero-house__badge--battery {
+  top: 46%;
+  left: 6%;
 }
 
-.icon-cluster__badge--bottom {
-  bottom: -0.4rem;
-  left: -0.4rem;
+@media (prefers-reduced-motion: reduce) {
+  .hero-house__face {
+    transition: none;
+  }
 }
 
 /* Text points (impact band) */
@@ -141,7 +212,7 @@
 .text-points {
   display: flex;
   flex-direction: column;
-  gap: 1.25rem;
+  gap: 1rem;
 }
 
 .text-point__title {
@@ -160,7 +231,6 @@
   margin: 0.3rem 0 0;
   font-size: 0.9rem;
   color: var(--ink-secondary);
-  max-width: 42rem;
 }
 
 /* Section head + cards */
@@ -184,7 +254,9 @@
 }
 
 .feature-card,
-.article-card {
+.article-card,
+.step,
+.text-point {
   display: flex;
   flex-direction: column;
   align-items: flex-start;
@@ -270,29 +342,6 @@
   color: var(--ink-secondary);
 }
 
-/* Mission */
-
-.mission {
-  display: flex;
-  flex-direction: column-reverse;
-  gap: 2rem;
-}
-
-.mission__copy {
-  display: flex;
-  flex-direction: column;
-  gap: 0.9rem;
-}
-
-.mission__copy h2 {
-  margin: 0;
-}
-
-.mission__copy p {
-  margin: 0;
-  color: var(--ink-secondary);
-}
-
 /* How it works */
 
 .steps__heading {
@@ -303,12 +352,10 @@
 .steps {
   display: flex;
   flex-direction: column;
-  gap: 1.75rem;
+  gap: 1rem;
 }
 
 .step {
-  display: flex;
-  flex-direction: column;
   align-items: center;
   text-align: center;
   gap: 0.5rem;
@@ -378,6 +425,10 @@
     flex: 1;
   }
 
+  .hero-house {
+    max-width: 26rem;
+  }
+
   .hero__copy h1 {
     font-size: 2.6rem;
   }
@@ -387,37 +438,8 @@
     align-items: center;
   }
 
-  .icon-cluster {
-    width: 15rem;
-    height: 15rem;
-  }
-
-  .icon-cluster__main {
-    width: 7rem;
-    height: 7rem;
-  }
-
-  .icon-cluster__badge {
-    width: 3.6rem;
-    height: 3.6rem;
-  }
-
   .card-grid {
     grid-template-columns: repeat(3, 1fr);
-  }
-
-  .mission {
-    flex-direction: row;
-    align-items: center;
-    gap: 3.5rem;
-  }
-
-  .mission__art {
-    flex: 1;
-  }
-
-  .mission__copy {
-    flex: 1.1;
   }
 
   .steps {
