@@ -19,7 +19,7 @@ Open three terminals and do not run the API before docker is up.
 
 ```bash
 cd backend
-docker compose up -d
+docker compose up -d (Can run it visa the GUI too)
 ```
 
 Copy the env file once:
