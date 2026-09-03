@@ -11,3 +11,13 @@ dist/
 .ruff_cache/
 .pytest_cache/
 context/
+_wireframes/
+
+# Terraform state holds resolved resource values, including the Neon
+# connection string passed via neon_database_url -- never commit it.
+terraform/.terraform/
+terraform/*.tfstate
+terraform/*.tfstate.*
+terraform/*.tfvars
+terraform/*.tfvars.json
+terraform/crash.log

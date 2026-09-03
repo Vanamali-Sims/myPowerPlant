@@ -1,6 +1,16 @@
+/**
+ * Vite entry: global styles, then mount the React tree on #root.
+ */
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
-import './index.css'
+import './styles/index.css'
+import './styles/app.css'
+import './styles/ui.css'
+import './styles/app-shell.css'
+import './styles/welcome.css'
+import './styles/setup.css'
+import './styles/profile.css'
+import './styles/dashboard.css'
 import App from './App.tsx'
 
 createRoot(document.getElementById('root')!).render(

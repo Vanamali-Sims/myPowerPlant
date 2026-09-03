@@ -1,0 +1,64 @@
+:root {
+  /* Eucalypt — structure, trust, surplus */
+  --euc-50: #edf2ee;
+  --euc-100: #d3e0d6;
+  --euc-200: #a3bca9;
+  --euc-400: #4a7a63;
+  --euc-600: #1f4a3c;
+  --euc-800: #163529;
+  --euc-900: #0d211a;
+
+  /* Terracotta — action, attention, deficit */
+  --terra-50: #fbf0e9;
+  --terra-100: #f2d5c2;
+  --terra-200: #e4ae8c;
+  --terra-400: #d4834f;
+  --terra-600: #c86a3c;
+  --terra-800: #934826;
+  --terra-900: #5e2d17;
+
+  /* Surfaces — warm neutrals, not tinted green */
+  --canvas: #faf8f3;
+  --surface: #ffffff;
+  --surface-sunken: #f2ede3;
+  --surface-deep: #163529;
+  --border: #e4ded2;
+  --border-strong: #d2c9b8;
+
+  /* Text */
+  --ink: #14231d;
+  --ink-secondary: #4b5a52;
+  --ink-muted: #7d8a82;
+  --on-deep: #f2ede3;
+  --on-deep-muted: #a3bca9;
+
+  /* Semantic */
+  --primary: var(--terra-600);
+  --primary-hover: var(--terra-800);
+  --on-primary: #ffffff;
+  --structure: var(--euc-600);
+  --surplus: var(--euc-600);
+  --deficit: var(--terra-600);
+  --success: #2f7d5c;
+  --warning: #a9761a;
+  --danger: #b3392f;
+  --focus-ring: var(--euc-400);
+
+  /* Chart series — alternate hue families */
+  --chart-1: #1f4a3c;
+  --chart-2: #c86a3c;
+  --chart-3: #4a7a63;
+  --chart-4: #e4ae8c;
+  --chart-5: #a3bca9;
+  --chart-6: #b5ab99;
+
+  --font-display: "Lora", "Source Serif 4", Georgia, serif;
+  --font-body: "Inter", system-ui, sans-serif;
+
+  --radius-pill: 999px;
+  --radius-card: 12px;
+  --radius-input: 10px;
+
+  /* Data-URI glyphs cannot use var(); this stroke matches --ink-muted. */
+  --select-chevron: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='18' height='18' viewBox='0 0 24 24' fill='none' stroke='%237D8A82' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+}

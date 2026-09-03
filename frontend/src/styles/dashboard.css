@@ -1,0 +1,480 @@
+.dashboard {
+  width: min(68rem, 100%);
+  margin: 0 auto;
+  padding: 1.25rem 1.15rem 3rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.2rem;
+}
+
+.dashboard__top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.dashboard__intro h1 {
+  margin: 0.35rem 0 0.45rem;
+  font-size: 2.15rem;
+}
+
+.dashboard__footer {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  align-items: flex-start;
+  margin-top: 0.75rem;
+}
+
+.dashboard__intro p {
+  margin: 0;
+  color: var(--ink-secondary);
+  max-width: 40rem;
+}
+
+.dashboard__time {
+  display: flex;
+  background: var(--surface-sunken);
+  border-radius: var(--radius-pill);
+  padding: 0.2rem;
+  gap: 0.15rem;
+  width: min(22rem, 100%);
+}
+
+.kpi-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1rem;
+}
+
+.kpi-card,
+.dashboard-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-card);
+  padding: 1.15rem 1.2rem 1.25rem;
+  overflow: visible;
+}
+
+/* Compact top cards: numbers first, minimal chrome. */
+.kpi-card {
+  padding: 0.8rem 0.95rem 0.85rem;
+}
+
+.kpi-card__icon,
+.dashboard-card__icon {
+  width: 2.2rem;
+  height: 2.2rem;
+  border-radius: 0.55rem;
+  background: var(--euc-50);
+  color: var(--euc-600);
+  display: grid;
+  place-items: center;
+  margin-bottom: 0.75rem;
+}
+
+.kpi-card__icon {
+  width: 1.65rem;
+  height: 1.65rem;
+  border-radius: 0.45rem;
+  margin-bottom: 0.4rem;
+}
+
+.kpi-card__icon svg {
+  width: 0.95rem;
+  height: 0.95rem;
+}
+
+.kpi-card .eyebrow,
+.dashboard-card .eyebrow {
+  margin: 0;
+}
+
+.kpi-card__value {
+  margin: 0.1rem 0 0;
+  font-family: var(--font-display);
+  font-size: 1.5rem;
+  font-weight: 500;
+  line-height: 1.15;
+  color: var(--ink);
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.kpi-card__value--surplus {
+  color: var(--surplus);
+}
+
+.kpi-card__value--deficit {
+  color: var(--deficit);
+}
+
+.kpi-card__note {
+  margin: 0.2rem 0 0;
+  font-size: 0.76rem;
+  color: var(--ink-secondary);
+}
+
+.kpi-badge {
+  font-family: var(--font-body);
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  border-radius: var(--radius-pill);
+  padding: 0.1rem 0.45rem;
+}
+
+.kpi-badge--estimate {
+  color: var(--ink-secondary);
+  border: 0.5px solid var(--border);
+  background: var(--surface-sunken);
+}
+
+.kpi-badge--fact {
+  color: var(--euc-800);
+  border: 1px solid transparent;
+  background: var(--euc-50);
+}
+
+.kpi-badge--sourced {
+  color: var(--ink-secondary);
+  border: 1px solid var(--border);
+  background: var(--surface-sunken);
+}
+
+.kpi-badge--sample {
+  color: var(--ink-secondary);
+  border: 0.5px solid var(--border);
+  background: var(--surface-sunken);
+}
+
+.kpi-badge--unavailable {
+  color: var(--ink-secondary);
+  border: 1px solid var(--border);
+  background: var(--surface-sunken);
+}
+
+.dashboard-card__head {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  margin-bottom: 0.7rem;
+}
+
+.dashboard-card__head h2,
+.dashboard-card h2 {
+  margin: 0.15rem 0 0;
+  font-size: 1.45rem;
+}
+
+.dashboard-card__lede {
+  margin: 0 0 1rem;
+  font-size: 0.9rem;
+  color: var(--ink-secondary);
+}
+
+.dashboard-card__flag {
+  margin: 0 0 1rem;
+  font-size: 0.85rem;
+  color: var(--euc-800);
+  background: var(--euc-50);
+  border-radius: var(--radius-input);
+  padding: 0.65rem 0.8rem;
+}
+
+.dashboard__split {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1rem;
+}
+
+.donut {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 1.5rem;
+}
+
+.donut__plot {
+  position: relative;
+  flex: 0 0 auto;
+}
+
+.donut__svg {
+  width: 13rem;
+  height: auto;
+  display: block;
+}
+
+.donut__track {
+  fill: var(--surface-sunken);
+  stroke: none;
+}
+
+.donut__slice {
+  cursor: pointer;
+  outline: none;
+  transition: opacity 0.15s ease;
+}
+
+.donut__slice.is-dim {
+  opacity: 0.4;
+}
+
+.donut__total {
+  font-family: var(--font-display);
+  font-size: 1.05rem;
+  fill: var(--ink);
+  text-anchor: middle;
+}
+
+.donut__total-label {
+  font-size: 0.55rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  fill: var(--ink-muted);
+  text-anchor: middle;
+}
+
+.donut__legend {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  flex: 0 1 11.5rem;
+  min-width: 0;
+}
+
+.donut__legend-item {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: 0.5rem;
+  width: 100%;
+  margin: 0;
+  padding: 0.2rem 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  font-size: 0.82rem;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+  border-radius: 0.35rem;
+}
+
+.donut__legend-item.is-active .donut__name {
+  font-weight: 600;
+}
+
+.donut__swatch {
+  width: 0.7rem;
+  height: 0.7rem;
+  border-radius: 3px;
+  flex-shrink: 0;
+}
+
+.donut__name {
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.forecast {
+  margin: 0;
+}
+
+.forecast__plot {
+  position: relative;
+}
+
+.forecast__svg {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+.forecast__grid {
+  stroke: var(--border);
+  stroke-width: 1;
+}
+
+.forecast__area {
+  fill: var(--euc-50);
+  stroke: none;
+}
+
+.forecast__line {
+  fill: none;
+  stroke: var(--euc-600);
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.forecast__dot {
+  fill: var(--euc-600);
+}
+
+.forecast__dot--peak {
+  fill: var(--terra-600);
+}
+
+.forecast__guide {
+  stroke: var(--border-strong);
+  stroke-width: 1;
+  stroke-dasharray: 3 4;
+  pointer-events: none;
+}
+
+.forecast__hit {
+  fill: transparent;
+  cursor: crosshair;
+}
+
+.forecast__tick {
+  fill: var(--ink-muted);
+  font-size: 0.66rem;
+  text-anchor: middle;
+}
+
+.forecast__y-tick,
+.forecast__y-unit {
+  fill: var(--ink-muted);
+  font-size: 0.66rem;
+  text-anchor: end;
+}
+
+.forecast__axis {
+  stroke: var(--border-strong);
+  stroke-width: 1;
+}
+
+.forecast__tooltip {
+  position: absolute;
+  z-index: 2;
+  pointer-events: none;
+  transform: translate(12px, calc(-100% - 8px));
+  background: var(--surface);
+  color: var(--ink);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-input);
+  padding: 0.35rem 0.55rem;
+  font-size: 0.78rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.forecast__tooltip.is-flip {
+  transform: translate(calc(-100% - 12px), calc(-100% - 8px));
+}
+
+.forecast__tooltip.is-peak {
+  color: var(--terra-600);
+}
+
+.forecast__source {
+  margin: 0.5rem 0 0;
+  font-size: 0.78rem;
+  color: var(--ink-secondary);
+}
+
+.plan-terms {
+  list-style: none;
+  margin: 0.8rem 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+
+.plan-terms li {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  font-size: 0.88rem;
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 0.4rem;
+}
+
+.plan-terms span {
+  color: var(--ink-secondary);
+}
+
+.dashboard-link {
+  font-size: 0.85rem;
+}
+
+.plan-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0.9rem;
+  margin-top: 1rem;
+}
+
+.plan-tile {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-card);
+  padding: 1rem;
+}
+
+.plan-tile.is-recommended {
+  border-color: var(--euc-400);
+  background: var(--euc-50);
+}
+
+.plan-tile.is-current:not(.is-recommended) {
+  background: var(--euc-50);
+  border-color: transparent;
+}
+
+.plan-tile__tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin-bottom: 0.55rem;
+}
+
+.plan-tile h3 {
+  margin: 0;
+  font-family: var(--font-body);
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+.plan-tile__brand {
+  margin: 0.15rem 0 0.5rem;
+  font-size: 0.82rem;
+  color: var(--ink-secondary);
+}
+
+@media (min-width: 900px) {
+  .dashboard {
+    padding: 1.6rem 2.4rem 3.5rem;
+  }
+
+  .dashboard__top {
+    justify-content: flex-end;
+  }
+
+  .kpi-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  .dashboard__split {
+    grid-template-columns: 1fr 1fr;
+    align-items: start;
+  }
+
+  .plan-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}

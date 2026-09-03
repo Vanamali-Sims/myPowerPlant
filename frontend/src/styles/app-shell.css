@@ -1,0 +1,112 @@
+.app-shell {
+  min-height: 100vh;
+  display: grid;
+  grid-template-columns: 1fr;
+}
+
+.app-rail {
+  display: none;
+}
+
+.app-shell__main {
+  min-width: 0;
+  min-height: 100vh;
+}
+
+.brand--inverse {
+  color: var(--on-deep);
+}
+
+.app-rail .brand__mark {
+  background: var(--terra-600);
+  color: var(--on-primary);
+}
+
+@media (min-width: 900px) {
+  .app-shell {
+    grid-template-columns: 4.25rem 1fr;
+  }
+
+  .app-rail {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2rem;
+    padding: 1.1rem 0.35rem 1.4rem;
+    background: var(--euc-900);
+    color: var(--euc-200);
+    position: sticky;
+    top: 0;
+    height: 100vh;
+  }
+
+  .app-rail .brand__word {
+    display: none;
+  }
+
+  .app-rail__nav {
+    display: flex;
+    flex-direction: column;
+    gap: 0.55rem;
+    flex: 1;
+    width: 100%;
+  }
+
+  .app-rail__item-wrap {
+    width: 100%;
+  }
+
+  .app-rail__item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.3rem;
+    width: 100%;
+    margin: 0;
+    padding: 0.55rem 0.2rem;
+    border: 0;
+    border-left: 3px solid transparent;
+    border-radius: 0.7rem;
+    background: transparent;
+    color: var(--euc-200);
+    font-family: var(--font-body);
+    font-size: 0.68rem;
+    font-weight: 500;
+    cursor: pointer;
+  }
+
+  .app-rail__item.is-unavailable {
+    opacity: 0.55;
+    cursor: not-allowed;
+  }
+
+  .app-rail__item:hover {
+    color: var(--on-deep);
+    background: var(--euc-800);
+  }
+
+  .app-rail__item:active {
+    transform: scale(0.96);
+  }
+
+  .app-rail__item.is-active {
+    color: var(--on-primary);
+    background: var(--euc-800);
+    border-left-color: var(--terra-600);
+  }
+
+  .app-rail__item.is-active:hover {
+    color: var(--on-primary);
+  }
+
+  .app-rail__place {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.3rem;
+    font-size: 0.65rem;
+    text-align: center;
+    line-height: 1.25;
+    color: var(--euc-200);
+  }
+}

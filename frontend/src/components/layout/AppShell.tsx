@@ -1,0 +1,106 @@
+/**
+ * Logged-in chrome: dark icon rail, wordmark, and location pill.
+ */
+import type { ReactNode } from 'react'
+import { DEFAULT_LOCATION_LABEL, NAV, type AppNavId } from '../../constants'
+import { locationFromPostcode } from '../../data/profileOptions'
+import { useTransientPopover } from '../../lib/useTransientPopover'
+import { BoltIcon } from '../ui/icons'
+import { Popover } from '../ui/Popover'
+
+export type { AppNavId }
+
+type Props = {
+  active: AppNavId | null
+  postcode: string
+  hasProfile: boolean
+  onNavigate: (id: AppNavId) => void
+  onLogoClick: () => void
+  children: ReactNode
+}
+
+/**
+ * AppShell
+ * @param props.active - Which rail item is current, or null during setup
+ * @param props.children - The screen rendered in the main column
+ * @returns JSX.Element
+ *
+ * Profile and Dashboard stay locked until a profile is saved.
+ * Home is always available so the user can leave setup without a dead end.
+ */
+export function AppShell({
+  active,
+  postcode,
+  hasProfile,
+  onNavigate,
+  onLogoClick,
+  children,
+}: Props) {
+  const place = locationFromPostcode(postcode)
+  const [openPopover, setOpenPopover] = useTransientPopover()
+
+  function isAvailable(id: AppNavId) {
+    if (id === 'home') return true
+    return hasProfile
+  }
+
+  function handleClick(item: (typeof NAV)[number]) {
+    if (!isAvailable(item.id)) {
+      setOpenPopover(item.id)
+      return
+    }
+    setOpenPopover(null)
+    onNavigate(item.id)
+  }
+
+  return (
+    <div className="app-shell">
+      <aside className="app-rail" aria-label="App">
+        <button
+          type="button"
+          className="brand brand--inverse brand--button"
+          onClick={onLogoClick}
+          aria-label="MyPowerPlant home"
+        >
+          <span className="brand__mark">
+            <BoltIcon width={14} height={14} />
+          </span>
+          <span className="brand__word">MyPowerPlant</span>
+        </button>
+        <nav className="app-rail__nav">
+          {NAV.map((item) => {
+            const Icon = item.icon
+            const available = isAvailable(item.id)
+            return (
+              <div key={item.id} className="popover-anchor app-rail__item-wrap">
+                <button
+                  type="button"
+                  className={`app-rail__item${active === item.id ? ' is-active' : ''}${
+                    available ? '' : ' is-unavailable'
+                  }`}
+                  onClick={() => handleClick(item)}
+                  aria-current={active === item.id ? 'page' : undefined}
+                  aria-disabled={!available}
+                  title={available ? item.label : item.unavailableMessage}
+                >
+                  <Icon />
+                  {item.label}
+                </button>
+                <Popover
+                  open={openPopover === item.id}
+                  message={item.unavailableMessage}
+                  placement="right"
+                />
+              </div>
+            )
+          })}
+        </nav>
+        <span className="app-rail__place">
+          <span className="location-pill__dot" />
+          {place || DEFAULT_LOCATION_LABEL}
+        </span>
+      </aside>
+      <div className="app-shell__main">{children}</div>
+    </div>
+  )
+}
