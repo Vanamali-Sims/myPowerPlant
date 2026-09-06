@@ -16,7 +16,7 @@ resource "aws_iam_role" "lambda_exec" {
 }
 
 # Least privilege: only this function's own log group, and only the one SSM
-# parameter it needs. No RDS/Aurora/VPC permissions -- the database is
+# parameter it needs. No RDS/Aurora/VPC permissions, since the database is
 # external (Neon), reached over the public internet, so this Lambda is never
 # placed in a VPC and needs none of that surface.
 data "aws_iam_policy_document" "lambda_exec" {

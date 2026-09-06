@@ -1,5 +1,5 @@
 # Created explicitly, named to match what Lambda would auto-create, so it
-# carries a retention policy -- Lambda's own auto-created log group defaults
+# carries a retention policy. Lambda's own auto-created log group defaults
 # to "never expire", which would otherwise slowly eat into the 5GB Always
 # Free CloudWatch Logs storage allowance.
 resource "aws_cloudwatch_log_group" "backend" {
@@ -14,7 +14,7 @@ resource "aws_lambda_function" "backend" {
   package_type = "Image"
   image_uri    = "${aws_ecr_repository.backend.repository_url}:${var.lambda_image_tag}"
 
-  # Matches backend/Dockerfile's pinned build platform (linux/arm64) -- the
+  # Matches backend/Dockerfile's pinned build platform (linux/arm64). The
   # two must agree or the function fails at runtime with an exec-format
   # error. arm64 is also cheaper per GB-second than x86_64.
   architectures = ["arm64"]

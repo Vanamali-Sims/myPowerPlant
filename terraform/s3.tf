@@ -1,5 +1,5 @@
 # Private bucket for the Vite build output (frontend/dist). Terraform only
-# provisions the bucket -- uploading the built files is a separate deploy
+# provisions the bucket. Uploading the built files is a separate deploy
 # step (e.g. `aws s3 sync frontend/dist s3://<bucket>`), not managed here,
 # since Terraform-managed file objects go stale on every build.
 
