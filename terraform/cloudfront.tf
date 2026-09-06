@@ -8,7 +8,7 @@ resource "aws_cloudfront_origin_access_control" "frontend" {
 # R8 / §3.3: the five required headers on every HTML/JS/CSS response.
 # connect-src allows Open-Meteo (browser weather) and this region's HTTP APIs
 # without referencing the API Gateway resource (that would cycle with Lambda's
-# CORS_ORIGINS → CloudFront domain).
+# CORS_ORIGINS is CloudFront domain).
 resource "aws_cloudfront_response_headers_policy" "frontend_security" {
   name    = "${local.name_prefix}-security-headers"
   comment = "R8 security headers for the MyPowerPlant SPA"
@@ -106,8 +106,8 @@ resource "aws_cloudfront_distribution" "frontend" {
     }
   }
 
-  # No custom domain configured -- uses the default *.cloudfront.net
-  # certificate, at no extra cost. Swap this block for an ACM cert +
+  # No custom domain configured, so this uses the default *.cloudfront.net
+  # certificate, at no extra cost. Swap this block for an ACM cert plus
   # aliases if a custom domain is added later.
   viewer_certificate {
     cloudfront_default_certificate = true
