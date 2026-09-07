@@ -20,12 +20,18 @@ variable "lambda_image_tag" {
   description = <<-EOT
     Tag of the backend image already pushed to the ECR repository this config
     creates. The image must exist in ECR before the Lambda function can be
-    created or updated with it -- Terraform does not build or push images.
+    created or updated with it. Terraform does not build or push images.
     First-time deploy: apply the ECR repository alone, docker build/push to
     it, then apply everything else with the tag you pushed.
+
+    No default on purpose. Terraform detects a Lambda update by comparing
+    this string, so a bare apply that silently fell back to some default
+    tag could roll the function back to whatever that tag currently points
+    to in ECR, which will drift out of date the moment a newer image is
+    pushed under a different tag. Every apply, local or CI, must state the
+    tag it actually intends to deploy.
   EOT
   type        = string
-  default     = "latest"
 }
 
 variable "lambda_memory_size" {
@@ -49,7 +55,7 @@ variable "log_retention_days" {
 variable "cloudfront_price_class" {
   description = <<-EOT
     CloudFront edge location coverage. Does not affect cost within the
-    Always Free 1 TB/month data-transfer allowance -- it only changes which
+    Always Free 1 TB/month data-transfer allowance. It only changes which
     edge locations serve requests. PriceClass_100 excludes Asia
     Pacific/Australia entirely, which would be a poor default for an
     Australia-facing app; PriceClass_All is used here so local users get a
@@ -81,4 +87,16 @@ variable "api_throttling_burst_limit" {
   description = "API Gateway token-bucket burst above the steady-state rate."
   type        = number
   default     = 40
+}
+
+variable "github_org" {
+  description = "GitHub organization or user that owns the repository. Used to scope the OIDC trust policy so only this repository can assume the CI role."
+  type        = string
+  default     = "Vanamali-Sims"
+}
+
+variable "github_repo" {
+  description = "GitHub repository name. Used to scope the OIDC trust policy so only this repository can assume the CI role."
+  type        = string
+  default     = "myPowerPlant"
 }
