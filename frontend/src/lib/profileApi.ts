@@ -1,13 +1,12 @@
 import type { ProfileData } from '../types/profile'
-import { getHouseholdId } from './householdId'
+import { clearHouseholdId, readHouseholdId, storeHouseholdId } from './householdId'
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL
 
 export type ApiResult = { ok: true } | { ok: false; error: string }
 
-function toPayload(profile: ProfileData, householdId: string) {
+function toPayload(profile: ProfileData) {
   return {
-    household_id: householdId,
     postcode: profile.postcode,
     people: profile.people,
     rooms: profile.rooms,
@@ -37,28 +36,58 @@ function toPayload(profile: ProfileData, householdId: string) {
   }
 }
 
+function describe(status: number): string {
+  if (status === 429) return 'Too many updates for now. Please try again later.'
+  if (status === 422) return 'The server rejected some values.'
+  if (status === 503) return 'The server is temporarily unavailable.'
+  return `Request failed (${status}).`
+}
+
+/** Register a new profile and remember the identifier the server issues. */
+async function createOnServer(profile: ProfileData): Promise<ApiResult> {
+  const response = await fetch(`${API_BASE_URL}/api/profile`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(toPayload(profile)),
+  })
+  if (!response.ok) return { ok: false, error: describe(response.status) }
+  const body = (await response.json()) as { household_id?: string }
+  if (!body.household_id) return { ok: false, error: 'Server did not return an identifier.' }
+  storeHouseholdId(body.household_id)
+  return { ok: true }
+}
+
 /**
  * Best-effort sync to the backend. localStorage remains the source of truth
- * for the app itself — this just mirrors the profile server-side so it's
- * available for dashboard calculations later. Failures are non-fatal.
+ * for the app itself - this mirrors the profile server-side so it's available
+ * for dashboard calculations later. Failures are non-fatal.
+ *
+ * The identifier is issued by the server, so the first sync POSTs and every
+ * later one PUTs. A stored identifier the server doesn't recognise (a profile
+ * purged under the retention policy, or one minted by an older build that
+ * generated UUIDs client-side) falls back to registering afresh.
  */
 export async function syncProfileToServer(profile: ProfileData): Promise<ApiResult> {
   if (!API_BASE_URL) {
     return { ok: false, error: 'VITE_API_BASE_URL is not set.' }
   }
 
-  const householdId = getHouseholdId()
-
   try {
+    const householdId = readHouseholdId()
+    if (!householdId) return await createOnServer(profile)
+
     const response = await fetch(`${API_BASE_URL}/api/profile/${householdId}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(toPayload(profile, householdId)),
+      body: JSON.stringify(toPayload(profile)),
     })
-    if (!response.ok) {
-      return { ok: false, error: `Request failed (${response.status})` }
+    if (response.ok) return { ok: true }
+
+    if (response.status === 404) {
+      clearHouseholdId()
+      return await createOnServer(profile)
     }
-    return { ok: true }
+    return { ok: false, error: describe(response.status) }
   } catch {
     return { ok: false, error: 'Could not reach the API. Is the backend running?' }
   }

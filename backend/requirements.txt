@@ -5,3 +5,4 @@ asyncpg==0.31.0
 alembic==1.19.1
 mangum==0.22.0
 python-dotenv==1.2.3
+slowapi==0.1.10

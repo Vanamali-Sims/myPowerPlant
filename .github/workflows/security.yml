@@ -1,0 +1,88 @@
+# Security Plan S11 (continuous integration) and R15 (compromised dependency).
+# Build fails on high-severity findings, per the Definition of Done in S11.
+name: security
+
+on:
+  push:
+    branches: [main, development, sec]
+  pull_request:
+  schedule:
+    # Weekly, so a newly-disclosed advisory in an unchanged dependency is
+    # still caught between iterations.
+    - cron: "0 19 * * 1"
+
+permissions:
+  contents: read
+
+jobs:
+  secret-scan:
+    name: gitleaks (full history)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # S13.2 requires the scan to cover full commit history, not just the
+          # tip - a secret removed in a later commit is still leaked.
+          fetch-depth: 0
+      - name: Install gitleaks
+        run: |
+          curl -sSfL -o /tmp/gitleaks.tar.gz \
+            https://github.com/gitleaks/gitleaks/releases/download/v8.28.0/gitleaks_8.28.0_linux_x64.tar.gz
+          tar -xzf /tmp/gitleaks.tar.gz -C /tmp gitleaks
+          sudo mv /tmp/gitleaks /usr/local/bin/
+      - name: Scan full history
+        run: gitleaks detect --source . --redact --verbose --exit-code 1
+
+  frontend-audit:
+    name: npm audit
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      # ci (not install) so the committed lockfile is authoritative - S3.3
+      # pinned lockfiles.
+      - run: npm ci
+      - run: npm audit --audit-level=high
+      - run: npx tsc -b
+      - run: npm run lint
+      # Unit tests for the validation rules and KPI maths. These are pure
+      # functions feeding a financial estimate, so a regression here is silent
+      # in the UI - hence a standing suite rather than a manual check.
+      - run: npm test
+
+  backend-audit:
+    name: pip-audit
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - run: pip install -r requirements.txt pip-audit
+      - run: pip-audit --strict
+
+  security-tests:
+    name: access-control regression tests
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - run: pip install -r requirements.txt pytest aiosqlite httpx
+      # S6.1 requires a standing test that identifiers are non-sequential and
+      # that an altered identifier returns 404.
+      - run: pytest tests/ -v

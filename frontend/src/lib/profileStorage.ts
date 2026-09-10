@@ -1,4 +1,5 @@
 import { emptyProfile, type ProfileData } from '../types/profile'
+import { clearHouseholdId } from './householdId'
 
 const STORAGE_KEY = 'mypowerplant.profile'
 
@@ -19,6 +20,11 @@ export function saveProfile(profile: ProfileData): ProfileData {
   return next
 }
 
+/**
+ * Forget this device's profile AND its server identifier, so a reset issues
+ * a fresh identity rather than continuing to address the old record.
+ */
 export function clearStoredProfile(): void {
   localStorage.removeItem(STORAGE_KEY)
+  clearHouseholdId()
 }

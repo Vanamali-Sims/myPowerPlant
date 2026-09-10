@@ -1,0 +1,186 @@
+
+ RUN  v3.2.7 /Users/vimal/Desktop/myPowerPlant/frontend
+
+ ✓ src/lib/validateProfile.test.ts > baseline profile > passes validation for the household step 1ms
+ ✓ src/lib/validateProfile.test.ts > baseline profile > passes validation for the usage step 0ms
+ ✓ src/lib/validateProfile.test.ts > baseline profile > passes validation for the solar step 0ms
+ ✓ src/lib/validateProfile.test.ts > baseline profile > passes validation for the battery step 0ms
+ ✓ src/lib/validateProfile.test.ts > baseline profile > passes validation for the provider step 0ms
+ ✓ src/lib/validateProfile.test.ts > VAL-01..06 postcode equivalence classes > VAL-01 3000 -> accepted=true (valid 3xxx Victorian postcode) 0ms
+ ✓ src/lib/validateProfile.test.ts > VAL-01..06 postcode equivalence classes > VAL-02 8007 -> accepted=true (valid 8xxx Victorian postcode) 0ms
+ ✓ src/lib/validateProfile.test.ts > VAL-01..06 postcode equivalence classes > VAL-03 2000 -> accepted=false (NSW postcode - product is Victoria-only) 0ms
+ ✓ src/lib/validateProfile.test.ts > VAL-01..06 postcode equivalence classes > VAL-04 300 -> accepted=false (too short) 0ms
+ ✓ src/lib/validateProfile.test.ts > VAL-01..06 postcode equivalence classes > VAL-05 abcd -> accepted=false (non-numeric) 0ms
+ ✓ src/lib/validateProfile.test.ts > VAL-01..06 postcode equivalence classes > VAL-06  -> accepted=false (empty - required field) 0ms
+ ✓ src/lib/validateProfile.test.ts > VAL-01..06 postcode equivalence classes > VAL-03 rejects every non-Victorian state prefix 0ms
+ ✓ src/lib/validateProfile.test.ts > VAL-01..06 postcode equivalence classes > VAL-04 rejects a 5-digit postcode 0ms
+ ✓ src/lib/validateProfile.test.ts > VAL-01..06 postcode equivalence classes > accepts a postcode with surrounding whitespace 0ms
+ ✓ src/lib/validateProfile.test.ts > 'VAL-07' boundary value analysis: 'monthlyBill' (undefined) > rejects min-1 (0) 0ms
+ ✓ src/lib/validateProfile.test.ts > 'VAL-07' boundary value analysis: 'monthlyBill' (undefined) > accepts min (1) 0ms
+ ✓ src/lib/validateProfile.test.ts > 'VAL-07' boundary value analysis: 'monthlyBill' (undefined) > accepts max (5000) 0ms
+ ✓ src/lib/validateProfile.test.ts > 'VAL-07' boundary value analysis: 'monthlyBill' (undefined) > rejects max+1 (5001) 0ms
+ ✓ src/lib/validateProfile.test.ts > 'VAL-07' boundary value analysis: 'monthlyBill' (undefined) > rejects a non-numeric value 0ms
+ ✓ src/lib/validateProfile.test.ts > 'VAL-07' boundary value analysis: 'monthlyBill' (undefined) > rejects an empty value 0ms
+ ✓ src/lib/validateProfile.test.ts > 'VAL-08' boundary value analysis: 'monthlyKwh' (undefined) > rejects min-1 (0) 0ms
+ ✓ src/lib/validateProfile.test.ts > 'VAL-08' boundary value analysis: 'monthlyKwh' (undefined) > accepts min (1) 0ms
+ ✓ src/lib/validateProfile.test.ts > 'VAL-08' boundary value analysis: 'monthlyKwh' (undefined) > accepts max (5000) 0ms
+ ✓ src/lib/validateProfile.test.ts > 'VAL-08' boundary value analysis: 'monthlyKwh' (undefined) > rejects max+1 (5001) 0ms
+ ✓ src/lib/validateProfile.test.ts > 'VAL-08' boundary value analysis: 'monthlyKwh' (undefined) > rejects a non-numeric value 0ms
+ ✓ src/lib/validateProfile.test.ts > 'VAL-08' boundary value analysis: 'monthlyKwh' (undefined) > rejects an empty value 0ms
+ ✓ src/lib/validateProfile.test.ts > 'VAL-09' boundary value analysis: 'panelCount' (undefined) > rejects min-1 (0) 0ms
+ ✓ src/lib/validateProfile.test.ts > 'VAL-09' boundary value analysis: 'panelCount' (undefined) > accepts min (1) 0ms
+ ✓ src/lib/validateProfile.test.ts > 'VAL-09' boundary value analysis: 'panelCount' (undefined) > accepts max (80) 0ms
+ ✓ src/lib/validateProfile.test.ts > 'VAL-09' boundary value analysis: 'panelCount' (undefined) > rejects max+1 (81) 0ms
+ ✓ src/lib/validateProfile.test.ts > 'VAL-09' boundary value analysis: 'panelCount' (undefined) > rejects a non-numeric value 0ms
+ ✓ src/lib/validateProfile.test.ts > 'VAL-09' boundary value analysis: 'panelCount' (undefined) > rejects an empty value 0ms
+ ✓ src/lib/validateProfile.test.ts > 'VAL-10' boundary value analysis: 'panelWatts' (undefined) > rejects min-1 (49) 0ms
+ ✓ src/lib/validateProfile.test.ts > 'VAL-10' boundary value analysis: 'panelWatts' (undefined) > accepts min (50) 0ms
+ ✓ src/lib/validateProfile.test.ts > 'VAL-10' boundary value analysis: 'panelWatts' (undefined) > accepts max (500) 0ms
+ ✓ src/lib/validateProfile.test.ts > 'VAL-10' boundary value analysis: 'panelWatts' (undefined) > rejects max+1 (501) 0ms
+ ✓ src/lib/validateProfile.test.ts > 'VAL-10' boundary value analysis: 'panelWatts' (undefined) > rejects a non-numeric value 0ms
+ ✓ src/lib/validateProfile.test.ts > 'VAL-10' boundary value analysis: 'panelWatts' (undefined) > rejects an empty value 0ms
+ ✓ src/lib/validateProfile.test.ts > 'VAL-11' boundary value analysis: 'reservePercent' (undefined) > rejects min-1 (-1) 0ms
+ ✓ src/lib/validateProfile.test.ts > 'VAL-11' boundary value analysis: 'reservePercent' (undefined) > accepts min (0) 0ms
+ ✓ src/lib/validateProfile.test.ts > 'VAL-11' boundary value analysis: 'reservePercent' (undefined) > accepts max (80) 0ms
+ ✓ src/lib/validateProfile.test.ts > 'VAL-11' boundary value analysis: 'reservePercent' (undefined) > rejects max+1 (81) 0ms
+ ✓ src/lib/validateProfile.test.ts > 'VAL-11' boundary value analysis: 'reservePercent' (undefined) > rejects a non-numeric value 0ms
+ ✓ src/lib/validateProfile.test.ts > 'VAL-11' boundary value analysis: 'reservePercent' (undefined) > rejects an empty value 0ms
+ ✓ src/lib/validateProfile.test.ts > 'VAL-12' boundary value analysis: 'batteryAge' (undefined) > rejects min-1 (-1) 0ms
+ ✓ src/lib/validateProfile.test.ts > 'VAL-12' boundary value analysis: 'batteryAge' (undefined) > accepts min (0) 0ms
+ ✓ src/lib/validateProfile.test.ts > 'VAL-12' boundary value analysis: 'batteryAge' (undefined) > accepts max (40) 0ms
+ ✓ src/lib/validateProfile.test.ts > 'VAL-12' boundary value analysis: 'batteryAge' (undefined) > rejects max+1 (41) 0ms
+ ✓ src/lib/validateProfile.test.ts > 'VAL-12' boundary value analysis: 'batteryAge' (undefined) > rejects a non-numeric value 0ms
+ ✓ src/lib/validateProfile.test.ts > 'VAL-12' boundary value analysis: 'batteryAge' (undefined) > rejects an empty value 0ms
+ ✓ src/lib/validateProfile.test.ts > VAL-14 battery units boundaries > accepts the minimum of 1 unit 0ms
+ ✓ src/lib/validateProfile.test.ts > VAL-14 battery units boundaries > accepts the maximum of 8 units 0ms
+ ✓ src/lib/validateProfile.test.ts > VAL-14 battery units boundaries > rejects 9 units 0ms
+ ✓ src/lib/validateProfile.test.ts > VAL-14 battery units boundaries > rejects 0 units in the browser, which the API accepts (known divergence) 0ms
+ ✓ src/lib/validateProfile.test.ts > VAL-15..17 battery model allow-list > VAL-15 accepts a model on the list 0ms
+ ✓ src/lib/validateProfile.test.ts > VAL-15..17 battery model allow-list > VAL-16 accepts "Not sure" as an explicit escape hatch 0ms
+ ✓ src/lib/validateProfile.test.ts > VAL-15..17 battery model allow-list > VAL-17 rejects an off-list model and points the user at "Not sure" 0ms
+ ✓ src/lib/validateProfile.test.ts > VAL-15..17 battery model allow-list > rejects an empty model 0ms
+ ✓ src/lib/validateProfile.test.ts > VAL-18..20 provider allow-list > VAL-18 accepts a provider on the list 0ms
+ ✓ src/lib/validateProfile.test.ts > VAL-18..20 provider allow-list > VAL-19 accepts "Other" because the list is not exhaustive 0ms
+ ✓ src/lib/validateProfile.test.ts > VAL-18..20 provider allow-list > VAL-19 accepts "Not sure" 0ms
+ ✓ src/lib/validateProfile.test.ts > VAL-18..20 provider allow-list > VAL-20 rejects an off-list provider 0ms
+ ✓ src/lib/validateProfile.test.ts > VAL-18..20 provider allow-list > rejects an empty provider 0ms
+ ✓ src/lib/validateProfile.test.ts > VAL-21/22 dryer conditional fields > VAL-21 does not require dryer frequency when the home has no dryer 0ms
+ ✓ src/lib/validateProfile.test.ts > VAL-21/22 dryer conditional fields > VAL-22 requires both frequency fields when the home has a dryer 0ms
+ ✓ src/lib/validateProfile.test.ts > VAL-23/24 solar conditional fields > VAL-23 does not require panel details when the home has no solar 0ms
+ ✓ src/lib/validateProfile.test.ts > VAL-23/24 solar conditional fields > VAL-24 requires direction, count and watts when the home has solar 0ms
+ ✓ src/lib/validateProfile.test.ts > VAL-23/24 solar conditional fields > requires an answer to the solar question itself 0ms
+ ✓ src/lib/validateProfile.test.ts > FUN-03 required fields block step advancement > blocks the step when people is blank 0ms
+ ✓ src/lib/validateProfile.test.ts > FUN-03 required fields block step advancement > blocks the step when rooms is blank 0ms
+ ✓ src/lib/validateProfile.test.ts > FUN-03 required fields block step advancement > blocks the step when gas is blank 0ms
+ ✓ src/lib/validateProfile.test.ts > FUN-03 required fields block step advancement > blocks the step when refrigerators is blank 0ms
+ ✓ src/lib/validateProfile.test.ts > FUN-03 required fields block step advancement > blocks the step when dryer is blank 0ms
+ ✓ src/lib/validateProfile.test.ts > FUN-03 required fields block step advancement > blocks the step when heating is blank 0ms
+ ✓ src/lib/validateProfile.test.ts > FUN-03 required fields block step advancement > blocks the step when cooling is blank 0ms
+ ✓ src/lib/validateProfile.test.ts > FUN-03 required fields block step advancement > blocks the step when hotWater is blank 0ms
+ ✓ src/lib/validateProfile.test.ts > FUN-03 required fields block step advancement > blocks the step when peakPeriod is blank 0ms
+ ✓ src/lib/validateProfile.test.ts > FUN-03 required fields block step advancement > blocks the step when usageLevel is blank 0ms
+ ✓ src/lib/validateProfile.test.ts > FUN-03 required fields block step advancement > blocks the step when wfh is blank 0ms
+ ✓ src/lib/validateProfile.test.ts > FUN-03 required fields block step advancement > reports every blank field at once, not one at a time 0ms
+ ✓ src/lib/validateProfile.test.ts > FUN-03 required fields block step advancement > gives a non-empty message for every error it reports 0ms
+ ✓ src/lib/validateProfile.test.ts > hasErrors > is false for an empty error object 0ms
+ ✓ src/lib/validateProfile.test.ts > hasErrors > is true when any field has an error 0ms
+ ✓ src/lib/kpis.test.ts > parseCount > parses 3 as 3 1ms
+ ✓ src/lib/kpis.test.ts > parseCount > parses 6+ as 6 0ms
+ ✓ src/lib/kpis.test.ts > parseCount > parses 10+ as 10 0ms
+ ✓ src/lib/kpis.test.ts > parseCount > parses 0 as 0 0ms
+ ✓ src/lib/kpis.test.ts > parseCount > falls back to 0 for '' 0ms
+ ✓ src/lib/kpis.test.ts > parseCount > falls back to 0 for 'abc' 0ms
+ ✓ src/lib/kpis.test.ts > parseCount > falls back to 0 for 'not a number' 0ms
+ ✓ src/lib/kpis.test.ts > parseCount > never returns NaN 0ms
+ ✓ src/lib/kpis.test.ts > timeframe scaling > daily is weekly divided by 7 0ms
+ ✓ src/lib/kpis.test.ts > timeframe scaling > weekly is unchanged 0ms
+ ✓ src/lib/kpis.test.ts > timeframe scaling > monthly is weekly multiplied by 4 0ms
+ ✓ src/lib/kpis.test.ts > timeframe scaling > scales currency by the same rule as energy 0ms
+ ✓ src/lib/kpis.test.ts > timeframe scaling > handles zero without producing NaN 0ms
+ ✓ src/lib/kpis.test.ts > FUN-08 consumption > derives weekly consumption from the billed monthly figure (540 / 4 = 135) 0ms
+ ✓ src/lib/kpis.test.ts > FUN-08 consumption > labels consumption "from_you" when the user supplied monthly kWh 0ms
+ ✓ src/lib/kpis.test.ts > FUN-08 consumption > labels consumption "estimate" when monthly kWh came from the baseline 0ms
+ ✓ src/lib/kpis.test.ts > FUN-08 consumption > falls back to the modelled appliance total when no monthly kWh is known 0ms
+ ✓ src/lib/kpis.test.ts > FUN-08 consumption > FUN-06 recalculates when the user edits their usage 0ms
+ ✓ src/lib/kpis.test.ts > FUN-08 solar generation > applies kW x peak sun hours x performance ratio x orientation x 7 0ms
+ ✓ src/lib/kpis.test.ts > FUN-08 solar generation > rates a north-facing roof above a south-facing one 1ms
+ ✓ src/lib/kpis.test.ts > FUN-08 solar generation > treats an unknown direction as the "not sure" factor 0ms
+ ✓ src/lib/kpis.test.ts > FUN-08 solar generation > FUN-07 models a typical 6.6 kW roof as potential when the home has no solar 0ms
+ ✓ src/lib/kpis.test.ts > energy balance > never distributes more than it generates 0ms
+ ✓ src/lib/kpis.test.ts > energy balance > splits generation into self-consumed plus distributed 0ms
+ ✓ src/lib/kpis.test.ts > energy balance > reports no surplus when generation is below consumption 0ms
+ ✓ src/lib/kpis.test.ts > energy balance > derives carbon avoided from distributed energy at the Victorian grid factor 0ms
+ ✓ src/lib/kpis.test.ts > energy balance > lets a larger battery shift at least as much energy as a smaller one 0ms
+ ✓ src/lib/kpis.test.ts > energy balance > splits the week into four periods that sum to the weekly totals 0ms
+ ✓ src/lib/kpis.test.ts > energy balance > weights the stated peak period most heavily 0ms
+ ✓ src/lib/kpis.test.ts > retail rate > derives the rate from bill divided by kWh (180 / 540) 0ms
+ ✓ src/lib/kpis.test.ts > retail rate > falls back to the typical Victorian rate when figures are missing 0ms
+ ✓ src/lib/kpis.test.ts > retail rate > labels the rate "from_you" when the bill came from the user 0ms
+ ✓ src/lib/kpis.test.ts > retail rate > never divides by zero 0ms
+ ✓ src/lib/kpis.test.ts > plan comparison > marks the household current provider as the current plan 0ms
+ ✓ src/lib/kpis.test.ts > plan comparison > has no current plan when the provider is not on the VPP list 0ms
+ ✓ src/lib/kpis.test.ts > plan comparison > orders plans by weekly savings, best first 0ms
+ ✓ src/lib/kpis.test.ts > plan comparison > recommends exactly one plan 0ms
+ ✓ src/lib/kpis.test.ts > plan comparison > does not recommend the plan the household is already on 0ms
+ ✓ src/lib/kpis.test.ts > plan comparison > computes savings as self-consumed x retail + distributed x export rate 0ms
+ ✓ src/lib/kpis.test.ts > plan comparison > only offers plans compatible with the household battery 0ms
+ ✓ src/lib/kpis.test.ts > appliance modelling > computes each line as units x power x hours 0ms
+ ✓ src/lib/kpis.test.ts > appliance modelling > includes a monitor only when someone works from home 0ms
+ ✓ src/lib/kpis.test.ts > appliance modelling > includes a dryer only when the home has one 0ms
+ ✓ src/lib/kpis.test.ts > appliance modelling > uses the stated dryer cycles as hours per week 0ms
+ ✓ src/lib/kpis.test.ts > appliance modelling > counts the stated number of refrigerators 0ms
+ ✓ src/lib/kpis.test.ts > appliance modelling > skips the electric water heater when the home has gas 0ms
+ ✓ src/lib/kpis.test.ts > appliance modelling > picks the cooling appliance that matches the answer 0ms
+ ✓ src/lib/kpis.test.ts > appliance modelling > includes an electric heater only for electric heating 0ms
+ ✓ src/lib/kpis.test.ts > appliance modelling > marks a line as "from you" only when the field came from the user 0ms
+ ✓ src/lib/kpis.test.ts > appliance modelling > KPI-01: a single refrigerator should use a realistic 5-20 kWh per week 5ms
+ ✓ src/lib/kpis.test.ts > appliance modelling > KPI-01 current behaviour, pinned until the defect is fixed 0ms
+ ✓ src/lib/kpis.test.ts > FUN-07 household without solar or battery > still produces a complete, finite report 0ms
+ ✓ src/lib/kpis.test.ts > FUN-07 household without solar or battery > shifts no energy when there is no battery 0ms
+ ✓ src/lib/kpis.test.ts > FUN-07 household without solar or battery > flags the solar figure as potential rather than actual 0ms
+ ✓ src/lib/kpis.test.ts > FUN-07 household without solar or battery > KPI-02: a household with no solar should not be shown dollar savings 2ms
+ ✓ src/lib/kpis.test.ts > FUN-07 household without solar or battery > KPI-02 current behaviour, pinned until the defect is fixed 0ms
+ ✓ src/lib/kpis.test.ts > FUN-10 boundary profiles produce usable output > all maximums: every weekly figure is finite and non-negative 0ms
+ ✓ src/lib/kpis.test.ts > FUN-10 boundary profiles produce usable output > all minimums: every weekly figure is finite and non-negative 0ms
+ ✓ src/lib/kpis.test.ts > FUN-10 boundary profiles produce usable output > empty profile: every weekly figure is finite and non-negative 0ms
+ ✓ src/lib/kpis.test.ts > FUN-10 boundary profiles produce usable output > no solar, no battery: every weekly figure is finite and non-negative 0ms
+ ✓ src/lib/kpis.test.ts > FUN-10 boundary profiles produce usable output > all maximums: always recommends a plan 0ms
+ ✓ src/lib/kpis.test.ts > FUN-10 boundary profiles produce usable output > all minimums: always recommends a plan 0ms
+ ✓ src/lib/kpis.test.ts > FUN-10 boundary profiles produce usable output > empty profile: always recommends a plan 0ms
+ ✓ src/lib/kpis.test.ts > FUN-10 boundary profiles produce usable output > no solar, no battery: always recommends a plan 0ms
+ ✓ src/lib/kpis.test.ts > FUN-10 boundary profiles produce usable output > all maximums: every appliance line is finite 0ms
+ ✓ src/lib/kpis.test.ts > FUN-10 boundary profiles produce usable output > all minimums: every appliance line is finite 0ms
+ ✓ src/lib/kpis.test.ts > FUN-10 boundary profiles produce usable output > empty profile: every appliance line is finite 0ms
+ ✓ src/lib/kpis.test.ts > FUN-10 boundary profiles produce usable output > no solar, no battery: every appliance line is finite 0ms
+ ✓ src/lib/kpis.test.ts > FUN-10 boundary profiles produce usable output > all maximums: produces the full set of assumptions 0ms
+ ✓ src/lib/kpis.test.ts > FUN-10 boundary profiles produce usable output > all minimums: produces the full set of assumptions 0ms
+ ✓ src/lib/kpis.test.ts > FUN-10 boundary profiles produce usable output > empty profile: produces the full set of assumptions 0ms
+ ✓ src/lib/kpis.test.ts > FUN-10 boundary profiles produce usable output > no solar, no battery: produces the full set of assumptions 0ms
+ ✓ src/lib/kpis.test.ts > formatters > formatKwh(150) is 150 kWh 0ms
+ ✓ src/lib/kpis.test.ts > formatters > formatKwh(100) is 100 kWh 0ms
+ ✓ src/lib/kpis.test.ts > formatters > formatKwh(99.9) is 99.9 kWh 0ms
+ ✓ src/lib/kpis.test.ts > formatters > formatKwh(15) is 15.0 kWh 0ms
+ ✓ src/lib/kpis.test.ts > formatters > formatKwh(10) is 10.0 kWh 0ms
+ ✓ src/lib/kpis.test.ts > formatters > formatKwh(9.99) is 9.99 kWh 0ms
+ ✓ src/lib/kpis.test.ts > formatters > formatKwh(1.5) is 1.50 kWh 0ms
+ ✓ src/lib/kpis.test.ts > formatters > formatKwh(0) is 0.00 kWh 0ms
+ ✓ src/lib/kpis.test.ts > formatters > formatAud(15) is undefined 0ms
+ ✓ src/lib/kpis.test.ts > formatters > formatAud(10) is undefined 0ms
+ ✓ src/lib/kpis.test.ts > formatters > formatAud(9.99) is $9.99 0ms
+ ✓ src/lib/kpis.test.ts > formatters > formatAud(1.5) is $1.50 0ms
+ ✓ src/lib/kpis.test.ts > formatters > formatAud(0) is $0.00 0ms
+ ✓ src/lib/kpis.test.ts > formatters > formatKg(15) is 15 kg 0ms
+ ✓ src/lib/kpis.test.ts > formatters > formatKg(10) is 10 kg 0ms
+ ✓ src/lib/kpis.test.ts > formatters > formatKg(9.9) is 9.9 kg 0ms
+ ✓ src/lib/kpis.test.ts > formatters > formatKg(0) is 0.0 kg 0ms
+ ✓ src/lib/kpis.test.ts > formatters > never renders NaN or Infinity as a value 0ms
+ ✓ src/lib/kpis.test.ts > report shape > labels the location from the postcode 0ms
+ ✓ src/lib/kpis.test.ts > report shape > falls back to VIC when the postcode is unknown 0ms
+ ✓ src/lib/kpis.test.ts > report shape > is a pure function of the profile 0ms
+ ✓ src/lib/kpis.test.ts > report shape > does not mutate the profile it is given 0ms
+
+ Test Files  2 passed (2)
+      Tests  177 passed (177)
+   Start at  19:59:14
+   Duration  403ms (transform 118ms, setup 0ms, collect 163ms, tests 29ms, environment 0ms, prepare 111ms)
+

@@ -1,0 +1,86 @@
+============================= test session starts ==============================
+platform darwin -- Python 3.14.0, pytest-9.1.1, pluggy-1.6.0 -- /Users/vimal/Desktop/myPowerPlant/backend/.venv/bin/python
+cachedir: .pytest_cache
+rootdir: /Users/vimal/Desktop/myPowerPlant/backend
+configfile: pytest.ini
+plugins: asyncio-1.4.0, anyio-4.14.2
+asyncio: mode=Mode.AUTO, debug=False, asyncio_default_fixture_loop_scope=None, asyncio_default_test_loop_scope=function
+collecting ... collected 67 items
+
+tests/test_access_control.py::TestIdentifierIssuance::test_identifiers_are_uuidv4_and_non_sequential PASSED [  1%]
+tests/test_access_control.py::TestIdentifierIssuance::test_client_cannot_choose_its_own_identifier PASSED [  2%]
+tests/test_access_control.py::TestIdentifierIssuance::test_sequential_primary_key_is_never_returned PASSED [  4%]
+tests/test_access_control.py::TestRetrieval::test_altered_identifier_returns_404 PASSED [  5%]
+tests/test_access_control.py::TestRetrieval::test_unknown_identifier_returns_404_not_403 PASSED [  7%]
+tests/test_access_control.py::TestRetrieval::test_non_uuidv4_identifiers_are_indistinguishable_from_a_miss[admin] PASSED [  8%]
+tests/test_access_control.py::TestRetrieval::test_non_uuidv4_identifiers_are_indistinguishable_from_a_miss[1] PASSED [ 10%]
+tests/test_access_control.py::TestRetrieval::test_non_uuidv4_identifiers_are_indistinguishable_from_a_miss[0] PASSED [ 11%]
+tests/test_access_control.py::TestRetrieval::test_non_uuidv4_identifiers_are_indistinguishable_from_a_miss[../../etc/passwd] PASSED [ 13%]
+tests/test_access_control.py::TestRetrieval::test_non_uuidv4_identifiers_are_indistinguishable_from_a_miss[aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa] PASSED [ 14%]
+tests/test_access_control.py::TestRetrieval::test_non_uuidv4_identifiers_are_indistinguishable_from_a_miss[%2e%2e%2f] PASSED [ 16%]
+tests/test_access_control.py::TestRetrieval::test_non_uuidv4_identifiers_are_indistinguishable_from_a_miss[00000000-0000-1000-8000-000000000000] PASSED [ 17%]
+tests/test_access_control.py::TestRetrieval::test_sequential_walk_finds_nothing PASSED [ 19%]
+tests/test_access_control.py::TestWrites::test_put_does_not_create PASSED [ 20%]
+tests/test_access_control.py::TestWrites::test_partial_body_does_not_blank_stored_values PASSED [ 22%]
+tests/test_access_control.py::TestWrites::test_full_replacement_succeeds PASSED [ 23%]
+tests/test_headers_and_limits.py::TestSecurityHeaders::test_header_present[content-security-policy] PASSED [ 25%]
+tests/test_headers_and_limits.py::TestSecurityHeaders::test_header_present[strict-transport-security] PASSED [ 26%]
+tests/test_headers_and_limits.py::TestSecurityHeaders::test_header_present[x-content-type-options] PASSED [ 28%]
+tests/test_headers_and_limits.py::TestSecurityHeaders::test_header_present[x-frame-options] PASSED [ 29%]
+tests/test_headers_and_limits.py::TestSecurityHeaders::test_header_present[referrer-policy] PASSED [ 31%]
+tests/test_headers_and_limits.py::TestSecurityHeaders::test_csp_forbids_inline_and_eval PASSED [ 32%]
+tests/test_headers_and_limits.py::TestSecurityHeaders::test_headers_present_on_error_responses PASSED [ 34%]
+tests/test_headers_and_limits.py::TestCors::test_hostile_origin_not_reflected PASSED [ 35%]
+tests/test_headers_and_limits.py::TestCors::test_credentials_not_allowed PASSED [ 37%]
+tests/test_headers_and_limits.py::TestRateLimiting::test_reads_are_throttled PASSED [ 38%]
+tests/test_headers_and_limits.py::TestRateLimiting::test_creation_is_throttled_harder_than_reads PASSED [ 40%]
+tests/test_headers_and_limits.py::TestErrorDisclosure::test_malformed_json_does_not_leak_internals PASSED [ 41%]
+tests/test_input_validation.py::TestPostcode::test_rejects_non_victorian_postcode[9999] PASSED [ 43%]
+tests/test_input_validation.py::TestPostcode::test_rejects_non_victorian_postcode[2000] PASSED [ 44%]
+tests/test_input_validation.py::TestPostcode::test_rejects_non_victorian_postcode[abcd] PASSED [ 46%]
+tests/test_input_validation.py::TestPostcode::test_rejects_non_victorian_postcode[00000] PASSED [ 47%]
+tests/test_input_validation.py::TestPostcode::test_rejects_non_victorian_postcode[] PASSED [ 49%]
+tests/test_input_validation.py::TestPostcode::test_rejects_non_victorian_postcode[310] PASSED [ 50%]
+tests/test_input_validation.py::TestPostcode::test_rejects_non_victorian_postcode[31011] PASSED [ 52%]
+tests/test_input_validation.py::TestPostcode::test_rejects_non_victorian_postcode['; DROP TABLE household_profiles;--] PASSED [ 53%]
+tests/test_input_validation.py::TestPostcode::test_rejects_non_victorian_postcode[3101 OR 1=1] PASSED [ 55%]
+tests/test_input_validation.py::TestPostcode::test_rejects_non_victorian_postcode[<script>x] PASSED [ 56%]
+tests/test_input_validation.py::TestPostcode::test_accepts_victorian_postcode[3000] PASSED [ 58%]
+tests/test_input_validation.py::TestPostcode::test_accepts_victorian_postcode[3101] PASSED [ 59%]
+tests/test_input_validation.py::TestPostcode::test_accepts_victorian_postcode[8000] PASSED [ 61%]
+tests/test_input_validation.py::TestPostcode::test_accepts_victorian_postcode[3999] PASSED [ 62%]
+tests/test_input_validation.py::TestReferenceDataAllowlists::test_rejects_unknown_battery_model PASSED [ 64%]
+tests/test_input_validation.py::TestReferenceDataAllowlists::test_rejects_unknown_provider PASSED [ 65%]
+tests/test_input_validation.py::TestReferenceDataAllowlists::test_accepts_not_sure PASSED [ 67%]
+tests/test_input_validation.py::TestNumericBounds::test_rejects_out_of_range_battery_units[-1] PASSED [ 68%]
+tests/test_input_validation.py::TestNumericBounds::test_rejects_out_of_range_battery_units[-999] PASSED [ 70%]
+tests/test_input_validation.py::TestNumericBounds::test_rejects_out_of_range_battery_units[9] PASSED [ 71%]
+tests/test_input_validation.py::TestNumericBounds::test_rejects_out_of_range_battery_units[1000000000] PASSED [ 73%]
+tests/test_input_validation.py::TestNumericBounds::test_rejects_out_of_range_numerics[monthly_bill-0] PASSED [ 74%]
+tests/test_input_validation.py::TestNumericBounds::test_rejects_out_of_range_numerics[monthly_bill-99999] PASSED [ 76%]
+tests/test_input_validation.py::TestNumericBounds::test_rejects_out_of_range_numerics[monthly_bill-abc] PASSED [ 77%]
+tests/test_input_validation.py::TestNumericBounds::test_rejects_out_of_range_numerics[monthly_kwh-0] PASSED [ 79%]
+tests/test_input_validation.py::TestNumericBounds::test_rejects_out_of_range_numerics[panel_count-81] PASSED [ 80%]
+tests/test_input_validation.py::TestNumericBounds::test_rejects_out_of_range_numerics[panel_watts-49] PASSED [ 82%]
+tests/test_input_validation.py::TestNumericBounds::test_rejects_out_of_range_numerics[reserve_percent-81] PASSED [ 83%]
+tests/test_input_validation.py::TestNumericBounds::test_rejects_out_of_range_numerics[battery_age-41] PASSED [ 85%]
+tests/test_input_validation.py::TestHostileInput::test_rejects_control_characters[3101\x00] PASSED [ 86%]
+tests/test_input_validation.py::TestHostileInput::test_rejects_control_characters[31\x0101] PASSED [ 88%]
+tests/test_input_validation.py::TestHostileInput::test_rejects_control_characters[3101\r\n] PASSED [ 89%]
+tests/test_input_validation.py::TestHostileInput::test_rejects_oversized_values PASSED [ 91%]
+tests/test_input_validation.py::TestHostileInput::test_rejects_unknown_fields PASSED [ 92%]
+tests/test_input_validation.py::TestHostileInput::test_bounds_field_sources_json PASSED [ 94%]
+tests/test_input_validation.py::TestHostileInput::test_rejects_invalid_field_sources_values PASSED [ 95%]
+tests/test_input_validation.py::TestConditionalRequirements::test_dryer_requires_cycle_counts PASSED [ 97%]
+tests/test_input_validation.py::TestConditionalRequirements::test_solar_requires_panel_details PASSED [ 98%]
+tests/test_input_validation.py::TestConditionalRequirements::test_no_solar_needs_no_panel_details PASSED [100%]
+
+=============================== warnings summary ===============================
+.venv/lib/python3.14/site-packages/slowapi/extension.py:720
+.venv/lib/python3.14/site-packages/slowapi/extension.py:720
+.venv/lib/python3.14/site-packages/slowapi/extension.py:720
+  /Users/vimal/Desktop/myPowerPlant/backend/.venv/lib/python3.14/site-packages/slowapi/extension.py:720: DeprecationWarning: 'asyncio.iscoroutinefunction' is deprecated and slated for removal in Python 3.16; use inspect.iscoroutinefunction() instead
+    if asyncio.iscoroutinefunction(func):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+======================== 67 passed, 3 warnings in 0.42s ========================
