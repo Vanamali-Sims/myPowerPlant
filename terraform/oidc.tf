@@ -15,10 +15,13 @@ resource "aws_iam_openid_connect_provider" "github_actions" {
 }
 
 # Trust policy scoped to this exact repository and to the main branch only.
-# The sub claim GitHub issues has the same shape for a push event and for a
-# manually triggered workflow_dispatch run, as long as both run against the
-# main branch, so this single condition covers both triggers without
-# widening it to any other branch or any other repository.
+# Matched on the repository and ref claims rather than sub: this org has
+# GitHub's "include immutable IDs in the OIDC subject claim" setting on, so
+# sub actually arrives as repo:ORG@ORG_ID/REPO@REPO_ID:ref:refs/heads/main
+# instead of the plain-name form the AWS docs show. repository and ref are
+# separate claims GitHub always issues in plain-name form regardless of
+# that setting, so matching on those avoids depending on numeric IDs that
+# would silently break trust again if the setting or the IDs ever change.
 data "aws_iam_policy_document" "github_actions_trust" {
   statement {
     effect  = "Allow"
@@ -37,8 +40,14 @@ data "aws_iam_policy_document" "github_actions_trust" {
 
     condition {
       test     = "StringEquals"
-      variable = "token.actions.githubusercontent.com:sub"
-      values   = ["repo:${var.github_org}/${var.github_repo}:ref:refs/heads/main"]
+      variable = "token.actions.githubusercontent.com:repository"
+      values   = ["${var.github_org}/${var.github_repo}"]
+    }
+
+    condition {
+      test     = "StringEquals"
+      variable = "token.actions.githubusercontent.com:ref"
+      values   = ["refs/heads/main"]
     }
   }
 }
