@@ -15,13 +15,19 @@ resource "aws_iam_openid_connect_provider" "github_actions" {
 }
 
 # Trust policy scoped to this exact repository and to the main branch only.
-# Matched on the repository and ref claims rather than sub: this org has
-# GitHub's "include immutable IDs in the OIDC subject claim" setting on, so
-# sub actually arrives as repo:ORG@ORG_ID/REPO@REPO_ID:ref:refs/heads/main
-# instead of the plain-name form the AWS docs show. repository and ref are
-# separate claims GitHub always issues in plain-name form regardless of
-# that setting, so matching on those avoids depending on numeric IDs that
-# would silently break trust again if the setting or the IDs ever change.
+#
+# Matched on sub, not repository/ref: this org has GitHub's "include
+# immutable IDs in the OIDC subject claim" setting on, so sub arrives as
+# repo:ORG@ORG_ID/REPO@REPO_ID:ref:refs/heads/main rather than the
+# plain-name form the AWS docs show (confirmed via CloudTrail on a denied
+# AssumeRoleWithWebIdentity call). repository/ref would be simpler and
+# immune to that setting, but AWS's own policy validation for this
+# provider rejects any trust policy that doesn't condition on a
+# non-wildcard sub or job_workflow_ref, so one of those has to be here
+# regardless. sub is used alone, without also matching repository/ref:
+# ANDing them back in would silently re-break trust on a repo or org
+# rename, since the ID-based sub survives a rename but a name-based
+# condition would not.
 data "aws_iam_policy_document" "github_actions_trust" {
   statement {
     effect  = "Allow"
@@ -40,14 +46,8 @@ data "aws_iam_policy_document" "github_actions_trust" {
 
     condition {
       test     = "StringEquals"
-      variable = "token.actions.githubusercontent.com:repository"
-      values   = ["${var.github_org}/${var.github_repo}"]
-    }
-
-    condition {
-      test     = "StringEquals"
-      variable = "token.actions.githubusercontent.com:ref"
-      values   = ["refs/heads/main"]
+      variable = "token.actions.githubusercontent.com:sub"
+      values   = ["repo:${var.github_org}@${var.github_org_id}/${var.github_repo}@${var.github_repo_id}:ref:refs/heads/main"]
     }
   }
 }

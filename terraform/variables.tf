@@ -100,3 +100,15 @@ variable "github_repo" {
   type        = string
   default     = "myPowerPlant"
 }
+
+variable "github_org_id" {
+  description = "Numeric GitHub organization ID. This org has GitHub's immutable-ID subject claim setting enabled, so the OIDC sub claim embeds this alongside github_org rather than the org name alone; see oidc.tf. Found via CloudTrail on a denied AssumeRoleWithWebIdentity call, not exposed anywhere in the GitHub UI."
+  type        = string
+  default     = "117826689"
+}
+
+variable "github_repo_id" {
+  description = "Numeric GitHub repository ID, embedded in the OIDC sub claim alongside github_repo for the same reason as github_org_id."
+  type        = string
+  default     = "1351386984"
+}
