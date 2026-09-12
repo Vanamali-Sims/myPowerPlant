@@ -113,6 +113,7 @@ data "aws_iam_policy_document" "github_actions_ecr" {
       "ecr:PutImage",
       "ecr:DescribeRepositories",
       "ecr:DescribeImages",
+      "ecr:ListTagsForResource",
     ]
     resources = [aws_ecr_repository.backend.arn]
   }
@@ -133,12 +134,43 @@ data "aws_iam_policy_document" "github_actions_ecr" {
 
 # Sync the frontend build to its bucket and read/write the state bucket's
 # own settings are covered above; this is only the frontend bucket.
+#
+# GetBucketAcl, GetBucketTagging, GetBucketPublicAccessBlock, and
+# GetEncryptionConfiguration are all here so Terraform can refresh
+# aws_s3_bucket.frontend, aws_s3_bucket_public_access_block.frontend, and
+# aws_s3_bucket_server_side_encryption_configuration.frontend, which this
+# config also manages, not because the deploy step syncing objects needs
+# any of them.
 data "aws_iam_policy_document" "github_actions_s3_frontend" {
   statement {
     sid    = "FrontendBucketList"
     effect = "Allow"
     actions = [
       "s3:ListBucket",
+      "s3:GetBucketPolicy",
+      "s3:GetBucketAcl",
+      "s3:GetBucketTagging",
+      "s3:GetBucketPublicAccessBlock",
+      "s3:GetEncryptionConfiguration",
+      "s3:GetBucketLocation",
+      # The rest of these are legacy aws_s3_bucket attributes (cors_rule,
+      # website, logging, replication_configuration,
+      # object_lock_configuration, request_payer, acceleration_status,
+      # versioning) that provider v5 still reads on every refresh even
+      # though none of them are set on this bucket and none are managed
+      # by this config. GetBucketCors turned up denied one at a time
+      # after the actions above were already granted, rather than
+      # alongside them, so the rest are added together here instead of
+      # waiting for each to fail on its own run.
+      "s3:GetBucketCORS",
+      "s3:GetBucketWebsite",
+      "s3:GetBucketLogging",
+      "s3:GetReplicationConfiguration",
+      "s3:GetBucketObjectLockConfiguration",
+      "s3:GetBucketRequestPayment",
+      "s3:GetAccelerateConfiguration",
+      "s3:GetBucketVersioning",
+      "s3:GetLifecycleConfiguration",
     ]
     resources = [aws_s3_bucket.frontend.arn]
   }
@@ -180,6 +212,7 @@ data "aws_iam_policy_document" "github_actions_cloudfront" {
       "cloudfront:GetDistributionConfig",
       "cloudfront:UpdateDistribution",
       "cloudfront:TagResource",
+      "cloudfront:ListTagsForResource",
       "cloudfront:GetOriginAccessControl",
       "cloudfront:GetOriginAccessControlConfig",
       "cloudfront:CreateOriginAccessControl",
@@ -219,11 +252,21 @@ data "aws_iam_policy_document" "github_actions_lambda" {
     sid    = "LambdaLogGroup"
     effect = "Allow"
     actions = [
-      "logs:DescribeLogGroups",
       "logs:PutRetentionPolicy",
       "logs:TagResource",
+      "logs:ListTagsForResource",
     ]
     resources = [aws_cloudwatch_log_group.backend.arn]
+  }
+
+  # DescribeLogGroups has no resource-level permission support (like
+  # ecr:GetAuthorizationToken above), so it can only be granted on "*"
+  # even though it is only ever used here to refresh one log group.
+  statement {
+    sid       = "LambdaLogGroupDescribe"
+    effect    = "Allow"
+    actions   = ["logs:DescribeLogGroups"]
+    resources = ["*"]
   }
 }
 
@@ -237,8 +280,30 @@ data "aws_iam_policy_document" "github_actions_iam" {
     actions = [
       "iam:GetRole",
       "iam:GetRolePolicy",
+      "iam:ListRolePolicies",
+      "iam:ListAttachedRolePolicies",
+      "iam:ListRoleTags",
     ]
     resources = [aws_iam_role.lambda_exec.arn]
+  }
+
+  # This config manages 8 inline policies on the github_actions role
+  # itself (all the aws_iam_role_policy.github_actions_* resources,
+  # including this one), so the role needs the same self-read access
+  # granted above for lambda_exec, just pointed at itself. Without this,
+  # Terraform can authenticate as this role but cannot refresh the role
+  # or any of its own inline policies.
+  statement {
+    sid    = "ReadSelfRole"
+    effect = "Allow"
+    actions = [
+      "iam:GetRole",
+      "iam:GetRolePolicy",
+      "iam:ListRolePolicies",
+      "iam:ListAttachedRolePolicies",
+      "iam:ListRoleTags",
+    ]
+    resources = [aws_iam_role.github_actions.arn]
   }
 
   statement {
@@ -252,6 +317,18 @@ data "aws_iam_policy_document" "github_actions_iam" {
       variable = "iam:PassedToService"
       values   = ["lambda.amazonaws.com"]
     }
+  }
+
+  # The OIDC provider itself is a resource this config manages, so
+  # Terraform reads it back on every refresh like any other.
+  statement {
+    sid    = "ReadOidcProvider"
+    effect = "Allow"
+    actions = [
+      "iam:GetOpenIDConnectProvider",
+      "iam:ListOpenIDConnectProviderTags",
+    ]
+    resources = [aws_iam_openid_connect_provider.github_actions.arn]
   }
 }
 
@@ -279,10 +356,23 @@ data "aws_iam_policy_document" "github_actions_apigateway" {
 # it, only enough to read it back for the plan to complete.
 data "aws_iam_policy_document" "github_actions_ssm" {
   statement {
-    sid       = "ReadDatabaseUrlParameter"
-    effect    = "Allow"
-    actions   = ["ssm:GetParameter"]
+    sid    = "ReadDatabaseUrlParameter"
+    effect = "Allow"
+    actions = [
+      "ssm:GetParameter",
+      "ssm:ListTagsForResource",
+    ]
     resources = [aws_ssm_parameter.database_url.arn]
+  }
+
+  # DescribeParameters has no resource-level permission support (like
+  # ecr:GetAuthorizationToken above), so it can only be granted on "*"
+  # even though it is only ever used here to refresh one parameter.
+  statement {
+    sid       = "DescribeDatabaseUrlParameter"
+    effect    = "Allow"
+    actions   = ["ssm:DescribeParameters"]
+    resources = ["*"]
   }
 }
 
