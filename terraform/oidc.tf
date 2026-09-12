@@ -244,6 +244,15 @@ data "aws_iam_policy_document" "github_actions_lambda" {
       "lambda:GetPolicy",
       "lambda:AddPermission",
       "lambda:RemovePermission",
+      "lambda:ListVersionsByFunction",
+      # These four are optional sub-configs (none are set on this
+      # function), but same as the S3 legacy attributes elsewhere in
+      # this file, provider v5 still reads them unconditionally on
+      # every refresh.
+      "lambda:GetFunctionEventInvokeConfig",
+      "lambda:GetFunctionUrlConfig",
+      "lambda:GetFunctionCodeSigningConfig",
+      "lambda:GetRuntimeManagementConfig",
     ]
     resources = [aws_lambda_function.backend.arn]
   }
