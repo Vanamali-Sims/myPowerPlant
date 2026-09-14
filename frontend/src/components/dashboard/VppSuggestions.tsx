@@ -1,20 +1,24 @@
 /**
- * Dashboard VPP Suggestions: matched plan terms and an illustrative payment example.
+ * Dashboard VPP Suggestions: compact ranked cards and a full-terms dialog.
  */
-import { useId, useState } from 'react'
+import { useEffect, useId, useRef, useState } from 'react'
 import type { BatteryModelRow, VppSuggestionPlan, VppSuggestionTerm } from '../../lib/methodologyApi'
 import {
   EXAMPLE_KWH,
+  STALE_PROMPT,
   TERM_LABELS,
   TERM_ORDER,
   UNAVAILABLE_TERM,
+  compactCardFacts,
   formatExampleAud,
   formatKwhShort,
   formatVerifiedDate,
   illustrativePayment,
+  isTermStale,
   matchSuggestionPlans,
   termByKey,
   type MatchReasonCode,
+  type SuggestionMatch,
 } from '../../lib/vppSuggestions'
 import type { ProfileData } from '../../types/profile'
 import { Button } from '../ui/Button'
@@ -50,8 +54,8 @@ const TERM_ICONS = {
  * @param props.profile - Household answers used only for matching, never sent
  * @returns JSX.Element
  *
- * No plan cards until a profile exists. Terms are text, not icons-only.
- * Payment dollars appear only inside the labelled illustrative example.
+ * Summary cards only. Full terms, sources, and missing-term notices open
+ * in a dialog so the dashboard report is not regenerated (US-3.5).
  */
 export function VppSuggestions({
   hasProfile,
@@ -60,6 +64,8 @@ export function VppSuggestions({
   batteryModels,
   onStartSetup,
 }: Props) {
+  const [openMatch, setOpenMatch] = useState<SuggestionMatch | null>(null)
+
   if (!hasProfile) {
     return (
       <section className="vpp-suggestions" aria-labelledby="vpp-suggestions-heading">
@@ -83,15 +89,23 @@ export function VppSuggestions({
   }
 
   const { matches, emptyReason } = matchSuggestionPlans(profile, plans, batteryModels)
+  const featured = matches[0] ?? null
+  const stacked = matches.slice(1, 3)
+  const extra = matches.slice(3)
+  const boardClass =
+    matches.length <= 1
+      ? 'vpp-plan-board vpp-plan-board--solo'
+      : matches.length === 2
+        ? 'vpp-plan-board vpp-plan-board--pair'
+        : 'vpp-plan-board'
 
   return (
     <section className="vpp-suggestions" aria-labelledby="vpp-suggestions-heading">
       <p className="eyebrow">Plans that could fit this home</p>
       <h2 id="vpp-suggestions-heading">VPP Suggestions</h2>
       <p className="vpp-suggestions__lede">
-        These are compiled plan terms, not a live shopping engine. No figure here is a guaranteed
-        return. Providers decide when the battery discharges for events — you don’t choose those
-        times.
+        Ranked by how easy it is to leave and how clearly dispatch is limited — not by payment.
+        Open a plan for full terms. Not a live quote or a guaranteed return.
       </p>
 
       {emptyReason ? (
@@ -99,92 +113,191 @@ export function VppSuggestions({
           {EMPTY_REASON[emptyReason]}
         </Callout>
       ) : (
-        <ul className="vpp-plan-list">
-          {matches.map((item) => (
-            <li key={item.plan.id}>
-              <PlanTermsCard plan={item.plan} reserveHeadroomKwh={item.reserveHeadroomKwh} />
-            </li>
-          ))}
-        </ul>
+        <>
+          <div className={boardClass}>
+            {featured ? (
+              <PlanSummaryCard
+                match={featured}
+                featured
+                onOpen={() => setOpenMatch(featured)}
+              />
+            ) : null}
+            {stacked.map((item) => (
+              <PlanSummaryCard
+                key={item.plan.id}
+                match={item}
+                onOpen={() => setOpenMatch(item)}
+              />
+            ))}
+          </div>
+          {extra.length ? (
+            <div className="vpp-plan-more">
+              {extra.map((item) => (
+                <PlanSummaryCard
+                  key={item.plan.id}
+                  match={item}
+                  onOpen={() => setOpenMatch(item)}
+                />
+              ))}
+            </div>
+          ) : null}
+        </>
       )}
+
+      <TermsDialog match={openMatch} onClose={() => setOpenMatch(null)} />
     </section>
   )
 }
 
 type CardProps = {
-  plan: VppSuggestionPlan
-  reserveHeadroomKwh: number | null
+  match: SuggestionMatch
+  featured?: boolean
+  onOpen: () => void
 }
 
-function PlanTermsCard({ plan, reserveHeadroomKwh }: CardProps) {
-  const exampleId = useId()
-  const [exampleOpen, setExampleOpen] = useState(false)
-  const paymentTerm = termByKey(plan, 'payment')
-  const exampleKwh = reserveHeadroomKwh && reserveHeadroomKwh > 0 ? reserveHeadroomKwh : EXAMPLE_KWH
-  const exampleAud = illustrativePayment(plan.illustrativeRatePerKwh, exampleKwh)
-  const canShowExample = paymentTerm != null && exampleAud != null && plan.illustrativeRatePerKwh != null
+function PlanSummaryCard({ match, featured = false, onOpen }: CardProps) {
+  const { plan, reserveHeadroomKwh } = match
+  const facts = compactCardFacts(plan, featured ? reserveHeadroomKwh : null)
+  const shown = featured ? facts : facts.slice(0, 3)
 
   return (
-    <article className="vpp-plan-card">
-      <p className="vpp-plan-card__brand">{plan.brand}</p>
-      <h3>{plan.name}</h3>
-      <p className="vpp-plan-card__eligibility">
-        Listed for {plan.eligibleRegions.join(', ')}
-        {plan.approvedBatteries.length === 1
-          ? ` and ${plan.approvedBatteries[0]}.`
-          : ` and ${plan.approvedBatteries.length} approved battery models.`}
-      </p>
+    <button
+      type="button"
+      className={`vpp-plan-card${featured ? ' vpp-plan-card--featured' : ''}`}
+      onClick={onOpen}
+      aria-haspopup="dialog"
+      aria-label={`View full terms for ${plan.name}`}
+    >
+      {featured ? <span className="vpp-plan-card__badge">Top match</span> : null}
+      <span className="vpp-plan-card__brand">{plan.brand}</span>
+      <span className="vpp-plan-card__name">{plan.name}</span>
+      <span className="vpp-plan-card__fit">
+        {plan.eligibleRegions.join(', ')}
+        {plan.approvedBatteries.length ? ` · ${plan.approvedBatteries.length} batteries` : ''}
+      </span>
+      <span className="vpp-fact-row">
+        {shown.map((fact) => (
+          <span key={fact.label} className="vpp-fact">
+            <span className="vpp-fact__label">{fact.label}</span>
+            <span className="vpp-fact__value">{fact.value}</span>
+          </span>
+        ))}
+      </span>
+      <span className="vpp-plan-card__cta">View full terms</span>
+    </button>
+  )
+}
 
-      <ul className="vpp-term-list">
-        {TERM_ORDER.map((key) => {
-          const term = termByKey(plan, key)
-          const extra =
-            key === 'reserve_min' && term?.valueText && reserveHeadroomKwh != null
-              ? ` On your setup that’s about ${formatKwhShort(reserveHeadroomKwh)} the VPP could use above that reserve.`
-              : ''
-          return (
-            <TermRow
-              key={key}
-              planId={plan.id}
-              termKey={key}
-              term={term}
-              extraExplanation={extra}
-            />
-          )
-        })}
-      </ul>
+type DialogProps = {
+  match: SuggestionMatch | null
+  onClose: () => void
+}
 
-      {canShowExample ? (
-        <div className="vpp-example">
-          <Button
-            variant="outline-accent"
-            aria-expanded={exampleOpen}
-            aria-controls={exampleId}
-            onClick={() => setExampleOpen((open) => !open)}
-          >
-            {exampleOpen ? 'Hide calculation' : 'See how this is calculated'}
-          </Button>
-          {exampleOpen ? (
-            <div id={exampleId} className="vpp-example__panel">
-              <p className="vpp-example__label">Illustrative example — not a guaranteed return.</p>
-              <p>
-                If {formatKwhShort(exampleKwh)} were dispatched at the compiled rate of{' '}
-                {formatExampleAud(plan.illustrativeRatePerKwh ?? 0)} per kWh, that would be{' '}
-                {formatExampleAud(exampleAud)} in credits. This uses a round figure
-                {reserveHeadroomKwh != null ? ' (your reserve headroom)' : ' (10 kWh)'} so you can
-                see the arithmetic — it is not what your home would earn.
-              </p>
+function TermsDialog({ match, onClose }: DialogProps) {
+  const dialogRef = useRef<HTMLDialogElement>(null)
+  const titleId = useId()
+
+  useEffect(() => {
+    const node = dialogRef.current
+    if (!node) return
+    if (match) {
+      if (!node.open) node.showModal()
+    } else if (node.open) {
+      node.close()
+    }
+  }, [match])
+
+  const plan = match?.plan ?? null
+  const headroom = match?.reserveHeadroomKwh ?? null
+  const exampleKwh = headroom && headroom > 0 ? headroom : EXAMPLE_KWH
+  const exampleAud = plan
+    ? illustrativePayment(plan.illustrativeRatePerKwh, exampleKwh)
+    : null
+  const canShowExample =
+    Boolean(plan && termByKey(plan, 'payment') && exampleAud != null && plan.illustrativeRatePerKwh != null)
+  const exampleId = useId()
+  const [exampleOpen, setExampleOpen] = useState(false)
+
+  useEffect(() => {
+    setExampleOpen(false)
+  }, [plan?.id])
+
+  return (
+    <dialog
+      ref={dialogRef}
+      className="vpp-dialog"
+      aria-labelledby={titleId}
+      onClose={onClose}
+      onClick={(event) => {
+        if (event.target === dialogRef.current) onClose()
+      }}
+    >
+      {plan ? (
+        <div className="vpp-dialog__panel">
+          <header className="vpp-dialog__header">
+            <div>
+              <p className="vpp-plan-card__brand">{plan.brand}</p>
+              <h3 id={titleId}>{plan.name}</h3>
+            </div>
+            <Button variant="edit" onClick={onClose}>
+              Close
+            </Button>
+          </header>
+          <p className="vpp-dialog__lede">
+            Compiled terms for this plan. Figures are not a guaranteed return.
+          </p>
+          <ul className="vpp-term-list">
+            {TERM_ORDER.map((key) => {
+              const term = termByKey(plan, key)
+              const extra =
+                key === 'reserve_min' && term?.valueText && headroom != null
+                  ? ` On your setup that’s about ${formatKwhShort(headroom)} the VPP could use above that reserve.`
+                  : ''
+              return (
+                <TermRow
+                  key={key}
+                  planId={plan.id}
+                  termKey={key}
+                  term={term}
+                  extraExplanation={extra}
+                />
+              )
+            })}
+          </ul>
+          {canShowExample ? (
+            <div className="vpp-example">
+              <Button
+                variant="outline-accent"
+                aria-expanded={exampleOpen}
+                aria-controls={exampleId}
+                onClick={() => setExampleOpen((open) => !open)}
+              >
+                {exampleOpen ? 'Hide calculation' : 'See how this is calculated'}
+              </Button>
+              {exampleOpen ? (
+                <div id={exampleId} className="vpp-example__panel">
+                  <p className="vpp-example__label">
+                    Illustrative example — not a guaranteed return.
+                  </p>
+                  <p>
+                    If {formatKwhShort(exampleKwh)} were dispatched at the compiled rate of{' '}
+                    {formatExampleAud(plan.illustrativeRatePerKwh ?? 0)} per kWh, that would be{' '}
+                    {formatExampleAud(exampleAud ?? 0)} in credits. This uses a round figure
+                    {headroom != null ? ' (your reserve headroom)' : ' (10 kWh)'} so you can see
+                    the arithmetic — it is not what your home would earn.
+                  </p>
+                </div>
+              ) : null}
             </div>
           ) : null}
+          <p className="vpp-plan-card__link">
+            <a href={plan.href} target="_blank" rel="noreferrer">
+              Confirm current terms with {plan.brand}
+            </a>
+          </p>
         </div>
       ) : null}
-
-      <p className="vpp-plan-card__link">
-        <a href={plan.href} target="_blank" rel="noreferrer">
-          Provider page for {plan.name}
-        </a>
-      </p>
-    </article>
+    </dialog>
   )
 }
 
@@ -199,17 +312,16 @@ function TermRow({ planId, termKey, term, extraExplanation }: TermRowProps) {
   const Icon = TERM_ICONS[termKey]
   const available = Boolean(term?.valueText)
   const headingId = `vpp-term-${planId}-${termKey}`
+  const stale = term ? isTermStale(term.lastVerified) : false
 
   return (
     <li className={available ? 'vpp-term' : 'vpp-term vpp-term--unavailable'}>
-        <span className="vpp-term__icon" aria-hidden="true">
+      <span className="vpp-term__icon" aria-hidden="true">
         <Icon />
       </span>
       <div>
         <h4 id={headingId} className="vpp-term__title">
-          <span className="vpp-term__icon-label">
-            {TERM_LABELS[termKey]}
-          </span>
+          {TERM_LABELS[termKey]}
         </h4>
         {available ? (
           <p className="vpp-term__body">
@@ -225,12 +337,20 @@ function TermRow({ planId, termKey, term, extraExplanation }: TermRowProps) {
             The compiled table did not list this term. That is not a “no” from the provider.
           </p>
         )}
+        {stale ? (
+          <p className="vpp-term__stale" role="status">
+            <AlertIcon width={16} height={16} />
+            <span>May be outdated. {STALE_PROMPT}</span>
+          </p>
+        ) : null}
         {term ? (
           <p className="vpp-term__meta">
             Source: {term.sourceLabel} Last verified {formatVerifiedDate(term.lastVerified)}.
           </p>
         ) : (
-          <p className="vpp-term__meta">Source and verified date are not yet available for this term.</p>
+          <p className="vpp-term__meta">
+            Source and verified date are not yet available for this term.
+          </p>
         )}
       </div>
     </li>

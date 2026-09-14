@@ -32,7 +32,18 @@ export const TERM_LABELS: Record<VppSuggestionTermKey, string> = {
 
 export const UNAVAILABLE_TERM = 'Not yet available for this provider'
 
+/** Terms older than this are flagged “may be outdated” (AC-3.3.2). */
+export const STALE_THRESHOLD_DAYS = 90
+
+export const STALE_PROMPT =
+  'This term may be outdated. Confirm current terms with the provider before you sign up.'
+
 export type MatchReasonCode = 'battery' | 'region' | 'none'
+
+export type CardFact = {
+  label: string
+  value: string
+}
 
 export type SuggestionMatch = {
   plan: VppSuggestionPlan
@@ -152,7 +163,11 @@ export function matchSuggestionPlans(
       (plan) =>
         plan.eligibleRegions.includes(region) && plan.approvedBatteries.includes(model),
     )
-    .sort((a, b) => a.brand.localeCompare(b.brand) || a.name.localeCompare(b.name))
+    .sort((a, b) => {
+      const byControl = householdControlScore(b) - householdControlScore(a)
+      if (byControl !== 0) return byControl
+      return a.brand.localeCompare(b.brand) || a.name.localeCompare(b.name)
+    })
     .map((plan) => ({
       plan,
       reserveHeadroomKwh: reserveHeadroomKwh(profile, plan, models),
@@ -195,4 +210,83 @@ export function formatKwhShort(value: number): string {
 export function formatExampleAud(value: number): string {
   const abs = Math.abs(value)
   return `${value < 0 ? '-' : ''}$${abs.toFixed(2)}`
+}
+
+/**
+ * isTermStale
+ * @param isoDate - YYYY-MM-DD last-verified stamp
+ * @param now - Comparison day; defaults to today
+ * @returns True when the term is older than STALE_THRESHOLD_DAYS
+ */
+export function isTermStale(isoDate: string, now: Date = new Date()): boolean {
+  const verified = new Date(`${isoDate}T00:00:00`)
+  if (Number.isNaN(verified.getTime())) return false
+  const ageMs = now.getTime() - verified.getTime()
+  return ageMs > STALE_THRESHOLD_DAYS * 24 * 60 * 60 * 1000
+}
+
+/**
+ * householdControlScore
+ * @param plan - Compiled suggestion plan
+ * @returns Higher when leaving is easier and dispatch limits are published
+ *
+ * Placeholder ranking until structured opt-out / discharge fields land.
+ * Payment rates and bonuses are ignored on purpose.
+ */
+export function householdControlScore(plan: VppSuggestionPlan): number {
+  const opt = (termByKey(plan, 'opt_out')?.valueText ?? '').toLowerCase()
+  const event = (termByKey(plan, 'event_cap')?.valueText ?? '').toLowerCase()
+  const reserve = termByKey(plan, 'reserve_min')
+  let score = 0
+  if (/any time|anytime|opt in and out|no lock-in|no fixed/.test(opt)) score += 40
+  else if (/notice|business days/.test(opt)) score += 25
+  else if (opt) score += 10
+  if (/no cancellation|\$0 cancellation|no penalty|none/.test(opt)) score += 10
+  if (event) score += 8
+  if (reserve?.numericValue != null) score += 6
+  return score
+}
+
+function compactOptOut(term: VppSuggestionTerm | null): string {
+  if (!term?.valueText) return 'Not listed'
+  const text = term.valueText.toLowerCase()
+  if (/any time|anytime|opt in and out/.test(text)) return 'Leave anytime'
+  if (/business days|notice/.test(text)) return 'Notice to leave'
+  if (/no lock-in|no fixed/.test(text)) return 'No lock-in'
+  if (/ongoing/.test(text)) return 'Ongoing'
+  return 'See terms'
+}
+
+function compactEvent(term: VppSuggestionTerm | null): string {
+  if (!term?.valueText) return 'Not listed'
+  const cap = term.valueText.match(/(\d+)\s*kwh/i)
+  if (cap) return `Up to ${cap[1]} kWh / yr`
+  return 'Provider dispatches'
+}
+
+function compactReserve(term: VppSuggestionTerm | null): string {
+  if (term?.numericValue != null) return `${Math.round(term.numericValue * 100)}% kept`
+  if (term?.valueText) return 'See terms'
+  return 'Not listed'
+}
+
+/**
+ * compactCardFacts
+ * @param plan - Compiled suggestion plan
+ * @param headroomKwh - Reserve headroom for this household, if known
+ * @returns Short labels for the summary card — not the full terms
+ */
+export function compactCardFacts(
+  plan: VppSuggestionPlan,
+  headroomKwh: number | null,
+): CardFact[] {
+  const facts: CardFact[] = [
+    { label: 'Reserve', value: compactReserve(termByKey(plan, 'reserve_min')) },
+    { label: 'Leave', value: compactOptOut(termByKey(plan, 'opt_out')) },
+    { label: 'Events', value: compactEvent(termByKey(plan, 'event_cap')) },
+  ]
+  if (headroomKwh != null) {
+    facts.push({ label: 'Headroom', value: formatKwhShort(headroomKwh) })
+  }
+  return facts
 }

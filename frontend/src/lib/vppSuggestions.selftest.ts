@@ -6,7 +6,10 @@ import { emptyProfile, type ProfileData } from '../types/profile'
 import type { VppSuggestionPlan } from './methodologyApi'
 import {
   EXAMPLE_KWH,
+  compactCardFacts,
+  householdControlScore,
   illustrativePayment,
+  isTermStale,
   matchSuggestionPlans,
   regionFromPostcode,
   reserveHeadroomKwh,
@@ -102,5 +105,28 @@ assert(headroom != null && Math.abs(headroom - 13.5 * 0.8) < 0.01, 'headroom is 
 
 assert(illustrativePayment(1, EXAMPLE_KWH) === 10, '10 kWh at $1 is $10')
 assert(illustrativePayment(null, EXAMPLE_KWH) === null, 'no rate means no dollar example')
+
+assert(!isTermStale('2026-09-14', new Date('2026-09-14T00:00:00')), 'same-day terms are not stale')
+assert(
+  isTermStale('2026-01-01', new Date('2026-09-14T00:00:00')),
+  'terms older than 90 days are stale',
+)
+
+const noticePlan: VppSuggestionPlan = {
+  ...agl,
+  id: 'notice-plan',
+  brand: 'Origin Energy',
+  terms: agl.terms.map((term) =>
+    term.key === 'opt_out' ? { ...term, valueText: 'Give 20 business days’ notice to leave.' } : term,
+  ),
+}
+assert(
+  householdControlScore(agl) > householdControlScore(noticePlan),
+  'leave-anytime must rank above a notice period, without using payment',
+)
+
+const facts = compactCardFacts(agl, 10.8)
+assert(facts.some((fact) => fact.label === 'Leave' && fact.value === 'Leave anytime'), 'opt-out is a short chip')
+assert(facts.some((fact) => fact.label === 'Reserve' && fact.value === '20% kept'), 'reserve is a short chip')
 
 console.log('vpp suggestion self-test passed')
