@@ -865,10 +865,6 @@
   }
 
   .vpp-plan-more {
-    grid-template-columns: minmax(0, 1.2fr) minmax(0, 0.8fr);
-  }
-
-  .vpp-plan-more .vpp-plan-card {
-    grid-column: 2;
+    grid-template-columns: repeat(auto-fill, minmax(16.5rem, 1fr));
   }
 }
