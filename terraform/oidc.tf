@@ -226,6 +226,24 @@ data "aws_iam_policy_document" "github_actions_cloudfront" {
     ]
     resources = ["*"]
   }
+
+  # Full CRUD for the CloudFront Function this config manages, scoped to
+  # that one function. DescribeFunction and GetFunction are both needed:
+  # the former for refresh (metadata/status), the latter for the
+  # function's code itself.
+  statement {
+    sid    = "CloudFrontFunctionManage"
+    effect = "Allow"
+    actions = [
+      "cloudfront:CreateFunction",
+      "cloudfront:DescribeFunction",
+      "cloudfront:GetFunction",
+      "cloudfront:UpdateFunction",
+      "cloudfront:PublishFunction",
+      "cloudfront:DeleteFunction",
+    ]
+    resources = [aws_cloudfront_function.basic_auth.arn]
+  }
 }
 
 # Update the Lambda function to the new image and keep its configuration

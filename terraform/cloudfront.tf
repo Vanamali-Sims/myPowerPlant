@@ -125,6 +125,7 @@ resource "aws_cloudfront_distribution" "frontend" {
   default_root_object = "index.html"
   price_class         = var.cloudfront_price_class
   comment             = "${local.name_prefix} frontend"
+  aliases             = [local.app_domain_name]
 
   origin {
     domain_name              = aws_s3_bucket.frontend.bucket_regional_domain_name
@@ -175,10 +176,15 @@ resource "aws_cloudfront_distribution" "frontend" {
     }
   }
 
-  # No custom domain configured, so this uses the default *.cloudfront.net
-  # certificate, at no extra cost. Swap this block for an ACM cert plus
-  # aliases if a custom domain is added later.
+  # Custom domain (local.app_domain_name) via the ACM cert in acm.tf,
+  # issued in us-east-1 since that's the only region CloudFront accepts
+  # custom-domain certificates from. sni-only avoids the ~$600/month
+  # dedicated-IP cost of vip; every browser CloudFront needs to support
+  # has supported SNI for years. TLSv1.2_2021 is AWS's current
+  # recommended minimum.
   viewer_certificate {
-    cloudfront_default_certificate = true
+    acm_certificate_arn      = aws_acm_certificate.app_domain.arn
+    ssl_support_method       = "sni-only"
+    minimum_protocol_version = "TLSv1.2_2021"
   }
 }

@@ -25,10 +25,21 @@ resource "aws_lambda_function" "backend" {
   environment {
     variables = {
       ENVIRONMENT = var.environment
-      # Resolves the CloudFront ordering dependency by referencing the
-      # distribution's own domain_name attribute directly, rather than a
-      # value that has to be filled in by hand after the fact.
-      CORS_ORIGINS = "https://${aws_cloudfront_distribution.frontend.domain_name}"
+      # domain_name always returns the original *.cloudfront.net address,
+      # even once an alias (local.app_domain_name) is attached - CloudFront
+      # never disables or replaces it, adding an alias only adds another
+      # way to reach the same distribution. So both stay permanently live
+      # regardless of what's allowed here, and both are allowed: there is
+      # no access-control reason to drop the cloudfront.net origin (the
+      # Basic Auth CloudFront Function in cloudfront.tf gates both
+      # identically, since it's attached to the distribution's behavior,
+      # not to a specific domain), and keeping it gives a working fallback
+      # if the custom domain's DNS ever has an outage or a propagation
+      # delay, without an emergency apply just to restore API access.
+      CORS_ORIGINS = join(",", [
+        "https://${aws_cloudfront_distribution.frontend.domain_name}",
+        "https://${local.app_domain_name}",
+      ])
       # Sourced from SSM at apply time, never a literal string in this repo.
       DATABASE_URL = aws_ssm_parameter.database_url.value
     }
