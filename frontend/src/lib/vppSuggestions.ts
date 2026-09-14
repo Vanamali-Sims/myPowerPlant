@@ -258,6 +258,74 @@ export function householdControlScore(plan: VppSuggestionPlan): number {
   return score
 }
 
+export type PlanFitCopy = {
+  why: string[]
+  tradeoffs: string[]
+}
+
+/**
+ * planFitCopy
+ * @param profile - Saved household answers used only for matching context
+ * @param match - Eligible plan plus reserve headroom for this battery
+ * @returns Why-it-may-suit and trade-off paragraphs, never dollar savings
+ *
+ * US-3.7. Eligibility, leave rights, and published dispatch limits only.
+ */
+export function planFitCopy(profile: ProfileData, match: SuggestionMatch): PlanFitCopy {
+  const { plan, reserveHeadroomKwh: headroom } = match
+  const battery = profile.batteryModel
+  const region = regionFromPostcode(profile.postcode)
+  const regionLabel = region === 'VIC' ? 'Victoria' : (region ?? 'your region')
+  const opt = compactOptOut(termByKey(plan, 'opt_out'))
+  const reserve = compactReserve(termByKey(plan, 'reserve_min'))
+  const events = compactEvent(termByKey(plan, 'event_cap'))
+  const reserveTerm = termByKey(plan, 'reserve_min')
+
+  const why: string[] = [
+    `${plan.brand} lists ${battery} as an approved battery in ${regionLabel}, so this plan can apply to your home.`,
+  ]
+  if (opt === 'Anytime') {
+    why.push('Compiled terms say you can leave at any time, with no lock-in listed.')
+  } else if (opt === 'No lock-in') {
+    why.push('Compiled terms list no fixed VPP lock-in for this plan.')
+  } else if (opt === 'Notice') {
+    why.push('Your battery and region still match, though leaving needs a notice period.')
+  }
+
+  if (reserveTerm?.numericValue != null) {
+    const pct = Math.round(reserveTerm.numericValue * 100)
+    let line = `A published reserve keeps ${pct}% of the battery for the home.`
+    if (headroom != null) {
+      line += ` On your setup that leaves about ${formatKwhShort(headroom)} the VPP may use.`
+    }
+    why.push(line)
+  }
+  if (events !== 'Not listed') {
+    why.push(`Event use is capped in the compiled table (${events}).`)
+  }
+
+  const tradeoffs: string[] = [
+    'The provider decides when your battery charges or discharges for VPP events. You cannot pick those times yourself.',
+  ]
+  if (opt === 'Notice') {
+    tradeoffs.push('Leaving is not instant — compiled terms list a notice period.')
+  } else if (opt === 'Ongoing') {
+    tradeoffs.push('The agreement is listed as ongoing, so confirm how to leave with the provider.')
+  }
+  if (reserve === 'Not listed' || events === 'Not listed') {
+    tradeoffs.push(
+      'Some dispatch limits are not yet listed for this provider. Confirm current terms before you sign up.',
+    )
+  }
+  if (reserveTerm?.numericValue != null && reserveTerm.numericValue > 0) {
+    tradeoffs.push(
+      'The reserved slice is not available for VPP dispatch, and the rest may be used when the provider calls an event.',
+    )
+  }
+
+  return { why, tradeoffs }
+}
+
 function compactOptOut(term: VppSuggestionTerm | null): string {
   if (!term?.valueText) return 'Not listed'
   const text = term.valueText.toLowerCase()
