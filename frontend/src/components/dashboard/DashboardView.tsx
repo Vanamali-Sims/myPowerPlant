@@ -26,11 +26,14 @@ import { Button } from '../ui/Button'
 import { Callout } from '../ui/Callout'
 import { ConsumptionDonut } from './ConsumptionDonut'
 import { SolarForecastChart } from './SolarForecastChart'
+import { VppSuggestions } from './VppSuggestions'
 import { BoltIcon, BulbIcon, LeafIcon } from '../ui/icons'
 
 type Props = {
   profile: ProfileData
+  hasProfile: boolean
   onEditProfile: () => void
+  onStartSetup: () => void
   onLogoClick: () => void
 }
 
@@ -57,8 +60,16 @@ function KindBadge({ kind }: { kind: ValueKind }) {
  * @returns JSX.Element
  *
  * Figures are estimates unless the badge says otherwise.
+ * VPP Suggestions sit under the charts and do not use the leftover
+ * dollar-ranked matcher in this file.
  */
-export function DashboardView({ profile, onEditProfile, onLogoClick }: Props) {
+export function DashboardView({
+  profile,
+  hasProfile,
+  onEditProfile,
+  onStartSetup,
+  onLogoClick,
+}: Props) {
   const [timeframe, setTimeframe] = useState<Timeframe>('weekly')
   const [bundle, setBundle] = useState<MethodologyBundle | null>(null)
   const [loadError, setLoadError] = useState('')
@@ -80,8 +91,8 @@ export function DashboardView({ profile, onEditProfile, onLogoClick }: Props) {
   }, [])
 
   const report = useMemo(
-    () => (bundle ? buildKpiReport(profile, bundle) : null),
-    [bundle, profile],
+    () => (hasProfile && bundle ? buildKpiReport(profile, bundle) : null),
+    [bundle, hasProfile, profile],
   )
   const place =
     locationFromPostcode(profile.postcode) || report?.locationLabel || ''
@@ -157,95 +168,112 @@ export function DashboardView({ profile, onEditProfile, onLogoClick }: Props) {
         <h1>Your household energy picture</h1>
       </div>
 
-      {loadError ? (
+      {hasProfile && loadError ? (
         <p className="app-notice" role="status">
           Dashboard rates could not be loaded. {loadError}
         </p>
       ) : null}
-      {!bundle && !loadError ? (
+      {hasProfile && !bundle && !loadError ? (
         <p className="app-notice" role="status">
           Loading rates and appliance ratings…
         </p>
       ) : null}
 
-      <div className="dashboard__time" role="radiogroup" aria-label="Timeframe">
-        {TIMEFRAMES.map((option) => (
-          <button
-            key={option.value}
-            type="button"
-            role="radio"
-            aria-checked={timeframe === option.value}
-            className={`ui-toggle__option${timeframe === option.value ? ' is-selected' : ''}`}
-            onClick={() => setTimeframe(option.value)}
-          >
-            {option.label}
-          </button>
-        ))}
-      </div>
-
-      <section className="kpi-grid" aria-label="Key insights">
-        {kpis.map((card) => {
-          const Icon = card.icon
-          return (
-            <article key={card.eyebrow} className="kpi-card">
-              <span className="kpi-card__icon">
-                <Icon />
-              </span>
-              <p className="eyebrow">{card.eyebrow}</p>
-              <p
-                className={
-                  card.signed
-                    ? `kpi-card__value kpi-card__value--${card.signed}`
-                    : 'kpi-card__value'
-                }
+      {hasProfile ? (
+        <>
+          <div className="dashboard__time" role="radiogroup" aria-label="Timeframe">
+            {TIMEFRAMES.map((option) => (
+              <button
+                key={option.value}
+                type="button"
+                role="radio"
+                aria-checked={timeframe === option.value}
+                className={`ui-toggle__option${timeframe === option.value ? ' is-selected' : ''}`}
+                onClick={() => setTimeframe(option.value)}
               >
-                {card.value}
-                <KindBadge kind={card.kind} />
-              </p>
-              {card.note ? <p className="kpi-card__note">{card.note}</p> : null}
-            </article>
-          )
-        })}
-      </section>
+                {option.label}
+              </button>
+            ))}
+          </div>
 
-      {report && weekly ? (
-        <div className="dashboard__split">
-          <section className="dashboard-card">
-            <p className="eyebrow">Where your energy goes</p>
-            <h2>Energy consumption breakdown</h2>
-            <ConsumptionDonut appliances={report.appliances} timeframe={timeframe} />
+          <section className="kpi-grid" aria-label="Key insights">
+            {kpis.map((card) => {
+              const Icon = card.icon
+              return (
+                <article key={card.eyebrow} className="kpi-card">
+                  <span className="kpi-card__icon">
+                    <Icon />
+                  </span>
+                  <p className="eyebrow">{card.eyebrow}</p>
+                  <p
+                    className={
+                      card.signed
+                        ? `kpi-card__value kpi-card__value--${card.signed}`
+                        : 'kpi-card__value'
+                    }
+                  >
+                    {card.value}
+                    <KindBadge kind={card.kind} />
+                  </p>
+                  {card.note ? <p className="kpi-card__note">{card.note}</p> : null}
+                </article>
+              )
+            })}
           </section>
 
-          <section className="dashboard-card">
-            <p className="eyebrow">
-              {report.solarIsPotential ? 'Solar potential' : 'Solar generation'} · weather forecast
-            </p>
-            <h2>Predicted solar generation</h2>
-            {solarInputs ? (
-              <SolarForecastChart
-                inputs={solarInputs}
-                view={timeframe}
-                isPotential={report.solarIsPotential}
-                placeLabel={place}
-              />
-            ) : null}
-          </section>
-        </div>
+          {report && weekly ? (
+            <div className="dashboard__split">
+              <section className="dashboard-card">
+                <p className="eyebrow">Where your energy goes</p>
+                <h2>Energy consumption breakdown</h2>
+                <ConsumptionDonut appliances={report.appliances} timeframe={timeframe} />
+              </section>
+
+              <section className="dashboard-card">
+                <p className="eyebrow">
+                  {report.solarIsPotential ? 'Solar potential' : 'Solar generation'} · weather
+                  forecast
+                </p>
+                <h2>Predicted solar generation</h2>
+                {solarInputs ? (
+                  <SolarForecastChart
+                    inputs={solarInputs}
+                    view={timeframe}
+                    isPotential={report.solarIsPotential}
+                    placeLabel={place}
+                  />
+                ) : null}
+              </section>
+            </div>
+          ) : null}
+        </>
       ) : null}
 
-      <footer className="dashboard__footer">
-        <Callout
-          tone="accent"
-          title={`Report generated from your profile · ${formatUpdatedAt(profile.lastUpdated)}`}
-          action={
-            <Button variant="edit" onClick={onEditProfile}>
-              Edit profile
-            </Button>
-          }
-        >
-          Change household details and come back — this report updates automatically.
-        </Callout>
-      </footer>
+      {!hasProfile || bundle ? (
+        <VppSuggestions
+          hasProfile={hasProfile}
+          profile={profile}
+          plans={bundle?.vppSuggestionPlans ?? []}
+          batteryModels={bundle?.batteryModels ?? []}
+          onStartSetup={onStartSetup}
+        />
+      ) : null}
+
+      {hasProfile ? (
+        <footer className="dashboard__footer">
+          <Callout
+            tone="accent"
+            title={`Report generated from your profile · ${formatUpdatedAt(profile.lastUpdated)}`}
+            action={
+              <Button variant="edit" onClick={onEditProfile}>
+                Edit profile
+              </Button>
+            }
+          >
+            Change household details and come back — this report updates automatically.
+          </Callout>
+        </footer>
+      ) : null}
     </div>
   )
 }
