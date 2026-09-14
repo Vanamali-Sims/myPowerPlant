@@ -65,7 +65,7 @@ function App() {
       setNotice('')
       return
     }
-    if (id === 'dashboard' && profile.lastUpdated) {
+    if (id === 'dashboard') {
       setView('dashboard')
       setNotice('')
     }
@@ -122,10 +122,12 @@ function App() {
       {view === 'dashboard' ? (
         <DashboardView
           profile={profile}
+          hasProfile={Boolean(profile.lastUpdated)}
           onEditProfile={() => {
             setView('profile')
             setNotice('')
           }}
+          onStartSetup={startSetup}
           onLogoClick={goHome}
         />
       ) : null}

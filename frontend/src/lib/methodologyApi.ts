@@ -49,6 +49,27 @@ export type VppPlan = {
   sourceLabel: string
 }
 
+export type VppSuggestionTermKey = 'reserve_min' | 'event_cap' | 'opt_out' | 'payment'
+
+export type VppSuggestionTerm = {
+  key: VppSuggestionTermKey
+  valueText: string | null
+  numericValue: number | null
+  sourceLabel: string
+  lastVerified: string
+}
+
+export type VppSuggestionPlan = {
+  id: string
+  brand: string
+  name: string
+  href: string
+  illustrativeRatePerKwh: number | null
+  approvedBatteries: string[]
+  eligibleRegions: string[]
+  terms: VppSuggestionTerm[]
+}
+
 export type MethodologyScalars = {
   melbournePeakSunHours: number
   solarPerformanceRatio: number
@@ -84,6 +105,7 @@ export type MethodologyBundle = {
   orientationFactors: Record<string, number>
   peakPeriods: PeakPeriodRow[]
   vppPlans: VppPlan[]
+  vppSuggestionPlans: VppSuggestionPlan[]
 }
 
 export type MethodologyResult =
@@ -140,6 +162,22 @@ type ApiPayload = {
     href: string
     source_label: string
     compatible_batteries: string[]
+  }[]
+  vpp_suggestion_plans?: {
+    id: string
+    brand: string
+    name: string
+    href: string
+    illustrative_rate_per_kwh: number | null
+    approved_batteries: string[]
+    eligible_regions: string[]
+    terms: {
+      key: VppSuggestionTermKey
+      value_text: string | null
+      numeric_value: number | null
+      source_label: string
+      last_verified: string
+    }[]
   }[]
 }
 
@@ -221,6 +259,22 @@ export function mapMethodologyPayload(raw: ApiPayload): MethodologyBundle {
       compatibleBatteries: row.compatible_batteries,
       href: row.href,
       sourceLabel: row.source_label,
+    })),
+    vppSuggestionPlans: (raw.vpp_suggestion_plans ?? []).map((row) => ({
+      id: row.id,
+      brand: row.brand,
+      name: row.name,
+      href: row.href,
+      illustrativeRatePerKwh: row.illustrative_rate_per_kwh,
+      approvedBatteries: row.approved_batteries,
+      eligibleRegions: row.eligible_regions,
+      terms: row.terms.map((term) => ({
+        key: term.key,
+        valueText: term.value_text,
+        numericValue: term.numeric_value,
+        sourceLabel: term.source_label,
+        lastVerified: term.last_verified,
+      })),
     })),
   }
 }
