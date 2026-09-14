@@ -11,6 +11,7 @@ import {
   illustrativePayment,
   isTermStale,
   matchSuggestionPlans,
+  planFitCopy,
   regionFromPostcode,
   reserveHeadroomKwh,
 } from './vppSuggestions'
@@ -129,5 +130,27 @@ const facts = compactCardFacts(agl, 10.8)
 assert(facts.some((fact) => fact.label === 'Leave' && fact.value === 'Anytime'), 'opt-out is a short chip')
 assert(facts.some((fact) => fact.label === 'Reserve' && fact.value === '20% kept'), 'reserve is a short chip')
 assert(facts.some((fact) => fact.label === 'Events' && fact.value === '250 kWh/yr'), 'event cap is a short chip')
+
+const aglFit = planFitCopy(teslaVic, teslaMatch.matches[0])
+assert(aglFit.why.some((line) => line.includes('Tesla Powerwall 2')), 'why names the household battery')
+assert(aglFit.why.some((line) => /Victoria/.test(line)), 'why names the region')
+assert(aglFit.why.some((line) => /leave at any time/i.test(line)), 'why mentions leave-anytime')
+assert(
+  aglFit.tradeoffs.some((line) => /cannot pick those times/i.test(line)),
+  'trade-off states the provider controls dispatch',
+)
+assert(
+  !/\$|saving|bonus|credit/i.test([...aglFit.why, ...aglFit.tradeoffs].join(' ')),
+  'fit copy must not use payment figures',
+)
+
+const noticeFit = planFitCopy(teslaVic, {
+  plan: noticePlan,
+  reserveHeadroomKwh: 10.8,
+})
+assert(
+  noticeFit.tradeoffs.some((line) => /notice period/i.test(line)),
+  'notice plans list leaving delay as a trade-off',
+)
 
 console.log('vpp suggestion self-test passed')

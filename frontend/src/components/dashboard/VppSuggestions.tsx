@@ -1,7 +1,8 @@
 /**
- * Dashboard VPP Suggestions: compact ranked cards and a full-terms dialog.
+ * Dashboard VPP Suggestions: compact ranked cards and two dialogs
+ * (why it suits you, and full terms / learn more).
  */
-import { useEffect, useId, useRef, useState } from 'react'
+import { useEffect, useId, useRef, useState, type MouseEvent, type ReactNode } from 'react'
 import type { BatteryModelRow, VppSuggestionPlan, VppSuggestionTerm } from '../../lib/methodologyApi'
 import {
   EXAMPLE_KWH,
@@ -16,6 +17,7 @@ import {
   illustrativePayment,
   isTermStale,
   matchSuggestionPlans,
+  planFitCopy,
   shortSource,
   termByKey,
   type MatchReasonCode,
@@ -55,14 +57,21 @@ const TERM_ICONS = {
   payment: InfoIcon,
 } as const
 
+type DialogKind = 'why' | 'terms'
+
+type OpenDialog = {
+  match: SuggestionMatch
+  kind: DialogKind
+}
+
 /**
  * VppSuggestions
  * @param props.hasProfile - Whether onboarding has been saved on this device
  * @param props.profile - Household answers used only for matching, never sent
  * @returns JSX.Element
  *
- * Summary cards only. Full terms, sources, and missing-term notices open
- * in a dialog so the dashboard report is not regenerated (US-3.5).
+ * Cards stay compact. Why-it-suits-you (US-3.7) and full terms (US-3.1/3.2)
+ * each open in their own dialog so the dashboard report is not regenerated.
  */
 export function VppSuggestions({
   hasProfile,
@@ -71,7 +80,22 @@ export function VppSuggestions({
   batteryModels,
   onStartSetup,
 }: Props) {
-  const [openMatch, setOpenMatch] = useState<SuggestionMatch | null>(null)
+  const [dialog, setDialog] = useState<OpenDialog | null>(null)
+  const openerRef = useRef<HTMLButtonElement | null>(null)
+
+  useEffect(() => {
+    if (dialog) return
+    openerRef.current?.focus()
+  }, [dialog])
+
+  function openDialog(match: SuggestionMatch, kind: DialogKind, opener: HTMLButtonElement) {
+    openerRef.current = opener
+    setDialog({ match, kind })
+  }
+
+  function closeDialog() {
+    setDialog(null)
+  }
 
   if (!hasProfile) {
     return (
@@ -96,6 +120,7 @@ export function VppSuggestions({
   }
 
   const { matches, emptyReason } = matchSuggestionPlans(profile, plans, batteryModels)
+  const openMatch = dialog?.match ?? null
 
   return (
     <section className="vpp-suggestions" aria-labelledby="vpp-suggestions-heading">
@@ -113,13 +138,23 @@ export function VppSuggestions({
               key={item.plan.id}
               match={item}
               featured={index === 0}
-              onOpen={() => setOpenMatch(item)}
+              onOpen={(kind, opener) => openDialog(item, kind, opener)}
             />
           ))}
         </div>
       )}
 
-      <TermsDialog match={openMatch} onClose={() => setOpenMatch(null)} />
+      <WhyDialog
+        open={dialog?.kind === 'why'}
+        match={dialog?.kind === 'why' ? openMatch : null}
+        profile={profile}
+        onClose={closeDialog}
+      />
+      <TermsDialog
+        open={dialog?.kind === 'terms'}
+        match={dialog?.kind === 'terms' ? openMatch : null}
+        onClose={closeDialog}
+      />
     </section>
   )
 }
@@ -127,55 +162,165 @@ export function VppSuggestions({
 type CardProps = {
   match: SuggestionMatch
   featured?: boolean
-  onOpen: () => void
+  onOpen: (kind: DialogKind, opener: HTMLButtonElement) => void
 }
 
 function PlanSummaryCard({ match, featured = false, onOpen }: CardProps) {
   const facts = compactCardFacts(match.plan, null)
 
+  function handleOpen(kind: DialogKind) {
+    return (event: MouseEvent<HTMLButtonElement>) => {
+      event.stopPropagation()
+      onOpen(kind, event.currentTarget)
+    }
+  }
+
   return (
-    <button
-      type="button"
-      className="dashboard-card vpp-plan-card"
-      onClick={onOpen}
-      aria-haspopup="dialog"
-      aria-label={`View full terms for ${match.plan.name}`}
-    >
+    <article className="dashboard-card vpp-plan-card">
       {featured ? <span className="kpi-badge kpi-badge--fact">Top match</span> : null}
-      <span className="eyebrow">{match.plan.brand}</span>
-      <span className="vpp-plan-card__name">{match.plan.name}</span>
-      <span className="vpp-stat-row">
+      <p className="eyebrow">{match.plan.brand}</p>
+      <h3 className="vpp-plan-card__name">{match.plan.name}</h3>
+      <div className="vpp-stat-row">
         {facts.map((fact) => (
-          <span key={fact.label} className="vpp-stat">
-            <span className="eyebrow">{fact.label}</span>
-            <span className="kpi-card__value">{fact.value}</span>
-          </span>
+          <div key={fact.label} className="vpp-stat">
+            <p className="eyebrow">{fact.label}</p>
+            <p className="kpi-card__value">{fact.value}</p>
+          </div>
         ))}
-      </span>
-      <span className="vpp-plan-card__cta">View full terms →</span>
-    </button>
+      </div>
+      <div className="vpp-plan-card__actions">
+        <button
+          type="button"
+          className="vpp-plan-card__cta"
+          aria-haspopup="dialog"
+          aria-label={`Why ${match.plan.name} may suit this home`}
+          onClick={handleOpen('why')}
+        >
+          Why it suits you
+        </button>
+        <button
+          type="button"
+          className="vpp-plan-card__cta"
+          aria-haspopup="dialog"
+          aria-label={`Learn more about terms for ${match.plan.name}`}
+          onClick={handleOpen('terms')}
+        >
+          Learn more
+        </button>
+      </div>
+    </article>
   )
 }
 
-type DialogProps = {
-  match: SuggestionMatch | null
+type ModalShellProps = {
+  open: boolean
+  titleId: string
+  brand: string
+  title: string
   onClose: () => void
+  children: ReactNode
+  footer?: ReactNode
 }
 
-function TermsDialog({ match, onClose }: DialogProps) {
+function VppModal({ open, titleId, brand, title, onClose, children, footer }: ModalShellProps) {
   const dialogRef = useRef<HTMLDialogElement>(null)
-  const titleId = useId()
 
   useEffect(() => {
     const node = dialogRef.current
     if (!node) return
-    if (match) {
+    if (open) {
       if (!node.open) node.showModal()
     } else if (node.open) {
       node.close()
     }
-  }, [match])
+  }, [open])
 
+  return (
+    <dialog
+      ref={dialogRef}
+      className="vpp-dialog"
+      aria-labelledby={titleId}
+      aria-modal="true"
+      onClose={onClose}
+      onClick={(event) => {
+        if (event.target === dialogRef.current) onClose()
+      }}
+    >
+      {open ? (
+        <div className="vpp-dialog__panel">
+          <header className="vpp-dialog__header">
+            <div>
+              <p className="eyebrow">{brand}</p>
+              <h3 id={titleId}>{title}</h3>
+            </div>
+            <Button className="vpp-dialog__close" variant="edit" onClick={onClose}>
+              Close
+            </Button>
+          </header>
+          <div className="vpp-dialog__body">{children}</div>
+          {footer ? <footer className="vpp-dialog__footer">{footer}</footer> : null}
+        </div>
+      ) : null}
+    </dialog>
+  )
+}
+
+type WhyDialogProps = {
+  open: boolean
+  match: SuggestionMatch | null
+  profile: ProfileData
+  onClose: () => void
+}
+
+function WhyDialog({ open, match, profile, onClose }: WhyDialogProps) {
+  const titleId = useId()
+  const plan = match?.plan ?? null
+  const fit = match ? planFitCopy(profile, match) : null
+
+  return (
+    <VppModal
+      open={open && Boolean(plan && fit)}
+      titleId={titleId}
+      brand={plan?.brand ?? ''}
+      title={plan ? `Why ${plan.name} may suit this home` : ''}
+      onClose={onClose}
+    >
+      {fit ? (
+        <>
+          <p className="vpp-dialog__lede">
+            Based on your saved battery and location. Not a payment comparison or a guaranteed
+            result.
+          </p>
+          <section className="vpp-fit-block" aria-labelledby={`${titleId}-why`}>
+            <h4 id={`${titleId}-why`}>Why it may suit you</h4>
+            <ul className="vpp-fit-list">
+              {fit.why.map((line) => (
+                <li key={line}>{line}</li>
+              ))}
+            </ul>
+          </section>
+          <section className="vpp-fit-block" aria-labelledby={`${titleId}-trade`}>
+            <h4 id={`${titleId}-trade`}>Trade-offs</h4>
+            <ul className="vpp-fit-list">
+              {fit.tradeoffs.map((line) => (
+                <li key={line}>{line}</li>
+              ))}
+            </ul>
+          </section>
+        </>
+      ) : null}
+    </VppModal>
+  )
+}
+
+type TermsDialogProps = {
+  open: boolean
+  match: SuggestionMatch | null
+  onClose: () => void
+}
+
+function TermsDialog({ open, match, onClose }: TermsDialogProps) {
+  const titleId = useId()
   const plan = match?.plan ?? null
   const headroom = match?.reserveHeadroomKwh ?? null
   const exampleKwh = headroom && headroom > 0 ? headroom : EXAMPLE_KWH
@@ -192,81 +337,70 @@ function TermsDialog({ match, onClose }: DialogProps) {
   }, [plan?.id])
 
   return (
-    <dialog
-      ref={dialogRef}
-      className="vpp-dialog"
-      aria-labelledby={titleId}
+    <VppModal
+      open={open && Boolean(plan)}
+      titleId={titleId}
+      brand={plan?.brand ?? ''}
+      title={plan?.name ?? ''}
       onClose={onClose}
-      onClick={(event) => {
-        if (event.target === dialogRef.current) onClose()
-      }}
+      footer={
+        plan ? (
+          <a href={plan.href} target="_blank" rel="noreferrer">
+            Confirm current terms with {plan.brand}
+          </a>
+        ) : null
+      }
     >
       {plan ? (
-        <div className="vpp-dialog__panel">
-          <header className="vpp-dialog__header">
-            <div>
-              <p className="eyebrow">{plan.brand}</p>
-              <h3 id={titleId}>{plan.name}</h3>
+        <>
+          <p className="vpp-dialog__lede">Compiled terms — not a guaranteed return.</p>
+          <ul className="vpp-term-list">
+            {TERM_ORDER.map((key) => {
+              const term = termByKey(plan, key)
+              const extra =
+                key === 'reserve_min' && term?.valueText && headroom != null
+                  ? ` About ${formatKwhShort(headroom)} available on your setup.`
+                  : ''
+              return (
+                <TermRow
+                  key={key}
+                  planId={plan.id}
+                  termKey={key}
+                  term={term}
+                  extraExplanation={extra}
+                />
+              )
+            })}
+          </ul>
+          {canShowExample ? (
+            <div className="vpp-example">
+              <Button
+                variant="outline-accent"
+                aria-expanded={exampleOpen}
+                aria-controls={exampleId}
+                onClick={() => setExampleOpen((state) => !state)}
+              >
+                {exampleOpen ? 'Hide calculation' : 'See how this is calculated'}
+              </Button>
+              {exampleOpen ? (
+                <div id={exampleId} className="vpp-example__panel">
+                  <p className="vpp-example__label">
+                    Illustrative example — not a guaranteed return.
+                  </p>
+                  <p>
+                    If {formatKwhShort(exampleKwh)} were dispatched at the compiled rate of{' '}
+                    {formatExampleAud(plan.illustrativeRatePerKwh ?? 0)} per kWh, that would be{' '}
+                    {formatExampleAud(exampleAud ?? 0)} in credits. This uses a round figure
+                    {headroom != null ? ' (your reserve headroom)' : ' (10 kWh)'} so you can see
+                    the arithmetic — it is not what your home would earn.
+                  </p>
+                </div>
+              ) : null}
             </div>
-            <Button className="vpp-dialog__close" variant="edit" onClick={onClose}>
-              Close
-            </Button>
-          </header>
-          <div className="vpp-dialog__body">
-            <p className="vpp-dialog__lede">Compiled terms — not a guaranteed return.</p>
-            <ul className="vpp-term-list">
-              {TERM_ORDER.map((key) => {
-                const term = termByKey(plan, key)
-                const extra =
-                  key === 'reserve_min' && term?.valueText && headroom != null
-                    ? ` About ${formatKwhShort(headroom)} available on your setup.`
-                    : ''
-                return (
-                  <TermRow
-                    key={key}
-                    planId={plan.id}
-                    termKey={key}
-                    term={term}
-                    extraExplanation={extra}
-                  />
-                )
-              })}
-            </ul>
-            {canShowExample ? (
-              <div className="vpp-example">
-                <Button
-                  variant="outline-accent"
-                  aria-expanded={exampleOpen}
-                  aria-controls={exampleId}
-                  onClick={() => setExampleOpen((open) => !open)}
-                >
-                  {exampleOpen ? 'Hide calculation' : 'See how this is calculated'}
-                </Button>
-                {exampleOpen ? (
-                  <div id={exampleId} className="vpp-example__panel">
-                    <p className="vpp-example__label">
-                      Illustrative example — not a guaranteed return.
-                    </p>
-                    <p>
-                      If {formatKwhShort(exampleKwh)} were dispatched at the compiled rate of{' '}
-                      {formatExampleAud(plan.illustrativeRatePerKwh ?? 0)} per kWh, that would be{' '}
-                      {formatExampleAud(exampleAud ?? 0)} in credits. This uses a round figure
-                      {headroom != null ? ' (your reserve headroom)' : ' (10 kWh)'} so you can see
-                      the arithmetic — it is not what your home would earn.
-                    </p>
-                  </div>
-                ) : null}
-              </div>
-            ) : null}
-          </div>
-          <footer className="vpp-dialog__footer">
-            <a href={plan.href} target="_blank" rel="noreferrer">
-              Confirm current terms with {plan.brand}
-            </a>
-          </footer>
-        </div>
+          ) : null}
+        </>
       ) : null}
-    </dialog>
+    </VppModal>
   )
 }
 
