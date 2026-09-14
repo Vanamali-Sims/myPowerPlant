@@ -403,6 +403,30 @@ data "aws_iam_policy_document" "github_actions_ssm" {
   }
 }
 
+# Full CRUD for the ACM certificate in acm.tf, scoped to that one
+# certificate. Note this is an IAM policy, not tied to any region - the
+# certificate itself lives in us-east-1 (see the aws.us_east_1 provider
+# alias in versions.tf and acm.tf), but this role's permissions apply
+# wherever its ARN is referenced, including from a plan/apply that
+# otherwise runs in var.aws_region. ListTagsForCertificate/
+# AddTagsToCertificate are here for the same default_tags reason as
+# every other resource's tag actions elsewhere in this file.
+data "aws_iam_policy_document" "github_actions_acm" {
+  statement {
+    sid    = "AcmCertificateManage"
+    effect = "Allow"
+    actions = [
+      "acm:RequestCertificate",
+      "acm:DescribeCertificate",
+      "acm:DeleteCertificate",
+      "acm:AddTagsToCertificate",
+      "acm:RemoveTagsFromCertificate",
+      "acm:ListTagsForCertificate",
+    ]
+    resources = [aws_acm_certificate.app_domain.arn]
+  }
+}
+
 resource "aws_iam_role_policy" "github_actions_state" {
   name   = "${local.name_prefix}-github-actions-state"
   role   = aws_iam_role.github_actions.id
@@ -449,6 +473,12 @@ resource "aws_iam_role_policy" "github_actions_ssm" {
   name   = "${local.name_prefix}-github-actions-ssm"
   role   = aws_iam_role.github_actions.id
   policy = data.aws_iam_policy_document.github_actions_ssm.json
+}
+
+resource "aws_iam_role_policy" "github_actions_acm" {
+  name   = "${local.name_prefix}-github-actions-acm"
+  role   = aws_iam_role.github_actions.id
+  policy = data.aws_iam_policy_document.github_actions_acm.json
 }
 
 output "github_actions_role_arn" {
