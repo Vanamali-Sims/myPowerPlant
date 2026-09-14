@@ -11,6 +11,7 @@
 .app-shell__main {
   min-width: 0;
   min-height: 100vh;
+  background: var(--canvas);
 }
 
 .brand--inverse {

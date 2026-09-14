@@ -275,5 +275,6 @@ export function seedMethodologyBundle(): MethodologyBundle {
         compatible_batteries: ['Tesla Powerwall 2', 'AlphaESS SMILE5', 'Sungrow SBR HV'],
       },
     ],
+    vpp_suggestion_plans: [],
   })
 }

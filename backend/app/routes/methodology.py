@@ -16,6 +16,10 @@ from app.models import (
     SolarOrientationFactor,
     VppPlan,
     VppPlanBattery,
+    VppSuggestionPlan,
+    VppSuggestionPlanBattery,
+    VppSuggestionPlanRegion,
+    VppSuggestionPlanTerm,
 )
 
 router = APIRouter()
@@ -34,7 +38,8 @@ async def get_methodology(
     Returns:
         dict: Seeded appliances with their published usage metrics, seasonal
         factors, battery capacities, solar factors, periods, methodology
-        scalars, and VPP plans with compatible batteries.
+        scalars, KPI VPP placeholder plans, and compiled VPP suggestion
+        plans with per-term sources.
 
     Used by the dashboard so KPI numbers come from Postgres, not frontend
     constants. A missing seed row is 404; a down database is 503.
@@ -58,6 +63,12 @@ async def get_methodology(
         ).all()
         plans = (await session.scalars(select(VppPlan).order_by(VppPlan.brand))).all()
         links = (await session.scalars(select(VppPlanBattery))).all()
+        suggestion_plans = (
+            await session.scalars(select(VppSuggestionPlan).order_by(VppSuggestionPlan.brand))
+        ).all()
+        suggestion_batteries = (await session.scalars(select(VppSuggestionPlanBattery))).all()
+        suggestion_regions = (await session.scalars(select(VppSuggestionPlanRegion))).all()
+        suggestion_terms = (await session.scalars(select(VppSuggestionPlanTerm))).all()
     except OperationalError as exc:
         raise HTTPException(status_code=503, detail="Database unavailable") from exc
 
@@ -67,6 +78,18 @@ async def get_methodology(
     batteries_by_plan: dict[str, list[str]] = {}
     for link in links:
         batteries_by_plan.setdefault(link.plan_id, []).append(link.battery_name)
+
+    suggestion_batteries_by_plan: dict[str, list[str]] = {}
+    for link in suggestion_batteries:
+        suggestion_batteries_by_plan.setdefault(link.plan_id, []).append(link.battery_name)
+
+    regions_by_plan: dict[str, list[str]] = {}
+    for row in suggestion_regions:
+        regions_by_plan.setdefault(row.plan_id, []).append(row.region)
+
+    terms_by_plan: dict[str, list[VppSuggestionPlanTerm]] = {}
+    for row in suggestion_terms:
+        terms_by_plan.setdefault(row.plan_id, []).append(row)
 
     return {
         "methodology": {
@@ -143,5 +166,29 @@ async def get_methodology(
                 "compatible_batteries": sorted(batteries_by_plan.get(row.id, [])),
             }
             for row in plans
+        ],
+        "vpp_suggestion_plans": [
+            {
+                "id": row.id,
+                "brand": row.brand,
+                "name": row.name,
+                "href": row.href,
+                "illustrative_rate_per_kwh": row.illustrative_rate_per_kwh,
+                "approved_batteries": sorted(suggestion_batteries_by_plan.get(row.id, [])),
+                "eligible_regions": sorted(regions_by_plan.get(row.id, [])),
+                "terms": [
+                    {
+                        "key": term.term_key,
+                        "value_text": term.value_text,
+                        "numeric_value": term.numeric_value,
+                        "source_label": term.source_label,
+                        "last_verified": term.last_verified.isoformat(),
+                    }
+                    for term in sorted(
+                        terms_by_plan.get(row.id, []), key=lambda item: item.term_key
+                    )
+                ],
+            }
+            for row in suggestion_plans
         ],
     }
