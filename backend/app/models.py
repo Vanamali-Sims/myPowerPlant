@@ -4,6 +4,8 @@ SQLModel tables for read-only reference data served by the methodology route.
 Column max_length values are schema constraints. Change them only with a
 migration — they are not shared frontend constants.
 """
+from datetime import date
+
 from sqlmodel import Field, SQLModel
 
 
@@ -110,3 +112,62 @@ class VppPlanBattery(SQLModel, table=True):
     battery_name: str = Field(
         max_length=120, primary_key=True, foreign_key="battery_models.name"
     )
+
+
+class VppSuggestionPlan(SQLModel, table=True):
+    """
+    Team-maintained VPP terms for the dashboard suggestions list.
+
+    Separate from vpp_plans, which still feeds the KPI engine's placeholder
+    export rates. These rows are compiled terms (SolarQuotes), not a live
+    comparison-shopping feed and not a dollar savings ranking.
+    """
+
+    __tablename__ = "vpp_suggestion_plans"
+
+    id: str = Field(max_length=40, primary_key=True)
+    brand: str = Field(max_length=80)
+    name: str = Field(max_length=120)
+    href: str = Field(max_length=500)
+    illustrative_rate_per_kwh: float | None = None
+
+
+class VppSuggestionPlanBattery(SQLModel, table=True):
+    __tablename__ = "vpp_suggestion_plan_batteries"
+
+    plan_id: str = Field(
+        max_length=40, primary_key=True, foreign_key="vpp_suggestion_plans.id"
+    )
+    battery_name: str = Field(
+        max_length=120, primary_key=True, foreign_key="battery_models.name"
+    )
+
+
+class VppSuggestionPlanRegion(SQLModel, table=True):
+    __tablename__ = "vpp_suggestion_plan_regions"
+
+    plan_id: str = Field(
+        max_length=40, primary_key=True, foreign_key="vpp_suggestion_plans.id"
+    )
+    region: str = Field(max_length=20, primary_key=True)
+
+
+class VppSuggestionPlanTerm(SQLModel, table=True):
+    """
+    One compiled term per plan: reserve, event cap, opt-out, or payment.
+
+    value_text is null when the source table did not list that term — the
+    UI must show “not yet available”, never a blank. source_label and
+    last_verified stay populated so Matt can see we checked.
+    """
+
+    __tablename__ = "vpp_suggestion_plan_terms"
+
+    plan_id: str = Field(
+        max_length=40, primary_key=True, foreign_key="vpp_suggestion_plans.id"
+    )
+    term_key: str = Field(max_length=40, primary_key=True)
+    value_text: str | None = Field(default=None, max_length=2000)
+    numeric_value: float | None = None
+    source_label: str = Field(max_length=300)
+    last_verified: date

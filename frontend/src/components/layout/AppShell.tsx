@@ -25,8 +25,9 @@ type Props = {
  * @param props.children - The screen rendered in the main column
  * @returns JSX.Element
  *
- * Profile and Dashboard stay locked until a profile is saved.
- * Home is always available so the user can leave setup without a dead end.
+ * Profile stays locked until a profile is saved.
+ * Home and Dashboard are always available so Matt can open VPP Suggestions
+ * and see the onboarding prompt before completing setup.
  */
 export function AppShell({
   active,
@@ -40,7 +41,7 @@ export function AppShell({
   const [openPopover, setOpenPopover] = useTransientPopover()
 
   function isAvailable(id: AppNavId) {
-    if (id === 'home') return true
+    if (id === 'home' || id === 'dashboard') return true
     return hasProfile
   }
 

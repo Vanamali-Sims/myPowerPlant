@@ -35,3 +35,17 @@ provider "aws" {
     tags = local.common_tags
   }
 }
+
+# CloudFront only accepts custom-domain certificates issued in us-east-1,
+# regardless of which region the distribution or anything else in this
+# config runs in (see acm.tf). Aliased rather than changing the default
+# provider's region, since every other resource here belongs in
+# var.aws_region.
+provider "aws" {
+  alias  = "us_east_1"
+  region = "us-east-1"
+
+  default_tags {
+    tags = local.common_tags
+  }
+}

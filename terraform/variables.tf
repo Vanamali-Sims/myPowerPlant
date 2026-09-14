@@ -127,3 +127,9 @@ variable "github_repo_id" {
   type        = string
   default     = "1351386984"
 }
+
+variable "root_domain" {
+  description = "Registrar-owned root domain. The frontend is served from a subdomain of this (see local.app_domain_name in locals.tf), not the bare root, since a subdomain only needs a plain CNAME at the registrar rather than the ALIAS/ANAME-style record the root would require."
+  type        = string
+  default     = "mypowerplant.tech"
+}

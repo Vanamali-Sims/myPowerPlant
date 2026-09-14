@@ -32,6 +32,6 @@ export const NAV: NavItem[] = [
     id: 'dashboard',
     label: 'Dashboard',
     icon: DashboardIcon,
-    unavailableMessage: 'Complete setup to view your dashboard.',
+    unavailableMessage: 'Dashboard is available. Complete setup for a personalised report.',
   },
 ]
