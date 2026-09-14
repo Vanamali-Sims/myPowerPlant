@@ -23,8 +23,20 @@
 #                             Terraform output: ecr_repository_url
 #
 # None of the above are secret values (an ARN, a URL, a bucket name, an
-# ID), so they are stored as repository variables, not secrets. No
-# repository secrets are required for this workflow at all.
+# ID), so they are stored as repository variables, not secrets.
+#
+# Required repository secrets (Settings > Secrets and variables >
+# Actions > Secrets):
+#   BASIC_AUTH_PASSWORD       Shared password for the frontend's CloudFront
+#                             Function Basic Auth gate (see
+#                             terraform/variables.tf basic_auth_password
+#                             and the basic_auth function in
+#                             terraform/cloudfront.tf). Must be set before
+#                             this workflow ever runs terraform apply: an
+#                             unset secret resolves to an empty string, not
+#                             an error, which would deploy an always-401
+#                             function that locks out every request,
+#                             including with the correct password.
 #
 # Image tagging: every push builds and pushes an image tagged with the
 # full git commit SHA, never latest or any other mutable tag. Terraform
@@ -165,4 +177,5 @@ jobs:
         run: |
           terraform apply -auto-approve -input=false \
             -var="lambda_image_tag=${{ github.sha }}" \
-            -var="neon_database_url=ci-apply-placeholder-not-written-see-ssm-tf"
+            -var="neon_database_url=ci-apply-placeholder-not-written-see-ssm-tf" \
+            -var="basic_auth_password=${{ secrets.BASIC_AUTH_PASSWORD }}"

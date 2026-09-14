@@ -55,6 +55,70 @@ resource "aws_cloudfront_response_headers_policy" "frontend_security" {
 }
 
 
+# Shared-password Basic Auth gate for the whole frontend. Runs on every
+# viewer request before cache/origin is touched. Accepts any username and
+# checks only the password half of the decoded credentials, since this
+# gates the site behind one shared password rather than per-user accounts.
+#
+# var.basic_auth_password is interpolated directly into the function
+# source below by Terraform before this is ever sent to AWS, so the
+# literal password only ever ends up here and in state, never in a
+# committed file. Supply it at apply time only, e.g.:
+#   TF_VAR_basic_auth_password="..." terraform apply
+resource "aws_cloudfront_function" "basic_auth" {
+  name    = "${local.name_prefix}-basic-auth"
+  runtime = "cloudfront-js-2.0"
+  comment = "Shared-password Basic Auth gate for the frontend"
+  publish = true
+
+  code = <<-EOT
+    function handler(event) {
+        var request = event.request;
+        var headers = request.headers;
+        var expectedPassword = "${var.basic_auth_password}";
+
+        var authHeader = headers.authorization;
+        if (!authHeader || !authHeader.value || authHeader.value.indexOf("Basic ") !== 0) {
+            return unauthorized();
+        }
+
+        var encoded = authHeader.value.substring(6);
+        var decoded;
+        try {
+            decoded = atob(encoded);
+        } catch (e) {
+            return unauthorized();
+        }
+
+        var separatorIndex = decoded.indexOf(":");
+        if (separatorIndex === -1) {
+            return unauthorized();
+        }
+
+        // Everything after the first colon is the password; whatever
+        // username was sent is ignored. RFC 7617 forbids a colon in the
+        // username, so splitting on the first colon is correct even if
+        // the password itself contains one.
+        var password = decoded.substring(separatorIndex + 1);
+        if (password !== expectedPassword) {
+            return unauthorized();
+        }
+
+        return request;
+    }
+
+    function unauthorized() {
+        return {
+            statusCode: 401,
+            statusDescription: "Unauthorized",
+            headers: {
+                "www-authenticate": { value: "Basic" }
+            }
+        };
+    }
+  EOT
+}
+
 resource "aws_cloudfront_distribution" "frontend" {
   enabled             = true
   is_ipv6_enabled     = true
@@ -83,6 +147,11 @@ resource "aws_cloudfront_distribution" "frontend" {
     # this account's IAM user doesn't have.
     cache_policy_id            = "658327ea-f89d-4fab-a63d-7e88639e58f6"
     response_headers_policy_id = aws_cloudfront_response_headers_policy.frontend_security.id
+
+    function_association {
+      event_type   = "viewer-request"
+      function_arn = aws_cloudfront_function.basic_auth.arn
+    }
   }
 
   # No router is in use in the current frontend (it's a client-side view
