@@ -126,7 +126,7 @@ assert(
 )
 
 const facts = compactCardFacts(agl, 10.8)
-assert(facts.some((fact) => fact.label === 'Leave' && fact.value === 'Leave anytime'), 'opt-out is a short chip')
+assert(facts.some((fact) => fact.label === 'Leave' && fact.value === 'Anytime'), 'opt-out is a short chip')
 assert(facts.some((fact) => fact.label === 'Reserve' && fact.value === '20% kept'), 'reserve is a short chip')
 assert(facts.some((fact) => fact.label === 'Events' && fact.value === '250 kWh/yr'), 'event cap is a short chip')
 

@@ -24,7 +24,13 @@ import {
 import type { ProfileData } from '../../types/profile'
 import { Button } from '../ui/Button'
 import { Callout } from '../ui/Callout'
-import { AlertIcon, BatteryIcon, InfoIcon, LockIcon, ShieldIcon } from '../ui/icons'
+import {
+  AlertIcon,
+  BatteryIcon,
+  InfoIcon,
+  LockIcon,
+  ShieldIcon,
+} from '../ui/icons'
 
 type Props = {
   hasProfile: boolean
@@ -90,58 +96,27 @@ export function VppSuggestions({
   }
 
   const { matches, emptyReason } = matchSuggestionPlans(profile, plans, batteryModels)
-  const featured = matches[0] ?? null
-  const stacked = matches.slice(1, 3)
-  const extra = matches.slice(3)
-  const boardClass =
-    matches.length <= 1
-      ? 'vpp-plan-board vpp-plan-board--solo'
-      : matches.length === 2
-        ? 'vpp-plan-board vpp-plan-board--pair'
-        : 'vpp-plan-board'
 
   return (
     <section className="vpp-suggestions" aria-labelledby="vpp-suggestions-heading">
       <p className="eyebrow">Plans that could fit this home</p>
       <h2 id="vpp-suggestions-heading">VPP Suggestions</h2>
-      <p className="vpp-suggestions__lede">
-        Open a plan for full terms. Ranked by opt-out and dispatch control, not by payment.
-      </p>
 
       {emptyReason ? (
         <Callout tone="neutral" icon={<AlertIcon />} title="No matching plans yet">
           {EMPTY_REASON[emptyReason]}
         </Callout>
       ) : (
-        <>
-          <div className={boardClass}>
-            {featured ? (
-              <PlanSummaryCard
-                match={featured}
-                featured
-                onOpen={() => setOpenMatch(featured)}
-              />
-            ) : null}
-            {stacked.map((item) => (
-              <PlanSummaryCard
-                key={item.plan.id}
-                match={item}
-                onOpen={() => setOpenMatch(item)}
-              />
-            ))}
-          </div>
-          {extra.length ? (
-            <div className="vpp-plan-more">
-              {extra.map((item) => (
-                <PlanSummaryCard
-                  key={item.plan.id}
-                  match={item}
-                  onOpen={() => setOpenMatch(item)}
-                />
-              ))}
-            </div>
-          ) : null}
-        </>
+        <div className="vpp-plan-board">
+          {matches.map((item, index) => (
+            <PlanSummaryCard
+              key={item.plan.id}
+              match={item}
+              featured={index === 0}
+              onOpen={() => setOpenMatch(item)}
+            />
+          ))}
+        </div>
       )}
 
       <TermsDialog match={openMatch} onClose={() => setOpenMatch(null)} />
@@ -156,41 +131,28 @@ type CardProps = {
 }
 
 function PlanSummaryCard({ match, featured = false, onOpen }: CardProps) {
-  const { plan, reserveHeadroomKwh } = match
-  const facts = compactCardFacts(plan, featured ? reserveHeadroomKwh : null)
-  const shown = featured ? facts : facts.slice(0, 3)
+  const facts = compactCardFacts(match.plan, null)
 
   return (
     <button
       type="button"
-      className={`vpp-plan-card${featured ? ' vpp-plan-card--featured' : ''}`}
+      className="dashboard-card vpp-plan-card"
       onClick={onOpen}
       aria-haspopup="dialog"
-      aria-label={`View full terms for ${plan.name}`}
+      aria-label={`View full terms for ${match.plan.name}`}
     >
-      {featured ? <span className="vpp-plan-card__badge">Top match</span> : null}
-      <span className="vpp-plan-card__brand">{plan.brand}</span>
-      <span className="vpp-plan-card__name">{plan.name}</span>
-      <span className="vpp-plan-card__fit">
-        {plan.eligibleRegions.join(', ')}
-        {plan.approvedBatteries.length ? ` · ${plan.approvedBatteries.length} batteries` : ''}
+      {featured ? <span className="kpi-badge kpi-badge--fact">Top match</span> : null}
+      <span className="eyebrow">{match.plan.brand}</span>
+      <span className="vpp-plan-card__name">{match.plan.name}</span>
+      <span className="vpp-stat-row">
+        {facts.map((fact) => (
+          <span key={fact.label} className="vpp-stat">
+            <span className="eyebrow">{fact.label}</span>
+            <span className="kpi-card__value">{fact.value}</span>
+          </span>
+        ))}
       </span>
-      {featured ? (
-        <span className="vpp-plan-card__why">
-          Ranked first for how easily you can leave and how clearly dispatch is limited.
-        </span>
-      ) : null}
-      <span className="vpp-plan-card__foot">
-        <span className="vpp-fact-row">
-          {shown.map((fact) => (
-            <span key={fact.label} className="vpp-fact">
-              <span className="vpp-fact__label">{fact.label}</span>
-              <span className="vpp-fact__value">{fact.value}</span>
-            </span>
-          ))}
-        </span>
-        <span className="vpp-plan-card__cta">View full terms</span>
-      </span>
+      <span className="vpp-plan-card__cta">View full terms →</span>
     </button>
   )
 }
@@ -243,7 +205,7 @@ function TermsDialog({ match, onClose }: DialogProps) {
         <div className="vpp-dialog__panel">
           <header className="vpp-dialog__header">
             <div>
-              <p className="vpp-plan-card__brand">{plan.brand}</p>
+              <p className="eyebrow">{plan.brand}</p>
               <h3 id={titleId}>{plan.name}</h3>
             </div>
             <Button className="vpp-dialog__close" variant="edit" onClick={onClose}>

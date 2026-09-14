@@ -261,7 +261,7 @@ export function householdControlScore(plan: VppSuggestionPlan): number {
 function compactOptOut(term: VppSuggestionTerm | null): string {
   if (!term?.valueText) return 'Not listed'
   const text = term.valueText.toLowerCase()
-  if (/any time|anytime|opt in and out/.test(text)) return 'Leave anytime'
+  if (/any time|anytime|opt in and out/.test(text)) return 'Anytime'
   if (/business days|notice/.test(text)) return 'Notice'
   if (/no lock-in|no fixed/.test(text)) return 'No lock-in'
   if (/ongoing/.test(text)) return 'Ongoing'
