@@ -16,6 +16,7 @@ import {
   illustrativePayment,
   isTermStale,
   matchSuggestionPlans,
+  shortSource,
   termByKey,
   type MatchReasonCode,
   type SuggestionMatch,
@@ -104,8 +105,7 @@ export function VppSuggestions({
       <p className="eyebrow">Plans that could fit this home</p>
       <h2 id="vpp-suggestions-heading">VPP Suggestions</h2>
       <p className="vpp-suggestions__lede">
-        Ranked by how easy it is to leave and how clearly dispatch is limited — not by payment.
-        Open a plan for full terms. Not a live quote or a guaranteed return.
+        Open a plan for full terms. Ranked by opt-out and dispatch control, not by payment.
       </p>
 
       {emptyReason ? (
@@ -175,15 +175,22 @@ function PlanSummaryCard({ match, featured = false, onOpen }: CardProps) {
         {plan.eligibleRegions.join(', ')}
         {plan.approvedBatteries.length ? ` · ${plan.approvedBatteries.length} batteries` : ''}
       </span>
-      <span className="vpp-fact-row">
-        {shown.map((fact) => (
-          <span key={fact.label} className="vpp-fact">
-            <span className="vpp-fact__label">{fact.label}</span>
-            <span className="vpp-fact__value">{fact.value}</span>
-          </span>
-        ))}
+      {featured ? (
+        <span className="vpp-plan-card__why">
+          Ranked first for how easily you can leave and how clearly dispatch is limited.
+        </span>
+      ) : null}
+      <span className="vpp-plan-card__foot">
+        <span className="vpp-fact-row">
+          {shown.map((fact) => (
+            <span key={fact.label} className="vpp-fact">
+              <span className="vpp-fact__label">{fact.label}</span>
+              <span className="vpp-fact__value">{fact.value}</span>
+            </span>
+          ))}
+        </span>
+        <span className="vpp-plan-card__cta">View full terms</span>
       </span>
-      <span className="vpp-plan-card__cta">View full terms</span>
     </button>
   )
 }
@@ -239,62 +246,62 @@ function TermsDialog({ match, onClose }: DialogProps) {
               <p className="vpp-plan-card__brand">{plan.brand}</p>
               <h3 id={titleId}>{plan.name}</h3>
             </div>
-            <Button variant="edit" onClick={onClose}>
+            <Button className="vpp-dialog__close" variant="edit" onClick={onClose}>
               Close
             </Button>
           </header>
-          <p className="vpp-dialog__lede">
-            Compiled terms for this plan. Figures are not a guaranteed return.
-          </p>
-          <ul className="vpp-term-list">
-            {TERM_ORDER.map((key) => {
-              const term = termByKey(plan, key)
-              const extra =
-                key === 'reserve_min' && term?.valueText && headroom != null
-                  ? ` On your setup that’s about ${formatKwhShort(headroom)} the VPP could use above that reserve.`
-                  : ''
-              return (
-                <TermRow
-                  key={key}
-                  planId={plan.id}
-                  termKey={key}
-                  term={term}
-                  extraExplanation={extra}
-                />
-              )
-            })}
-          </ul>
-          {canShowExample ? (
-            <div className="vpp-example">
-              <Button
-                variant="outline-accent"
-                aria-expanded={exampleOpen}
-                aria-controls={exampleId}
-                onClick={() => setExampleOpen((open) => !open)}
-              >
-                {exampleOpen ? 'Hide calculation' : 'See how this is calculated'}
-              </Button>
-              {exampleOpen ? (
-                <div id={exampleId} className="vpp-example__panel">
-                  <p className="vpp-example__label">
-                    Illustrative example — not a guaranteed return.
-                  </p>
-                  <p>
-                    If {formatKwhShort(exampleKwh)} were dispatched at the compiled rate of{' '}
-                    {formatExampleAud(plan.illustrativeRatePerKwh ?? 0)} per kWh, that would be{' '}
-                    {formatExampleAud(exampleAud ?? 0)} in credits. This uses a round figure
-                    {headroom != null ? ' (your reserve headroom)' : ' (10 kWh)'} so you can see
-                    the arithmetic — it is not what your home would earn.
-                  </p>
-                </div>
-              ) : null}
-            </div>
-          ) : null}
-          <p className="vpp-plan-card__link">
+          <div className="vpp-dialog__body">
+            <p className="vpp-dialog__lede">Compiled terms — not a guaranteed return.</p>
+            <ul className="vpp-term-list">
+              {TERM_ORDER.map((key) => {
+                const term = termByKey(plan, key)
+                const extra =
+                  key === 'reserve_min' && term?.valueText && headroom != null
+                    ? ` About ${formatKwhShort(headroom)} available on your setup.`
+                    : ''
+                return (
+                  <TermRow
+                    key={key}
+                    planId={plan.id}
+                    termKey={key}
+                    term={term}
+                    extraExplanation={extra}
+                  />
+                )
+              })}
+            </ul>
+            {canShowExample ? (
+              <div className="vpp-example">
+                <Button
+                  variant="outline-accent"
+                  aria-expanded={exampleOpen}
+                  aria-controls={exampleId}
+                  onClick={() => setExampleOpen((open) => !open)}
+                >
+                  {exampleOpen ? 'Hide calculation' : 'See how this is calculated'}
+                </Button>
+                {exampleOpen ? (
+                  <div id={exampleId} className="vpp-example__panel">
+                    <p className="vpp-example__label">
+                      Illustrative example — not a guaranteed return.
+                    </p>
+                    <p>
+                      If {formatKwhShort(exampleKwh)} were dispatched at the compiled rate of{' '}
+                      {formatExampleAud(plan.illustrativeRatePerKwh ?? 0)} per kWh, that would be{' '}
+                      {formatExampleAud(exampleAud ?? 0)} in credits. This uses a round figure
+                      {headroom != null ? ' (your reserve headroom)' : ' (10 kWh)'} so you can see
+                      the arithmetic — it is not what your home would earn.
+                    </p>
+                  </div>
+                ) : null}
+              </div>
+            ) : null}
+          </div>
+          <footer className="vpp-dialog__footer">
             <a href={plan.href} target="_blank" rel="noreferrer">
               Confirm current terms with {plan.brand}
             </a>
-          </p>
+          </footer>
         </div>
       ) : null}
     </dialog>
@@ -334,7 +341,7 @@ function TermRow({ planId, termKey, term, extraExplanation }: TermRowProps) {
               <AlertIcon width={16} height={16} />
               <span>{UNAVAILABLE_TERM}</span>
             </span>
-            The compiled table did not list this term. That is not a “no” from the provider.
+            The compiled table did not list this term.
           </p>
         )}
         {stale ? (
@@ -345,7 +352,8 @@ function TermRow({ planId, termKey, term, extraExplanation }: TermRowProps) {
         ) : null}
         {term ? (
           <p className="vpp-term__meta">
-            Source: {term.sourceLabel} Last verified {formatVerifiedDate(term.lastVerified)}.
+            <span>{shortSource(term.sourceLabel)}</span>
+            <span>Verified {formatVerifiedDate(term.lastVerified)}</span>
           </p>
         ) : (
           <p className="vpp-term__meta">

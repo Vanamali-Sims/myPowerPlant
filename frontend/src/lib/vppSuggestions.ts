@@ -95,6 +95,17 @@ export function formatVerifiedDate(isoDate: string): string {
   })
 }
 
+/**
+ * shortSource
+ * @param label - Full compiled source sentence
+ * @returns A short publisher name for the term footer
+ */
+export function shortSource(label: string): string {
+  if (/solarquotes/i.test(label)) return 'SolarQuotes'
+  const first = label.split(/[,.]/)[0]?.trim()
+  return first || label
+}
+
 function batteryCapacityKwh(
   profile: ProfileData,
   models: BatteryModelRow[],
@@ -251,7 +262,7 @@ function compactOptOut(term: VppSuggestionTerm | null): string {
   if (!term?.valueText) return 'Not listed'
   const text = term.valueText.toLowerCase()
   if (/any time|anytime|opt in and out/.test(text)) return 'Leave anytime'
-  if (/business days|notice/.test(text)) return 'Notice to leave'
+  if (/business days|notice/.test(text)) return 'Notice'
   if (/no lock-in|no fixed/.test(text)) return 'No lock-in'
   if (/ongoing/.test(text)) return 'Ongoing'
   return 'See terms'
@@ -260,7 +271,7 @@ function compactOptOut(term: VppSuggestionTerm | null): string {
 function compactEvent(term: VppSuggestionTerm | null): string {
   if (!term?.valueText) return 'Not listed'
   const cap = term.valueText.match(/(\d+)\s*kwh/i)
-  if (cap) return `Up to ${cap[1]} kWh / yr`
+  if (cap) return `${cap[1]} kWh/yr`
   return 'Provider dispatches'
 }
 
