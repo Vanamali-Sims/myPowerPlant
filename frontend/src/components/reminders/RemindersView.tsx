@@ -11,6 +11,7 @@ import {
   REMINDER_PERIOD_OPTIONS,
 } from '../../constants'
 import { DEFAULT_RESERVE_PERCENT, FIELD_BOUNDS, clampNumber } from '../../constants/validation'
+import { buildIcsFile, downloadIcsFile } from '../../lib/calendarExport'
 import { coordsFromPostcode, locationFromPostcode } from '../../data/profileOptions'
 import { formatKwh, parseCount } from '../../lib/kpis'
 import { fetchMethodology, type MethodologyBundle } from '../../lib/methodologyApi'
@@ -28,8 +29,9 @@ import {
 } from '../../lib/solarForecast'
 import type { ProfileData } from '../../types/profile'
 import type { EventType } from '../../types/reminders'
+import { Button } from '../ui/Button'
 import { Callout } from '../ui/Callout'
-import { AlertIcon, BoltIcon, ChevronIcon, CloseIcon } from '../ui/icons'
+import { AlertIcon, BoltIcon, ChevronIcon, CloseIcon, DownloadIcon, LockIcon } from '../ui/icons'
 import { LocationControl } from '../ui/LocationControl'
 import { SegmentedToggle } from '../ui/SegmentedToggle'
 import { SelectField } from '../ui/SelectField'
@@ -180,6 +182,28 @@ export function RemindersView({ profile, onLogoClick }: Props) {
     })
   }
 
+  /**
+   * downloadEntry
+   * @param entry - The single row to save as a calendar file
+   *
+   * Builds a one-event .ics file for just this day.
+   */
+  function downloadEntry(entry: ReminderRecommendation) {
+    const content = buildIcsFile([entry], eventType)
+    downloadIcsFile(`mypowerplant-${eventType.replace('_', '-')}-${entry.date}.ics`, content)
+  }
+
+  /**
+   * downloadAllEntries
+   *
+   * Bundles every row currently on screen (so anything already dismissed is
+   * left out) into a single .ics file.
+   */
+  function downloadAllEntries() {
+    const content = buildIcsFile(visibleRecommendations, eventType)
+    downloadIcsFile(`mypowerplant-${eventType.replace('_', '-')}-reminders.ics`, content)
+  }
+
   return (
     <div className="reminders">
       <header className="reminders__top">
@@ -293,6 +317,14 @@ export function RemindersView({ profile, onLogoClick }: Props) {
                     {isOpen ? (
                       <div id={detailId} className="reminder-row__detail">
                         <p className="reminder-row__reason">{entry.reason}</p>
+                        <Button
+                          variant="edit"
+                          className="reminder-row__download"
+                          onClick={() => downloadEntry(entry)}
+                        >
+                          <DownloadIcon width={14} height={14} />
+                          Download
+                        </Button>
                       </div>
                     ) : null}
                   </li>
@@ -300,6 +332,18 @@ export function RemindersView({ profile, onLogoClick }: Props) {
               })}
             </ul>
           )}
+          {visibleRecommendations.length > 0 ? (
+            <div className="reminder-results__actions">
+              <Button variant="primary" onClick={downloadAllEntries}>
+                Download all reminders
+              </Button>
+              <p className="setup-secure">
+                <LockIcon width={14} height={14} />
+                Downloaded reminders are calendar files (.ics). Open the file to add it to your
+                calendar app on this device — nothing is uploaded or saved anywhere else.
+              </p>
+            </div>
+          ) : null}
         </section>
       ) : null}
     </div>

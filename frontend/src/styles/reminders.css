@@ -147,6 +147,10 @@
   color: var(--ink);
 }
 
+.reminder-row__download {
+  align-self: flex-start;
+}
+
 .reminder-row__estimate-inline {
   display: flex;
   align-items: center;
@@ -155,6 +159,13 @@
   font-weight: 600;
   color: var(--ink);
   white-space: nowrap;
+}
+
+.reminder-results__actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  margin-top: 0.3rem;
 }
 
 @media (min-width: 900px) {
