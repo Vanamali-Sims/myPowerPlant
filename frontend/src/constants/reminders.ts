@@ -26,3 +26,8 @@ export const EVENT_TYPE_OPTIONS: { value: EventType; label: string }[] = [
 ]
 
 export const DEFAULT_EVENT_TYPE: EventType = 'discharge'
+
+export const EVENT_TYPE_RESULTS_HEADING: Record<EventType, string> = {
+  discharge: 'Recommended discharge days',
+  opt_out: 'Recommended opt-out days',
+}

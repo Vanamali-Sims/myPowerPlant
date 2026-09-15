@@ -19,6 +19,8 @@ export type ForecastPoint = {
   label: string
   /** Predicted generation for this bucket, in kWh. */
   kwh: number
+  /** ISO date (YYYY-MM-DD) this point falls on, for reminders that need a real date. */
+  date: string
 }
 
 export type SolarForecast = {
@@ -99,6 +101,7 @@ export async function fetchSolarForecast(inputs: SolarInputs): Promise<SolarFore
       hourlyToday.push({
         label: HOUR_LABELS(iso),
         kwh: (watts / 1000) * systemKw * derate,
+        date: firstDay,
       })
     }
   }
@@ -108,6 +111,7 @@ export async function fetchSolarForecast(inputs: SolarInputs): Promise<SolarFore
     return {
       label: DAY_LABEL(iso),
       kwh: mj * MJ_TO_KWH * systemKw * derate,
+      date: iso,
     }
   })
 
