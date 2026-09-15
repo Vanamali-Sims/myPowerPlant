@@ -51,8 +51,7 @@ type Props = {
  * The reminder period and event type chosen here filter and switch between
  * the discharge and opt-out day lists. The postcode starts from the saved
  * profile but can be changed on this page alone, to preview a different
- * location's forecast without editing the profile. The opt-out list is
- * wired up separately; this only renders the discharge side for now.
+ * location's forecast without editing the profile.
  */
 export function RemindersView({ profile, onLogoClick }: Props) {
   const [reminderPeriodDays, setReminderPeriodDays] = useState(DEFAULT_REMINDER_PERIOD_DAYS)
@@ -223,7 +222,7 @@ export function RemindersView({ profile, onLogoClick }: Props) {
         </p>
       ) : null}
 
-      {eventType === 'discharge' && !loading && !bundleError && !forecastError ? (
+      {!loading && !bundleError && !forecastError ? (
         <section className="reminder-results" aria-labelledby="reminder-results-heading">
           <h2 id="reminder-results-heading">{resultsHeading}</h2>
           <p className="reminder-results__caption">{caption}</p>
