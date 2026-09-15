@@ -231,6 +231,15 @@ export function BulbIcon(props: IconProps) {
   )
 }
 
+export function CloseIcon(props: IconProps) {
+  return (
+    <svg {...icon(props)}>
+      <path d="m6 6 12 12" />
+      <path d="m18 6-12 12" />
+    </svg>
+  )
+}
+
 export function BellIcon(props: IconProps) {
   return (
     <svg {...icon(props)}>

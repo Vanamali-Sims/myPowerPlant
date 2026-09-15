@@ -29,7 +29,7 @@ import {
 import type { ProfileData } from '../../types/profile'
 import type { EventType } from '../../types/reminders'
 import { Callout } from '../ui/Callout'
-import { AlertIcon, BoltIcon, ChevronIcon } from '../ui/icons'
+import { AlertIcon, BoltIcon, ChevronIcon, CloseIcon } from '../ui/icons'
 import { LocationControl } from '../ui/LocationControl'
 import { SegmentedToggle } from '../ui/SegmentedToggle'
 import { SelectField } from '../ui/SelectField'
@@ -58,6 +58,7 @@ export function RemindersView({ profile, onLogoClick }: Props) {
   const [eventType, setEventType] = useState<EventType>(DEFAULT_EVENT_TYPE)
   const [postcode, setPostcode] = useState(profile.postcode)
   const [openDate, setOpenDate] = useState<string | null>(null)
+  const [dismissedKeys, setDismissedKeys] = useState<Set<string>>(new Set())
 
   const [bundle, setBundle] = useState<MethodologyBundle | null>(null)
   const [bundleError, setBundleError] = useState('')
@@ -148,6 +149,12 @@ export function RemindersView({ profile, onLogoClick }: Props) {
     [dailyPoints, typicalDailyKwh, eventType, reservePercent],
   )
 
+  // Keyed by event type so dismissing a day on one list never hides it on the other.
+  const visibleRecommendations = useMemo(
+    () => recommendations.filter((entry) => !dismissedKeys.has(`${eventType}:${entry.date}`)),
+    [recommendations, dismissedKeys, eventType],
+  )
+
   const loading = Boolean(solarInputs) && !bundleError && !forecastError && forecast === null
   const resultsHeading = EVENT_TYPE_RESULTS_HEADING[eventType]
   const caption = resultsCaption(eventType, reservePercent)
@@ -155,6 +162,22 @@ export function RemindersView({ profile, onLogoClick }: Props) {
 
   function toggleRow(date: string) {
     setOpenDate((current) => (current === date ? null : date))
+  }
+
+  /**
+   * dismissEntry
+   * @param date - ISO date of the row to hide
+   *
+   * Only hides the row from the list currently on screen. Nothing is saved
+   * anywhere, so a page reload or switching back to this list later brings
+   * it back.
+   */
+  function dismissEntry(date: string) {
+    setDismissedKeys((current) => {
+      const next = new Set(current)
+      next.add(`${eventType}:${date}`)
+      return next
+    })
   }
 
   return (
@@ -226,37 +249,47 @@ export function RemindersView({ profile, onLogoClick }: Props) {
         <section className="reminder-results" aria-labelledby="reminder-results-heading">
           <h2 id="reminder-results-heading">{resultsHeading}</h2>
           <p className="reminder-results__caption">{caption}</p>
-          {recommendations.length === 0 ? (
+          {visibleRecommendations.length === 0 ? (
             <Callout tone="neutral" icon={<AlertIcon />} title="No days to show yet">
               {emptyMessage}
             </Callout>
           ) : (
             <ul className="reminder-list">
-              {recommendations.map((entry) => {
+              {visibleRecommendations.map((entry) => {
                 const isOpen = openDate === entry.date
                 const detailId = `reminder-detail-${entry.date}`
                 return (
                   <li key={entry.date} className="reminder-row">
-                    <button
-                      type="button"
-                      className="reminder-row__summary"
-                      aria-expanded={isOpen}
-                      aria-controls={detailId}
-                      onClick={() => toggleRow(entry.date)}
-                    >
-                      <span className="reminder-row__date">{entry.dayLabel}</span>
-                      <span className="reminder-row__meta">
-                        <span className="reminder-row__estimate-inline">
-                          {formatKwh(entry.forecastKwh)}
-                          <span className="kpi-badge kpi-badge--estimate">Estimate</span>
+                    <div className="reminder-row__bar">
+                      <button
+                        type="button"
+                        className="reminder-row__summary"
+                        aria-expanded={isOpen}
+                        aria-controls={detailId}
+                        onClick={() => toggleRow(entry.date)}
+                      >
+                        <span className="reminder-row__date">{entry.dayLabel}</span>
+                        <span className="reminder-row__meta">
+                          <span className="reminder-row__estimate-inline">
+                            {formatKwh(entry.forecastKwh)}
+                            <span className="kpi-badge kpi-badge--estimate">Estimate</span>
+                          </span>
+                          <ChevronIcon
+                            className={`reminder-row__chevron${isOpen ? ' is-open' : ''}`}
+                            width={16}
+                            height={16}
+                          />
                         </span>
-                        <ChevronIcon
-                          className={`reminder-row__chevron${isOpen ? ' is-open' : ''}`}
-                          width={16}
-                          height={16}
-                        />
-                      </span>
-                    </button>
+                      </button>
+                      <button
+                        type="button"
+                        className="reminder-row__dismiss"
+                        aria-label={`Dismiss ${entry.dayLabel}`}
+                        onClick={() => dismissEntry(entry.date)}
+                      >
+                        <CloseIcon width={15} height={15} />
+                      </button>
+                    </div>
                     {isOpen ? (
                       <div id={detailId} className="reminder-row__detail">
                         <p className="reminder-row__reason">{entry.reason}</p>
