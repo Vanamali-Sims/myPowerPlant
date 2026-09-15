@@ -5,7 +5,9 @@ import { useState } from 'react'
 import { SETUP_STEPS, STEP_FIELDS } from '../../constants'
 import { applyBaseline, markUserFields } from '../../data/baselines'
 import { hasErrors, validateStep, type FieldErrors } from '../../lib/validateProfile'
+import { useVoiceInput } from '../../lib/voice/useVoiceInput'
 import type { ProfileData } from '../../types/profile'
+import { VoiceDock } from '../voice/VoiceDock'
 import { FormActions } from '../ui/FormActions'
 import { FormHeader } from '../ui/FormHeader'
 import { StepProgress } from '../ui/StepProgress'
@@ -56,6 +58,17 @@ export function SetupForm({ profile, onChange, onComplete, onExit, onLogoClick }
     }
   }
 
+  const voice = useVoiceInput({ stepId: step.id, onFill: patch })
+
+  /**
+   * Typing over a spoken answer replaces it, and drops the "we heard" note with
+   * it — the user's own input is never second-guessed by an earlier transcript.
+   */
+  function changeField<K extends keyof ProfileData>(field: K, value: ProfileData[K]) {
+    patch(field, value)
+    voice.clearHeard(field)
+  }
+
   function continueStep() {
     const stepErrors = validateStep(step.id, profile)
     if (hasErrors(stepErrors)) {
@@ -96,7 +109,7 @@ export function SetupForm({ profile, onChange, onComplete, onExit, onLogoClick }
     <div className="setup">
       <FormHeader
         postcode={profile.postcode}
-        onPostcodeChange={(postcode) => patch('postcode', postcode)}
+        onPostcodeChange={(postcode) => changeField('postcode', postcode)}
         onLogoClick={onLogoClick}
       />
       <StepProgress step={stepIndex + 1} total={total} />
@@ -106,19 +119,19 @@ export function SetupForm({ profile, onChange, onComplete, onExit, onLogoClick }
       </div>
       <div className="setup__fields">
         {step.id === 'household' ? (
-          <HouseholdProfileStep profile={profile} errors={errors} onChange={patch} />
+          <HouseholdProfileStep profile={profile} errors={errors} onChange={changeField} />
         ) : null}
         {step.id === 'usage' ? (
-          <HouseholdUsageStep profile={profile} errors={errors} onChange={patch} />
+          <HouseholdUsageStep profile={profile} errors={errors} onChange={changeField} />
         ) : null}
         {step.id === 'solar' ? (
-          <SolarDetailsStep profile={profile} errors={errors} onChange={patch} />
+          <SolarDetailsStep profile={profile} errors={errors} onChange={changeField} />
         ) : null}
         {step.id === 'battery' ? (
-          <BatteryProfileStep profile={profile} errors={errors} onChange={patch} />
+          <BatteryProfileStep profile={profile} errors={errors} onChange={changeField} />
         ) : null}
         {step.id === 'provider' ? (
-          <EnergyProviderStep profile={profile} errors={errors} onChange={patch} />
+          <EnergyProviderStep profile={profile} errors={errors} onChange={changeField} />
         ) : null}
       </div>
       <FormActions
@@ -127,6 +140,25 @@ export function SetupForm({ profile, onChange, onComplete, onExit, onLogoClick }
         onContinue={continueStep}
         onSkip={skipStep}
         showSkip
+      />
+      <VoiceDock
+        state={voice.state}
+        supported={voice.supported}
+        consented={voice.consented}
+        partial={voice.partial}
+        failure={voice.failure}
+        heard={voice.heard}
+        flagged={voice.flagged}
+        pending={voice.pending}
+        onStart={voice.start}
+        onConsentAndStart={voice.grantConsentAndStart}
+        onPause={voice.pause}
+        onStop={voice.stop}
+        onTurnOff={voice.turnOff}
+        onConfirmPending={voice.confirmPending}
+        onRejectPending={voice.rejectPending}
+        onChooseInstead={voice.chooseInstead}
+        onDismissFailure={voice.dismissFailure}
       />
     </div>
   )
