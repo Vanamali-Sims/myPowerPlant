@@ -26,8 +26,9 @@ type Props = {
  * @returns JSX.Element
  *
  * Profile stays locked until a profile is saved.
- * Home and Dashboard are always available so Matt can open VPP Suggestions
- * and see the onboarding prompt before completing setup.
+ * Home, Dashboard, and Reminders are always available so Matt can open VPP
+ * Suggestions or get reminders and see the onboarding prompt before
+ * completing setup.
  */
 export function AppShell({
   active,
@@ -41,7 +42,7 @@ export function AppShell({
   const [openPopover, setOpenPopover] = useTransientPopover()
 
   function isAvailable(id: AppNavId) {
-    if (id === 'home' || id === 'dashboard') return true
+    if (id === 'home' || id === 'dashboard' || id === 'reminders') return true
     return hasProfile
   }
 

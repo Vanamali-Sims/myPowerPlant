@@ -230,3 +230,12 @@ export function BulbIcon(props: IconProps) {
     </svg>
   )
 }
+
+export function BellIcon(props: IconProps) {
+  return (
+    <svg {...icon(props)}>
+      <path d="M6 17v-5.5a6 6 0 0 1 12 0V17l1.7 2.2a1 1 0 0 1-.8 1.6H5.1a1 1 0 0 1-.8-1.6L6 17z" />
+      <path d="M10 20.5a2 2 0 0 0 4 0" />
+    </svg>
+  )
+}
