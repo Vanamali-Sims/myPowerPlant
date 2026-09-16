@@ -36,6 +36,14 @@ export type EnergyRiverModel = {
   share: number
 }
 
+export type RiverBarSliceId = 'generated' | 'used' | 'vpp'
+
+export type RiverBarSlice = {
+  id: RiverBarSliceId
+  tone: 'generated' | 'used' | 'discharge' | 'borrow'
+  pct: number
+}
+
 /** Weekly kWh below this (after scaling) reads as a break-even home. */
 const BALANCE_EPS_KWH = 0.05
 
@@ -111,4 +119,32 @@ export function riverForkStage(fork: RiverFork): { eyebrow: string; hint: string
   if (fork === 'surplus') return { eyebrow: 'Possible discharge', hint: 'to a VPP, estimate' }
   if (fork === 'deficit') return { eyebrow: 'Possible borrow', hint: 'from a VPP, estimate' }
   return { eyebrow: 'VPP on standby', hint: 'event pay still applies' }
+}
+
+/**
+ * riverBarSlices
+ * @param model - Current balance figures
+ * @returns Adjacent widths for generated, used, and leftover or gap
+ *
+ * Widths are shares of generated + used + leftover/gap so the three legend
+ * colours sit on one line. Break-even homes omit the third slice.
+ */
+export function riverBarSlices(model: EnergyRiverModel): RiverBarSlice[] {
+  const vppTone = model.fork === 'deficit' ? 'borrow' : 'discharge'
+  const parts: Array<{ id: RiverBarSliceId; tone: RiverBarSlice['tone']; kwh: number }> = [
+    { id: 'generated', tone: 'generated', kwh: model.generatedKwh },
+    { id: 'used', tone: 'used', kwh: model.usedKwh },
+    { id: 'vpp', tone: vppTone, kwh: model.forkKwh },
+  ]
+  const visible = parts.filter((part) => part.kwh > 0)
+  const total = visible.reduce((sum, part) => sum + part.kwh, 0)
+  if (total <= 0) return []
+
+  let allocated = 0
+  return visible.map((part, index) => {
+    const isLast = index === visible.length - 1
+    const pct = isLast ? Math.max(0, 100 - allocated) : (part.kwh / total) * 100
+    allocated += pct
+    return { id: part.id, tone: part.tone, pct }
+  })
 }

@@ -79,8 +79,8 @@
 .energy-story {
   --energy-gen: var(--blue);
   --energy-used: var(--paper-soft);
-  --energy-borrow: var(--blue);
-  --energy-discharge: var(--blue);
+  --energy-borrow: #ff8a7a;
+  --energy-discharge: #8ee0b0;
   --energy-join: var(--energy-borrow);
   display: flex;
   flex-direction: column;
@@ -188,33 +188,59 @@
 }
 
 .energy-bar__track {
-  position: relative;
+  display: flex;
   height: 8px;
   overflow: visible;
   border-radius: 999px;
   background: var(--track-dark);
+  gap: 2px;
 }
 
-.energy-bar__fill {
+.energy-bar__slice {
+  display: block;
+  min-width: 0;
   height: 100%;
-  border-radius: 999px;
-  background: var(--blue);
-  max-width: 100%;
-  transition: width 0.35s var(--ease-out, cubic-bezier(0.22, 1, 0.36, 1));
+  flex-basis: 0;
+  cursor: pointer;
+  transition: opacity 0.2s ease, flex-grow 0.35s var(--ease-out, cubic-bezier(0.22, 1, 0.36, 1));
 }
 
-.energy-bar__handle {
-  position: absolute;
-  top: 50%;
-  width: 14px;
-  height: 14px;
-  margin-left: -7px;
-  border: 2px solid var(--paper);
-  border-radius: 50%;
-  background: var(--blue);
-  box-shadow: 0 0 0 1px rgb(14 36 30 / 0.35);
-  transform: translateY(-50%);
-  pointer-events: none;
+.energy-bar__slice:first-child {
+  border-radius: 999px 0 0 999px;
+}
+
+.energy-bar__slice:last-child {
+  border-radius: 0 999px 999px 0;
+}
+
+.energy-bar__slice:only-child {
+  border-radius: 999px;
+}
+
+.energy-bar__slice--generated {
+  background: var(--energy-gen);
+}
+
+.energy-bar__slice--used {
+  background: var(--energy-used);
+}
+
+.energy-bar__slice--discharge {
+  background: var(--energy-discharge);
+  box-shadow: 0 0 10px rgb(90 220 150 / 0.55);
+}
+
+.energy-bar__slice--borrow {
+  background: var(--energy-borrow);
+  box-shadow: 0 0 10px rgb(255 120 100 / 0.5);
+}
+
+.energy-bar__slice.is-on {
+  opacity: 1;
+}
+
+.energy-bar__slice.is-dim {
+  opacity: 0.35;
 }
 
 .energy-balance__live {
@@ -279,9 +305,24 @@
   color: var(--energy-used);
 }
 
-.energy-legend__item--borrow,
+.energy-legend__item--borrow {
+  color: var(--energy-borrow);
+}
+
 .energy-legend__item--discharge {
-  color: var(--blue);
+  color: var(--energy-discharge);
+}
+
+.energy-legend__item--standby {
+  color: var(--euc-200);
+}
+
+.energy-legend__item--borrow .energy-legend__swatch {
+  box-shadow: 0 0 8px rgb(255 120 100 / 0.55);
+}
+
+.energy-legend__item--discharge .energy-legend__swatch {
+  box-shadow: 0 0 8px rgb(90 220 150 / 0.6);
 }
 
 .energy-legend__item--savings {

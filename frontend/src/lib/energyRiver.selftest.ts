@@ -4,7 +4,13 @@
  */
 import { BASELINE_PROFILE } from '../data/baselines'
 import { emptyProfile, type ProfileData } from '../types/profile'
-import { buildEnergyRiver, formatShare, riverForkStage, riverPeriod } from './energyRiver'
+import {
+  buildEnergyRiver,
+  formatShare,
+  riverBarSlices,
+  riverForkStage,
+  riverPeriod,
+} from './energyRiver'
 import { buildKpiReport } from './kpis'
 import { seedMethodologyBundle } from './methodologyFixture'
 
@@ -107,6 +113,29 @@ assert(almostEqual(daily.annualValueAud, surplus.annualValueAud), 'annual saving
 
 assert(riverForkStage('surplus').eyebrow === 'Possible discharge', 'surplus third stage is discharge')
 assert(riverForkStage('deficit').eyebrow === 'Possible borrow', 'deficit third stage is borrow')
+
+const surplusBar = riverBarSlices(surplus)
+assert(surplusBar.length === 3, 'surplus bar shows generated, used, and discharge')
+assert(surplusBar[2].tone === 'discharge', 'surplus third slice is green discharge')
+assert(
+  almostEqual(surplusBar.reduce((sum, slice) => sum + slice.pct, 0), 100, 0.01),
+  'surplus bar widths add to 100',
+)
+
+const deficitBar = riverBarSlices(deficit)
+assert(deficitBar.length === 3, 'deficit bar shows generated, used, and borrow')
+assert(deficitBar[2].tone === 'borrow', 'deficit third slice is red borrow')
+assert(
+  almostEqual(deficitBar.reduce((sum, slice) => sum + slice.pct, 0), 100, 0.01),
+  'deficit bar widths add to 100',
+)
+
+const balancedBar = riverBarSlices(balanced)
+assert(balancedBar.length === 2, 'break-even bar omits the empty leftover slice')
+assert(
+  almostEqual(balancedBar.reduce((sum, slice) => sum + slice.pct, 0), 100, 0.01),
+  'break-even bar widths add to 100',
+)
 
 const fromReport = buildEnergyRiver({ report, timeframe: 'weekly', feedInRate: feedIn })
 assert(fromReport.coveredKwh === Math.min(fromReport.generatedKwh, fromReport.usedKwh), 'covered is the overlap')

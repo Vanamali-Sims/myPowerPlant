@@ -3,6 +3,7 @@ import { TIMEFRAMES } from '../../constants/dashboard'
 import { formatAud, formatKwh, type Timeframe } from '../../lib/kpis'
 import {
   formatShare,
+  riverBarSlices,
   riverForkStage,
   riverPeriod,
   type EnergyRiverModel,
@@ -27,10 +28,10 @@ type EnergyRiverProps = {
  * @param props.timeframe - Daily / weekly / fortnightly
  * @param props.onTimeframe - Switch the dashboard scale
  * @param props.onSeePlans - Jump to VPP recommendations under this card
- * @returns One dark balance card: share bar, four stats, CTA
+ * @returns One dark balance card: split bar, four stats, CTA
  *
  * Savings explanation sits in a hover/focus tooltip so the default view stays
- * numbers-first. The share bar mirrors the headline percent (not a kWh split).
+ * numbers-first. The bar splits generated, used, and leftover or gap.
  */
 export function EnergyRiver({
   model,
@@ -49,16 +50,23 @@ export function EnergyRiver({
   const stage = riverForkStage(model.fork)
   const isSurplus = model.fork === 'surplus'
   const isDeficit = model.fork === 'deficit'
-  const vppTone = isSurplus ? 'discharge' : 'borrow'
+  const vppTone = isSurplus ? 'discharge' : isDeficit ? 'borrow' : 'standby'
   const shareFraction = model.fork === 'balanced' ? 1 : model.share
-  const sharePercent = Math.round(shareFraction * 100)
   const shareLabel = formatShare(shareFraction)
+  const slices = riverBarSlices(model)
   const headline = isSurplus
     ? 'of what this home generated could go to a VPP'
     : isDeficit
       ? 'of what this home used could come from a VPP'
       : 'of what this home used the roof already covers'
   const tip = savingsTip(model)
+  const barLabel = [
+    `Energy generated ${formatKwh(model.generatedKwh)}`,
+    `Energy used ${formatKwh(model.usedKwh)}`,
+    model.forkKwh > 0 ? `${stage.eyebrow} ${formatKwh(model.forkKwh)}` : null,
+  ]
+    .filter(Boolean)
+    .join(', ')
 
   const detail = detailFor(active, model)
 
@@ -107,22 +115,18 @@ export function EnergyRiver({
           <span className="energy-balance__share">{shareLabel}</span>
         </h1>
 
-        <div
-          className="energy-bar"
-          role="progressbar"
-          aria-valuenow={sharePercent}
-          aria-valuemin={0}
-          aria-valuemax={100}
-          aria-label={headline}
-          aria-describedby={liveId}
-        >
+        <div className="energy-bar" role="img" aria-label={barLabel} aria-describedby={liveId}>
           <div className="energy-bar__track">
-            <div className="energy-bar__fill" style={{ width: `${sharePercent}%` }} />
-            <span
-              className="energy-bar__handle"
-              style={{ left: `${sharePercent}%` }}
-              aria-hidden="true"
-            />
+            {slices.map((slice) => (
+              <span
+                key={slice.id}
+                className={`energy-bar__slice energy-bar__slice--${slice.tone}${toneClass(slice.id, active)}`}
+                style={{ flexGrow: slice.pct }}
+                onMouseEnter={() => setHover(slice.id)}
+                onMouseLeave={() => setHover(null)}
+                onClick={() => setPinned(pinned === slice.id ? null : slice.id)}
+              />
+            ))}
           </div>
         </div>
 
