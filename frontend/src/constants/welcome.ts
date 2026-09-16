@@ -219,13 +219,15 @@ export function buildVppExplainerCompare(
   personal: VppExplainerHousehold | null,
 ): VppExplainerCompareCopy {
   if (personal) {
+    const gen = Math.round(personal.generatedKwh)
+    const used = Math.round(personal.usedKwh)
     const gap = formatExplainerKwh(personal.gapKwh)
     return {
-      eyebrow: 'Your numbers, one week',
+      eyebrow: 'Same gap, two ways to cover it',
       title: 'What the gap costs',
       without: {
-        title: 'Bought from the retail grid',
-        detail: `The ${gap} gap is billed at the retail rate.`,
+        title: `Your panels made ${gen}, your home used ${used}`,
+        detail: `The ${gap} gap gets billed at the retail grid rate.`,
         costLabel: 'roughly, this gap costs',
         costAud: personal.gapCostAud,
         footer: `Same ${gap} gap, paid to the retail grid.`,
@@ -240,13 +242,13 @@ export function buildVppExplainerCompare(
     }
   }
 
-  const { gapKwh, gapCostAud, vppGapCostAud } = VPP_EXPLAINER_EXAMPLE
+  const { generatedKwh, usedKwh, gapKwh, gapCostAud, vppGapCostAud } = VPP_EXPLAINER_EXAMPLE
   return {
-    eyebrow: 'An example week',
+    eyebrow: 'Same gap, two ways to cover it',
     title: 'What the gap costs',
     without: {
-      title: 'Bought from the retail grid',
-      detail: `The ${gapKwh} kWh gap is billed at the retail rate.`,
+      title: `Your panels made ${generatedKwh}, your home used ${usedKwh}`,
+      detail: `The ${gapKwh} kWh gap gets billed at the retail grid rate.`,
       costLabel: 'roughly, this gap costs',
       costAud: gapCostAud,
       footer: `Same ${gapKwh} kWh gap, paid to the retail grid.`,

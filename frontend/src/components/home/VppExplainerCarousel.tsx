@@ -49,7 +49,6 @@ export function VppExplainerCarousel({
   const compare = buildVppExplainerCompare(personal)
   const current = Math.min(index, steps.length - 1)
   const step = steps[current] ?? steps[0]
-  const compareSide = compareMode === 'with' ? compare.with : compare.without
 
   function go(delta: number) {
     setIndex((prev) => (prev + delta + steps.length) % steps.length)
@@ -73,13 +72,10 @@ export function VppExplainerCarousel({
 
   return (
     <section className="vpp-explainer" aria-labelledby={labelId}>
-      <div className="vpp-explainer__card">
+      <div className={`vpp-explainer__card vpp-explainer__card--${step.id}`}>
         <header className="vpp-explainer__head">
           <p className="vpp-explainer__eyebrow">{eyebrow}</p>
-          <h2
-            id={labelId}
-            className={`vpp-explainer__title${step.id === 'cta' ? ' vpp-explainer__title--wide' : ''}`}
-          >
+          <h2 id={labelId} className="vpp-explainer__title">
             {title}
           </h2>
         </header>
@@ -106,9 +102,6 @@ export function VppExplainerCarousel({
                 <p className="vpp-explainer__body">{step.body}</p>
               </>
             ) : null}
-            {step.id === 'compare' ? (
-              <p className="vpp-explainer__body">{compareSide.footer}</p>
-            ) : null}
             {step.id === 'cta' ? (
               <>
                 <p className="vpp-explainer__body">{VPP_EXPLAINER_CTA.body}</p>
@@ -123,15 +116,15 @@ export function VppExplainerCarousel({
             ) : null}
           </div>
         </div>
-      </div>
 
-      <ExplainerControls
-        steps={steps}
-        index={current}
-        onPrev={() => go(-1)}
-        onNext={() => go(1)}
-        onSelect={setIndex}
-      />
+        <ExplainerControls
+          steps={steps}
+          index={current}
+          onPrev={() => go(-1)}
+          onNext={() => go(1)}
+          onSelect={setIndex}
+        />
+      </div>
     </section>
   )
 }
@@ -213,15 +206,9 @@ type CompareVisualProps = {
 function CompareVisual({ copy, mode, onMode }: CompareVisualProps) {
   const { setRef, box } = useSlidingHighlight(mode, '[aria-checked="true"]')
   const side = mode === 'with' ? copy.with : copy.without
-  const weeklySave =
-    copy.without.costAud != null && copy.with.costAud != null
-      ? copy.without.costAud - copy.with.costAud
-      : null
   const yearLine =
     side.costAud != null
-      ? mode === 'with' && weeklySave != null
-        ? `≈ ${formatExplainerYearAud(side.costAud)}/year · ${formatExplainerExactAud(weeklySave)} less than retail`
-        : `≈ ${formatExplainerYearAud(side.costAud)}/year`
+      ? `≈ ${formatExplainerYearAud(side.costAud)}/year, if weeks like this are typical`
       : null
 
   return (
