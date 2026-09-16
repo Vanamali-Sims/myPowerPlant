@@ -1,11 +1,18 @@
 /**
  * Marketing home page: hero, VPP explainer carousel, and article links.
  */
-import { WELCOME_ARTICLES, type VppExplainerHousehold } from '../../constants'
+import {
+  VPP_EXPLAINER_EXAMPLE,
+  VPP_HOW_IT_HELPS,
+  WELCOME_ARTICLES,
+  formatExplainerWeekAud,
+  formatExplainerYearAud,
+  type VppExplainerHousehold,
+} from '../../constants'
 import { Button } from '../ui/Button'
 import { HeroHouse } from './HeroHouse'
 import { VppExplainerCarousel } from './VppExplainerCarousel'
-import { BoltIcon } from '../ui/icons'
+import { BatteryIcon, BoltIcon, PeopleIcon } from '../ui/icons'
 
 type Props = {
   hasProfile: boolean
@@ -32,6 +39,10 @@ export function Welcome({
   onViewDashboard,
   onLogoClick,
 }: Props) {
+  const retailWeek = VPP_EXPLAINER_EXAMPLE.gapCostAud
+  const vppWeek = VPP_EXPLAINER_EXAMPLE.vppGapCostAud
+  const yearSave = retailWeek - vppWeek
+
   return (
     <div className="welcome">
       <button
@@ -75,13 +86,64 @@ export function Welcome({
       </section>
 
       <section className="band">
-        <div className="band__inner">
+        <div className="band__inner welcome__vpp-story">
           <VppExplainerCarousel
             isOnboarded={hasProfile}
             householdData={householdData}
             onFillDetails={onGetStarted}
             onSeeNumbers={onViewDashboard}
           />
+
+          <section
+            id="how-it-helps"
+            className="vpp-helps"
+            aria-labelledby="how-it-helps-heading"
+          >
+            <div className="vpp-explainer__card vpp-helps__card">
+              <h2 id="how-it-helps-heading" className="vpp-helps__title">
+                {VPP_HOW_IT_HELPS.heading}
+              </h2>
+
+              <div className="vpp-helps__compare">
+                <article className="vpp-compare__card">
+                  <p className="vpp-helps__label">{VPP_HOW_IT_HELPS.withoutTitle}</p>
+                  <p className="vpp-compare__cost-value">{formatExplainerWeekAud(retailWeek)}</p>
+                  <p className="vpp-compare__detail">{VPP_HOW_IT_HELPS.withoutDetail}</p>
+                  <p className="vpp-compare__cost-year">
+                    ≈ {formatExplainerYearAud(retailWeek)}/yr
+                  </p>
+                </article>
+                <article className="vpp-compare__card">
+                  <p className="vpp-helps__label">{VPP_HOW_IT_HELPS.withTitle}</p>
+                  <p className="vpp-compare__cost-value">{formatExplainerWeekAud(vppWeek)}</p>
+                  <p className="vpp-compare__detail">{VPP_HOW_IT_HELPS.withDetail}</p>
+                  <p className="vpp-compare__cost-year">
+                    ≈ {formatExplainerYearAud(vppWeek)}/yr — about{' '}
+                    {formatExplainerYearAud(yearSave)} less a year
+                  </p>
+                </article>
+              </div>
+
+              <ul className="vpp-helps__benefits">
+                <li className="vpp-helps__benefit">
+                  <span className="vpp-compare__icon vpp-compare__icon--with" aria-hidden="true">
+                    <BatteryIcon width={18} height={18} />
+                  </span>
+                  <p>{VPP_HOW_IT_HELPS.benefits[0]}</p>
+                </li>
+                <li className="vpp-helps__benefit">
+                  <span className="vpp-compare__icon vpp-compare__icon--with" aria-hidden="true">
+                    <PeopleIcon width={18} height={18} />
+                  </span>
+                  <p>{VPP_HOW_IT_HELPS.benefits[1]}</p>
+                </li>
+              </ul>
+
+              <Button variant="primary" onClick={onViewDashboard}>
+                {VPP_HOW_IT_HELPS.cta}
+              </Button>
+            </div>
+          </section>
         </div>
       </section>
 

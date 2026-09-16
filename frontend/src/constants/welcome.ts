@@ -38,7 +38,7 @@ export type VppExplainerHousehold = {
   vppGapCostAud?: number | null
 }
 
-export type VppExplainerStepId = 'shortfall' | 'grid' | 'neighbour' | 'trade' | 'compare'
+export type VppExplainerStepId = 'shortfall' | 'compare' | 'trade' | 'cta'
 
 export type VppExplainerStep = {
   id: VppExplainerStepId
@@ -134,32 +134,79 @@ export const VPP_EXPLAINER_EXAMPLE = {
   vppGapCostAud: 5.1,
 } as const
 
-/** Battery ring fill shown on each diagram step (visual only). */
-export const VPP_EXPLAINER_BATTERY: Record<
-  Exclude<VppExplainerStepId, 'compare'>,
-  number
-> = {
-  shortfall: 0.2,
-  grid: 0.35,
-  neighbour: 0.75,
-  trade: 0.9,
+/** Draw / supply cards on the “it runs both ways” slide. */
+export const VPP_EXPLAINER_FLOW = {
+  intro:
+    'Nearby batteries act like a second grid — the VPP grid — that you draw from or add to, instead of the retail grid.',
+  cards: [
+    {
+      id: 'draw',
+      title: 'Draw from the VPP grid',
+      body: 'When this home is short, nearby batteries cover the gap — instead of buying it from the retail grid.',
+    },
+    {
+      id: 'supply',
+      title: 'Supply to the VPP grid',
+      body: 'When there’s extra in the battery, this home adds it for a neighbour to draw, and gets credited.',
+    },
+  ],
+} as const
+
+/** Closing carousel slide — scrolls to the how-it-helps section, no route change. */
+export const VPP_EXPLAINER_CTA = {
+  eyebrow: 'Ready when you are',
+  title: 'See how this can help you',
+  body: 'A quick comparison for a home like yours — no sign-up needed.',
+  button: 'Show me',
+} as const
+
+/** Example “how it helps” block under the carousel (not the live dashboard). */
+export const VPP_HOW_IT_HELPS = {
+  heading: 'A quick look at what this means for a home like yours',
+  withoutTitle: 'Without a VPP',
+  withoutDetail: 'bought from the retail grid',
+  withTitle: 'With a VPP',
+  withDetail: 'covered by the VPP grid instead',
+  benefits: [
+    'No new hardware. Works with the battery you already have.',
+    'Covered both ways. Draw when you’re short, get credited when you help someone else.',
+  ],
+  cta: 'See your numbers',
+} as const
+
+/** Illustrative year from a typical week — not a live bill projection. */
+export function annualizeWeeklyAud(weeklyAud: number): number {
+  return Math.round(weeklyAud * 52)
 }
 
 /**
  * buildVppExplainerSteps
- * @param personal - Real shortfall week when onboarded and a gap exists; else null
- * @returns Five carousel slides (four story beats + cost compare) with hedging for examples
+ * @param _personal - Reserved so the carousel can still pass modelled week data
+ * @returns Four slides: shortfall, cost compare, both-ways, CTA
  */
 export function buildVppExplainerSteps(
-  personal: VppExplainerHousehold | null,
+  _personal: VppExplainerHousehold | null,
 ): VppExplainerStep[] {
-  const story = personal ? personalStory(personal) : exampleStory()
   return [
-    ...story,
+    {
+      id: 'shortfall',
+      headline: 'Why the numbers don’t usually match',
+      body: 'Solar peaks around midday. Most homes use more power in the evening — so there’s almost always a gap to fill, one way or another.',
+    },
     {
       id: 'compare',
-      headline: 'Same shortfall, two ways to cover it',
+      headline: 'What the gap costs',
       body: 'Toggle without vs with a VPP to see how the same gap can be priced.',
+    },
+    {
+      id: 'trade',
+      headline: 'It runs both ways',
+      body: VPP_EXPLAINER_FLOW.intro,
+    },
+    {
+      id: 'cta',
+      headline: VPP_EXPLAINER_CTA.title,
+      body: VPP_EXPLAINER_CTA.body,
     },
   ]
 }
@@ -178,20 +225,20 @@ export function buildVppExplainerCompare(
     const gap = formatExplainerKwh(personal.gapKwh)
     return {
       eyebrow: 'Your numbers, one week',
-      title: 'Same shortfall, two ways to cover it',
+      title: 'What the gap costs',
       without: {
         title: `Your panels made about ${gen}, your home used about ${used}`,
-        detail: `The ${gap} gap gets billed at the grid’s going rate — an estimate, not a bill.`,
+        detail: `The ${gap} gap gets billed at the retail grid’s going rate — an estimate, not a bill.`,
         costLabel: 'roughly, this gap costs',
         costAud: personal.gapCostAud,
-        footer: `Same ${gap} gap, bought from the grid instead of borrowed through a VPP.`,
+        footer: `Same ${gap} gap, bought from the retail grid instead of borrowed through a VPP.`,
       },
       with: {
         title: 'Same shortfall, a VPP fills the gap instead',
         detail: `Homes nearby with spare charge lend you the ${gap}.`,
         costLabel: 'roughly, this gap costs',
         costAud: personal.vppGapCostAud ?? null,
-        footer: `Same ${gap} gap, borrowed from a VPP instead of bought from the grid.`,
+        footer: `Same ${gap} gap, borrowed from the VPP grid instead of bought from the retail grid.`,
       },
     }
   }
@@ -199,81 +246,22 @@ export function buildVppExplainerCompare(
   const { generatedKwh, usedKwh, gapKwh, gapCostAud, vppGapCostAud } = VPP_EXPLAINER_EXAMPLE
   return {
     eyebrow: 'An example week',
-    title: 'Same shortfall, two ways to cover it',
+    title: 'What the gap costs',
     without: {
       title: `Your panels made ${generatedKwh}, your home used ${usedKwh}`,
-      detail: `The ${gapKwh} kWh gap gets billed at the grid’s going rate`,
+      detail: `The ${gapKwh} kWh gap gets billed at the retail grid’s going rate`,
       costLabel: 'roughly, this gap costs',
       costAud: gapCostAud,
-      footer: `Same ${gapKwh} kWh gap, bought from the grid instead of borrowed through a VPP.`,
+      footer: `Same ${gapKwh} kWh gap, bought from the retail grid instead of borrowed through a VPP.`,
     },
     with: {
       title: 'Same shortfall, a VPP fills the gap instead',
       detail: `Homes nearby with spare charge lend you the ${gapKwh} kWh.`,
       costLabel: 'roughly, this gap costs',
       costAud: vppGapCostAud,
-      footer: `Same ${gapKwh} kWh gap, borrowed from a VPP instead of bought from the grid.`,
+      footer: `Same ${gapKwh} kWh gap, borrowed from the VPP grid instead of bought from the retail grid.`,
     },
   }
-}
-
-function personalStory(personal: VppExplainerHousehold): VppExplainerStep[] {
-  const gen = formatExplainerKwh(personal.generatedKwh)
-  const used = formatExplainerKwh(personal.usedKwh)
-  const gap = formatExplainerKwh(personal.gapKwh)
-  const cost =
-    personal.gapCostAud != null
-      ? ` Roughly ${formatExplainerAud(personal.gapCostAud)} at your retail rate — an estimate, not a bill.`
-      : ''
-
-  return [
-    {
-      id: 'shortfall',
-      headline: `Your panels made about ${gen} this week`,
-      body: `And your home used about ${used}. That ${gap} gap has to come from somewhere.`,
-    },
-    {
-      id: 'grid',
-      headline: 'Normally, you’d buy that gap from the grid',
-      body: `At retail rates, often during the priciest hours of the evening.${cost}`,
-    },
-    {
-      id: 'neighbour',
-      headline: 'In a VPP, you’d borrow it from a neighbour instead',
-      body: `Homes nearby with spare battery charge cover the gap for you — about ${gap}.`,
-    },
-    {
-      id: 'trade',
-      headline: 'Next time you’ve got extra, someone borrows from you',
-      body: 'It runs both ways. That’s the whole idea of a virtual power plant.',
-    },
-  ]
-}
-
-function exampleStory(): VppExplainerStep[] {
-  const { generatedKwh, usedKwh, gapKwh, gapCostAud } = VPP_EXPLAINER_EXAMPLE
-  return [
-    {
-      id: 'shortfall',
-      headline: `Say your panels made ${generatedKwh} kWh this week`,
-      body: `And your home used ${usedKwh}. That ${gapKwh} kWh gap has to come from somewhere.`,
-    },
-    {
-      id: 'grid',
-      headline: 'Normally, you’d buy that gap from the grid',
-      body: `At retail rates, often during the priciest hours of the evening. On a rough example week that might cost about $${gapCostAud.toFixed(2)}.`,
-    },
-    {
-      id: 'neighbour',
-      headline: 'In a VPP, you’d borrow it from a neighbour instead',
-      body: 'Homes nearby with spare battery charge cover the gap for you.',
-    },
-    {
-      id: 'trade',
-      headline: 'Next time you’ve got extra, someone borrows from you',
-      body: 'It runs both ways. That’s the whole idea of a virtual power plant.',
-    },
-  ]
 }
 
 function formatExplainerKwh(value: number): string {
@@ -281,10 +269,25 @@ function formatExplainerKwh(value: number): string {
   return `${rounded} kWh`
 }
 
-function formatExplainerAud(value: number): string {
+/** Weekly gap cost as shown on the compare slide and how-it-helps cards. */
+export function formatExplainerExactAud(weeklyAud: number): string {
   return new Intl.NumberFormat('en-AU', {
     style: 'currency',
     currency: 'AUD',
-    maximumFractionDigits: value >= 10 ? 0 : 2,
-  }).format(value)
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(weeklyAud)
+}
+
+export function formatExplainerWeekAud(weeklyAud: number): string {
+  return `${formatExplainerExactAud(weeklyAud)}/week`
+}
+
+/** Rounded 52-week equivalent of a weekly gap cost. */
+export function formatExplainerYearAud(weeklyAud: number): string {
+  return new Intl.NumberFormat('en-AU', {
+    style: 'currency',
+    currency: 'AUD',
+    maximumFractionDigits: 0,
+  }).format(annualizeWeeklyAud(weeklyAud))
 }

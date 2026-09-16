@@ -366,6 +366,10 @@
   color: var(--vpp-exp-cream);
 }
 
+.vpp-explainer__title--wide {
+  max-width: 22ch;
+}
+
 .vpp-explainer__layout {
   display: flex;
   flex-direction: column;
@@ -377,6 +381,10 @@
   width: 100%;
   max-width: 22rem;
   margin: 0 auto;
+}
+
+.vpp-explainer__diagram:empty {
+  display: none;
 }
 
 .vpp-shortfall-bars {
@@ -515,7 +523,11 @@
 }
 
 .vpp-explainer__chevron--prev {
-  transform: rotate(180deg);
+  transform: rotate(90deg);
+}
+
+.vpp-explainer__chevron--next {
+  transform: rotate(-90deg);
 }
 
 .vpp-explainer__dots {
@@ -549,6 +561,91 @@
 .vpp-explainer__cta {
   display: flex;
   justify-content: flex-start;
+}
+
+.vpp-flow-cards {
+  display: grid;
+  gap: 0.75rem;
+  margin-top: 0.35rem;
+}
+
+.vpp-explainer-cta-slide__btn {
+  width: auto;
+  align-self: flex-start;
+  margin-top: 0.35rem;
+  padding-left: 1.75rem;
+  padding-right: 1.75rem;
+}
+
+.welcome__vpp-story {
+  --vpp-exp-coral: var(--terra-400);
+  --vpp-exp-coral-strong: var(--primary);
+  --vpp-exp-teal: var(--success);
+  --vpp-exp-cream: var(--on-deep);
+  --vpp-exp-muted: rgb(242 237 227 / 0.62);
+  display: flex;
+  flex-direction: column;
+  gap: 1.15rem;
+}
+
+.vpp-helps {
+  scroll-margin-top: 1.25rem;
+}
+
+.vpp-helps__card {
+  display: flex;
+  flex-direction: column;
+  gap: 1.35rem;
+}
+
+.vpp-helps__title {
+  margin: 0;
+  max-width: 22ch;
+  font-family: var(--font-display);
+  font-size: clamp(1.55rem, 3vw, 1.85rem);
+  font-weight: 500;
+  line-height: 1.2;
+  color: var(--vpp-exp-cream);
+}
+
+.vpp-helps__compare {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.vpp-helps__label {
+  margin: 0;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--vpp-exp-coral-strong);
+}
+
+.vpp-helps__compare .vpp-compare__cost-value {
+  margin: 0.35rem 0 0.4rem;
+}
+
+.vpp-helps__benefits {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.vpp-helps__benefit {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.85rem;
+}
+
+.vpp-helps__benefit p {
+  margin: 0;
+  font-size: 0.95rem;
+  line-height: 1.45;
+  color: var(--vpp-exp-muted);
 }
 
 /* Compare slide — Without / With a VPP */
@@ -637,7 +734,7 @@
 
 .vpp-compare__cost {
   display: flex;
-  align-items: baseline;
+  align-items: flex-start;
   justify-content: space-between;
   gap: 1rem;
   padding-top: 0.95rem;
@@ -650,158 +747,37 @@
   color: var(--vpp-exp-muted);
 }
 
+.vpp-compare__cost-stack {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.35rem;
+  text-align: right;
+}
+
 .vpp-compare__cost-value {
   margin: 0;
   font-family: var(--font-display);
-  font-size: clamp(1.85rem, 4vw, 2.35rem);
+  font-size: clamp(1.55rem, 3.4vw, 2.1rem);
   font-weight: 500;
-  line-height: 1;
+  line-height: 1.1;
   color: var(--vpp-exp-coral-strong);
 }
 
-.vpp-compare__foot {
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-}
-
-.vpp-compare__foot .vpp-explainer__controls {
-  margin-top: 0;
-}
-
-.vpp-compare__caption {
-  margin: 0;
-  font-size: 0.88rem;
-  line-height: 1.45;
+.vpp-compare__per {
+  margin-left: 0.12em;
+  font-size: 0.52em;
+  font-weight: 600;
+  letter-spacing: 0.02em;
   color: var(--vpp-exp-muted);
 }
 
-.vpp-explainer-svg {
-  display: block;
-  width: 100%;
-  height: auto;
-}
-
-.vpp-explainer-svg__orbit {
-  stroke: rgb(242 237 227 / 0.12);
-  stroke-width: 1;
-}
-
-.vpp-explainer-svg__grid {
-  fill: none;
-  stroke: rgb(242 237 227 / 0.55);
-  stroke-width: 1.5;
-  opacity: 0;
-  transition: opacity 0.35s ease;
-}
-
-.vpp-explainer-svg__grid.is-on,
-.vpp-explainer-svg__grid.is-dim {
-  opacity: 1;
-}
-
-.vpp-explainer-svg__grid.is-dim {
-  opacity: 0.35;
-}
-
-.vpp-explainer-svg__grid-label {
-  fill: var(--vpp-exp-muted);
-  font-family: var(--font-body);
-  font-size: 10px;
-  letter-spacing: 0.06em;
-}
-
-.vpp-explainer-svg__neighbour {
-  fill: rgb(47 125 92 / 0.35);
-  transition:
-    fill 0.35s ease,
-    opacity 0.35s ease;
-  opacity: 0.55;
-}
-
-.vpp-explainer-svg__neighbour.is-on {
-  fill: var(--vpp-exp-teal);
-  opacity: 1;
-}
-
-.vpp-explainer-svg__link {
-  fill: none;
-  stroke: transparent;
-  stroke-width: 1.6;
-  opacity: 0;
-  transition: opacity 0.35s ease, stroke 0.35s ease;
-}
-
-.vpp-explainer-svg__link.is-dim {
-  opacity: 0.28;
-  stroke: rgb(242 237 227 / 0.45);
-}
-
-.vpp-explainer-svg__link.is-on.is-coral {
-  opacity: 1;
-  stroke: var(--vpp-exp-coral);
-}
-
-.vpp-explainer-svg__link.is-on.is-teal {
-  opacity: 1;
-  stroke: var(--vpp-exp-teal);
-}
-
-.vpp-explainer-svg__marker--coral {
-  fill: var(--vpp-exp-coral);
-}
-
-.vpp-explainer-svg__marker--teal {
-  fill: var(--vpp-exp-teal);
-}
-
-.vpp-explainer-svg__ring-track {
-  stroke: rgb(242 237 227 / 0.16);
-  stroke-width: 3.5;
-}
-
-.vpp-explainer-svg__ring-fill {
-  stroke-width: 3.5;
-  stroke-linecap: round;
-  transition:
-    stroke-dasharray 0.45s ease,
-    stroke 0.35s ease;
-}
-
-.vpp-explainer-svg__ring-fill.is-coral {
-  stroke: var(--vpp-exp-coral);
-}
-
-.vpp-explainer-svg__ring-fill.is-teal {
-  stroke: var(--vpp-exp-teal);
-}
-
-.vpp-explainer-svg__house-disc {
-  fill: var(--vpp-exp-cream);
-}
-
-.vpp-explainer-svg__house-shape {
-  fill: var(--surface-deep);
-}
-
-.vpp-explainer-svg__door {
-  fill: var(--surface-deep);
-}
-
-.vpp-explainer-svg__battery-label {
-  fill: var(--vpp-exp-muted);
-  font-family: var(--font-body);
-  font-size: 11px;
-  letter-spacing: 0.04em;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .vpp-explainer-svg__grid,
-  .vpp-explainer-svg__neighbour,
-  .vpp-explainer-svg__link,
-  .vpp-explainer-svg__ring-fill {
-    transition: none;
-  }
+.vpp-compare__cost-year,
+.vpp-compare__delta {
+  margin: 0;
+  font-size: 0.78rem;
+  line-height: 1.4;
+  color: var(--vpp-exp-muted);
 }
 
 @media (min-width: 640px) {
@@ -851,19 +827,26 @@
   }
 
   .vpp-explainer__layout {
-    flex-direction: row;
+    display: grid;
+    grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr);
     align-items: center;
     gap: 2rem;
   }
 
   .vpp-explainer__diagram {
-    flex: 0 0 44%;
     max-width: none;
     margin: 0;
   }
 
+  .vpp-explainer__diagram:empty {
+    display: block;
+  }
+
   .vpp-explainer__panel {
-    flex: 1 1 0;
     padding-top: 0.25rem;
+  }
+
+  .vpp-helps__compare {
+    grid-template-columns: 1fr 1fr;
   }
 }
