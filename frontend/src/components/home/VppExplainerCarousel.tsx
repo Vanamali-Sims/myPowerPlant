@@ -121,17 +121,17 @@ export function VppExplainerCarousel({
                 </Button>
               </>
             ) : null}
-
-            <ExplainerControls
-              steps={steps}
-              index={current}
-              onPrev={() => go(-1)}
-              onNext={() => go(1)}
-              onSelect={setIndex}
-            />
           </div>
         </div>
       </div>
+
+      <ExplainerControls
+        steps={steps}
+        index={current}
+        onPrev={() => go(-1)}
+        onNext={() => go(1)}
+        onSelect={setIndex}
+      />
     </section>
   )
 }
@@ -219,11 +219,9 @@ function CompareVisual({ copy, mode, onMode }: CompareVisualProps) {
       : null
   const yearLine =
     side.costAud != null
-      ? `≈ ${formatExplainerYearAud(side.costAud)}/year, if weeks like this are typical`
-      : null
-  const savingsLine =
-    mode === 'with' && weeklySave != null
-      ? `${formatExplainerExactAud(weeklySave)} less per week than the retail grid — about ${formatExplainerYearAud(weeklySave)}/yr`
+      ? mode === 'with' && weeklySave != null
+        ? `≈ ${formatExplainerYearAud(side.costAud)}/year · ${formatExplainerExactAud(weeklySave)} less than retail`
+        : `≈ ${formatExplainerYearAud(side.costAud)}/year`
       : null
 
   return (
@@ -284,7 +282,6 @@ function CompareVisual({ copy, mode, onMode }: CompareVisualProps) {
               <span className="visually-hidden"> Estimate</span>
             </p>
             {yearLine ? <p className="vpp-compare__cost-year">{yearLine}</p> : null}
-            {savingsLine ? <p className="vpp-compare__delta">{savingsLine}</p> : null}
           </div>
         </div>
       </article>

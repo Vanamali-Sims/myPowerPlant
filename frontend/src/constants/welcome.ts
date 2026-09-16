@@ -136,18 +136,17 @@ export const VPP_EXPLAINER_EXAMPLE = {
 
 /** Draw / supply cards on the “it runs both ways” slide. */
 export const VPP_EXPLAINER_FLOW = {
-  intro:
-    'Nearby batteries act like a second grid — the VPP grid — that you draw from or add to, instead of the retail grid.',
+  intro: 'Nearby batteries act like a second grid you can draw from or add to.',
   cards: [
     {
       id: 'draw',
       title: 'Draw from the VPP grid',
-      body: 'When this home is short, nearby batteries cover the gap — instead of buying it from the retail grid.',
+      body: 'When this home is short, neighbours cover the gap instead of the retail grid.',
     },
     {
       id: 'supply',
       title: 'Supply to the VPP grid',
-      body: 'When there’s extra in the battery, this home adds it for a neighbour to draw, and gets credited.',
+      body: 'Spare charge goes to a neighbour, and this home gets credited.',
     },
   ],
 } as const
@@ -220,46 +219,44 @@ export function buildVppExplainerCompare(
   personal: VppExplainerHousehold | null,
 ): VppExplainerCompareCopy {
   if (personal) {
-    const gen = formatExplainerKwh(personal.generatedKwh)
-    const used = formatExplainerKwh(personal.usedKwh)
     const gap = formatExplainerKwh(personal.gapKwh)
     return {
       eyebrow: 'Your numbers, one week',
       title: 'What the gap costs',
       without: {
-        title: `Your panels made about ${gen}, your home used about ${used}`,
-        detail: `The ${gap} gap gets billed at the retail grid’s going rate — an estimate, not a bill.`,
+        title: 'Bought from the retail grid',
+        detail: `The ${gap} gap is billed at the retail rate.`,
         costLabel: 'roughly, this gap costs',
         costAud: personal.gapCostAud,
-        footer: `Same ${gap} gap, bought from the retail grid instead of borrowed through a VPP.`,
+        footer: `Same ${gap} gap, paid to the retail grid.`,
       },
       with: {
-        title: 'Same shortfall, a VPP fills the gap instead',
+        title: 'A VPP fills the gap instead',
         detail: `Homes nearby with spare charge lend you the ${gap}.`,
         costLabel: 'roughly, this gap costs',
         costAud: personal.vppGapCostAud ?? null,
-        footer: `Same ${gap} gap, borrowed from the VPP grid instead of bought from the retail grid.`,
+        footer: `Same ${gap} gap, borrowed from the VPP grid.`,
       },
     }
   }
 
-  const { generatedKwh, usedKwh, gapKwh, gapCostAud, vppGapCostAud } = VPP_EXPLAINER_EXAMPLE
+  const { gapKwh, gapCostAud, vppGapCostAud } = VPP_EXPLAINER_EXAMPLE
   return {
     eyebrow: 'An example week',
     title: 'What the gap costs',
     without: {
-      title: `Your panels made ${generatedKwh}, your home used ${usedKwh}`,
-      detail: `The ${gapKwh} kWh gap gets billed at the retail grid’s going rate`,
+      title: 'Bought from the retail grid',
+      detail: `The ${gapKwh} kWh gap is billed at the retail rate.`,
       costLabel: 'roughly, this gap costs',
       costAud: gapCostAud,
-      footer: `Same ${gapKwh} kWh gap, bought from the retail grid instead of borrowed through a VPP.`,
+      footer: `Same ${gapKwh} kWh gap, paid to the retail grid.`,
     },
     with: {
-      title: 'Same shortfall, a VPP fills the gap instead',
+      title: 'A VPP fills the gap instead',
       detail: `Homes nearby with spare charge lend you the ${gapKwh} kWh.`,
       costLabel: 'roughly, this gap costs',
       costAud: vppGapCostAud,
-      footer: `Same ${gapKwh} kWh gap, borrowed from the VPP grid instead of bought from the retail grid.`,
+      footer: `Same ${gapKwh} kWh gap, borrowed from the VPP grid.`,
     },
   }
 }
