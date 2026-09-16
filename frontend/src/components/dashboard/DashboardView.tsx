@@ -136,34 +136,36 @@ export function DashboardView({
 
       {hasProfile ? (
         <>
-          <div className="dashboard__story">
-            {river ? (
-              <EnergyRiver
-                key={timeframe}
-                model={river}
-                place={place}
-                timeframe={timeframe}
-                onTimeframe={setTimeframe}
-                onSeePlans={() => {
-                  document.getElementById('vpp-suggestions')?.scrollIntoView({
-                    behavior: 'smooth',
-                    block: 'start',
-                  })
-                }}
-              />
-            ) : null}
+          <div className="dashboard-stage">
+            <div className="dashboard__story">
+              {river ? (
+                <EnergyRiver
+                  key={timeframe}
+                  model={river}
+                  place={place}
+                  timeframe={timeframe}
+                  onTimeframe={setTimeframe}
+                  onSeePlans={() => {
+                    document.getElementById('vpp-suggestions')?.scrollIntoView({
+                      behavior: 'smooth',
+                      block: 'start',
+                    })
+                  }}
+                />
+              ) : null}
 
-            {bundle ? (
-              <VppSuggestions
-                hasProfile
-                profile={profile}
-                plans={bundle.vppSuggestionPlans}
-                batteryModels={bundle.batteryModels}
-                fork={river?.fork ?? null}
-                onStartSetup={onStartSetup}
-                fromSavings
-              />
-            ) : null}
+              {bundle ? (
+                <VppSuggestions
+                  hasProfile
+                  profile={profile}
+                  plans={bundle.vppSuggestionPlans}
+                  batteryModels={bundle.batteryModels}
+                  fork={river?.fork ?? null}
+                  onStartSetup={onStartSetup}
+                  fromSavings
+                />
+              ) : null}
+            </div>
           </div>
 
           {report ? (

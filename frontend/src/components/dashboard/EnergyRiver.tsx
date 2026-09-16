@@ -205,7 +205,7 @@ export function EnergyRiver({
             >
               <header className="energy-savings__head">
                 <p className="energy-savings__eyebrow">
-                  Possible money saved · annual
+                  Money saved · annual
                   <span className="energy-savings__info" aria-hidden="true">
                     <InfoIcon width={14} height={14} />
                   </span>
@@ -220,7 +220,7 @@ export function EnergyRiver({
           </div>
 
           <button type="button" className="energy-plans-cta" onClick={onSeePlans}>
-            See the plans that get you there
+            See the plans
           </button>
         </div>
       </article>
@@ -253,9 +253,11 @@ function LegendItem({ id, tone, label, value, hint, active, pinned, onHover, onP
         onBlur={() => onHover(null)}
         onClick={() => onPin(pinned === id ? null : id)}
       >
-        <span className="energy-legend__swatch" aria-hidden="true" />
         <span className="energy-legend__copy">
-          <span className="energy-legend__label">{label}</span>
+          <span className="energy-legend__label-row">
+            <span className="energy-legend__swatch" aria-hidden="true" />
+            <span className="energy-legend__label">{label}</span>
+          </span>
           <span className="energy-legend__value">{value}</span>
           <span className="energy-legend__hint">{hint}</span>
         </span>
