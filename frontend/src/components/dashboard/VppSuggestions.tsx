@@ -134,6 +134,7 @@ export function VppSuggestions({
 
   return (
     <section
+      id="vpp-suggestions"
       className={`vpp-suggestions${fromSavings ? ' vpp-suggestions--from-savings' : ''}`}
       aria-labelledby="vpp-suggestions-heading"
     >

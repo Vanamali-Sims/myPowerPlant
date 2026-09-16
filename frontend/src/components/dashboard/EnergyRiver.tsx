@@ -8,6 +8,7 @@ import {
   type EnergyRiverModel,
 } from '../../lib/energyRiver'
 import { useSlidingHighlight } from '../../lib/useSlidingHighlight'
+import { InfoIcon } from '../ui/icons'
 
 type SliceId = 'generated' | 'used' | 'vpp'
 
@@ -16,26 +17,35 @@ type EnergyRiverProps = {
   place: string
   timeframe: Timeframe
   onTimeframe: (next: Timeframe) => void
+  onSeePlans: () => void
 }
 
 /**
  * EnergyRiver
- * @param props.model - Scaled generation, use, leftover/gap, and estimate
+ * @param props.model - Scaled generation, use, leftover/gap, and annual estimate
  * @param props.place - Suburb and state, e.g. "Kew, VIC"
  * @param props.timeframe - Daily / weekly / fortnightly
  * @param props.onTimeframe - Switch the dashboard scale
- * @returns Dark balance card joined to an estimated-savings card
+ * @param props.onSeePlans - Jump to VPP recommendations under this card
+ * @returns One dark balance card: split, three numbers, annual savings + CTA
  *
- * Three bar slices match the three numbers. Surplus paints the VPP slice green
- * (discharge); deficit paints it terracotta (borrow). Hover or focus a slice
- * or legend to cross-highlight; the VPP slice also lights the savings card.
+ * Savings explanation sits in a hover/focus tooltip so the default view stays
+ * numbers-first. Surplus paints the VPP slice green; deficit paints it terracotta.
  */
-export function EnergyRiver({ model, place, timeframe, onTimeframe }: EnergyRiverProps) {
+export function EnergyRiver({
+  model,
+  place,
+  timeframe,
+  onTimeframe,
+  onSeePlans,
+}: EnergyRiverProps) {
   const { setRef, box } = useSlidingHighlight(timeframe, '[aria-checked="true"]')
   const [pinned, setPinned] = useState<SliceId | null>(null)
   const [hover, setHover] = useState<SliceId | null>(null)
+  const [tipOpen, setTipOpen] = useState(false)
   const active = hover ?? pinned
   const liveId = useId()
+  const tipId = useId()
   const stage = riverForkStage(model.fork)
   const isSurplus = model.fork === 'surplus'
   const isDeficit = model.fork === 'deficit'
@@ -46,6 +56,7 @@ export function EnergyRiver({ model, place, timeframe, onTimeframe }: EnergyRive
     : isDeficit
       ? 'of what this home used could come from a VPP'
       : 'of what this home used the roof already covers'
+  const tip = savingsTip(model)
 
   const slices: { id: SliceId; tone: string; kwh: number; label: string }[] = [
     {
@@ -71,7 +82,6 @@ export function EnergyRiver({ model, place, timeframe, onTimeframe }: EnergyRive
   }
 
   const detail = detailFor(active, model)
-  const vppOn = active === 'vpp'
 
   return (
     <section className={`energy-story energy-story--${model.fork}`} aria-label="Household energy balance">
@@ -176,30 +186,43 @@ export function EnergyRiver({ model, place, timeframe, onTimeframe }: EnergyRive
             onPin={setPinned}
           />
         </ul>
-      </article>
 
-      <div className={`energy-join${vppOn ? ' is-lit' : ''}`} aria-hidden="true">
-        <span className="energy-join__from" />
-        <span className="energy-join__knob" />
-        <span className="energy-join__to" />
-      </div>
+        <div className="energy-balance__foot">
+          <div className={`energy-savings-wrap${tipOpen ? ' is-open' : ''}`}>
+            {tipOpen ? (
+              <p id={tipId} className="energy-savings-tip" role="tooltip">
+                {tip}
+              </p>
+            ) : null}
+            <button
+              type="button"
+              className="energy-savings"
+              aria-describedby={tipOpen ? tipId : undefined}
+              onMouseEnter={() => setTipOpen(true)}
+              onMouseLeave={() => setTipOpen(false)}
+              onFocus={() => setTipOpen(true)}
+              onBlur={() => setTipOpen(false)}
+            >
+              <header className="energy-savings__head">
+                <p className="energy-savings__eyebrow">
+                  Possible money saved · annual
+                  <span className="energy-savings__info" aria-hidden="true">
+                    <InfoIcon width={14} height={14} />
+                  </span>
+                </p>
+                <span className="kpi-badge kpi-badge--estimate kpi-badge--on-deep">Estimate</span>
+              </header>
+              <p className="energy-savings__value">
+                {formatAud(model.annualValueAud)}
+                <span className="energy-savings__per">per year</span>
+              </p>
+            </button>
+          </div>
 
-      <article className={`energy-savings${vppOn ? ' is-lit' : ''}`}>
-        <header className="energy-savings__head">
-          <p className="energy-savings__eyebrow">Possible money saved · annual</p>
-          <span className="kpi-badge kpi-badge--estimate">Estimate</span>
-        </header>
-        <p className="energy-savings__value">
-          {formatAud(model.annualValueAud)}
-          <span className="energy-savings__per">per year</span>
-        </p>
-        <p className="energy-savings__hint">
-          {isSurplus
-            ? 'If that leftover went out through a VPP instead of a standard feed-in, over a year.'
-            : isDeficit
-              ? 'If a VPP covered the gap instead of buying that much from the grid, over a year.'
-              : 'The roof already covers use. A VPP still pays for grid events.'}
-        </p>
+          <button type="button" className="energy-plans-cta" onClick={onSeePlans}>
+            See the plans that get you there
+          </button>
+        </div>
       </article>
     </section>
   )
@@ -218,12 +241,11 @@ type LegendItemProps = {
 }
 
 function LegendItem({ id, tone, label, value, hint, active, pinned, onHover, onPin }: LegendItemProps) {
-  const on = active === id
   return (
     <li>
       <button
         type="button"
-        className={`energy-legend__item energy-legend__item--${tone}${toneClass(id, active)}`}
+        className={`energy-station energy-legend__item energy-legend__item--${tone}${toneClass(id, active)}`}
         aria-pressed={pinned === id}
         onMouseEnter={() => onHover(id)}
         onMouseLeave={() => onHover(null)}
@@ -272,4 +294,21 @@ function detailFor(active: SliceId | null, model: EnergyRiverModel): string | nu
   const base = model.fork === 'surplus' ? model.generatedKwh : model.usedKwh
   const baseLabel = model.fork === 'surplus' ? 'energy generated' : 'energy used'
   return `${stage.eyebrow} ${formatKwh(model.forkKwh)} ÷ ${baseLabel} ${formatKwh(base)}`
+}
+
+/**
+ * savingsTip
+ * @param model - Current balance figures
+ * @returns Hover tooltip copy for the annual savings tile
+ */
+function savingsTip(model: EnergyRiverModel): string {
+  const period =
+    model.timeframe === 'daily' ? 'a day' : model.timeframe === 'fortnightly' ? 'a fortnight' : 'a week'
+  if (model.fork === 'surplus' && model.forkKwh > 0) {
+    return `If that leftover ${formatKwh(model.forkKwh)} ${period} went out through a VPP instead of a standard feed-in.`
+  }
+  if (model.fork === 'deficit' && model.forkKwh > 0) {
+    return `If that gap of ${formatKwh(model.forkKwh)} ${period} came from a VPP instead of buying from the grid.`
+  }
+  return 'The roof already covers use. A VPP still pays for grid events.'
 }

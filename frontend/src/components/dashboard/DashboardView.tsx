@@ -144,25 +144,25 @@ export function DashboardView({
                 place={place}
                 timeframe={timeframe}
                 onTimeframe={setTimeframe}
+                onSeePlans={() => {
+                  document.getElementById('vpp-suggestions')?.scrollIntoView({
+                    behavior: 'smooth',
+                    block: 'start',
+                  })
+                }}
               />
             ) : null}
 
             {bundle ? (
-              <>
-                <div className="dashboard__story-join" aria-hidden="true">
-                  <span className="dashboard__story-join__stem" />
-                  <span className="dashboard__story-join__knob" />
-                </div>
-                <VppSuggestions
-                  hasProfile
-                  profile={profile}
-                  plans={bundle.vppSuggestionPlans}
-                  batteryModels={bundle.batteryModels}
-                  fork={river?.fork ?? null}
-                  onStartSetup={onStartSetup}
-                  fromSavings
-                />
-              </>
+              <VppSuggestions
+                hasProfile
+                profile={profile}
+                plans={bundle.vppSuggestionPlans}
+                batteryModels={bundle.batteryModels}
+                fork={river?.fork ?? null}
+                onStartSetup={onStartSetup}
+                fromSavings
+              />
             ) : null}
           </div>
 
