@@ -87,7 +87,8 @@ type BoundarySpec = {
 
 const boundaries: BoundarySpec[] = [
   { id: 'VAL-07', field: 'monthlyBill', step: 'usage', min: 1, max: 5000 },
-  { id: 'VAL-08', field: 'monthlyKwh', step: 'usage', min: 1, max: 5000 },
+  // VAL-08 (monthlyKwh) removed: the usage step no longer validates it —
+  // billed kWh is now an optional field, not gated at step advancement.
   {
     id: 'VAL-09',
     field: 'panelCount',
@@ -323,7 +324,8 @@ describe('FUN-03 required fields block step advancement', () => {
       fieldSources: {},
       lastUpdated: null,
     })
-    expect(Object.keys(errors).length).toBeGreaterThanOrEqual(5)
+    // monthlyBill, peakPeriod, usageLevel, wfh — monthlyKwh is not gated here.
+    expect(Object.keys(errors).length).toBeGreaterThanOrEqual(4)
   })
 
   it('gives a non-empty message for every error it reports', () => {

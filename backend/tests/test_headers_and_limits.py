@@ -4,7 +4,6 @@ import pytest
 
 REQUIRED_HEADERS = [
     "content-security-policy",
-    "strict-transport-security",
     "x-content-type-options",
     "x-frame-options",
     "referrer-policy",
@@ -22,9 +21,20 @@ class TestSecurityHeaders:
         assert "unsafe-inline" not in csp
         assert "unsafe-eval" not in csp
 
+    async def test_hsts_present_when_request_is_https(self, client):
+        """HSTS is conditional on the request being HTTPS (via the
+        CloudFront-set X-Forwarded-Proto) - sending it over plain HTTP would
+        be a no-op for the browser, so the app only sets it when it matters."""
+        r = await client.get("/api/health", headers={"X-Forwarded-Proto": "https"})
+        assert "strict-transport-security" in {k.lower() for k in r.headers}
+
+    async def test_hsts_absent_over_plain_http(self, client):
+        r = await client.get("/api/health")
+        assert "strict-transport-security" not in {k.lower() for k in r.headers}
+
     async def test_headers_present_on_error_responses(self, client):
         """An error path must not drop the headers."""
-        r = await client.get("/api/profile/nope")
+        r = await client.get("/api/nope")
         assert r.status_code == 404
         assert "x-content-type-options" in {k.lower() for k in r.headers}
 
@@ -40,28 +50,18 @@ class TestCors:
 
 
 class TestRateLimiting:
-    async def test_reads_are_throttled(self, client, profile):
-        """R13 denial-of-wallet. In-process limiter only - WAF is the
-        authoritative control (see app/rate_limit.py)."""
-        household_id = (await client.post("/api/profile", json=profile)).json()["household_id"]
-        codes = [(await client.get(f"/api/profile/{household_id}")).status_code
-                 for _ in range(80)]
+    async def test_reads_are_throttled(self, client):
+        """R13 denial-of-wallet. In-process limiter only - API Gateway's
+        usage plan is the authoritative control (see app/rate_limit.py).
+        There is no write endpoint left to throttle harder than reads -
+        the API is read-only GET, so every request shares one limit."""
+        codes = [(await client.get("/api/health")).status_code for _ in range(80)]
         assert 429 in codes, "no throttling engaged"
 
-    async def test_creation_is_throttled_harder_than_reads(self, client, profile):
-        codes = [(await client.post("/api/profile", json=profile)).status_code
-                 for _ in range(15)]
-        assert 429 in codes
-
-
-class TestErrorDisclosure:
-    async def test_malformed_json_does_not_leak_internals(self, client):
-        r = await client.post(
-            "/api/profile",
-            content=b"{not json",
-            headers={"Content-Type": "application/json"},
-        )
-        body = r.text.lower()
-        assert "traceback" not in body
-        assert "sqlalchemy" not in body
-        assert "/users/" not in body
+    async def test_throttled_response_includes_retry_after(self, client):
+        for _ in range(80):
+            r = await client.get("/api/health")
+            if r.status_code == 429:
+                assert "retry-after" in {k.lower() for k in r.headers}
+                return
+        pytest.fail("no throttling engaged")

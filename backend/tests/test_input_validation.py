@@ -1,90 +1,62 @@
-"""Server-side validation - Security Plan S3.3, R7, R9.
+"""Input validation - Security Plan S3.
 
-Client-side validation is a usability feature. These tests assert the server
-enforces the same rules independently, because the browser is not a control.
+The write-capable /api/profile endpoint this suite originally validated
+(postcode format, battery/provider allow-lists, numeric bounds, an
+explicit field allow-list, control characters, oversized payloads) has
+been removed: the household profile now lives only in the browser and is
+validated there (frontend/src/lib/validateProfile.ts,
+frontend/src/lib/profileStorage.ts). Neither remaining route
+(GET /api/health, GET /api/methodology) takes a body, query parameter, or
+path parameter, so there is no longer any user-controlled input reaching
+this API.
+
+These tests pin that "no input surface" invariant, so it is caught if a
+future endpoint reintroduces a parameter without validation, and confirm
+that garbage sent at the now-absent surface is handled safely rather than
+crashing or leaking internals.
 """
 
 import pytest
 
 
-async def post(client, profile, **overrides):
-    profile.update(overrides)
-    return await client.post("/api/profile", json=profile)
+class TestNoInputSurfaceRemains:
+    async def test_neither_route_declares_a_body_or_parameters(self, client):
+        r = await client.get("/openapi.json")
+        schema = r.json()
+        for path, operations in schema["paths"].items():
+            get_op = operations.get("get", {})
+            assert "requestBody" not in get_op, f"{path} unexpectedly accepts a body"
+            assert not get_op.get("parameters"), f"{path} unexpectedly declares parameters"
 
 
-class TestPostcode:
+class TestGarbageInputIsHandledSafely:
     @pytest.mark.parametrize(
-        "postcode",
-        ["9999", "2000", "abcd", "00000", "", "310", "31011",
-         "'; DROP TABLE household_profiles;--", "3101 OR 1=1", "<script>x"],
+        "path",
+        [
+            pytest.param("/api/health?" + "x" * 5000, id="oversized-query-string"),
+            pytest.param("/api/health?<script>alert(1)</script>=1", id="script-tag-in-query"),
+            pytest.param("/api/health/../../etc/passwd", id="path-traversal"),
+            pytest.param(
+                "/api/methodology/'; DROP TABLE appliances;--", id="sql-injection-in-path"
+            ),
+        ],
     )
-    async def test_rejects_non_victorian_postcode(self, client, profile, postcode):
-        assert (await post(client, profile, postcode=postcode)).status_code == 422
+    async def test_does_not_crash_or_leak_internals(self, client, path):
+        r = await client.get(path)
+        # 503 (Database unavailable) is a controlled, intended response from
+        # the route's own exception handler - not a crash. A bare 500 would
+        # mean an unhandled exception reached the client.
+        assert r.status_code != 500
+        assert "traceback" not in r.text.lower()
 
-    @pytest.mark.parametrize("postcode", ["3000", "3101", "8000", "3999"])
-    async def test_accepts_victorian_postcode(self, client, profile, postcode):
-        assert (await post(client, profile, postcode=postcode)).status_code == 201
-
-
-class TestReferenceDataAllowlists:
-    async def test_rejects_unknown_battery_model(self, client, profile):
-        r = await post(client, profile, battery_model="<script>alert(1)</script>")
-        assert r.status_code == 422
-
-    async def test_rejects_unknown_provider(self, client, profile):
-        assert (await post(client, profile, provider="Totally Real Energy")).status_code == 422
-
-    async def test_accepts_not_sure(self, client, profile):
-        r = await post(client, profile, battery_model="Not sure", provider="Not sure")
-        assert r.status_code == 201
-
-
-class TestNumericBounds:
-    @pytest.mark.parametrize("units", [-1, -999, 9, 10**9])
-    async def test_rejects_out_of_range_battery_units(self, client, profile, units):
-        assert (await post(client, profile, battery_units=units)).status_code == 422
-
-    @pytest.mark.parametrize(
-        "field,value",
-        [("monthly_bill", "0"), ("monthly_bill", "99999"), ("monthly_bill", "abc"),
-         ("monthly_kwh", "0"), ("panel_count", "81"), ("panel_watts", "49"),
-         ("reserve_percent", "81"), ("battery_age", "41")],
-    )
-    async def test_rejects_out_of_range_numerics(self, client, profile, field, value):
-        assert (await post(client, profile, **{field: value})).status_code == 422
-
-
-class TestHostileInput:
-    @pytest.mark.parametrize("value", ["3101\x00", "31\x0101", "3101\r\n"])
-    async def test_rejects_control_characters(self, client, profile, value):
-        assert (await post(client, profile, postcode=value)).status_code == 422
-
-    async def test_rejects_oversized_values(self, client, profile):
-        assert (await post(client, profile, postcode="3" * 5000)).status_code == 422
-
-    async def test_rejects_unknown_fields(self, client, profile):
-        assert (await post(client, profile, is_admin=True)).status_code == 422
-
-    async def test_bounds_field_sources_json(self, client, profile):
-        """field_sources is client-supplied JSON written to a JSON column.
-        Unconstrained it is an unbounded storage write."""
-        r = await post(client, profile, field_sources={"x" * 500: "y" * 10000})
-        assert r.status_code == 422
-
-    async def test_rejects_invalid_field_sources_values(self, client, profile):
-        assert (await post(client, profile, field_sources={"postcode": "spoofed"})).status_code == 422
-
-
-class TestConditionalRequirements:
-    async def test_dryer_requires_cycle_counts(self, client, profile):
-        r = await post(client, profile, dryer="yes", dryer_week="", dryer_weekend="")
-        assert r.status_code == 422
-
-    async def test_solar_requires_panel_details(self, client, profile):
-        r = await post(client, profile, has_solar="yes", panel_count="", panel_watts="")
-        assert r.status_code == 422
-
-    async def test_no_solar_needs_no_panel_details(self, client, profile):
-        r = await post(client, profile, has_solar="no", solar_direction="",
-                       panel_count="", panel_watts="")
-        assert r.status_code == 201
+    async def test_malformed_json_body_on_a_get_route_does_not_leak_internals(self, client):
+        r = await client.request(
+            "GET",
+            "/api/methodology",
+            content=b"{not json",
+            headers={"Content-Type": "application/json"},
+        )
+        body = r.text.lower()
+        assert "traceback" not in body
+        assert "sqlalchemy" not in body
+        assert "/users/" not in body

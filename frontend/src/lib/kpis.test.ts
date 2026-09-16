@@ -8,22 +8,18 @@
  * merely that a number was produced. Worked examples are in
  * testing/05-evidence/kpi-worked-example-1.md.
  *
- * Two tests are marked `it.fails`: they encode the behaviour we believe is
- * correct, and currently fail. Each names the defect it is waiting on. When the
- * defect is fixed these turn red until `.fails` is removed - which is the point.
+ * One test is marked `it.fails`: it encodes the behaviour we believe is
+ * correct, and currently fails (KPI-02). It names the defect it is waiting
+ * on. When the defect is fixed it turns red until `.fails` is removed -
+ * which is the point. A second known defect, KPI-01 (refrigerator power
+ * rating), was fixed since this suite was first written — see the
+ * regression test below, which is a plain `it`.
  */
 import { describe, expect, it } from 'vitest'
 
-import {
-  DEFAULT_RETAIL_RATE,
-  MELBOURNE_PEAK_SUN_HOURS,
-  ORIENTATION_FACTOR,
-  SOLAR_PERFORMANCE_RATIO,
-  TYPICAL_POTENTIAL_KW,
-  VIC_GRID_KG_CO2_PER_KWH,
-} from '../data/appliances'
 import { BASELINE_PROFILE } from '../data/baselines'
 import { emptyProfile, type ProfileData } from '../types/profile'
+import { seedMethodologyBundle } from './methodologyFixture'
 import {
   buildKpiReport,
   formatAud,
@@ -33,6 +29,18 @@ import {
   scaleAud,
   scaleKwh,
 } from './kpis'
+
+// Mirrors the Alembic-seeded methodology data (see methodologyFixture.ts),
+// so these hand-worked figures do not depend on a running API.
+const data = seedMethodologyBundle()
+const {
+  melbournePeakSunHours: MELBOURNE_PEAK_SUN_HOURS,
+  solarPerformanceRatio: SOLAR_PERFORMANCE_RATIO,
+  typicalPotentialKw: TYPICAL_POTENTIAL_KW,
+  vicGridKgCo2PerKwh: VIC_GRID_KG_CO2_PER_KWH,
+  defaultRetailRate: DEFAULT_RETAIL_RATE,
+} = data.methodology
+const ORIENTATION_FACTOR = data.orientationFactors
 
 function profile(overrides: Partial<ProfileData> = {}): ProfileData {
   return {
@@ -76,7 +84,7 @@ describe('parseCount', () => {
 
 // -------------------------------------------------------------------------
 // Timeframe scaling - the documented rule is daily = weekly / 7,
-// monthly = weekly x 4
+// fortnightly = weekly x 2
 // -------------------------------------------------------------------------
 
 describe('timeframe scaling', () => {
@@ -88,18 +96,18 @@ describe('timeframe scaling', () => {
     expect(scaleKwh(140, 'weekly')).toBe(140)
   })
 
-  it('monthly is weekly multiplied by 4', () => {
-    expect(scaleKwh(140, 'monthly')).toBe(560)
+  it('fortnightly is weekly multiplied by 2', () => {
+    expect(scaleKwh(140, 'fortnightly')).toBe(280)
   })
 
   it('scales currency by the same rule as energy', () => {
-    for (const tf of ['daily', 'weekly', 'monthly'] as const) {
+    for (const tf of ['daily', 'weekly', 'fortnightly'] as const) {
       expect(scaleAud(140, tf)).toBe(scaleKwh(140, tf))
     }
   })
 
   it('handles zero without producing NaN', () => {
-    for (const tf of ['daily', 'weekly', 'monthly'] as const) {
+    for (const tf of ['daily', 'weekly', 'fortnightly'] as const) {
       expect(Number.isFinite(scaleKwh(0, tf))).toBe(true)
     }
   })
@@ -111,13 +119,14 @@ describe('timeframe scaling', () => {
 
 describe('FUN-08 consumption', () => {
   it('derives weekly consumption from the billed monthly figure (540 / 4 = 135)', () => {
-    const report = buildKpiReport(profile({ monthlyKwh: '540' }))
+    const report = buildKpiReport(profile({ monthlyKwh: '540' }), data)
     expect(report.weekly.consumptionKwh).toBeCloseTo(135, 6)
   })
 
   it('labels consumption "from_you" when the user supplied monthly kWh', () => {
     const report = buildKpiReport(
       profile({ fieldSources: { monthlyKwh: 'user' } }),
+      data,
     )
     expect(report.consumptionKind).toBe('from_you')
   })
@@ -125,20 +134,21 @@ describe('FUN-08 consumption', () => {
   it('labels consumption "estimate" when monthly kWh came from the baseline', () => {
     const report = buildKpiReport(
       profile({ fieldSources: { monthlyKwh: 'baseline' } }),
+      data,
     )
     expect(report.consumptionKind).toBe('estimate')
   })
 
   it('falls back to the modelled appliance total when no monthly kWh is known', () => {
-    const report = buildKpiReport(profile({ monthlyKwh: '' }))
+    const report = buildKpiReport(profile({ monthlyKwh: '' }), data)
     const applianceTotal = report.appliances.reduce((s, l) => s + l.weeklyKwh, 0)
     expect(report.weekly.consumptionKwh).toBeCloseTo(applianceTotal, 6)
     expect(report.consumptionKind).toBe('estimate')
   })
 
   it('FUN-06 recalculates when the user edits their usage', () => {
-    const before = buildKpiReport(profile({ monthlyKwh: '540' }))
-    const after = buildKpiReport(profile({ monthlyKwh: '800' }))
+    const before = buildKpiReport(profile({ monthlyKwh: '540' }), data)
+    const after = buildKpiReport(profile({ monthlyKwh: '800' }), data)
     expect(after.weekly.consumptionKwh).toBeGreaterThan(before.weekly.consumptionKwh)
     expect(after.weekly.consumptionKwh).toBeCloseTo(200, 6)
   })
@@ -152,6 +162,7 @@ describe('FUN-08 solar generation', () => {
   it('applies kW x peak sun hours x performance ratio x orientation x 7', () => {
     const report = buildKpiReport(
       profile({ hasSolar: 'yes', panelCount: '12', panelWatts: '400', solarDirection: 'S' }),
+      data,
     )
     const kw = (12 * 400) / 1000
     const expected =
@@ -161,20 +172,21 @@ describe('FUN-08 solar generation', () => {
   })
 
   it('rates a north-facing roof above a south-facing one', () => {
-    const north = buildKpiReport(profile({ solarDirection: 'N' }))
-    const south = buildKpiReport(profile({ solarDirection: 'S' }))
+    const north = buildKpiReport(profile({ solarDirection: 'N' }), data)
+    const south = buildKpiReport(profile({ solarDirection: 'S' }), data)
     expect(north.weekly.generationKwh).toBeGreaterThan(south.weekly.generationKwh)
   })
 
   it('treats an unknown direction as the "not sure" factor', () => {
-    const unknown = buildKpiReport(profile({ solarDirection: '' }))
-    const notSure = buildKpiReport(profile({ solarDirection: 'not_sure' }))
+    const unknown = buildKpiReport(profile({ solarDirection: '' }), data)
+    const notSure = buildKpiReport(profile({ solarDirection: 'not_sure' }), data)
     expect(unknown.weekly.generationKwh).toBeCloseTo(notSure.weekly.generationKwh, 6)
   })
 
   it('FUN-07 models a typical 6.6 kW roof as potential when the home has no solar', () => {
     const report = buildKpiReport(
       profile({ hasSolar: 'no', panelCount: '', panelWatts: '', solarDirection: '' }),
+      data,
     )
     expect(report.hasSolar).toBe(false)
     expect(report.solarIsPotential).toBe(true)
@@ -194,7 +206,7 @@ describe('FUN-08 solar generation', () => {
 // -------------------------------------------------------------------------
 
 describe('energy balance', () => {
-  const report = buildKpiReport(profile())
+  const report = buildKpiReport(profile(), data)
 
   it('never distributes more than it generates', () => {
     expect(report.weekly.energyDistributedKwh).toBeLessThanOrEqual(
@@ -221,8 +233,8 @@ describe('energy balance', () => {
   })
 
   it('lets a larger battery shift at least as much energy as a smaller one', () => {
-    const small = buildKpiReport(profile({ batteryUnits: 1, reservePercent: '80' }))
-    const large = buildKpiReport(profile({ batteryUnits: 8, reservePercent: '0' }))
+    const small = buildKpiReport(profile({ batteryUnits: 1, reservePercent: '80' }), data)
+    const large = buildKpiReport(profile({ batteryUnits: 8, reservePercent: '0' }), data)
     expect(large.weekly.selfConsumedKwh).toBeGreaterThanOrEqual(
       small.weekly.selfConsumedKwh,
     )
@@ -240,7 +252,7 @@ describe('energy balance', () => {
   })
 
   it('weights the stated peak period most heavily', () => {
-    const evening = buildKpiReport(profile({ peakPeriod: 'evening' }))
+    const evening = buildKpiReport(profile({ peakPeriod: 'evening' }), data)
     const peak = evening.periods.find((p) => p.id === 'evening')!
     for (const other of evening.periods.filter((p) => p.id !== 'evening')) {
       expect(peak.consumptionKwh).toBeGreaterThan(other.consumptionKwh)
@@ -254,23 +266,23 @@ describe('energy balance', () => {
 
 describe('retail rate', () => {
   it('derives the rate from bill divided by kWh (180 / 540)', () => {
-    const report = buildKpiReport(profile({ monthlyBill: '180', monthlyKwh: '540' }))
+    const report = buildKpiReport(profile({ monthlyBill: '180', monthlyKwh: '540' }), data)
     expect(report.retailRate).toBeCloseTo(180 / 540, 6)
   })
 
   it('falls back to the typical Victorian rate when figures are missing', () => {
-    const report = buildKpiReport(profile({ monthlyBill: '', monthlyKwh: '' }))
+    const report = buildKpiReport(profile({ monthlyBill: '', monthlyKwh: '' }), data)
     expect(report.retailRate).toBe(DEFAULT_RETAIL_RATE)
     expect(report.retailRateKind).toBe('estimate')
   })
 
   it('labels the rate "from_you" when the bill came from the user', () => {
-    const report = buildKpiReport(profile({ fieldSources: { monthlyBill: 'user' } }))
+    const report = buildKpiReport(profile({ fieldSources: { monthlyBill: 'user' } }), data)
     expect(report.retailRateKind).toBe('from_you')
   })
 
   it('never divides by zero', () => {
-    const report = buildKpiReport(profile({ monthlyBill: '180', monthlyKwh: '0' }))
+    const report = buildKpiReport(profile({ monthlyBill: '180', monthlyKwh: '0' }), data)
     expect(Number.isFinite(report.retailRate)).toBe(true)
     expect(report.retailRate).toBe(DEFAULT_RETAIL_RATE)
   })
@@ -278,32 +290,32 @@ describe('retail rate', () => {
 
 describe('plan comparison', () => {
   it('marks the household current provider as the current plan', () => {
-    const report = buildKpiReport(profile({ provider: 'AGL Energy' }))
+    const report = buildKpiReport(profile({ provider: 'AGL Energy' }), data)
     expect(report.currentPlan?.plan.brand).toBe('AGL Energy')
   })
 
   it('has no current plan when the provider is not on the VPP list', () => {
-    expect(buildKpiReport(profile({ provider: 'Other' })).currentPlan).toBeNull()
+    expect(buildKpiReport(profile({ provider: 'Other' }), data).currentPlan).toBeNull()
   })
 
   it('orders plans by weekly savings, best first', () => {
-    const plans = buildKpiReport(profile()).matchedPlans
+    const plans = buildKpiReport(profile(), data).matchedPlans
     const savings = plans.map((p) => p.weeklySavings)
     expect([...savings].sort((a, b) => b - a)).toEqual(savings)
   })
 
   it('recommends exactly one plan', () => {
-    const plans = buildKpiReport(profile()).matchedPlans
+    const plans = buildKpiReport(profile(), data).matchedPlans
     expect(plans.filter((p) => p.isRecommended)).toHaveLength(1)
   })
 
   it('does not recommend the plan the household is already on', () => {
-    const report = buildKpiReport(profile({ provider: 'AGL Energy' }))
+    const report = buildKpiReport(profile({ provider: 'AGL Energy' }), data)
     expect(report.recommended.plan.brand).not.toBe('AGL Energy')
   })
 
   it('computes savings as self-consumed x retail + distributed x export rate', () => {
-    const report = buildKpiReport(profile())
+    const report = buildKpiReport(profile(), data)
     const { selfConsumedKwh, energyDistributedKwh } = report.weekly
     const expected =
       selfConsumedKwh * report.retailRate +
@@ -312,7 +324,7 @@ describe('plan comparison', () => {
   })
 
   it('only offers plans compatible with the household battery', () => {
-    const report = buildKpiReport(profile({ batteryModel: 'Tesla Powerwall 2' }))
+    const report = buildKpiReport(profile({ batteryModel: 'Tesla Powerwall 2' }), data)
     for (const { plan } of report.matchedPlans) {
       expect(plan.compatibleBatteries).toContain('Tesla Powerwall 2')
     }
@@ -325,10 +337,10 @@ describe('plan comparison', () => {
 
 describe('appliance modelling', () => {
   const lineFor = (p: ProfileData, id: string) =>
-    buildKpiReport(p).appliances.find((l) => l.spec.id === id)
+    buildKpiReport(p, data).appliances.find((l) => l.spec.id === id)
 
   it('computes each line as units x power x hours', () => {
-    for (const line of buildKpiReport(profile()).appliances) {
+    for (const line of buildKpiReport(profile(), data).appliances) {
       expect(line.weeklyKwh).toBeCloseTo(line.units * line.spec.powerKw * line.hoursPerWeek, 9)
     }
   })
@@ -343,9 +355,11 @@ describe('appliance modelling', () => {
     expect(lineFor(profile({ dryer: 'no' }), 'dryer')).toBeUndefined()
   })
 
-  it('uses the stated dryer cycles as hours per week', () => {
+  it('uses the stated dryer cycles times the published minutes per cycle', () => {
     const line = lineFor(profile({ dryer: 'yes', dryerWeek: '4', dryerWeekend: '2' }), 'dryer')
-    expect(line?.hoursPerWeek).toBe(6)
+    const hoursPerCycle = data.appliances.dryer.hoursPerCycle!
+    // 6 stated cycles x ~54 min/cycle (Sustainability Victoria), not 1 hr/cycle.
+    expect(line?.hoursPerWeek).toBeCloseTo(6 * hoursPerCycle, 6)
   })
 
   it('counts the stated number of refrigerators', () => {
@@ -382,21 +396,15 @@ describe('appliance modelling', () => {
   })
 
   /**
-   * DEFECT KPI-01 (S2). appliances.ts gives the refrigerator powerKw 1.92 -
-   * the same figure as the air conditioner - and runs it 168 h/week. That is
-   * 322 kWh per fridge per week, against a real-world 7-14 kWh. Modelled
-   * consumption is roughly 30x too high for any household that has not entered
-   * a monthly kWh figure. 1.92 looks like a rated input power, not an average
-   * draw; a duty-cycle adjusted figure is about 0.05 kW.
+   * DEFECT KPI-01 (S2) is fixed: the published refrigerator powerKw moved
+   * from 1.92 (the same figure as the air conditioner, and a rated input
+   * power rather than an average draw) to a duty-cycle-adjusted 0.057,
+   * giving a realistic weekly total. Kept as a regression test.
    */
-  it.fails('KPI-01: a single refrigerator should use a realistic 5-20 kWh per week', () => {
+  it('KPI-01: a single refrigerator uses a realistic 5-20 kWh per week', () => {
     const line = lineFor(profile({ refrigerators: '1' }), 'refrigerator')!
+    expect(line.weeklyKwh).toBeGreaterThan(5)
     expect(line.weeklyKwh).toBeLessThan(20)
-  })
-
-  it('KPI-01 current behaviour, pinned until the defect is fixed', () => {
-    const line = lineFor(profile({ refrigerators: '1' }), 'refrigerator')!
-    expect(line.weeklyKwh).toBeCloseTo(1.92 * 168, 6)
   })
 })
 
@@ -415,20 +423,20 @@ describe('FUN-07 household without solar or battery', () => {
   })
 
   it('still produces a complete, finite report', () => {
-    const report = buildKpiReport(noSystem)
+    const report = buildKpiReport(noSystem, data)
     for (const [key, value] of weeklyValues(report)) {
       expect(Number.isFinite(value), `${key} is not finite`).toBe(true)
     }
   })
 
   it('shifts no energy when there is no battery', () => {
-    const report = buildKpiReport(noSystem)
+    const report = buildKpiReport(noSystem, data)
     const daytime = report.weekly.consumptionKwh * 0.4
     expect(report.weekly.selfConsumedKwh).toBeLessThanOrEqual(daytime + 1e-9)
   })
 
   it('flags the solar figure as potential rather than actual', () => {
-    expect(buildKpiReport(noSystem).solarIsPotential).toBe(true)
+    expect(buildKpiReport(noSystem, data).solarIsPotential).toBe(true)
   })
 
   /**
@@ -440,11 +448,11 @@ describe('FUN-07 household without solar or battery', () => {
    * potential-only report, or label them as hypothetical in the dashboard.
    */
   it.fails('KPI-02: a household with no solar should not be shown dollar savings', () => {
-    expect(buildKpiReport(noSystem).weekly.savingsAud).toBe(0)
+    expect(buildKpiReport(noSystem, data).weekly.savingsAud).toBe(0)
   })
 
   it('KPI-02 current behaviour, pinned until the defect is fixed', () => {
-    const report = buildKpiReport(noSystem)
+    const report = buildKpiReport(noSystem, data)
     expect(report.weekly.savingsAud).toBeGreaterThan(0)
     expect(report.weekly.carbonAvoidedKg).toBeGreaterThan(0)
   })
@@ -485,25 +493,28 @@ describe('FUN-10 boundary profiles produce usable output', () => {
   ]
 
   it.each(profiles)('%s: every weekly figure is finite and non-negative', (_name, p) => {
-    const report = buildKpiReport(p)
+    const report = buildKpiReport(p, data)
     for (const [key, value] of weeklyValues(report)) {
       expect(Number.isFinite(value), `${key} is ${value}`).toBe(true)
+      // netEnergyValueAud is (generation − consumption) × rate: signed by
+      // design, negative for any household that imports more than it makes.
+      if (key === 'netEnergyValueAud') continue
       expect(value, `${key} is negative`).toBeGreaterThanOrEqual(0)
     }
   })
 
   it.each(profiles)('%s: always recommends a plan', (_name, p) => {
-    expect(buildKpiReport(p).recommended?.plan).toBeDefined()
+    expect(buildKpiReport(p, data).recommended?.plan).toBeDefined()
   })
 
   it.each(profiles)('%s: every appliance line is finite', (_name, p) => {
-    for (const line of buildKpiReport(p).appliances) {
+    for (const line of buildKpiReport(p, data).appliances) {
       expect(Number.isFinite(line.weeklyKwh)).toBe(true)
     }
   })
 
   it.each(profiles)('%s: produces the full set of assumptions', (_name, p) => {
-    const report = buildKpiReport(p)
+    const report = buildKpiReport(p, data)
     expect(report.assumptions.length).toBeGreaterThanOrEqual(7)
     for (const a of report.assumptions) {
       expect(a.title).toBeTruthy()
@@ -562,22 +573,22 @@ describe('formatters', () => {
 
 describe('report shape', () => {
   it('labels the location from the postcode', () => {
-    expect(buildKpiReport(profile({ postcode: '3101' })).locationLabel).toBeTruthy()
+    expect(buildKpiReport(profile({ postcode: '3101' }), data).locationLabel).toBeTruthy()
   })
 
   it('falls back to VIC when the postcode is unknown', () => {
-    expect(buildKpiReport(profile({ postcode: '' })).locationLabel).toBe('VIC')
+    expect(buildKpiReport(profile({ postcode: '' }), data).locationLabel).toBe('VIC')
   })
 
   it('is a pure function of the profile', () => {
     const p = profile()
-    expect(buildKpiReport(p).weekly).toEqual(buildKpiReport(p).weekly)
+    expect(buildKpiReport(p, data).weekly).toEqual(buildKpiReport(p, data).weekly)
   })
 
   it('does not mutate the profile it is given', () => {
     const p = profile()
     const snapshot = JSON.stringify(p)
-    buildKpiReport(p)
+    buildKpiReport(p, data)
     expect(JSON.stringify(p)).toBe(snapshot)
   })
 })
