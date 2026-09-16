@@ -356,8 +356,8 @@
 
   .kpi-card__figure,
   .energy-balance__share,
-  .energy-savings__value,
-  .energy-bar__seg,
+  .energy-legend__value--accent,
+  .energy-bar__fill,
   .energy-savings-tip,
   .donut__draw,
   .forecast__draw .forecast__area,

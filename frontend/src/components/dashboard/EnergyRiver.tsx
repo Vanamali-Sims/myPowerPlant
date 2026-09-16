@@ -27,10 +27,10 @@ type EnergyRiverProps = {
  * @param props.timeframe - Daily / weekly / fortnightly
  * @param props.onTimeframe - Switch the dashboard scale
  * @param props.onSeePlans - Jump to VPP recommendations under this card
- * @returns One dark balance card: split, three numbers, annual savings + CTA
+ * @returns One dark balance card: share bar, four stats, CTA
  *
  * Savings explanation sits in a hover/focus tooltip so the default view stays
- * numbers-first. Surplus paints the VPP slice green; deficit paints it terracotta.
+ * numbers-first. The share bar mirrors the headline percent (not a kWh split).
  */
 export function EnergyRiver({
   model,
@@ -50,36 +50,15 @@ export function EnergyRiver({
   const isSurplus = model.fork === 'surplus'
   const isDeficit = model.fork === 'deficit'
   const vppTone = isSurplus ? 'discharge' : 'borrow'
-  const shareLabel = formatShare(model.fork === 'balanced' ? 1 : model.share)
+  const shareFraction = model.fork === 'balanced' ? 1 : model.share
+  const sharePercent = Math.round(shareFraction * 100)
+  const shareLabel = formatShare(shareFraction)
   const headline = isSurplus
     ? 'of what this home generated could go to a VPP'
     : isDeficit
       ? 'of what this home used could come from a VPP'
       : 'of what this home used the roof already covers'
   const tip = savingsTip(model)
-
-  const slices: { id: SliceId; tone: string; kwh: number; label: string }[] = [
-    {
-      id: 'generated',
-      tone: 'generated',
-      kwh: model.generatedKwh,
-      label: `Energy generated ${formatKwh(model.generatedKwh)}`,
-    },
-    {
-      id: 'used',
-      tone: 'used',
-      kwh: model.usedKwh,
-      label: `Energy used ${formatKwh(model.usedKwh)}`,
-    },
-  ]
-  if (model.forkKwh > 0) {
-    slices.push({
-      id: 'vpp',
-      tone: vppTone,
-      kwh: model.forkKwh,
-      label: `${stage.eyebrow} ${formatKwh(model.forkKwh)}`,
-    })
-  }
 
   const detail = detailFor(active, model)
 
@@ -128,23 +107,23 @@ export function EnergyRiver({
           <span className="energy-balance__share">{shareLabel}</span>
         </h1>
 
-        <div className="energy-bar" role="group" aria-label="Energy split" aria-describedby={liveId}>
-          {slices.map((slice) => (
-            <button
-              key={slice.id}
-              type="button"
-              className={`energy-bar__seg energy-bar__seg--${slice.tone}${toneClass(slice.id, active)}`}
-              style={{ flexGrow: Math.max(slice.kwh, 0.4), flexBasis: 0 }}
-              aria-pressed={pinned === slice.id}
-              onMouseEnter={() => setHover(slice.id)}
-              onMouseLeave={() => setHover(null)}
-              onFocus={() => setHover(slice.id)}
-              onBlur={() => setHover(null)}
-              onClick={() => setPinned((prev) => (prev === slice.id ? null : slice.id))}
-            >
-              <span className="visually-hidden">{slice.label}</span>
-            </button>
-          ))}
+        <div
+          className="energy-bar"
+          role="progressbar"
+          aria-valuenow={sharePercent}
+          aria-valuemin={0}
+          aria-valuemax={100}
+          aria-label={headline}
+          aria-describedby={liveId}
+        >
+          <div className="energy-bar__track">
+            <div className="energy-bar__fill" style={{ width: `${sharePercent}%` }} />
+            <span
+              className="energy-bar__handle"
+              style={{ left: `${sharePercent}%` }}
+              aria-hidden="true"
+            />
+          </div>
         </div>
 
         <p id={liveId} className="energy-balance__live" aria-live="polite">
@@ -185,40 +164,46 @@ export function EnergyRiver({
             onHover={setHover}
             onPin={setPinned}
           />
+          <li className="energy-legend__savings">
+            <div className={`energy-savings-wrap${tipOpen ? ' is-open' : ''}`}>
+              {tipOpen ? (
+                <p id={tipId} className="energy-savings-tip" role="tooltip">
+                  {tip}
+                </p>
+              ) : null}
+              <button
+                type="button"
+                className="energy-station energy-legend__item energy-legend__item--savings"
+                aria-describedby={tipOpen ? tipId : undefined}
+                onMouseEnter={() => setTipOpen(true)}
+                onMouseLeave={() => setTipOpen(false)}
+                onFocus={() => setTipOpen(true)}
+                onBlur={() => setTipOpen(false)}
+              >
+                <span className="energy-legend__copy">
+                  <span className="energy-legend__label-row">
+                    <span className="energy-legend__swatch" aria-hidden="true" />
+                    <span className="energy-legend__label">Money saved · annual</span>
+                    <span className="energy-savings__info" aria-hidden="true">
+                      <InfoIcon width={14} height={14} />
+                    </span>
+                  </span>
+                  <span className="energy-legend__value energy-legend__value--accent">
+                    {formatAud(model.annualValueAud)}
+                  </span>
+                  <span className="energy-legend__hint">
+                    per year
+                    <span className="kpi-badge kpi-badge--estimate kpi-badge--on-deep">
+                      Estimate
+                    </span>
+                  </span>
+                </span>
+              </button>
+            </div>
+          </li>
         </ul>
 
         <div className="energy-balance__foot">
-          <div className={`energy-savings-wrap${tipOpen ? ' is-open' : ''}`}>
-            {tipOpen ? (
-              <p id={tipId} className="energy-savings-tip" role="tooltip">
-                {tip}
-              </p>
-            ) : null}
-            <button
-              type="button"
-              className="energy-savings"
-              aria-describedby={tipOpen ? tipId : undefined}
-              onMouseEnter={() => setTipOpen(true)}
-              onMouseLeave={() => setTipOpen(false)}
-              onFocus={() => setTipOpen(true)}
-              onBlur={() => setTipOpen(false)}
-            >
-              <header className="energy-savings__head">
-                <p className="energy-savings__eyebrow">
-                  Money saved · annual
-                  <span className="energy-savings__info" aria-hidden="true">
-                    <InfoIcon width={14} height={14} />
-                  </span>
-                </p>
-                <span className="kpi-badge kpi-badge--estimate kpi-badge--on-deep">Estimate</span>
-              </header>
-              <p className="energy-savings__value">
-                {formatAud(model.annualValueAud)}
-                <span className="energy-savings__per">per year</span>
-              </p>
-            </button>
-          </div>
-
           <button type="button" className="energy-plans-cta" onClick={onSeePlans}>
             See the plans
           </button>
@@ -270,7 +255,7 @@ function LegendItem({ id, tone, label, value, hint, active, pinned, onHover, onP
  * toneClass
  * @param id - Slice this control represents
  * @param active - Currently highlighted slice, or none
- * @returns Hover/focus modifiers for bar and legend
+ * @returns Hover/focus modifiers for legend
  */
 function toneClass(id: SliceId, active: SliceId | null): string {
   if (!active) return ''

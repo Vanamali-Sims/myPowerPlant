@@ -9,12 +9,12 @@
 }
 
 .dashboard-stage {
-  --dash-stage: #f7f4ec;
-  --dash-hero: #132e26;
-  --dash-ink: #143a2f;
-  --dash-muted: #5f5e5a;
-  --dash-accent: #993c1d;
-  --dash-cta: #d85a30;
+  --dash-stage: var(--cream-card);
+  --dash-hero: var(--green-deep);
+  --dash-ink: var(--ink);
+  --dash-muted: var(--ink-soft);
+  --dash-accent: var(--accent-deep);
+  --dash-cta: var(--accent);
   background: var(--dash-stage);
   border-radius: 14px;
   padding: clamp(1.35rem, 3vw, 2.25rem) clamp(1.15rem, 3vw, 2.35rem)
@@ -91,10 +91,10 @@
 }
 
 .energy-story {
-  --energy-gen: #4a90d9;
-  --energy-used: #ede7da;
-  --energy-borrow: #e8a07a;
-  --energy-discharge: #e8a07a;
+  --energy-gen: var(--blue);
+  --energy-used: var(--paper-soft);
+  --energy-borrow: var(--blue);
+  --energy-discharge: var(--blue);
   --energy-join: var(--energy-borrow);
   display: flex;
   flex-direction: column;
@@ -112,7 +112,7 @@
 .energy-balance {
   margin: 0;
   padding: clamp(1.35rem, 3vw, 2.1rem) clamp(1.25rem, 3vw, 2.4rem);
-  background: var(--dash-hero, #132e26);
+  background: var(--dash-hero, var(--green-deep));
   color: var(--on-deep);
   border-radius: 16px;
 }
@@ -198,51 +198,37 @@
 }
 
 .energy-bar {
-  display: flex;
-  align-items: stretch;
-  gap: 0;
-  height: 6px;
   margin-top: 1.35rem;
-  overflow: hidden;
+}
+
+.energy-bar__track {
+  position: relative;
+  height: 8px;
+  overflow: visible;
   border-radius: 999px;
-  background: rgb(255 255 255 / 0.08);
+  background: var(--track-dark);
 }
 
-.energy-bar__seg {
-  min-width: 6px;
+.energy-bar__fill {
   height: 100%;
-  margin: 0;
-  padding: 0;
-  border: 0;
-  border-radius: 0;
-  cursor: pointer;
-  transition:
-    filter 0.2s ease,
-    opacity 0.2s ease;
+  border-radius: 999px;
+  background: var(--blue);
+  max-width: 100%;
+  transition: width 0.35s var(--ease-out, cubic-bezier(0.22, 1, 0.36, 1));
 }
 
-.energy-bar__seg--generated {
-  background: var(--energy-gen);
-}
-
-.energy-bar__seg--used {
-  background: var(--energy-used);
-}
-
-.energy-bar__seg--borrow {
-  background: var(--energy-borrow);
-}
-
-.energy-bar__seg--discharge {
-  background: var(--energy-discharge);
-}
-
-.energy-bar__seg.is-on {
-  filter: brightness(1.18);
-}
-
-.energy-bar__seg.is-dim {
-  opacity: 0.42;
+.energy-bar__handle {
+  position: absolute;
+  top: 50%;
+  width: 14px;
+  height: 14px;
+  margin-left: -7px;
+  border: 2px solid var(--paper);
+  border-radius: 50%;
+  background: var(--blue);
+  box-shadow: 0 0 0 1px rgb(14 36 30 / 0.35);
+  transform: translateY(-50%);
+  pointer-events: none;
 }
 
 .energy-balance__live {
@@ -307,12 +293,36 @@
   color: var(--energy-used);
 }
 
-.energy-legend__item--borrow {
-  color: var(--energy-borrow);
+.energy-legend__item--borrow,
+.energy-legend__item--discharge {
+  color: var(--blue);
 }
 
-.energy-legend__item--discharge {
-  color: var(--energy-discharge);
+.energy-legend__item--savings {
+  color: var(--accent);
+}
+
+.energy-legend__savings {
+  position: relative;
+}
+
+.energy-legend__item--savings .energy-legend__hint {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.energy-legend__item--savings .kpi-badge--on-deep {
+  color: rgb(242 237 227 / 0.78);
+  border-color: rgb(255 255 255 / 0.18);
+  background: rgb(255 255 255 / 0.08);
+}
+
+.energy-legend__item--savings .energy-savings__info {
+  display: inline-grid;
+  place-items: center;
+  color: var(--paper-soft);
 }
 
 .energy-legend__copy {
@@ -337,7 +347,11 @@
   font-size: clamp(1.2rem, 2.2vw, 1.35rem);
   font-weight: 500;
   line-height: 1.15;
-  color: currentColor;
+  color: var(--paper);
+}
+
+.energy-legend__value--accent {
+  color: var(--accent);
 }
 
 .energy-legend__hint {
@@ -357,7 +371,6 @@
 
 .energy-savings-wrap {
   position: relative;
-  flex: 1 1 auto;
   min-width: 0;
 }
 
@@ -370,7 +383,7 @@
   margin: 0;
   padding: 0.7rem 0.85rem;
   border-radius: 0.65rem;
-  background: #2b1a12;
+  background: var(--green-deeper);
   color: var(--on-deep);
   font-size: 0.88rem;
   line-height: 1.4;
@@ -384,86 +397,7 @@
   left: 1.4rem;
   top: 100%;
   border: 7px solid transparent;
-  border-top-color: #2b1a12;
-}
-
-.energy-savings {
-  display: block;
-  width: 100%;
-  margin: 0;
-  padding: 0.95rem 1.15rem 1rem;
-  border: 0;
-  border-radius: 12px;
-  background: #2b1a12;
-  color: var(--on-deep);
-  font: inherit;
-  text-align: left;
-  cursor: pointer;
-  transition: background-color 0.2s ease;
-}
-
-.energy-savings:hover,
-.energy-savings:focus-visible {
-  background: #352018;
-}
-
-.energy-savings__head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 0.75rem;
-}
-
-.energy-savings__eyebrow {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.35rem;
-  margin: 0;
-  font-size: 0.68rem;
-  font-weight: 600;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: rgb(242 237 227 / 0.72);
-}
-
-.energy-savings__info {
-  display: inline-grid;
-  place-items: center;
-  color: rgb(242 237 227 / 0.7);
-}
-
-.energy-savings .kpi-badge--on-deep {
-  color: rgb(242 237 227 / 0.78);
-  border-color: rgb(255 255 255 / 0.18);
-  background: rgb(255 255 255 / 0.08);
-}
-
-.energy-savings__value {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: baseline;
-  gap: 0.35rem 0.65rem;
-  margin: 0.3rem 0 0;
-  font-family: var(--font-display);
-  font-size: clamp(2.4rem, 5vw, 2.75rem);
-  font-weight: 500;
-  line-height: 1;
-  color: #d85a30;
-  animation: kpi-in 0.18s var(--ease-out, cubic-bezier(0.22, 1, 0.36, 1)) both;
-}
-
-.energy-savings__per {
-  font-family: var(--font-body);
-  font-size: 0.82rem;
-  font-weight: 500;
-  letter-spacing: 0;
-  text-transform: none;
-  color: rgb(242 237 227 / 0.7);
-}
-
-.energy-story--surplus .energy-savings__value,
-.energy-story--deficit .energy-savings__value {
-  color: #d85a30;
+  border-top-color: var(--green-deeper);
 }
 
 .energy-plans-cta {
@@ -476,8 +410,8 @@
   padding: 0.75rem 1.35rem;
   border: 0;
   border-radius: var(--radius-pill);
-  background: var(--dash-cta, #d85a30);
-  color: var(--on-primary);
+  background: var(--dash-cta, var(--accent));
+  color: var(--paper);
   font-family: var(--font-body);
   font-size: 0.95rem;
   font-weight: 600;
@@ -488,7 +422,7 @@
 }
 
 .energy-plans-cta:hover {
-  background: #c24f28;
+  background: var(--accent-deep);
 }
 
 .energy-plans-cta:focus-visible {
@@ -1079,6 +1013,10 @@
   line-height: 1.2;
 }
 
+.vpp-stat .kpi-card__value--unknown {
+  font-weight: 400;
+}
+
 .vpp-plan-card__actions {
   display: flex;
   flex-wrap: wrap;
@@ -1095,21 +1033,59 @@
   min-width: 24px;
   margin: 0;
   padding: 0.4rem 0.85rem;
-  border: 1px solid var(--primary);
+  border: 1px solid transparent;
   border-radius: var(--radius-pill);
-  background: var(--surface);
+  background: transparent;
   font-family: var(--font-body);
   font-size: 0.85rem;
   font-weight: 600;
   line-height: 1.2;
-  color: var(--primary);
   cursor: pointer;
   text-align: center;
   white-space: nowrap;
+  transition:
+    background-color 0.2s ease,
+    color 0.2s ease,
+    border-color 0.2s ease;
 }
 
-.vpp-plan-card__cta:hover {
-  background: var(--terra-50);
+.vpp-plan-card__cta--primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--paper);
+}
+
+.vpp-plan-card__cta--primary:hover {
+  background: var(--accent-deep);
+  border-color: var(--accent-deep);
+}
+
+.vpp-plan-card__cta--primary:focus-visible {
+  outline: 2px solid var(--accent-deep);
+  outline-offset: 2px;
+}
+
+.vpp-plan-card__cta--ghost {
+  background: transparent;
+  border-color: transparent;
+  color: var(--ink-soft);
+  font-weight: 500;
+}
+
+.vpp-plan-card__cta--ghost:hover {
+  color: var(--ink);
+  background: transparent;
+}
+
+.vpp-plan-card__cta--ghost:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
+}
+
+.kpi-card__value--unknown {
+  color: var(--muted);
+  font-style: italic;
+  font-weight: 400;
 }
 
 .vpp-fit-block {
@@ -1402,7 +1378,7 @@
   }
 
   .energy-legend {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-columns: repeat(4, minmax(0, 1fr));
     gap: 0;
   }
 
@@ -1419,16 +1395,9 @@
     padding: 0.15rem 0.9rem 0.15rem 0;
   }
 
-  .energy-balance__foot {
-    flex-direction: row;
-    align-items: stretch;
-    gap: 1rem;
-  }
-
   .energy-plans-cta {
     width: auto;
-    flex: 0 0 auto;
-    align-self: center;
+    align-self: flex-start;
     padding-inline: 1.5rem;
   }
 }

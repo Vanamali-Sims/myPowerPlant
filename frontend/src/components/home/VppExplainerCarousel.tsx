@@ -6,6 +6,7 @@ import {
   buildVppExplainerCompare,
   buildVppExplainerSteps,
   VPP_EXPLAINER_BATTERY,
+  VPP_EXPLAINER_EXAMPLE,
   type VppExplainerCompareMode,
   type VppExplainerHousehold,
   type VppExplainerStepId,
@@ -85,8 +86,16 @@ export function VppExplainerCarousel({
             </header>
 
             <div className="vpp-explainer__layout">
-              <div className="vpp-explainer__diagram" aria-hidden="true">
-                <VppExplainerDiagram step={step.id as DiagramStepId} />
+              <div className="vpp-explainer__diagram" aria-hidden={step.id === 'shortfall' ? undefined : true}>
+                {step.id === 'shortfall' ? (
+                  <ShortfallCompareBars
+                    generatedKwh={(personal ?? VPP_EXPLAINER_EXAMPLE).generatedKwh}
+                    usedKwh={(personal ?? VPP_EXPLAINER_EXAMPLE).usedKwh}
+                    gapKwh={(personal ?? VPP_EXPLAINER_EXAMPLE).gapKwh}
+                  />
+                ) : (
+                  <VppExplainerDiagram step={step.id as DiagramStepId} />
+                )}
               </div>
 
               <div className="vpp-explainer__panel">
@@ -270,6 +279,73 @@ function ComparePanel({
 
 type DiagramProps = {
   step: DiagramStepId
+}
+
+type ShortfallBarsProps = {
+  generatedKwh: number
+  usedKwh: number
+  gapKwh: number
+}
+
+/**
+ * ShortfallCompareBars
+ * @param props - Same week figures as the shortfall copy (example or personal)
+ * @returns Two horizontal bars on a shared scale plus a gap callout
+ */
+function ShortfallCompareBars({ generatedKwh, usedKwh, gapKwh }: ShortfallBarsProps) {
+  const max = Math.max(generatedKwh, usedKwh, 1)
+  const genPct = Math.round((generatedKwh / max) * 100)
+  const usedPct = Math.round((usedKwh / max) * 100)
+  const gapLabel = Number.isInteger(gapKwh) ? `${gapKwh}` : gapKwh.toFixed(1)
+
+  return (
+    <div className="vpp-shortfall-bars" aria-label="Panels generated versus home use">
+      <div className="vpp-shortfall-bars__row">
+        <div className="vpp-shortfall-bars__meta">
+          <span className="vpp-shortfall-bars__label">Panels generated</span>
+          <span className="vpp-shortfall-bars__value">{generatedKwh} kWh</span>
+        </div>
+        <div
+          className="vpp-shortfall-bars__track"
+          role="progressbar"
+          aria-valuenow={generatedKwh}
+          aria-valuemin={0}
+          aria-valuemax={max}
+          aria-label={`Panels generated ${generatedKwh} kilowatt hours`}
+        >
+          <div
+            className="vpp-shortfall-bars__fill vpp-shortfall-bars__fill--generated"
+            style={{ width: `${genPct}%` }}
+          />
+        </div>
+      </div>
+
+      <div className="vpp-shortfall-bars__row">
+        <div className="vpp-shortfall-bars__meta">
+          <span className="vpp-shortfall-bars__label">Home used</span>
+          <span className="vpp-shortfall-bars__value">{usedKwh} kWh</span>
+        </div>
+        <div
+          className="vpp-shortfall-bars__track"
+          role="progressbar"
+          aria-valuenow={usedKwh}
+          aria-valuemin={0}
+          aria-valuemax={max}
+          aria-label={`Home used ${usedKwh} kilowatt hours`}
+        >
+          <div
+            className="vpp-shortfall-bars__fill vpp-shortfall-bars__fill--used"
+            style={{ width: `${usedPct}%` }}
+          />
+        </div>
+      </div>
+
+      <p className="vpp-shortfall-bars__gap">
+        <strong>{gapLabel} kWh gap</strong>
+        <span> — it has to come from the battery or the grid</span>
+      </p>
+    </div>
+  )
 }
 
 function VppExplainerDiagram({ step }: DiagramProps) {

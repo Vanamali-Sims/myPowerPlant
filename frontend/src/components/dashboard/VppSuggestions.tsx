@@ -196,17 +196,24 @@ function PlanSummaryCard({ match, featured = false, onOpen }: CardProps) {
       <p className="eyebrow">{match.plan.brand}</p>
       <h3 className="vpp-plan-card__name">{match.plan.name}</h3>
       <div className="vpp-stat-row">
-        {facts.map((fact) => (
-          <div key={fact.label} className="vpp-stat">
-            <p className="eyebrow">{fact.label}</p>
-            <p className="kpi-card__value">{fact.value}</p>
-          </div>
-        ))}
+        {facts.map((fact) => {
+          const missing = fact.value === 'Not listed'
+          return (
+            <div key={fact.label} className="vpp-stat">
+              <p className="eyebrow">{fact.label}</p>
+              <p
+                className={`kpi-card__value${missing ? ' kpi-card__value--unknown' : ''}`}
+              >
+                {fact.value}
+              </p>
+            </div>
+          )
+        })}
       </div>
       <div className="vpp-plan-card__actions">
         <button
           type="button"
-          className="vpp-plan-card__cta"
+          className="vpp-plan-card__cta vpp-plan-card__cta--primary"
           aria-haspopup="dialog"
           aria-label={`Why ${match.plan.name} may suit this home`}
           onClick={handleOpen('why')}
@@ -215,7 +222,7 @@ function PlanSummaryCard({ match, featured = false, onOpen }: CardProps) {
         </button>
         <button
           type="button"
-          className="vpp-plan-card__cta"
+          className="vpp-plan-card__cta vpp-plan-card__cta--ghost"
           aria-haspopup="dialog"
           aria-label={`Learn more about terms for ${match.plan.name}`}
           onClick={handleOpen('terms')}
