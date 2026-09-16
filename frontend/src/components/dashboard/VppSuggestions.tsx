@@ -18,6 +18,7 @@ import {
   isTermStale,
   matchSuggestionPlans,
   planFitCopy,
+  safeProviderUrl,
   shortSource,
   termByKey,
   type MatchReasonCode,
@@ -345,9 +346,22 @@ function TermsDialog({ open, match, onClose }: TermsDialogProps) {
       onClose={onClose}
       footer={
         plan ? (
-          <a href={plan.href} target="_blank" rel="noreferrer">
-            Confirm current terms with {plan.brand}
-          </a>
+          (() => {
+            const trustedHref = safeProviderUrl(plan.href)
+            return trustedHref ? (
+              <a href={trustedHref} target="_blank" rel="noopener noreferrer">
+                Confirm current terms with {plan.brand}
+              </a>
+            ) : (
+              <span className="vpp-term__unavailable-flag">
+                <AlertIcon width={16} height={16} />
+                <span>
+                  We couldn’t verify {plan.brand}’s link. Search for {plan.brand} directly to
+                  confirm current terms.
+                </span>
+              </span>
+            )
+          })()
         ) : null
       }
     >

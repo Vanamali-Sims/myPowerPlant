@@ -32,6 +32,44 @@ export const TERM_LABELS: Record<VppSuggestionTermKey, string> = {
 
 export const UNAVAILABLE_TERM = 'Not yet available for this provider'
 
+/**
+ * Hardcoded allow-list of provider domains the compiled suggestion table is
+ * permitted to link out to (Security Plan R20). A plan.href that does not
+ * resolve to one of these hosts must never be rendered as a clickable link —
+ * this guards against a bad seed row or a compromised data source sending
+ * users to an unintended site, independent of whether the API itself is
+ * trusted.
+ */
+export const ALLOWED_PROVIDER_DOMAINS = [
+  'agl.com.au',
+  'originenergy.com.au',
+  'engie.com.au',
+  'diamondenergy.com.au',
+  'globirdenergy.com.au',
+] as const
+
+/**
+ * safeProviderUrl
+ * @param href - Compiled plan.href from GET /api/methodology
+ * @returns href when it is https and its host matches the allow-list, else null
+ *
+ * Callers must check this before rendering an outbound provider link (R20).
+ */
+export function safeProviderUrl(href: string): string | null {
+  let url: URL
+  try {
+    url = new URL(href)
+  } catch {
+    return null
+  }
+  if (url.protocol !== 'https:') return null
+  const host = url.hostname.toLowerCase()
+  const allowed = ALLOWED_PROVIDER_DOMAINS.some(
+    (domain) => host === domain || host.endsWith(`.${domain}`),
+  )
+  return allowed ? url.toString() : null
+}
+
 /** Terms older than this are flagged “may be outdated” (AC-3.3.2). */
 export const STALE_THRESHOLD_DAYS = 90
 
