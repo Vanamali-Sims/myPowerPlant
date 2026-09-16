@@ -332,10 +332,14 @@ function TermsDialog({ open, match, onClose }: TermsDialogProps) {
     Boolean(plan && termByKey(plan, 'payment') && exampleAud != null && plan.illustrativeRatePerKwh != null)
   const exampleId = useId()
   const [exampleOpen, setExampleOpen] = useState(false)
-
-  useEffect(() => {
+  // Reset the worked-example toggle when the dialog switches plans. Adjusted
+  // during render (React's documented pattern for this) rather than in a
+  // useEffect, which would cost an extra commit/paint before resetting.
+  const [shownPlanId, setShownPlanId] = useState(plan?.id ?? null)
+  if ((plan?.id ?? null) !== shownPlanId) {
+    setShownPlanId(plan?.id ?? null)
     setExampleOpen(false)
-  }, [plan?.id])
+  }
 
   return (
     <VppModal
