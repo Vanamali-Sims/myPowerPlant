@@ -1,15 +1,18 @@
 /**
- * Home-page “How a VPP works” carousel: diagram + four explainer steps.
+ * Home-page “How a VPP works” carousel: diagram steps + cost compare panel.
  */
 import { useId, useState } from 'react'
 import {
+  buildVppExplainerCompare,
   buildVppExplainerSteps,
   VPP_EXPLAINER_BATTERY,
+  type VppExplainerCompareMode,
   type VppExplainerHousehold,
   type VppExplainerStepId,
 } from '../../constants/welcome'
+import { useSlidingHighlight } from '../../lib/useSlidingHighlight'
 import { Button } from '../ui/Button'
-import { ChevronIcon } from '../ui/icons'
+import { BoltIcon, ChevronIcon, PeopleIcon } from '../ui/icons'
 
 export type VppExplainerCarouselProps = {
   /** Same flag as Welcome / AppShell: saved profile on this device. */
@@ -23,11 +26,13 @@ export type VppExplainerCarouselProps = {
 /** Circumference of battery ring at r=52 (2πr). */
 const RING_LEN = 2 * Math.PI * 52
 
+type DiagramStepId = Exclude<VppExplainerStepId, 'compare'>
+
 /**
  * VppExplainerCarousel
  * @param props.isOnboarded - Whether household answers are saved on this device
  * @param props.householdData - Optional real shortfall week; null/undefined → example copy
- * @returns Dark explainer card with SVG diagram and stepped copy
+ * @returns Dark explainer card with SVG diagram steps and a With/Without compare slide
  *
  * Parent owns profile/methodology fetch. This component only renders the story.
  */
@@ -39,72 +44,66 @@ export function VppExplainerCarousel({
 }: VppExplainerCarouselProps) {
   const labelId = useId()
   const [index, setIndex] = useState(0)
+  const [compareMode, setCompareMode] = useState<VppExplainerCompareMode>('with')
   const personal =
     isOnboarded && householdData && householdData.gapKwh > 0 ? householdData : null
   const steps = buildVppExplainerSteps(personal)
+  const compare = buildVppExplainerCompare(personal)
   const step = steps[index] ?? steps[0]
-  const stepId = step.id
+  const isCompare = step.id === 'compare'
 
   function go(delta: number) {
     setIndex((prev) => (prev + delta + steps.length) % steps.length)
   }
 
-  const eyebrow = personal
+  const storyEyebrow = personal
     ? 'Your numbers, one week'
     : 'An example, not your data yet'
 
   return (
     <section className="vpp-explainer" aria-labelledby={labelId}>
-      <div className="vpp-explainer__card">
-        <header className="vpp-explainer__head">
-          <p className="vpp-explainer__eyebrow">{eyebrow}</p>
-          <h2 id={labelId} className="vpp-explainer__title">
-            How does a VPP actually work?
-          </h2>
-        </header>
+      <div className={`vpp-explainer__card${isCompare ? ' vpp-explainer__card--compare' : ''}`}>
+        {isCompare ? (
+          <ComparePanel
+            labelId={labelId}
+            copy={compare}
+            mode={compareMode}
+            onMode={setCompareMode}
+            onPrev={() => go(-1)}
+            onNext={() => go(1)}
+            steps={steps}
+            index={index}
+            onSelect={setIndex}
+          />
+        ) : (
+          <>
+            <header className="vpp-explainer__head">
+              <p className="vpp-explainer__eyebrow">{storyEyebrow}</p>
+              <h2 id={labelId} className="vpp-explainer__title">
+                How does a VPP actually work?
+              </h2>
+            </header>
 
-        <div className="vpp-explainer__layout">
-          <div className="vpp-explainer__diagram" aria-hidden="true">
-            <VppExplainerDiagram step={stepId} />
-          </div>
+            <div className="vpp-explainer__layout">
+              <div className="vpp-explainer__diagram" aria-hidden="true">
+                <VppExplainerDiagram step={step.id as DiagramStepId} />
+              </div>
 
-          <div className="vpp-explainer__panel">
-            <h3 className="vpp-explainer__headline">{step.headline}</h3>
-            <p className="vpp-explainer__body">{step.body}</p>
+              <div className="vpp-explainer__panel">
+                <h3 className="vpp-explainer__headline">{step.headline}</h3>
+                <p className="vpp-explainer__body">{step.body}</p>
 
-            <div className="vpp-explainer__controls">
-              <button
-                type="button"
-                className="vpp-explainer__nav"
-                aria-label="Previous step"
-                onClick={() => go(-1)}
-              >
-                <ChevronIcon className="vpp-explainer__chevron vpp-explainer__chevron--prev" />
-              </button>
-              <button
-                type="button"
-                className="vpp-explainer__nav"
-                aria-label="Next step"
-                onClick={() => go(1)}
-              >
-                <ChevronIcon className="vpp-explainer__chevron vpp-explainer__chevron--next" />
-              </button>
-
-              <div className="vpp-explainer__dots" role="group" aria-label="Explainer steps">
-                {steps.map((item, i) => (
-                  <button
-                    key={item.id}
-                    type="button"
-                    aria-current={i === index ? 'step' : undefined}
-                    aria-label={`Step ${i + 1}`}
-                    className={`vpp-explainer__dot${i === index ? ' is-active' : ''}`}
-                    onClick={() => setIndex(i)}
-                  />
-                ))}
+                <ExplainerControls
+                  steps={steps}
+                  index={index}
+                  onPrev={() => go(-1)}
+                  onNext={() => go(1)}
+                  onSelect={setIndex}
+                />
               </div>
             </div>
-          </div>
-        </div>
+          </>
+        )}
       </div>
 
       <div className="vpp-explainer__cta">
@@ -122,8 +121,155 @@ export function VppExplainerCarousel({
   )
 }
 
+type ControlsProps = {
+  steps: { id: string }[]
+  index: number
+  onPrev: () => void
+  onNext: () => void
+  onSelect: (index: number) => void
+}
+
+function ExplainerControls({ steps, index, onPrev, onNext, onSelect }: ControlsProps) {
+  return (
+    <div className="vpp-explainer__controls">
+      <button type="button" className="vpp-explainer__nav" aria-label="Previous step" onClick={onPrev}>
+        <ChevronIcon className="vpp-explainer__chevron vpp-explainer__chevron--prev" />
+      </button>
+      <button type="button" className="vpp-explainer__nav" aria-label="Next step" onClick={onNext}>
+        <ChevronIcon className="vpp-explainer__chevron vpp-explainer__chevron--next" />
+      </button>
+
+      <div className="vpp-explainer__dots" role="group" aria-label="Explainer steps">
+        {steps.map((item, i) => (
+          <button
+            key={item.id}
+            type="button"
+            aria-current={i === index ? 'step' : undefined}
+            aria-label={`Step ${i + 1}`}
+            className={`vpp-explainer__dot${i === index ? ' is-active' : ''}`}
+            onClick={() => onSelect(i)}
+          />
+        ))}
+      </div>
+    </div>
+  )
+}
+
+type ComparePanelProps = {
+  labelId: string
+  copy: ReturnType<typeof buildVppExplainerCompare>
+  mode: VppExplainerCompareMode
+  onMode: (mode: VppExplainerCompareMode) => void
+  onPrev: () => void
+  onNext: () => void
+  steps: { id: string }[]
+  index: number
+  onSelect: (index: number) => void
+}
+
+function ComparePanel({
+  labelId,
+  copy,
+  mode,
+  onMode,
+  onPrev,
+  onNext,
+  steps,
+  index,
+  onSelect,
+}: ComparePanelProps) {
+  const { setRef, box } = useSlidingHighlight(mode, '[aria-checked="true"]')
+  const side = mode === 'with' ? copy.with : copy.without
+  const cost =
+    side.costAud != null
+      ? new Intl.NumberFormat('en-AU', {
+          style: 'currency',
+          currency: 'AUD',
+          maximumFractionDigits: 2,
+        }).format(side.costAud)
+      : '—'
+
+  return (
+    <div className="vpp-compare">
+      <header className="vpp-compare__head">
+        <p className="vpp-explainer__eyebrow">{copy.eyebrow}</p>
+        <h2 id={labelId} className="vpp-explainer__title">
+          {copy.title}
+        </h2>
+      </header>
+
+      <div
+        ref={setRef}
+        className="ui-toggle ui-toggle--on-deep vpp-compare__toggle"
+        role="radiogroup"
+        aria-label="Cover the shortfall with or without a VPP"
+      >
+        <span
+          aria-hidden="true"
+          className={`ui-toggle__highlight${box.visible ? ' is-visible' : ''}${
+            box.ready ? ' is-ready' : ''
+          }`}
+          style={{
+            transform: `translate3d(${box.left}px, ${box.top}px, 0)`,
+            width: box.width,
+            height: box.height,
+          }}
+        />
+        <button
+          type="button"
+          role="radio"
+          aria-checked={mode === 'without'}
+          className={`ui-toggle__option${mode === 'without' ? ' is-selected' : ''}`}
+          onClick={() => onMode('without')}
+        >
+          Without a VPP
+        </button>
+        <button
+          type="button"
+          role="radio"
+          aria-checked={mode === 'with'}
+          className={`ui-toggle__option${mode === 'with' ? ' is-selected' : ''}`}
+          onClick={() => onMode('with')}
+        >
+          With a VPP
+        </button>
+      </div>
+
+      <article className="vpp-compare__card">
+        <div className="vpp-compare__row">
+          <span className={`vpp-compare__icon vpp-compare__icon--${mode}`} aria-hidden="true">
+            {mode === 'with' ? <PeopleIcon width={18} height={18} /> : <BoltIcon width={18} height={18} />}
+          </span>
+          <div className="vpp-compare__copy">
+            <p className="vpp-compare__title">{side.title}</p>
+            <p className="vpp-compare__detail">{side.detail}</p>
+          </div>
+        </div>
+        <div className="vpp-compare__cost">
+          <p className="vpp-compare__cost-label">{side.costLabel}</p>
+          <p className="vpp-compare__cost-value">
+            {cost}
+            <span className="visually-hidden"> Estimate</span>
+          </p>
+        </div>
+      </article>
+
+      <div className="vpp-compare__foot">
+        <ExplainerControls
+          steps={steps}
+          index={index}
+          onPrev={onPrev}
+          onNext={onNext}
+          onSelect={onSelect}
+        />
+        <p className="vpp-compare__caption">{side.footer}</p>
+      </div>
+    </div>
+  )
+}
+
 type DiagramProps = {
-  step: VppExplainerStepId
+  step: DiagramStepId
 }
 
 function VppExplainerDiagram({ step }: DiagramProps) {
@@ -166,16 +312,8 @@ function VppExplainerDiagram({ step }: DiagramProps) {
         </marker>
       </defs>
 
-      {/* Faint orbit for neighbour nodes */}
-      <circle
-        className="vpp-explainer-svg__orbit"
-        cx="180"
-        cy="160"
-        r="108"
-        fill="none"
-      />
+      <circle className="vpp-explainer-svg__orbit" cx="180" cy="160" r="108" fill="none" />
 
-      {/* Grid node */}
       <g className={`vpp-explainer-svg__grid${gridActive ? ' is-on' : gridDim ? ' is-dim' : ''}`}>
         <rect x="158" y="18" width="44" height="36" rx="6" />
         <path d="M168 30h24M168 38h24M168 46h12" />
@@ -184,7 +322,6 @@ function VppExplainerDiagram({ step }: DiagramProps) {
         </text>
       </g>
 
-      {/* House ↔ grid */}
       <path
         className={`vpp-explainer-svg__link${
           gridActive ? ' is-on is-coral' : gridDim ? ' is-dim' : ''
@@ -193,7 +330,6 @@ function VppExplainerDiagram({ step }: DiagramProps) {
         markerEnd={gridActive ? 'url(#vpp-exp-arrow-coral)' : undefined}
       />
 
-      {/* Neighbour nodes */}
       {NEIGHBOURS.map((node) => (
         <circle
           key={node.id}
@@ -204,7 +340,6 @@ function VppExplainerDiagram({ step }: DiagramProps) {
         />
       ))}
 
-      {/* Neighbour links into house */}
       {NEIGHBOURS.map((node) => (
         <path
           key={`in-${node.id}`}
@@ -214,7 +349,6 @@ function VppExplainerDiagram({ step }: DiagramProps) {
         />
       ))}
 
-      {/* Outgoing lend links (trade step) */}
       {NEIGHBOURS.map((node) => (
         <path
           key={`out-${node.id}`}
@@ -224,14 +358,7 @@ function VppExplainerDiagram({ step }: DiagramProps) {
         />
       ))}
 
-      {/* Battery ring */}
-      <circle
-        className="vpp-explainer-svg__ring-track"
-        cx="180"
-        cy="160"
-        r="52"
-        fill="none"
-      />
+      <circle className="vpp-explainer-svg__ring-track" cx="180" cy="160" r="52" fill="none" />
       <circle
         className={`vpp-explainer-svg__ring-fill ${ringTone}`}
         cx="180"
@@ -242,7 +369,6 @@ function VppExplainerDiagram({ step }: DiagramProps) {
         transform="rotate(-90 180 160)"
       />
 
-      {/* House */}
       <g className="vpp-explainer-svg__house" transform="translate(180 160)">
         <circle r="28" className="vpp-explainer-svg__house-disc" />
         <path
@@ -252,12 +378,7 @@ function VppExplainerDiagram({ step }: DiagramProps) {
         <rect x="-3" y="4" width="6" height="10" rx="1" className="vpp-explainer-svg__door" />
       </g>
 
-      <text
-        x="180"
-        y="228"
-        textAnchor="middle"
-        className="vpp-explainer-svg__battery-label"
-      >
+      <text x="180" y="228" textAnchor="middle" className="vpp-explainer-svg__battery-label">
         {`battery ${pct}%`}
       </text>
     </svg>

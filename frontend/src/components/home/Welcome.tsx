@@ -1,16 +1,8 @@
 /**
- * Marketing home page: hero, features, VPP explainer carousel, and articles.
+ * Marketing home page: hero, VPP explainer carousel, and article links.
  */
-import {
-  FEATURE_STATUS_LABEL,
-  SEE_ALL_POPOVER,
-  WELCOME_ARTICLES,
-  WELCOME_FEATURES,
-  type VppExplainerHousehold,
-} from '../../constants'
-import { useTransientPopover } from '../../lib/useTransientPopover'
+import { WELCOME_ARTICLES, type VppExplainerHousehold } from '../../constants'
 import { Button } from '../ui/Button'
-import { Popover } from '../ui/Popover'
 import { HeroHouse } from './HeroHouse'
 import { VppExplainerCarousel } from './VppExplainerCarousel'
 import { BoltIcon } from '../ui/icons'
@@ -40,8 +32,6 @@ export function Welcome({
   onViewDashboard,
   onLogoClick,
 }: Props) {
-  const [openPopover, setOpenPopover] = useTransientPopover()
-
   return (
     <div className="welcome">
       <button
@@ -80,41 +70,6 @@ export function Welcome({
           </div>
           <div className="hero__art" aria-hidden="true">
             <HeroHouse />
-          </div>
-        </div>
-      </section>
-
-      <section className="band">
-        <div className="band__inner">
-          <div className="section-head">
-            <h2>What MyPowerPlant checks</h2>
-            <span className="popover-anchor">
-              <Button variant="ghost" onClick={() => setOpenPopover('see-all')}>
-                See all
-              </Button>
-              <Popover
-                open={openPopover === 'see-all'}
-                message={SEE_ALL_POPOVER}
-                placement="bottom-end"
-              />
-            </span>
-          </div>
-          <div className="card-grid">
-            {WELCOME_FEATURES.map((feature) => {
-              const Icon = feature.icon
-              return (
-                <div key={feature.title} className="feature-card">
-                  <span className="feature-card__icon">
-                    <Icon />
-                  </span>
-                  <h3>{feature.title}</h3>
-                  <p className="feature-card__desc">{feature.description}</p>
-                  <span className={`status-pill status-pill--${feature.status}`}>
-                    {FEATURE_STATUS_LABEL[feature.status]}
-                  </span>
-                </div>
-              )
-            })}
           </div>
         </div>
       </section>
