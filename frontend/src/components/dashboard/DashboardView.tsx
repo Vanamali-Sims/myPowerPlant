@@ -5,6 +5,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { KIND_LABELS, TIMEFRAMES } from '../../constants'
 import { coordsFromPostcode, locationFromPostcode } from '../../data/profileOptions'
 import { formatUpdatedAt } from '../../lib/formatProfile'
+import { useSlidingHighlight } from '../../lib/useSlidingHighlight'
 import {
   fetchMethodology,
   type MethodologyBundle,
@@ -148,6 +149,11 @@ export function DashboardView({
         ]
       : []
 
+  const { setRef: setTimeRef, box: timeBox } = useSlidingHighlight(
+    hasProfile ? timeframe : null,
+    '[aria-checked="true"]',
+  )
+
   return (
     <div className="dashboard">
       <header className="dashboard__top">
@@ -181,7 +187,23 @@ export function DashboardView({
 
       {hasProfile ? (
         <>
-          <div className="dashboard__time" role="radiogroup" aria-label="Timeframe">
+          <div
+            ref={setTimeRef}
+            className="dashboard__time ui-toggle"
+            role="radiogroup"
+            aria-label="Timeframe"
+          >
+            <span
+              aria-hidden="true"
+              className={`ui-toggle__highlight${timeBox.visible ? ' is-visible' : ''}${
+                timeBox.ready ? ' is-ready' : ''
+              }`}
+              style={{
+                transform: `translate3d(${timeBox.left}px, ${timeBox.top}px, 0)`,
+                width: timeBox.width,
+                height: timeBox.height,
+              }}
+            />
             {TIMEFRAMES.map((option) => (
               <button
                 key={option.value}
@@ -212,7 +234,9 @@ export function DashboardView({
                         : 'kpi-card__value'
                     }
                   >
-                    {card.value}
+                    <span key={`${timeframe}-${card.value}`} className="kpi-card__figure">
+                      {card.value}
+                    </span>
                     <KindBadge kind={card.kind} />
                   </p>
                   {card.note ? <p className="kpi-card__note">{card.note}</p> : null}

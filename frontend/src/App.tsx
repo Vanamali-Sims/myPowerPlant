@@ -8,6 +8,7 @@ import { Welcome } from './components/home/Welcome'
 import { ProfileView } from './components/profile/ProfileView'
 import { RemindersView } from './components/reminders/RemindersView'
 import { SetupForm } from './components/setup/SetupForm'
+import { CustomCursor } from './components/ui/CustomCursor'
 import { clearStoredProfile, loadProfile, saveProfile } from './lib/profileStorage'
 import { emptyProfile, type ProfileData } from './types/profile'
 
@@ -78,75 +79,80 @@ function App() {
   }
 
   return (
-    <AppShell
-      active={
-        view === 'dashboard'
-          ? 'dashboard'
-          : view === 'profile'
-            ? 'profile'
-            : view === 'reminders'
-              ? 'reminders'
-              : view === 'welcome'
-                ? 'home'
-                : null
-      }
-      postcode={profile.postcode}
-      hasProfile={Boolean(profile.lastUpdated)}
-      onNavigate={goTo}
-      onLogoClick={goHome}
-    >
-      {notice ? (
-        <p className="app-notice" role="status">
-          {notice}
-        </p>
-      ) : null}
-      {view === 'welcome' ? (
-        <Welcome
-          hasProfile={Boolean(profile.lastUpdated)}
-          onGetStarted={startSetup}
-          onViewDashboard={() => {
-            setView('dashboard')
-            setNotice('')
-          }}
-          onLogoClick={goHome}
-        />
-      ) : null}
-      {view === 'setup' ? (
-        <SetupForm
-          profile={profile}
-          onChange={setProfile}
-          onComplete={completeSetup}
-          onLogoClick={goHome}
-        />
-      ) : null}
-      {view === 'profile' ? (
-        <ProfileView
-          key={profile.lastUpdated ?? 'profile'}
-          profile={profile}
-          onSave={saveEdits}
-          onReset={resetProfile}
-          onLiveChange={setProfile}
-          onLogoClick={goHome}
-          onViewDashboard={() => {
-            setView('dashboard')
-            setNotice('')
-          }}
-        />
-      ) : null}
-      {view === 'dashboard' ? (
-        <DashboardView
-          profile={profile}
-          hasProfile={Boolean(profile.lastUpdated)}
-          onEditProfile={() => {
-            setView('profile')
-            setNotice('')
-          }}
-          onStartSetup={startSetup}
-          onLogoClick={goHome}
-        />
-      ) : null}
-      {view === 'reminders' ? <RemindersView profile={profile} onLogoClick={goHome} /> : null}
-    </AppShell>
+    <>
+      <CustomCursor />
+      <AppShell
+        active={
+          view === 'dashboard'
+            ? 'dashboard'
+            : view === 'profile'
+              ? 'profile'
+              : view === 'reminders'
+                ? 'reminders'
+                : view === 'welcome'
+                  ? 'home'
+                  : null
+        }
+        postcode={profile.postcode}
+        hasProfile={Boolean(profile.lastUpdated)}
+        onNavigate={goTo}
+        onLogoClick={goHome}
+      >
+        {notice ? (
+          <p className="app-notice" role="status">
+            {notice}
+          </p>
+        ) : null}
+        <div key={view} className="view-enter min-h-full">
+          {view === 'welcome' ? (
+            <Welcome
+              hasProfile={Boolean(profile.lastUpdated)}
+              onGetStarted={startSetup}
+              onViewDashboard={() => {
+                setView('dashboard')
+                setNotice('')
+              }}
+              onLogoClick={goHome}
+            />
+          ) : null}
+          {view === 'setup' ? (
+            <SetupForm
+              profile={profile}
+              onChange={setProfile}
+              onComplete={completeSetup}
+              onLogoClick={goHome}
+            />
+          ) : null}
+          {view === 'profile' ? (
+            <ProfileView
+              key={profile.lastUpdated ?? 'profile'}
+              profile={profile}
+              onSave={saveEdits}
+              onReset={resetProfile}
+              onLiveChange={setProfile}
+              onLogoClick={goHome}
+              onViewDashboard={() => {
+                setView('dashboard')
+                setNotice('')
+              }}
+            />
+          ) : null}
+          {view === 'dashboard' ? (
+            <DashboardView
+              profile={profile}
+              hasProfile={Boolean(profile.lastUpdated)}
+              onEditProfile={() => {
+                setView('profile')
+                setNotice('')
+              }}
+              onStartSetup={startSetup}
+              onLogoClick={goHome}
+            />
+          ) : null}
+          {view === 'reminders' ? <RemindersView profile={profile} onLogoClick={goHome} /> : null}
+        </div>
+      </AppShell>
+    </>
   )
 }
 

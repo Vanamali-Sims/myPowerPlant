@@ -229,8 +229,10 @@ export function SolarForecastChart({ inputs, view, isPotential, placeLabel }: Pr
                 kWh
               </text>
 
-              <path d={geometry.area} className="forecast__area" />
-              <path d={geometry.line} className="forecast__line" />
+              <g key={view} className="forecast__draw">
+                <path d={geometry.area} className="forecast__area" />
+                <path d={geometry.line} className="forecast__line" pathLength={1} />
+              </g>
 
               {hoverX !== null ? (
                 <line

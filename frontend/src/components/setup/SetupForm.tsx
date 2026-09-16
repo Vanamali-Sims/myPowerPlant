@@ -100,26 +100,28 @@ export function SetupForm({ profile, onChange, onComplete, onExit, onLogoClick }
         onLogoClick={onLogoClick}
       />
       <StepProgress step={stepIndex + 1} total={total} />
-      <div className="setup__intro">
-        <h1>{step.title}</h1>
-        <p>{step.lede}</p>
-      </div>
-      <div className="setup__fields">
-        {step.id === 'household' ? (
-          <HouseholdProfileStep profile={profile} errors={errors} onChange={patch} />
-        ) : null}
-        {step.id === 'usage' ? (
-          <HouseholdUsageStep profile={profile} errors={errors} onChange={patch} />
-        ) : null}
-        {step.id === 'solar' ? (
-          <SolarDetailsStep profile={profile} errors={errors} onChange={patch} />
-        ) : null}
-        {step.id === 'battery' ? (
-          <BatteryProfileStep profile={profile} errors={errors} onChange={patch} />
-        ) : null}
-        {step.id === 'provider' ? (
-          <EnergyProviderStep profile={profile} errors={errors} onChange={patch} />
-        ) : null}
+      <div key={step.id} className="view-enter flex flex-col gap-5">
+        <div className="setup__intro">
+          <h1>{step.title}</h1>
+          <p>{step.lede}</p>
+        </div>
+        <div className="setup__fields">
+          {step.id === 'household' ? (
+            <HouseholdProfileStep profile={profile} errors={errors} onChange={patch} />
+          ) : null}
+          {step.id === 'usage' ? (
+            <HouseholdUsageStep profile={profile} errors={errors} onChange={patch} />
+          ) : null}
+          {step.id === 'solar' ? (
+            <SolarDetailsStep profile={profile} errors={errors} onChange={patch} />
+          ) : null}
+          {step.id === 'battery' ? (
+            <BatteryProfileStep profile={profile} errors={errors} onChange={patch} />
+          ) : null}
+          {step.id === 'provider' ? (
+            <EnergyProviderStep profile={profile} errors={errors} onChange={patch} />
+          ) : null}
+        </div>
       </div>
       <FormActions
         continueLabel={step.id === 'provider' ? 'Complete Profile' : 'Continue'}
