@@ -11,6 +11,7 @@ const SELECTOR = [
   '.kpi-card',
   '.profile-card',
   '.vpp-plan-card',
+  '.vpp-helps__quote',
   '.ui-choice',
   '.ui-dir',
   '.ui-btn',
@@ -50,7 +51,10 @@ export function StickyHover() {
       const target = event.target
       if (!(target instanceof Element)) return
       const next = target.closest(SELECTOR)
-      if (!(next instanceof HTMLElement) || next.matches(':disabled, .is-unavailable')) {
+      if (
+        !(next instanceof HTMLElement) ||
+        next.matches(':disabled, .is-unavailable, .ui-btn--color-hover')
+      ) {
         reset(current)
         current = null
         return

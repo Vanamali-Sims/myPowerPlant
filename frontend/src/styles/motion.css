@@ -84,6 +84,7 @@
 .profile-card,
 .vpp-plan-card,
 .vpp-plan-card__cta,
+.vpp-helps__quote,
 .location-control,
 .location-control__locate,
 .brand--button {
@@ -101,6 +102,7 @@
 .kpi-card,
 .profile-card,
 .vpp-plan-card,
+.vpp-helps__quote,
 .ui-choice,
 .ui-dir,
 .ui-btn,
@@ -131,13 +133,24 @@
 .kpi-card.is-hover-grow,
 .profile-card.is-hover-grow,
 .vpp-plan-card.is-hover-grow,
+.vpp-helps__quote.is-hover-grow,
 .ui-choice.is-hover-grow {
   box-shadow: 0 18px 40px rgba(20, 35, 29, 0.12);
   border-color: var(--border-strong);
 }
 
+.vpp-helps__quote.is-hover-grow {
+  box-shadow: 0 18px 40px rgba(8, 16, 14, 0.35);
+  border-color: rgb(242 237 227 / 0.38);
+}
+
 .ui-btn--primary.is-hover-grow {
   box-shadow: 0 12px 24px rgba(200, 106, 60, 0.3);
+}
+
+.ui-btn--color-hover.is-hover-grow {
+  --hover-scale: 1;
+  box-shadow: none;
 }
 
 .hero-house__face {
@@ -150,13 +163,24 @@
   .kpi-card:hover,
   .profile-card:hover,
   .vpp-plan-card:hover,
+  .vpp-helps__quote:hover,
   .ui-choice:hover {
     z-index: 3;
     border-color: var(--border-strong);
   }
 
+  .vpp-helps__quote:hover {
+    border-color: rgb(242 237 227 / 0.38);
+  }
+
   .ui-btn--primary:hover:not(:disabled) {
     box-shadow: 0 12px 24px rgba(200, 106, 60, 0.3);
+  }
+
+  .ui-btn--color-hover:hover:not(:disabled),
+  .ui-btn--color-hover:active:not(:disabled) {
+    --hover-scale: 1;
+    box-shadow: none;
   }
 
   .ui-btn--primary:active:not(:disabled),
@@ -333,6 +357,7 @@
   .profile-card,
   .vpp-plan-card,
   .vpp-plan-card__cta,
+  .vpp-helps__quote,
   .location-control,
   .location-control__locate,
   .brand--button,

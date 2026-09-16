@@ -206,9 +206,9 @@ type CompareVisualProps = {
 function CompareVisual({ copy, mode, onMode }: CompareVisualProps) {
   const { setRef, box } = useSlidingHighlight(mode, '[aria-checked="true"]')
   const side = mode === 'with' ? copy.with : copy.without
-  const yearLine =
+  const weekLine =
     side.costAud != null
-      ? `≈ ${formatExplainerYearAud(side.costAud)}/year, if weeks like this are typical`
+      ? `≈ ${formatExplainerExactAud(side.costAud)}/week, if weeks like this are typical`
       : null
 
   return (
@@ -264,11 +264,11 @@ function CompareVisual({ copy, mode, onMode }: CompareVisualProps) {
           <p className="vpp-compare__cost-label">{side.costLabel}</p>
           <div className="vpp-compare__cost-stack">
             <p className="vpp-compare__cost-value">
-              {side.costAud != null ? formatExplainerExactAud(side.costAud) : '—'}
-              {side.costAud != null ? <span className="vpp-compare__per">/week</span> : null}
+              {side.costAud != null ? formatExplainerYearAud(side.costAud) : '—'}
+              {side.costAud != null ? <span className="vpp-compare__per">/year</span> : null}
               <span className="visually-hidden"> Estimate</span>
             </p>
-            {yearLine ? <p className="vpp-compare__cost-year">{yearLine}</p> : null}
+            {weekLine ? <p className="vpp-compare__cost-year">{weekLine}</p> : null}
           </div>
         </div>
       </article>

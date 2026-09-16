@@ -105,20 +105,24 @@ export function Welcome({
               </h2>
 
               <div className="vpp-helps__compare">
-                <article className="vpp-compare__card">
+                <article className="vpp-compare__card vpp-helps__quote">
                   <p className="vpp-helps__label">{VPP_HOW_IT_HELPS.withoutTitle}</p>
-                  <p className="vpp-compare__cost-value">{formatExplainerWeekAud(retailWeek)}</p>
-                  <p className="vpp-compare__detail">{VPP_HOW_IT_HELPS.withoutDetail}</p>
-                  <p className="vpp-compare__cost-year">
-                    ≈ {formatExplainerYearAud(retailWeek)}/yr
+                  <p className="vpp-compare__cost-value">
+                    {formatExplainerYearAud(retailWeek)}
+                    <span className="vpp-compare__per">/yr</span>
                   </p>
+                  <p className="vpp-compare__detail">{VPP_HOW_IT_HELPS.withoutDetail}</p>
+                  <p className="vpp-compare__cost-year">≈ {formatExplainerWeekAud(retailWeek)}</p>
                 </article>
-                <article className="vpp-compare__card">
+                <article className="vpp-compare__card vpp-helps__quote">
                   <p className="vpp-helps__label">{VPP_HOW_IT_HELPS.withTitle}</p>
-                  <p className="vpp-compare__cost-value">{formatExplainerWeekAud(vppWeek)}</p>
+                  <p className="vpp-compare__cost-value">
+                    {formatExplainerYearAud(vppWeek)}
+                    <span className="vpp-compare__per">/yr</span>
+                  </p>
                   <p className="vpp-compare__detail">{VPP_HOW_IT_HELPS.withDetail}</p>
                   <p className="vpp-compare__cost-year">
-                    ≈ {formatExplainerYearAud(vppWeek)}/yr — about{' '}
+                    ≈ {formatExplainerWeekAud(vppWeek)} — about{' '}
                     {formatExplainerYearAud(yearSave)} less a year
                   </p>
                 </article>
@@ -139,7 +143,7 @@ export function Welcome({
                 </li>
               </ul>
 
-              <Button variant="primary" onClick={onViewDashboard}>
+              <Button variant="primary" className="vpp-helps__cta ui-btn--color-hover" onClick={onViewDashboard}>
                 {VPP_HOW_IT_HELPS.cta}
               </Button>
             </div>

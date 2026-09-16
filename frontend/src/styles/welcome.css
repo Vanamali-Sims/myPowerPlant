@@ -600,6 +600,7 @@
   display: flex;
   flex-direction: column;
   gap: 1.35rem;
+  overflow: visible;
 }
 
 .vpp-helps__title {
@@ -615,6 +616,11 @@
 .vpp-helps__compare {
   display: grid;
   gap: 0.75rem;
+  overflow: visible;
+}
+
+.vpp-helps__quote {
+  min-width: 0;
 }
 
 .vpp-helps__label {
