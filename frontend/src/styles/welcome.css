@@ -207,31 +207,7 @@
   }
 }
 
-/* Text points (impact band) */
-
-.text-points {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-}
-
-.text-point__title {
-  margin: 0;
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-  font-family: var(--font-body);
-  font-size: 1rem;
-  font-weight: 700;
-  color: var(--ink);
-}
-
-.text-point__desc {
-  margin: 0.3rem 0 0;
-  font-size: 0.9rem;
-  color: var(--ink-secondary);
-}
+/* Text points (impact band) — removed with Matt worked-example section */
 
 /* Section head + cards */
 
@@ -255,9 +231,7 @@
 }
 
 .feature-card,
-.article-card,
-.step,
-.text-point {
+.article-card {
   display: flex;
   flex-direction: column;
   align-items: flex-start;
@@ -343,63 +317,296 @@
   color: var(--ink-secondary);
 }
 
-/* How it works */
+/* How a VPP works — explainer carousel
+   Tokens: --surface-deep (dark card), --on-deep (cream text), --primary/--terra-* (coral).
+   Teal for incoming VPP flow reuses --success (closest vivid green in the palette).
+   Avoid --on-deep-muted on this card — same eucalypt family as the background. */
 
-.steps__heading {
-  text-align: center;
-  margin: 0 0 2rem;
-}
-
-.steps {
+.vpp-explainer {
+  --vpp-exp-coral: var(--terra-400);
+  --vpp-exp-coral-strong: var(--primary);
+  --vpp-exp-teal: var(--success);
+  --vpp-exp-cream: var(--on-deep);
+  --vpp-exp-muted: rgb(242 237 227 / 0.62);
   display: flex;
   flex-direction: column;
-  gap: 1rem;
+  gap: 1.15rem;
 }
 
-.step {
-  align-items: center;
-  text-align: center;
-  gap: 0.5rem;
-}
-
-.step__badge {
-  width: 2.6rem;
-  height: 2.6rem;
-  border-radius: 50%;
-  background: var(--euc-600);
-  color: var(--on-primary);
-  display: grid;
-  place-items: center;
-  font-family: var(--font-display);
-  font-weight: 600;
-  font-size: 1.1rem;
-}
-
-.step h3 {
+.vpp-explainer__card {
   margin: 0;
+  padding: clamp(1.35rem, 3vw, 2rem) clamp(1.2rem, 3vw, 2.1rem)
+    clamp(1.35rem, 3vw, 1.85rem);
+  background: var(--surface-deep);
+  color: var(--vpp-exp-cream);
+  border-radius: 16px;
+}
+
+.vpp-explainer__head {
+  margin: 0 0 1.35rem;
+}
+
+.vpp-explainer__eyebrow {
+  margin: 0 0 0.45rem;
   font-family: var(--font-body);
-  font-size: 1rem;
-  font-weight: 700;
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--vpp-exp-coral-strong);
 }
 
-.step p {
+.vpp-explainer__title {
   margin: 0;
-  font-size: 0.85rem;
-  color: var(--ink-secondary);
+  max-width: 18ch;
+  font-family: var(--font-display);
+  font-size: clamp(1.55rem, 3vw, 1.85rem);
+  font-weight: 500;
+  line-height: 1.2;
+  color: var(--vpp-exp-cream);
+}
+
+.vpp-explainer__layout {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  align-items: stretch;
+}
+
+.vpp-explainer__diagram {
+  width: 100%;
   max-width: 22rem;
+  margin: 0 auto;
+}
+
+.vpp-explainer__panel {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+  min-width: 0;
+}
+
+.vpp-explainer__headline {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: clamp(1.25rem, 2.5vw, 1.45rem);
+  font-weight: 500;
+  line-height: 1.25;
+  color: var(--vpp-exp-cream);
+}
+
+.vpp-explainer__body {
+  margin: 0;
+  font-size: 0.95rem;
+  line-height: 1.5;
+  color: var(--vpp-exp-muted);
+}
+
+.vpp-explainer__controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.55rem;
+  margin-top: 1.1rem;
+}
+
+.vpp-explainer__nav {
+  display: inline-grid;
+  place-items: center;
+  width: 2.4rem;
+  height: 2.4rem;
+  margin: 0;
+  padding: 0;
+  border: 1px solid rgb(242 237 227 / 0.45);
+  border-radius: 50%;
+  background: transparent;
+  color: var(--vpp-exp-cream);
+  cursor: pointer;
+}
+
+.vpp-explainer__nav:hover {
+  border-color: var(--vpp-exp-cream);
+  background: rgb(242 237 227 / 0.06);
+}
+
+.vpp-explainer__nav:focus-visible {
+  outline: 2px solid var(--vpp-exp-cream);
+  outline-offset: 2px;
+}
+
+.vpp-explainer__chevron {
+  width: 1rem;
+  height: 1rem;
+}
+
+.vpp-explainer__chevron--prev {
+  transform: rotate(180deg);
+}
+
+.vpp-explainer__dots {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin-left: 0.35rem;
+}
+
+.vpp-explainer__dot {
+  width: 0.45rem;
+  height: 0.45rem;
+  margin: 0;
+  padding: 0;
+  border: 1px solid rgb(242 237 227 / 0.45);
+  border-radius: 50%;
+  background: transparent;
+  cursor: pointer;
+}
+
+.vpp-explainer__dot.is-active {
+  border-color: var(--vpp-exp-coral-strong);
+  background: var(--vpp-exp-coral-strong);
+}
+
+.vpp-explainer__dot:focus-visible {
+  outline: 2px solid var(--vpp-exp-cream);
+  outline-offset: 2px;
+}
+
+.vpp-explainer__cta {
+  display: flex;
+  justify-content: flex-start;
+}
+
+.vpp-explainer-svg {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.vpp-explainer-svg__orbit {
+  stroke: rgb(242 237 227 / 0.12);
+  stroke-width: 1;
+}
+
+.vpp-explainer-svg__grid {
+  fill: none;
+  stroke: rgb(242 237 227 / 0.55);
+  stroke-width: 1.5;
+  opacity: 0;
+  transition: opacity 0.35s ease;
+}
+
+.vpp-explainer-svg__grid.is-on,
+.vpp-explainer-svg__grid.is-dim {
+  opacity: 1;
+}
+
+.vpp-explainer-svg__grid.is-dim {
+  opacity: 0.35;
+}
+
+.vpp-explainer-svg__grid-label {
+  fill: var(--vpp-exp-muted);
+  font-family: var(--font-body);
+  font-size: 10px;
+  letter-spacing: 0.06em;
+}
+
+.vpp-explainer-svg__neighbour {
+  fill: rgb(47 125 92 / 0.35);
+  transition:
+    fill 0.35s ease,
+    opacity 0.35s ease;
+  opacity: 0.55;
+}
+
+.vpp-explainer-svg__neighbour.is-on {
+  fill: var(--vpp-exp-teal);
+  opacity: 1;
+}
+
+.vpp-explainer-svg__link {
+  fill: none;
+  stroke: transparent;
+  stroke-width: 1.6;
+  opacity: 0;
+  transition: opacity 0.35s ease, stroke 0.35s ease;
+}
+
+.vpp-explainer-svg__link.is-dim {
+  opacity: 0.28;
+  stroke: rgb(242 237 227 / 0.45);
+}
+
+.vpp-explainer-svg__link.is-on.is-coral {
+  opacity: 1;
+  stroke: var(--vpp-exp-coral);
+}
+
+.vpp-explainer-svg__link.is-on.is-teal {
+  opacity: 1;
+  stroke: var(--vpp-exp-teal);
+}
+
+.vpp-explainer-svg__marker--coral {
+  fill: var(--vpp-exp-coral);
+}
+
+.vpp-explainer-svg__marker--teal {
+  fill: var(--vpp-exp-teal);
+}
+
+.vpp-explainer-svg__ring-track {
+  stroke: rgb(242 237 227 / 0.16);
+  stroke-width: 3.5;
+}
+
+.vpp-explainer-svg__ring-fill {
+  stroke-width: 3.5;
+  stroke-linecap: round;
+  transition:
+    stroke-dasharray 0.45s ease,
+    stroke 0.35s ease;
+}
+
+.vpp-explainer-svg__ring-fill.is-coral {
+  stroke: var(--vpp-exp-coral);
+}
+
+.vpp-explainer-svg__ring-fill.is-teal {
+  stroke: var(--vpp-exp-teal);
+}
+
+.vpp-explainer-svg__house-disc {
+  fill: var(--vpp-exp-cream);
+}
+
+.vpp-explainer-svg__house-shape {
+  fill: var(--surface-deep);
+}
+
+.vpp-explainer-svg__door {
+  fill: var(--surface-deep);
+}
+
+.vpp-explainer-svg__battery-label {
+  fill: var(--vpp-exp-muted);
+  font-family: var(--font-body);
+  font-size: 11px;
+  letter-spacing: 0.04em;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .vpp-explainer-svg__grid,
+  .vpp-explainer-svg__neighbour,
+  .vpp-explainer-svg__link,
+  .vpp-explainer-svg__ring-fill {
+    transition: none;
+  }
 }
 
 @media (min-width: 640px) {
   .card-grid {
     grid-template-columns: repeat(2, 1fr);
-  }
-
-  .text-points {
-    flex-direction: row;
-  }
-
-  .text-point {
-    flex: 1;
   }
 }
 
@@ -443,12 +650,20 @@
     grid-template-columns: repeat(3, 1fr);
   }
 
-  .steps {
+  .vpp-explainer__layout {
     flex-direction: row;
-    align-items: flex-start;
+    align-items: center;
+    gap: 2rem;
   }
 
-  .step {
-    flex: 1;
+  .vpp-explainer__diagram {
+    flex: 0 0 44%;
+    max-width: none;
+    margin: 0;
+  }
+
+  .vpp-explainer__panel {
+    flex: 1 1 0;
+    padding-top: 0.25rem;
   }
 }

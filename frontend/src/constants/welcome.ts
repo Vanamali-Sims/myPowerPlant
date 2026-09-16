@@ -19,23 +19,29 @@ export type WelcomeFeature = {
   status: FeatureStatus
 }
 
-export type WelcomeImpactPoint = {
-  title: string
-  description: string
-  estimate?: boolean
-}
-
-export type WelcomeStep = {
-  title: string
-  description: string
-}
-
 export type WelcomeArticle = {
   tag: string
   title: string
   excerpt: string
   source: string
   href: string
+}
+
+/** Optional modelled week for the VPP explainer when a profile exists. */
+export type VppExplainerHousehold = {
+  generatedKwh: number
+  usedKwh: number
+  gapKwh: number
+  /** Gap × retail rate for the same week — always shown as an estimate. */
+  gapCostAud: number | null
+}
+
+export type VppExplainerStepId = 'shortfall' | 'grid' | 'neighbour' | 'trade'
+
+export type VppExplainerStep = {
+  id: VppExplainerStepId
+  headline: string
+  body: string
 }
 
 export const WELCOME_FEATURES: WelcomeFeature[] = [
@@ -59,43 +65,6 @@ export const WELCOME_FEATURES: WelcomeFeature[] = [
     description:
       'See whether joining a VPP makes sense for your home, and how — kept up to date as your setup changes.',
     status: 'available',
-  },
-]
-
-export const WELCOME_IMPACT_POINTS: WelcomeImpactPoint[] = [
-  {
-    title: 'Solar & battery',
-    description:
-      'Matt has a rooftop solar system paired with a home battery — the kind of setup MyPowerPlant is built around.',
-  },
-  {
-    title: 'Battery reserve',
-    description:
-      'He keeps a portion of his battery charge in reserve at all times, balancing backup power with VPP participation.',
-  },
-  {
-    title: 'Potential to save',
-    description:
-      'Depending on his usage and battery size, joining a VPP could lower Matt’s running costs. This isn’t a guaranteed figure — it depends on your own home.',
-    estimate: true,
-  },
-]
-
-export const HOW_IT_WORKS: WelcomeStep[] = [
-  {
-    title: 'Tell us about your home',
-    description:
-      'Answer a short set of questions about your household, usage, solar and battery.',
-  },
-  {
-    title: 'We look at your numbers',
-    description:
-      'MyPowerPlant checks your setup against real assessment criteria, not guesswork.',
-  },
-  {
-    title: 'Get your recommendation',
-    description:
-      'See whether joining a VPP makes sense for you, and how — updated as things change.',
   },
 ]
 
@@ -132,3 +101,98 @@ export const FEATURE_STATUS_LABEL: Record<FeatureStatus, string> = {
 }
 
 export const SEE_ALL_POPOVER = 'The full features list is coming soon.'
+
+/** Hypothetical week used when the visitor has no profile (or no shortfall). */
+export const VPP_EXPLAINER_EXAMPLE = {
+  generatedKwh: 40,
+  usedKwh: 55,
+  gapKwh: 15,
+  gapCostAud: 7.2,
+} as const
+
+/** Battery ring fill shown on each diagram step (visual only). */
+export const VPP_EXPLAINER_BATTERY: Record<VppExplainerStepId, number> = {
+  shortfall: 0.2,
+  grid: 0.35,
+  neighbour: 0.75,
+  trade: 0.9,
+}
+
+/**
+ * buildVppExplainerSteps
+ * @param personal - Real shortfall week when onboarded and a gap exists; else null
+ * @returns Four carousel slides with hedging when figures are only examples
+ */
+export function buildVppExplainerSteps(
+  personal: VppExplainerHousehold | null,
+): VppExplainerStep[] {
+  if (personal) {
+    const gen = formatExplainerKwh(personal.generatedKwh)
+    const used = formatExplainerKwh(personal.usedKwh)
+    const gap = formatExplainerKwh(personal.gapKwh)
+    const cost =
+      personal.gapCostAud != null
+        ? ` Roughly ${formatExplainerAud(personal.gapCostAud)} at your retail rate — an estimate, not a bill.`
+        : ''
+
+    return [
+      {
+        id: 'shortfall',
+        headline: `Your panels made about ${gen} this week`,
+        body: `And your home used about ${used}. That ${gap} gap has to come from somewhere.`,
+      },
+      {
+        id: 'grid',
+        headline: 'Normally, you’d buy that gap from the grid',
+        body: `At retail rates, often during the priciest hours of the evening.${cost}`,
+      },
+      {
+        id: 'neighbour',
+        headline: 'In a VPP, you’d borrow it from a neighbour instead',
+        body: `Homes nearby with spare battery charge cover the gap for you — about ${gap}.`,
+      },
+      {
+        id: 'trade',
+        headline: 'Next time you’ve got extra, someone borrows from you',
+        body: 'It runs both ways. That’s the whole idea of a virtual power plant.',
+      },
+    ]
+  }
+
+  const { generatedKwh, usedKwh, gapKwh, gapCostAud } = VPP_EXPLAINER_EXAMPLE
+  return [
+    {
+      id: 'shortfall',
+      headline: `Say your panels made ${generatedKwh} kWh this week`,
+      body: `And your home used ${usedKwh}. That ${gapKwh} kWh gap has to come from somewhere.`,
+    },
+    {
+      id: 'grid',
+      headline: 'Normally, you’d buy that gap from the grid',
+      body: `At retail rates, often during the priciest hours of the evening. On a rough example week that might cost about $${gapCostAud.toFixed(2)}.`,
+    },
+    {
+      id: 'neighbour',
+      headline: 'In a VPP, you’d borrow it from a neighbour instead',
+      body: 'Homes nearby with spare battery charge cover the gap for you.',
+    },
+    {
+      id: 'trade',
+      headline: 'Next time you’ve got extra, someone borrows from you',
+      body: 'It runs both ways. That’s the whole idea of a virtual power plant.',
+    },
+  ]
+}
+
+function formatExplainerKwh(value: number): string {
+  const rounded = Math.round(value * 10) / 10
+  return `${rounded} kWh`
+}
+
+function formatExplainerAud(value: number): string {
+  return new Intl.NumberFormat('en-AU', {
+    style: 'currency',
+    currency: 'AUD',
+    maximumFractionDigits: value >= 10 ? 0 : 2,
+  }).format(value)
+}

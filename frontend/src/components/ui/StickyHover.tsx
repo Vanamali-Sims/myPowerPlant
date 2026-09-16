@@ -11,8 +11,6 @@ const SELECTOR = [
   '.kpi-card',
   '.profile-card',
   '.vpp-plan-card',
-  '.step',
-  '.text-point',
   '.ui-choice',
   '.ui-dir',
   '.ui-btn',

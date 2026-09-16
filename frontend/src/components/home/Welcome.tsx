@@ -1,22 +1,24 @@
 /**
- * Marketing home page: hero, features, how-it-works, Kew example, and articles.
+ * Marketing home page: hero, features, VPP explainer carousel, and articles.
  */
 import {
   FEATURE_STATUS_LABEL,
-  HOW_IT_WORKS,
   SEE_ALL_POPOVER,
   WELCOME_ARTICLES,
   WELCOME_FEATURES,
-  WELCOME_IMPACT_POINTS,
+  type VppExplainerHousehold,
 } from '../../constants'
 import { useTransientPopover } from '../../lib/useTransientPopover'
 import { Button } from '../ui/Button'
 import { Popover } from '../ui/Popover'
 import { HeroHouse } from './HeroHouse'
+import { VppExplainerCarousel } from './VppExplainerCarousel'
 import { BoltIcon } from '../ui/icons'
 
 type Props = {
   hasProfile: boolean
+  /** Weekly shortfall when modelled; omit/null keeps hypothetical carousel copy. */
+  householdData?: VppExplainerHousehold | null
   onGetStarted: () => void
   onViewDashboard: () => void
   onLogoClick: () => void
@@ -31,7 +33,13 @@ type Props = {
  * Copy and feature lists come from constants/welcome so this file is layout.
  * The primary button switches to “View dashboard” after setup is complete.
  */
-export function Welcome({ hasProfile, onGetStarted, onViewDashboard, onLogoClick }: Props) {
+export function Welcome({
+  hasProfile,
+  householdData = null,
+  onGetStarted,
+  onViewDashboard,
+  onLogoClick,
+}: Props) {
   const [openPopover, setOpenPopover] = useTransientPopover()
 
   return (
@@ -113,43 +121,17 @@ export function Welcome({ hasProfile, onGetStarted, onViewDashboard, onLogoClick
 
       <section className="band">
         <div className="band__inner">
-          <h2 className="steps__heading">How it works</h2>
-          <div className="steps">
-            {HOW_IT_WORKS.map((step, index) => (
-              <div key={step.title} className="step">
-                <span className="step__badge">{index + 1}</span>
-                <h3>{step.title}</h3>
-                <p>{step.description}</p>
-              </div>
-            ))}
-          </div>
+          <VppExplainerCarousel
+            isOnboarded={hasProfile}
+            householdData={householdData}
+            onFillDetails={onGetStarted}
+            onSeeNumbers={onViewDashboard}
+          />
         </div>
       </section>
 
       <section className="band">
         <div className="band__inner">
-          <h2>A worked example: Matt, in Kew VIC</h2>
-          <div className="text-points">
-            {WELCOME_IMPACT_POINTS.map((point) => (
-              <div key={point.title} className="text-point">
-                <p className="text-point__title">
-                  {point.title}
-                  {point.estimate ? (
-                    <span className="profile-estimate">Estimate</span>
-                  ) : null}
-                </p>
-                <p className="text-point__desc">{point.description}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      <section className="band">
-        <div className="band__inner">
-          <div className="section-head">
-            <h2>Learn more</h2>
-          </div>
           <div className="card-grid">
             {WELCOME_ARTICLES.map((article) => (
               <a

@@ -25,8 +25,6 @@ const HOVER_SELECTOR = [
   '.kpi-card',
   '.profile-card',
   '.vpp-plan-card',
-  '.step',
-  '.text-point',
   '.ui-choice',
   '.app-rail__item',
   '.vpp-plan-card__cta',

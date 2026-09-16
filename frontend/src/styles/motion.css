@@ -84,8 +84,6 @@
 .profile-card,
 .vpp-plan-card,
 .vpp-plan-card__cta,
-.step,
-.text-point,
 .location-control,
 .location-control__locate,
 .brand--button {
@@ -103,8 +101,6 @@
 .kpi-card,
 .profile-card,
 .vpp-plan-card,
-.step,
-.text-point,
 .ui-choice,
 .ui-dir,
 .ui-btn,
@@ -135,8 +131,6 @@
 .kpi-card.is-hover-grow,
 .profile-card.is-hover-grow,
 .vpp-plan-card.is-hover-grow,
-.step.is-hover-grow,
-.text-point.is-hover-grow,
 .ui-choice.is-hover-grow {
   box-shadow: 0 18px 40px rgba(20, 35, 29, 0.12);
   border-color: var(--border-strong);
@@ -156,8 +150,6 @@
   .kpi-card:hover,
   .profile-card:hover,
   .vpp-plan-card:hover,
-  .step:hover,
-  .text-point:hover,
   .ui-choice:hover {
     z-index: 3;
     border-color: var(--border-strong);
@@ -341,8 +333,6 @@
   .profile-card,
   .vpp-plan-card,
   .vpp-plan-card__cta,
-  .step,
-  .text-point,
   .location-control,
   .location-control__locate,
   .brand--button,
