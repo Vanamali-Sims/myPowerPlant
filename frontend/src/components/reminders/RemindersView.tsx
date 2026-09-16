@@ -9,6 +9,7 @@ import {
   EVENT_TYPE_OPTIONS,
   EVENT_TYPE_RESULTS_HEADING,
   REMINDER_PERIOD_OPTIONS,
+  TIMEFRAMES,
 } from '../../constants'
 import { DEFAULT_RESERVE_PERCENT, FIELD_BOUNDS, clampNumber } from '../../constants/validation'
 import { buildIcsFile, downloadIcsFile } from '../../lib/calendarExport'
@@ -24,11 +25,13 @@ import {
 import {
   fetchSolarForecast,
   pointsForView,
+  type ForecastView,
   type SolarForecast,
   type SolarInputs,
 } from '../../lib/solarForecast'
 import type { ProfileData } from '../../types/profile'
 import type { EventType } from '../../types/reminders'
+import { SolarForecastChart } from '../dashboard/SolarForecastChart'
 import { Button } from '../ui/Button'
 import { Callout } from '../ui/Callout'
 import { AlertIcon, BoltIcon, ChevronIcon, CloseIcon, DownloadIcon, LockIcon } from '../ui/icons'
@@ -61,6 +64,7 @@ export function RemindersView({ profile, onLogoClick }: Props) {
   const [postcode, setPostcode] = useState(profile.postcode)
   const [openDate, setOpenDate] = useState<string | null>(null)
   const [dismissedKeys, setDismissedKeys] = useState<Set<string>>(new Set())
+  const [forecastView, setForecastView] = useState<ForecastView>('weekly')
 
   const [bundle, setBundle] = useState<MethodologyBundle | null>(null)
   const [bundleError, setBundleError] = useState('')
@@ -267,6 +271,27 @@ export function RemindersView({ profile, onLogoClick }: Props) {
         <p className="app-notice" role="status">
           Loading the solar forecast…
         </p>
+      ) : null}
+
+      {solarInputs ? (
+        <section className="dashboard-card reminders-forecast" aria-labelledby="reminders-forecast-heading">
+          <p className="eyebrow">
+            {hasOwnSolar ? 'Roof' : 'Roof potential'} · closer look
+          </p>
+          <h2 id="reminders-forecast-heading">Predicted solar generation</h2>
+          <SegmentedToggle
+            label="Forecast range"
+            value={forecastView}
+            options={TIMEFRAMES}
+            onChange={setForecastView}
+          />
+          <SolarForecastChart
+            inputs={solarInputs}
+            view={forecastView}
+            isPotential={!hasOwnSolar}
+            placeLabel={place}
+          />
+        </section>
       ) : null}
 
       {!loading && !bundleError && !forecastError ? (

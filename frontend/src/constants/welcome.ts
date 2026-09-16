@@ -165,12 +165,13 @@ export const VPP_HOW_IT_HELPS = {
   withoutTitle: 'Without a VPP',
   withoutDetail: 'bought from the retail grid',
   withTitle: 'With a VPP',
-  withDetail: 'covered by the VPP grid instead',
+  withDetail: 'saved by the VPP grid instead',
   benefits: [
     'No new hardware. Works with the battery you already have.',
     'Covered both ways. Draw when you’re short, get credited when you help someone else.',
   ],
   cta: 'See your numbers',
+  ctaStart: 'Get started',
 } as const
 
 /** Illustrative year from a typical week — not a live bill projection. */

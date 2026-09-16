@@ -603,6 +603,10 @@
   overflow: visible;
 }
 
+.dashboard-vpp-compare {
+  margin: 0;
+}
+
 .vpp-helps__title {
   margin: 0;
   max-width: 22ch;
@@ -740,6 +744,20 @@
   font-size: 0.9rem;
   line-height: 1.45;
   color: var(--vpp-exp-muted);
+}
+
+.vpp-helps__verb {
+  font-weight: 700;
+}
+
+.vpp-helps__verb--cost {
+  color: #ff8a7a;
+  text-shadow: 0 0 12px rgb(255 120 100 / 0.55);
+}
+
+.vpp-helps__verb--save {
+  color: #8ee0b0;
+  text-shadow: 0 0 14px rgb(90 220 150 / 0.65);
 }
 
 .vpp-compare__cost {

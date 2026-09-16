@@ -35,6 +35,10 @@
   width: min(16rem, 100%);
 }
 
+.reminders-forecast .ui-field {
+  margin: 0.35rem 0 1rem;
+}
+
 .reminder-results {
   display: flex;
   flex-direction: column;

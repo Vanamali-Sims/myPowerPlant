@@ -1,25 +1,21 @@
 /**
- * Household energy dashboard: balance card, closer-look charts, and VPP plans.
+ * Household energy dashboard: balance card, cost compare, and VPP plans.
  */
 import { useEffect, useMemo, useState } from 'react'
-import { coordsFromPostcode, locationFromPostcode } from '../../data/profileOptions'
+import { VPP_HOW_IT_HELPS } from '../../constants'
+import { locationFromPostcode } from '../../data/profileOptions'
 import { formatUpdatedAt } from '../../lib/formatProfile'
 import {
   fetchMethodology,
   type MethodologyBundle,
 } from '../../lib/methodologyApi'
 import { buildEnergyRiver } from '../../lib/energyRiver'
-import {
-  buildKpiReport,
-  parseCount,
-  type Timeframe,
-} from '../../lib/kpis'
+import { buildKpiReport, type Timeframe } from '../../lib/kpis'
 import type { ProfileData } from '../../types/profile'
 import { Button } from '../ui/Button'
 import { Callout } from '../ui/Callout'
-import { ConsumptionDonut } from './ConsumptionDonut'
+import { VppHelpsQuotes } from '../home/VppHelpsQuotes'
 import { EnergyRiver } from './EnergyRiver'
-import { SolarForecastChart } from './SolarForecastChart'
 import { VppSuggestions } from './VppSuggestions'
 import { BoltIcon } from '../ui/icons'
 
@@ -38,7 +34,7 @@ type Props = {
  * @returns JSX.Element
  *
  * The balance card is the story: generation, use, leftover or gap, annual
- * savings, then VPP plans. Donut and forecast sit underneath as detail.
+ * savings, then the without/with VPP cost pair and matching plans.
  * Figures are estimates unless a badge says otherwise.
  */
 export function DashboardView({
@@ -87,25 +83,15 @@ export function DashboardView({
     [bundle, report, timeframe],
   )
 
-  const solarInputs = useMemo(() => {
-    if (!bundle) return null
-    const systemKw =
-      report && !report.solarIsPotential
-        ? (parseCount(profile.panelCount) * parseCount(profile.panelWatts)) / 1000
-        : bundle.methodology.typicalPotentialKw
-    const orientationFactor =
-      bundle.orientationFactors[profile.solarDirection] ??
-      bundle.orientationFactors.not_sure ??
-      1
-    const { lat, lon } = coordsFromPostcode(profile.postcode)
+  const compareWeeks = useMemo(() => {
+    if (!report) return null
+    const gapKwh = Math.abs(report.weekly.generationKwh - report.weekly.consumptionKwh)
+    const vppRate = Math.min(report.recommended.plan.exportRate, report.retailRate)
     return {
-      lat,
-      lon,
-      systemKw,
-      orientationFactor,
-      performanceRatio: bundle.methodology.solarPerformanceRatio,
+      withoutWeek: gapKwh * report.retailRate,
+      withWeek: gapKwh * vppRate,
     }
-  }, [bundle, report, profile.panelCount, profile.panelWatts, profile.solarDirection, profile.postcode])
+  }, [report])
 
   return (
     <div className="dashboard">
@@ -154,6 +140,21 @@ export function DashboardView({
                 />
               ) : null}
 
+              {compareWeeks ? (
+                <section
+                  className="vpp-explainer__card vpp-helps__card dashboard-vpp-compare"
+                  aria-labelledby="dashboard-vpp-compare-heading"
+                >
+                  <h2 id="dashboard-vpp-compare-heading" className="vpp-helps__title">
+                    {VPP_HOW_IT_HELPS.heading}
+                  </h2>
+                  <VppHelpsQuotes
+                    withoutWeek={compareWeeks.withoutWeek}
+                    withWeek={compareWeeks.withWeek}
+                  />
+                </section>
+              ) : null}
+
               {bundle ? (
                 <VppSuggestions
                   hasProfile
@@ -167,31 +168,6 @@ export function DashboardView({
               ) : null}
             </div>
           </div>
-
-          {report ? (
-            <div className="dashboard__split">
-              <section className="dashboard-card">
-                <p className="eyebrow">
-                  {report.solarIsPotential ? 'Roof potential' : 'Roof'} · closer look
-                </p>
-                <h2>Predicted solar generation</h2>
-                {solarInputs ? (
-                  <SolarForecastChart
-                    inputs={solarInputs}
-                    view={timeframe}
-                    isPotential={report.solarIsPotential}
-                    placeLabel={place}
-                  />
-                ) : null}
-              </section>
-
-              <section className="dashboard-card">
-                <p className="eyebrow">House · closer look</p>
-                <h2>Where that energy goes</h2>
-                <ConsumptionDonut appliances={report.appliances} timeframe={timeframe} />
-              </section>
-            </div>
-          ) : null}
         </>
       ) : null}
 

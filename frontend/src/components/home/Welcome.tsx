@@ -5,13 +5,12 @@ import {
   VPP_EXPLAINER_EXAMPLE,
   VPP_HOW_IT_HELPS,
   WELCOME_ARTICLES,
-  formatExplainerWeekAud,
-  formatExplainerYearAud,
   type VppExplainerHousehold,
 } from '../../constants'
 import { Button } from '../ui/Button'
 import { HeroHouse } from './HeroHouse'
 import { VppExplainerCarousel } from './VppExplainerCarousel'
+import { VppHelpsQuotes } from './VppHelpsQuotes'
 import { BatteryIcon, BoltIcon, PeopleIcon } from '../ui/icons'
 
 type Props = {
@@ -41,7 +40,6 @@ export function Welcome({
 }: Props) {
   const retailWeek = VPP_EXPLAINER_EXAMPLE.gapCostAud
   const vppWeek = VPP_EXPLAINER_EXAMPLE.vppGapCostAud
-  const yearSave = retailWeek - vppWeek
 
   return (
     <div className="welcome">
@@ -104,29 +102,7 @@ export function Welcome({
                 {VPP_HOW_IT_HELPS.heading}
               </h2>
 
-              <div className="vpp-helps__compare">
-                <article className="vpp-compare__card vpp-helps__quote">
-                  <p className="vpp-helps__label">{VPP_HOW_IT_HELPS.withoutTitle}</p>
-                  <p className="vpp-compare__cost-value">
-                    {formatExplainerYearAud(retailWeek)}
-                    <span className="vpp-compare__per">/yr</span>
-                  </p>
-                  <p className="vpp-compare__detail">{VPP_HOW_IT_HELPS.withoutDetail}</p>
-                  <p className="vpp-compare__cost-year">≈ {formatExplainerWeekAud(retailWeek)}</p>
-                </article>
-                <article className="vpp-compare__card vpp-helps__quote">
-                  <p className="vpp-helps__label">{VPP_HOW_IT_HELPS.withTitle}</p>
-                  <p className="vpp-compare__cost-value">
-                    {formatExplainerYearAud(vppWeek)}
-                    <span className="vpp-compare__per">/yr</span>
-                  </p>
-                  <p className="vpp-compare__detail">{VPP_HOW_IT_HELPS.withDetail}</p>
-                  <p className="vpp-compare__cost-year">
-                    ≈ {formatExplainerWeekAud(vppWeek)} — about{' '}
-                    {formatExplainerYearAud(yearSave)} less a year
-                  </p>
-                </article>
-              </div>
+              <VppHelpsQuotes withoutWeek={retailWeek} withWeek={vppWeek} />
 
               <ul className="vpp-helps__benefits">
                 <li className="vpp-helps__benefit">
@@ -143,8 +119,12 @@ export function Welcome({
                 </li>
               </ul>
 
-              <Button variant="primary" className="vpp-helps__cta ui-btn--color-hover" onClick={onViewDashboard}>
-                {VPP_HOW_IT_HELPS.cta}
+              <Button
+                variant="primary"
+                className="vpp-helps__cta ui-btn--color-hover"
+                onClick={hasProfile ? onViewDashboard : onGetStarted}
+              >
+                {hasProfile ? VPP_HOW_IT_HELPS.cta : VPP_HOW_IT_HELPS.ctaStart}
               </Button>
             </div>
           </section>
