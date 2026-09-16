@@ -52,6 +52,7 @@
     gap: 0.55rem;
     flex: 1;
     width: 100%;
+    overflow: visible;
   }
 
   .app-rail__highlight {
@@ -113,7 +114,7 @@
   }
 
   .app-rail__item:active {
-    transform: scale(0.96);
+    --hover-scale: 0.96;
   }
 
   .app-rail__item.is-active {

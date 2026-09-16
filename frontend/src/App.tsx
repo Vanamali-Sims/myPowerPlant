@@ -9,6 +9,7 @@ import { ProfileView } from './components/profile/ProfileView'
 import { RemindersView } from './components/reminders/RemindersView'
 import { SetupForm } from './components/setup/SetupForm'
 import { CustomCursor } from './components/ui/CustomCursor'
+import { StickyHover } from './components/ui/StickyHover'
 import { clearStoredProfile, loadProfile, saveProfile } from './lib/profileStorage'
 import { emptyProfile, type ProfileData } from './types/profile'
 
@@ -81,6 +82,7 @@ function App() {
   return (
     <>
       <CustomCursor />
+      <StickyHover />
       <AppShell
         active={
           view === 'dashboard'
