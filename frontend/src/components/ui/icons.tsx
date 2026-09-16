@@ -221,12 +221,40 @@ export function ProfileIcon(props: IconProps) {
   )
 }
 
+export function DownloadIcon(props: IconProps) {
+  return (
+    <svg {...icon(props)}>
+      <path d="M12 3v12" />
+      <path d="m7 10 5 5 5-5" />
+      <path d="M5 19.5h14" />
+    </svg>
+  )
+}
+
 export function BulbIcon(props: IconProps) {
   return (
     <svg {...icon(props)}>
       <path d="M9 18h6" />
       <path d="M10 21h4" />
       <path d="M12 3a6 6 0 0 1 3.6 10.8c-.7.5-1.1 1.2-1.2 2.2h-4.8c-.1-1-.5-1.7-1.2-2.2A6 6 0 0 1 12 3z" />
+    </svg>
+  )
+}
+
+export function CloseIcon(props: IconProps) {
+  return (
+    <svg {...icon(props)}>
+      <path d="m6 6 12 12" />
+      <path d="m18 6-12 12" />
+    </svg>
+  )
+}
+
+export function BellIcon(props: IconProps) {
+  return (
+    <svg {...icon(props)}>
+      <path d="M6 17v-5.5a6 6 0 0 1 12 0V17l1.7 2.2a1 1 0 0 1-.8 1.6H5.1a1 1 0 0 1-.8-1.6L6 17z" />
+      <path d="M10 20.5a2 2 0 0 0 4 0" />
     </svg>
   )
 }

@@ -6,11 +6,12 @@ import { AppShell, type AppNavId } from './components/layout/AppShell'
 import { DashboardView } from './components/dashboard/DashboardView'
 import { Welcome } from './components/home/Welcome'
 import { ProfileView } from './components/profile/ProfileView'
+import { RemindersView } from './components/reminders/RemindersView'
 import { SetupForm } from './components/setup/SetupForm'
 import { clearStoredProfile, loadProfile, saveProfile } from './lib/profileStorage'
 import { emptyProfile, type ProfileData } from './types/profile'
 
-type View = 'welcome' | 'setup' | 'profile' | 'dashboard'
+type View = 'welcome' | 'setup' | 'profile' | 'dashboard' | 'reminders'
 
 /**
  * App
@@ -68,13 +69,26 @@ function App() {
     if (id === 'dashboard') {
       setView('dashboard')
       setNotice('')
+      return
+    }
+    if (id === 'reminders') {
+      setView('reminders')
+      setNotice('')
     }
   }
 
   return (
     <AppShell
       active={
-        view === 'dashboard' ? 'dashboard' : view === 'profile' ? 'profile' : view === 'welcome' ? 'home' : null
+        view === 'dashboard'
+          ? 'dashboard'
+          : view === 'profile'
+            ? 'profile'
+            : view === 'reminders'
+              ? 'reminders'
+              : view === 'welcome'
+                ? 'home'
+                : null
       }
       postcode={profile.postcode}
       hasProfile={Boolean(profile.lastUpdated)}
@@ -131,6 +145,7 @@ function App() {
           onLogoClick={goHome}
         />
       ) : null}
+      {view === 'reminders' ? <RemindersView profile={profile} onLogoClick={goHome} /> : null}
     </AppShell>
   )
 }
