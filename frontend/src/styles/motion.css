@@ -365,17 +365,17 @@
   }
 
   .kpi-card__figure,
-  .energy-river__figure,
+  .energy-balance__share,
+  .energy-savings__value,
+  .energy-bar__seg,
+  .energy-join__knob,
   .donut__draw,
   .forecast__draw .forecast__area,
   .forecast__draw .forecast__line {
     animation: none;
     opacity: 1;
     transform: none;
-  }
-
-  .energy-river__current {
-    animation: none;
+    transition: none;
   }
 
   .forecast__draw .forecast__line {

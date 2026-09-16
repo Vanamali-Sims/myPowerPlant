@@ -1,16 +1,14 @@
 /**
- * Household energy dashboard: energy river, node details, and VPP plans.
+ * Household energy dashboard: balance card, closer-look charts, and VPP plans.
  */
 import { useEffect, useMemo, useState } from 'react'
-import { TIMEFRAMES } from '../../constants'
 import { coordsFromPostcode, locationFromPostcode } from '../../data/profileOptions'
 import { formatUpdatedAt } from '../../lib/formatProfile'
-import { useSlidingHighlight } from '../../lib/useSlidingHighlight'
 import {
   fetchMethodology,
   type MethodologyBundle,
 } from '../../lib/methodologyApi'
-import { buildEnergyRiver, riverTitle } from '../../lib/energyRiver'
+import { buildEnergyRiver } from '../../lib/energyRiver'
 import {
   buildKpiReport,
   parseCount,
@@ -39,9 +37,9 @@ type Props = {
  * @param props.onEditProfile - Jump to the profile editor
  * @returns JSX.Element
  *
- * The river is the story: generation, use, leftover or gap, then VPP plans
- * at the mouth. Donut and forecast sit under the house and roof as detail.
- * Figures are estimates unless a badge says otherwise.
+ * The balance card is the story: generation, use, leftover or gap, then
+ * estimated savings on a joined card. Donut and forecast sit underneath
+ * as detail. Figures are estimates unless a badge says otherwise.
  */
 export function DashboardView({
   profile,
@@ -109,11 +107,6 @@ export function DashboardView({
     }
   }, [bundle, report, profile.panelCount, profile.panelWatts, profile.solarDirection, profile.postcode])
 
-  const { setRef: setTimeRef, box: timeBox } = useSlidingHighlight(
-    hasProfile ? timeframe : null,
-    '[aria-checked="true"]',
-  )
-
   return (
     <div className="dashboard">
       <header className="dashboard__top">
@@ -130,11 +123,6 @@ export function DashboardView({
         </button>
       </header>
 
-      <div className="dashboard__intro">
-        <p className="eyebrow">Your energy river</p>
-        <h1>{river ? riverTitle(river.fork) : 'See how this home’s power moves.'}</h1>
-      </div>
-
       {hasProfile && loadError ? (
         <p className="app-notice" role="status">
           Dashboard rates could not be loaded. {loadError}
@@ -148,38 +136,15 @@ export function DashboardView({
 
       {hasProfile ? (
         <>
-          <div
-            ref={setTimeRef}
-            className="dashboard__time ui-toggle"
-            role="radiogroup"
-            aria-label="Timeframe"
-          >
-            <span
-              aria-hidden="true"
-              className={`ui-toggle__highlight${timeBox.visible ? ' is-visible' : ''}${
-                timeBox.ready ? ' is-ready' : ''
-              }`}
-              style={{
-                transform: `translate3d(${timeBox.left}px, ${timeBox.top}px, 0)`,
-                width: timeBox.width,
-                height: timeBox.height,
-              }}
+          {river ? (
+            <EnergyRiver
+              key={timeframe}
+              model={river}
+              place={place}
+              timeframe={timeframe}
+              onTimeframe={setTimeframe}
             />
-            {TIMEFRAMES.map((option) => (
-              <button
-                key={option.value}
-                type="button"
-                role="radio"
-                aria-checked={timeframe === option.value}
-                className={`ui-toggle__option${timeframe === option.value ? ' is-selected' : ''}`}
-                onClick={() => setTimeframe(option.value)}
-              >
-                {option.label}
-              </button>
-            ))}
-          </div>
-
-          {river ? <EnergyRiver key={timeframe} model={river} /> : null}
+          ) : null}
 
           {report ? (
             <div className="dashboard__split">
