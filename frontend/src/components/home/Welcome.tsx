@@ -61,9 +61,7 @@ export function Welcome({
             <p className="eyebrow">For homes with solar and battery</p>
             <h1>See if a Virtual Power Plant is worth it for your home.</h1>
             <p className="hero__lede">
-              A Virtual Power Plant, or VPP, links your home battery and solar with other homes
-              nearby. MyPowerPlant looks at your actual home — not averages — and gives you one
-              clear, ongoing recommendation: whether joining makes sense, and how.
+            Most battery owners are leaving savings on the table MyPowerPlant helps you see how much you could be benefitting from joining a Virtual Power Plant.
             </p>
             <div className="hero__actions">
               {hasProfile ? (

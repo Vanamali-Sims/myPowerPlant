@@ -120,55 +120,58 @@ export function DashboardView({
         </p>
       ) : null}
 
+      <header className="dashboard__intro">
+        <p className="eyebrow">
+          Dashboard{place ? ` · ${place}` : ''}
+        </p>
+        <h1>Your Numbers and VPP Estimation</h1>
+      </header>
+
       {hasProfile ? (
-        <>
-          <div className="dashboard-stage">
-            <div className="dashboard__story">
-              {river ? (
-                <EnergyRiver
-                  key={timeframe}
-                  model={river}
-                  place={place}
-                  timeframe={timeframe}
-                  onTimeframe={setTimeframe}
-                  onSeePlans={() => {
-                    document.getElementById('vpp-suggestions')?.scrollIntoView({
-                      behavior: 'smooth',
-                      block: 'start',
-                    })
-                  }}
-                />
-              ) : null}
+        <div className="dashboard__story">
+          {river ? (
+            <EnergyRiver
+              key={timeframe}
+              model={river}
+              place={place}
+              timeframe={timeframe}
+              onTimeframe={setTimeframe}
+              onSeePlans={() => {
+                document.getElementById('vpp-suggestions')?.scrollIntoView({
+                  behavior: 'smooth',
+                  block: 'start',
+                })
+              }}
+            />
+          ) : null}
 
-              {compareWeeks ? (
-                <section
-                  className="vpp-explainer__card vpp-helps__card dashboard-vpp-compare"
-                  aria-labelledby="dashboard-vpp-compare-heading"
-                >
-                  <h2 id="dashboard-vpp-compare-heading" className="vpp-helps__title">
-                    {VPP_HOW_IT_HELPS.heading}
-                  </h2>
-                  <VppHelpsQuotes
-                    withoutWeek={compareWeeks.withoutWeek}
-                    withWeek={compareWeeks.withWeek}
-                  />
-                </section>
-              ) : null}
+          {compareWeeks ? (
+            <section
+              className="vpp-explainer__card vpp-helps__card dashboard-vpp-compare"
+              aria-labelledby="dashboard-vpp-compare-heading"
+            >
+              <h2 id="dashboard-vpp-compare-heading" className="vpp-helps__title">
+                {VPP_HOW_IT_HELPS.heading}
+              </h2>
+              <VppHelpsQuotes
+                withoutWeek={compareWeeks.withoutWeek}
+                withWeek={compareWeeks.withWeek}
+              />
+            </section>
+          ) : null}
 
-              {bundle ? (
-                <VppSuggestions
-                  hasProfile
-                  profile={profile}
-                  plans={bundle.vppSuggestionPlans}
-                  batteryModels={bundle.batteryModels}
-                  fork={river?.fork ?? null}
-                  onStartSetup={onStartSetup}
-                  fromSavings
-                />
-              ) : null}
-            </div>
-          </div>
-        </>
+          {bundle ? (
+            <VppSuggestions
+              hasProfile
+              profile={profile}
+              plans={bundle.vppSuggestionPlans}
+              batteryModels={bundle.batteryModels}
+              fork={river?.fork ?? null}
+              onStartSetup={onStartSetup}
+              fromSavings
+            />
+          ) : null}
+        </div>
       ) : null}
 
       {!hasProfile && bundle ? (

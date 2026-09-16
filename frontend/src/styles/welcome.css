@@ -334,6 +334,11 @@
 }
 
 .vpp-explainer__card {
+  --vpp-exp-coral: var(--terra-400);
+  --vpp-exp-coral-strong: var(--primary);
+  --vpp-exp-teal: var(--success);
+  --vpp-exp-cream: var(--on-deep);
+  --vpp-exp-muted: rgb(242 237 227 / 0.62);
   display: flex;
   flex-direction: column;
   margin: 0;
@@ -571,6 +576,11 @@
 .vpp-flow-cards {
   display: grid;
   gap: 0.6rem;
+  overflow: visible;
+}
+
+.vpp-flow-cards__item {
+  min-width: 0;
 }
 
 .vpp-explainer-cta-slide__btn {
@@ -615,6 +625,11 @@
   font-weight: 500;
   line-height: 1.2;
   color: var(--vpp-exp-cream);
+}
+
+.dashboard-vpp-compare .vpp-helps__title {
+  max-width: none;
+  color: var(--on-deep);
 }
 
 .vpp-helps__compare {

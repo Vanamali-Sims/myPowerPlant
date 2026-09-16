@@ -12,6 +12,7 @@ const SELECTOR = [
   '.profile-card',
   '.vpp-plan-card',
   '.vpp-helps__quote',
+  '.vpp-flow-cards__item',
   '.ui-choice',
   '.ui-dir',
   '.ui-btn',

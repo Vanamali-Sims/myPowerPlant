@@ -85,6 +85,7 @@
 .vpp-plan-card,
 .vpp-plan-card__cta,
 .vpp-helps__quote,
+.vpp-flow-cards__item,
 .location-control,
 .location-control__locate,
 .brand--button {
@@ -103,6 +104,7 @@
 .profile-card,
 .vpp-plan-card,
 .vpp-helps__quote,
+.vpp-flow-cards__item,
 .ui-choice,
 .ui-dir,
 .ui-btn,
@@ -134,12 +136,14 @@
 .profile-card.is-hover-grow,
 .vpp-plan-card.is-hover-grow,
 .vpp-helps__quote.is-hover-grow,
+.vpp-flow-cards__item.is-hover-grow,
 .ui-choice.is-hover-grow {
   box-shadow: 0 18px 40px rgba(20, 35, 29, 0.12);
   border-color: var(--border-strong);
 }
 
-.vpp-helps__quote.is-hover-grow {
+.vpp-helps__quote.is-hover-grow,
+.vpp-flow-cards__item.is-hover-grow {
   box-shadow: 0 18px 40px rgba(8, 16, 14, 0.35);
   border-color: rgb(242 237 227 / 0.38);
 }
@@ -164,12 +168,14 @@
   .profile-card:hover,
   .vpp-plan-card:hover,
   .vpp-helps__quote:hover,
+  .vpp-flow-cards__item:hover,
   .ui-choice:hover {
     z-index: 3;
     border-color: var(--border-strong);
   }
 
-  .vpp-helps__quote:hover {
+  .vpp-helps__quote:hover,
+  .vpp-flow-cards__item:hover {
     border-color: rgb(242 237 227 / 0.38);
   }
 
@@ -358,6 +364,7 @@
   .vpp-plan-card,
   .vpp-plan-card__cta,
   .vpp-helps__quote,
+  .vpp-flow-cards__item,
   .location-control,
   .location-control__locate,
   .brand--button,
