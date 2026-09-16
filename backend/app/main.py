@@ -1,3 +1,12 @@
+"""
+FastAPI application entry for local uvicorn and AWS Lambda (Mangum).
+
+CORS origins come from CORS_ORIGINS so the same code can allow Vite locally
+and the Amplify origin in production. ENVIRONMENT switches between the two:
+anything other than "production" gets the permissive local/dev behaviour
+(localhost defaults plus a port-hopping regex); "production" requires
+CORS_ORIGINS to be set explicitly and allows no regex or wildcard matching.
+"""
 import os
 from contextlib import asynccontextmanager
 
@@ -5,56 +14,76 @@ from dotenv import load_dotenv
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from mangum import Mangum
-from slowapi import _rate_limit_exceeded_handler
-from slowapi.errors import RateLimitExceeded
 
 from app.db import engine
-from app.rate_limit import limiter
-from app.routes import health, profile
-from app.security import SecurityHeadersMiddleware
+from app.rate_limit import RateLimitMiddleware
+from app.routes import health, methodology
+from app.security_headers import SecurityHeadersMiddleware
 
 load_dotenv()
 
-CORS_ORIGINS = [
-    origin.strip()
-    for origin in os.getenv("CORS_ORIGINS", "http://localhost:5173").split(",")
-    if origin.strip()
-]
+ENVIRONMENT = os.getenv("ENVIRONMENT", "local")
+
+if ENVIRONMENT == "production":
+    _origins_raw = os.getenv("CORS_ORIGINS")
+    if not _origins_raw:
+        raise RuntimeError(
+            "CORS_ORIGINS must be set to the deployed frontend origin(s) when "
+            "ENVIRONMENT=production. No wildcard or regex matching is used here."
+        )
+    CORS_ORIGINS = [origin.strip() for origin in _origins_raw.split(",") if origin.strip()]
+    CORS_ORIGIN_REGEX = None
+else:
+    CORS_ORIGINS = [
+        origin.strip()
+        for origin in os.getenv(
+            "CORS_ORIGINS",
+            "http://localhost:5173,http://localhost:5174,http://127.0.0.1:5173,http://127.0.0.1:5174",
+        ).split(",")
+        if origin.strip()
+    ]
+    # Vite hops to 5174+ when 5173 is busy; the browser Origin must still match.
+    CORS_ORIGIN_REGEX = r"https?://(localhost|127\.0\.0\.1):\d+"
 
 
 @asynccontextmanager
 async def lifespan(_app: FastAPI):
+    """
+    lifespan
+
+    Args:
+        _app: FastAPI instance supplied by the framework.
+
+    Yields:
+        None while the process is serving requests.
+
+    Startup is empty because the engine is created at import time.
+    Shutdown disposes the SQLAlchemy pool so Lambda freezes a clean process.
+    """
     yield
     await engine.dispose()
 
 
-app = FastAPI(
-    title="MyPowerPlant API",
-    lifespan=lifespan,
-    # Keep the response surface uniform. With slash redirects on, a
-    # URL-encoded traversal in an identifier returns 307 instead of 404,
-    # which is a different response for the same "no such record" case.
-    redirect_slashes=False,
-)
+app = FastAPI(title="Form API", lifespan=lifespan)
 
-app.state.limiter = limiter
-app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
-
-app.add_middleware(SecurityHeadersMiddleware)
-
+# Innermost first. Last add_middleware call is outermost on the request.
+# Rate limit stays inside CORS so OPTIONS preflight is not counted and 429
+# still gets Access-Control-Allow-Origin. Security headers wrap everything.
+app.add_middleware(RateLimitMiddleware)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=CORS_ORIGINS,
-    # No cookies or Authorization headers are used - there are no accounts.
-    # Leaving credentials enabled would widen the origin check for no benefit.
+    allow_origin_regex=CORS_ORIGIN_REGEX,
+    # No cookies, sessions, or Authorization header — do not advertise credentials.
     allow_credentials=False,
-    allow_methods=["GET", "POST", "PUT", "OPTIONS"],
-    allow_headers=["Content-Type"],
+    allow_methods=["GET", "HEAD", "OPTIONS"],
+    allow_headers=["Accept", "Content-Type"],
 )
+app.add_middleware(SecurityHeadersMiddleware)
 
 app.include_router(health.router, prefix="/api")
-app.include_router(profile.router, prefix="/api")
+app.include_router(methodology.router, prefix="/api")
 
-# Lambda entrypoint (API Gateway). Locally unused - run with:
+# Lambda entrypoint (API Gateway). Locally unused — run with:
 #   uvicorn app.main:app --reload
 handler = Mangum(app)

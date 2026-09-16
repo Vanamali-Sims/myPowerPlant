@@ -1,0 +1,453 @@
+.welcome {
+  display: flex;
+  flex-direction: column;
+}
+
+.welcome__brand {
+  margin: 1.25rem 1.15rem 0;
+}
+
+.band {
+  width: 100%;
+  background: var(--canvas);
+}
+
+.band--deep {
+  background: var(--surface-deep);
+  color: var(--on-deep);
+}
+
+.band--deep h1,
+.band--deep h2 {
+  color: var(--on-deep);
+}
+
+.band--deep .eyebrow {
+  color: var(--on-deep-muted);
+}
+
+.band__inner {
+  width: min(64rem, 100%);
+  margin: 0 auto;
+  padding: 2.5rem 1.15rem;
+}
+
+/* Hero */
+
+.hero {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+.hero__copy {
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+}
+
+.hero__copy h1 {
+  margin: 0.35rem 0 0;
+  font-size: 2.15rem;
+}
+
+.hero__lede {
+  margin: 0;
+  color: var(--ink-secondary);
+  font-size: 1rem;
+}
+
+.band--deep .hero__lede {
+  color: var(--on-deep);
+}
+
+.hero__actions {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.5rem;
+  margin-top: 0.4rem;
+}
+
+.hero__actions .ui-btn--primary {
+  width: auto;
+  padding-left: 1.75rem;
+  padding-right: 1.75rem;
+}
+
+.hero__art {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Hero isometric house — token fills, depth from overlapping planes */
+
+.hero-house {
+  width: 100%;
+  max-width: 22rem;
+  margin: 0 auto;
+}
+
+.hero-house__stage {
+  position: relative;
+  width: 100%;
+}
+
+.hero-house__svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  overflow: visible;
+}
+
+.hero-house__face {
+  stroke: var(--euc-900);
+  stroke-width: 0.85;
+  stroke-linejoin: miter;
+  transition: fill 0.15s ease, stroke 0.15s ease;
+}
+
+.hero-house__face--far {
+  fill: var(--euc-800);
+}
+
+.hero-house__face--mid {
+  fill: var(--euc-600);
+}
+
+.hero-house__face--side {
+  fill: var(--euc-800);
+}
+
+.hero-house__face--front {
+  fill: var(--euc-400);
+}
+
+.hero-house__face--roof-back {
+  fill: var(--euc-800);
+}
+
+.hero-house__face--solar {
+  fill: var(--euc-600);
+}
+
+.hero-house__face--solar:hover {
+  fill: var(--euc-400);
+}
+
+.hero-house__face--battery {
+  fill: var(--euc-800);
+}
+
+.hero-house__face--battery:hover {
+  fill: var(--euc-600);
+  stroke: var(--terra-600);
+  stroke-width: 1.35;
+}
+
+.hero-house__door {
+  fill: var(--euc-800);
+  stroke: var(--euc-900);
+  stroke-width: 0.7;
+  pointer-events: none;
+}
+
+.hero-house__window {
+  fill: var(--euc-200);
+  stroke: var(--euc-900);
+  stroke-width: 0.7;
+  pointer-events: none;
+}
+
+.hero-house__panel {
+  fill: var(--euc-200);
+  pointer-events: none;
+}
+
+.hero-house__link {
+  stroke: var(--euc-400);
+  stroke-width: 1.6;
+  fill: none;
+  stroke-linecap: round;
+}
+
+.hero-house__node {
+  fill: var(--euc-400);
+  stroke: var(--euc-900);
+  stroke-width: 0.6;
+}
+
+.hero-house__badge {
+  position: absolute;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 50%;
+  background: var(--terra-600);
+  color: var(--on-primary);
+  display: grid;
+  place-items: center;
+  border: 2px solid var(--surface-deep);
+  pointer-events: none;
+}
+
+.hero-house__badge--sun {
+  top: 12%;
+  left: 26%;
+}
+
+.hero-house__badge--battery {
+  top: 46%;
+  left: 6%;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-house__face {
+    transition: none;
+  }
+}
+
+/* Text points (impact band) */
+
+.text-points {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.text-point__title {
+  margin: 0;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  font-family: var(--font-body);
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.text-point__desc {
+  margin: 0.3rem 0 0;
+  font-size: 0.9rem;
+  color: var(--ink-secondary);
+}
+
+/* Section head + cards */
+
+.section-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1.25rem;
+}
+
+.section-head h2 {
+  margin: 0;
+}
+
+.card-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1rem;
+}
+
+.feature-card,
+.article-card,
+.step,
+.text-point {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.4rem;
+  background: var(--surface);
+  border: 0.5px solid var(--border);
+  border-radius: var(--radius-card);
+  padding: 1.25rem 1.25rem 1.4rem;
+  text-align: left;
+}
+
+.article-card {
+  font-family: var(--font-body);
+  color: inherit;
+  text-decoration: none;
+  font-weight: 400;
+}
+
+.feature-card h3,
+.article-card h3 {
+  margin: 0.3rem 0 0;
+  font-family: var(--font-body);
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.article-card p {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--ink-secondary);
+}
+
+.feature-card__icon {
+  width: 2.4rem;
+  height: 2.4rem;
+  border-radius: 0.6rem;
+  background: var(--euc-600);
+  color: var(--on-primary);
+  display: grid;
+  place-items: center;
+}
+
+.feature-card__desc {
+  margin: 0;
+  font-size: 0.88rem;
+  color: var(--ink-secondary);
+}
+
+.article-card__source {
+  margin-top: 0.3rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--euc-600);
+}
+
+.article-card:hover {
+  border-color: var(--border-strong);
+}
+
+.article-card:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
+}
+
+.status-pill {
+  margin-top: 0.5rem;
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  border-radius: var(--radius-pill);
+  padding: 0.15rem 0.55rem;
+}
+
+.status-pill--available {
+  background: var(--euc-50);
+  color: var(--euc-800);
+}
+
+.status-pill--soon {
+  background: var(--surface-sunken);
+  color: var(--ink-secondary);
+}
+
+/* How it works */
+
+.steps__heading {
+  text-align: center;
+  margin: 0 0 2rem;
+}
+
+.steps {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.step {
+  align-items: center;
+  text-align: center;
+  gap: 0.5rem;
+}
+
+.step__badge {
+  width: 2.6rem;
+  height: 2.6rem;
+  border-radius: 50%;
+  background: var(--euc-600);
+  color: var(--on-primary);
+  display: grid;
+  place-items: center;
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 1.1rem;
+}
+
+.step h3 {
+  margin: 0;
+  font-family: var(--font-body);
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+.step p {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--ink-secondary);
+  max-width: 22rem;
+}
+
+@media (min-width: 640px) {
+  .card-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .text-points {
+    flex-direction: row;
+  }
+
+  .text-point {
+    flex: 1;
+  }
+}
+
+@media (min-width: 900px) {
+  .band__inner {
+    padding: 4rem 2.4rem;
+  }
+
+  .welcome__brand {
+    display: none;
+  }
+
+  .hero {
+    flex-direction: row;
+    align-items: center;
+    gap: 3rem;
+  }
+
+  .hero__copy {
+    flex: 1.1;
+  }
+
+  .hero__art {
+    flex: 1;
+  }
+
+  .hero-house {
+    max-width: 26rem;
+  }
+
+  .hero__copy h1 {
+    font-size: 2.6rem;
+  }
+
+  .hero__actions {
+    flex-direction: row;
+    align-items: center;
+  }
+
+  .card-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  .steps {
+    flex-direction: row;
+    align-items: flex-start;
+  }
+
+  .step {
+    flex: 1;
+  }
+}

@@ -1,3 +1,10 @@
+/**
+ * Line icons for the rail, forms, and marketing clusters.
+ *
+ * Each export is an 18×18 currentColor SVG with aria-hidden so the nearby
+ * text (or aria-label on the button) provides the name. Do not add a full
+ * JSDoc block per icon — they share this stroke set and differ only in path.
+ */
 import type { SVGProps } from 'react'
 
 type IconProps = SVGProps<SVGSVGElement>

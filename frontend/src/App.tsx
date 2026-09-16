@@ -1,27 +1,28 @@
-import { useEffect, useState } from 'react'
+/**
+ * Client-side view router: welcome, setup, profile, and dashboard.
+ */
+import { useState } from 'react'
 import { AppShell, type AppNavId } from './components/layout/AppShell'
 import { DashboardView } from './components/dashboard/DashboardView'
 import { Welcome } from './components/home/Welcome'
 import { ProfileView } from './components/profile/ProfileView'
 import { SetupForm } from './components/setup/SetupForm'
 import { clearStoredProfile, loadProfile, saveProfile } from './lib/profileStorage'
-import { syncProfileToServer } from './lib/profileApi'
 import { emptyProfile, type ProfileData } from './types/profile'
-import './App.css'
 
 type View = 'welcome' | 'setup' | 'profile' | 'dashboard'
 
+/**
+ * App
+ * @returns JSX.Element
+ *
+ * Holds the in-memory profile and which screen is showing.
+ * localStorage is the only persistence — no data leaves the device.
+ */
 function App() {
   const [profile, setProfile] = useState<ProfileData>(loadProfile)
   const [view, setView] = useState<View>('welcome')
   const [notice, setNotice] = useState('')
-
-  // Push whatever is already saved locally (e.g. from before backend sync
-  // existed, or a previous session where the API was unreachable).
-  useEffect(() => {
-    const existing = loadProfile()
-    if (existing.lastUpdated) void syncProfileToServer(existing)
-  }, [])
 
   function startSetup() {
     setView('setup')
@@ -38,17 +39,11 @@ function App() {
     setProfile(saved)
     setView('dashboard')
     setNotice('')
-    void syncProfileToServer(saved).then((result) => {
-      if (!result.ok) setNotice(`Saved on this device. ${result.error}`)
-    })
   }
 
   function saveEdits(next: ProfileData) {
     const saved = saveProfile(next)
     setProfile(saved)
-    void syncProfileToServer(saved).then((result) => {
-      if (!result.ok) setNotice(`Saved on this device. ${result.error}`)
-    })
   }
 
   function resetProfile() {
@@ -70,7 +65,7 @@ function App() {
       setNotice('')
       return
     }
-    if (id === 'dashboard' && profile.lastUpdated) {
+    if (id === 'dashboard') {
       setView('dashboard')
       setNotice('')
     }
@@ -127,10 +122,12 @@ function App() {
       {view === 'dashboard' ? (
         <DashboardView
           profile={profile}
+          hasProfile={Boolean(profile.lastUpdated)}
           onEditProfile={() => {
             setView('profile')
             setNotice('')
           }}
+          onStartSetup={startSetup}
           onLogoClick={goHome}
         />
       ) : null}

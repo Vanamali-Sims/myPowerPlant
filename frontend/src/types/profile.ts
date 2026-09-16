@@ -1,3 +1,8 @@
+/**
+ * Shared household-profile types and the empty-form factory.
+ */
+import { DEFAULT_BATTERY_UNITS, DEFAULT_RESERVE_PERCENT } from '../constants/validation'
+
 export type YesNo = 'yes' | 'no'
 
 export type YesNoNotSure = YesNo | 'not_sure'
@@ -32,11 +37,15 @@ export type ProfileData = {
   rooms: string
   gas: YesNoNotSure | ''
   refrigerators: string
+  tvHoursPerWeek: string
+  washerCyclesPerWeek: string
+  dishwasherCyclesPerWeek: string
   dryer: YesNoNotSure | ''
   dryerWeek: string
   dryerWeekend: string
   heating: string
   cooling: string
+  airconHoursPerWeek: string
   hotWater: YesNoNotSure | ''
 
   monthlyBill: string
@@ -61,17 +70,28 @@ export type ProfileData = {
   lastUpdated: string | null
 }
 
+/**
+ * emptyProfile
+ * @returns A blank profile with battery defaults only
+ *
+ * Battery units and reserve start at the shared defaults because those fields
+ * are steppers, not empty strings. Everything else waits for the wizard.
+ */
 export const emptyProfile = (): ProfileData => ({
   postcode: '',
   people: '',
   rooms: '',
   gas: '',
   refrigerators: '',
+  tvHoursPerWeek: '',
+  washerCyclesPerWeek: '',
+  dishwasherCyclesPerWeek: '',
   dryer: '',
   dryerWeek: '',
   dryerWeekend: '',
   heating: '',
   cooling: '',
+  airconHoursPerWeek: '',
   hotWater: '',
   monthlyBill: '',
   monthlyKwh: '',
@@ -82,8 +102,8 @@ export const emptyProfile = (): ProfileData => ({
   solarDirection: '',
   panelCount: '',
   panelWatts: '',
-  batteryUnits: 1,
-  reservePercent: '20',
+  batteryUnits: DEFAULT_BATTERY_UNITS,
+  reservePercent: DEFAULT_RESERVE_PERCENT,
   batteryAge: '',
   batteryModel: '',
   provider: '',

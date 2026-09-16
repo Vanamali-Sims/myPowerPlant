@@ -1,70 +1,152 @@
-import { useMemo, useState } from 'react'
-import { locationFromPostcode } from '../../data/profileOptions'
+/**
+ * Household energy dashboard: KPI cards, charts, and a short profile footer.
+ */
+import { useEffect, useMemo, useState } from 'react'
+import { KIND_LABELS, TIMEFRAMES } from '../../constants'
+import { coordsFromPostcode, locationFromPostcode } from '../../data/profileOptions'
 import { formatUpdatedAt } from '../../lib/formatProfile'
+import {
+  fetchMethodology,
+  type MethodologyBundle,
+} from '../../lib/methodologyApi'
 import {
   buildKpiReport,
   formatAud,
+  formatKg,
   formatKwh,
+  parseCount,
   scaleAud,
   scaleKwh,
+  scaleWeekly,
   type Timeframe,
   type ValueKind,
 } from '../../lib/kpis'
 import type { ProfileData } from '../../types/profile'
 import { Button } from '../ui/Button'
 import { Callout } from '../ui/Callout'
-import { BoltIcon, SunIcon } from '../ui/icons'
-import './DashboardView.css'
+import { ConsumptionDonut } from './ConsumptionDonut'
+import { SolarForecastChart } from './SolarForecastChart'
+import { VppSuggestions } from './VppSuggestions'
+import { BoltIcon, BulbIcon, LeafIcon } from '../ui/icons'
 
 type Props = {
   profile: ProfileData
+  hasProfile: boolean
   onEditProfile: () => void
+  onStartSetup: () => void
   onLogoClick: () => void
 }
 
-const TIMEFRAMES: { value: Timeframe; label: string }[] = [
-  { value: 'daily', label: 'Daily' },
-  { value: 'weekly', label: 'Weekly' },
-  { value: 'monthly', label: 'Monthly' },
-]
-
-const HIDDEN_ASSUMPTIONS = new Set(['Carbon avoided'])
-
 function kindLabel(kind: ValueKind): string {
-  if (kind === 'from_you') return 'From you'
-  if (kind === 'sourced') return 'Sourced terms'
-  return 'Estimate'
+  return KIND_LABELS[kind]
+}
+
+function kindClass(kind: ValueKind): string {
+  if (kind === 'from_you') return 'kpi-badge kpi-badge--fact'
+  if (kind === 'sourced') return 'kpi-badge kpi-badge--sourced'
+  if (kind === 'sample') return 'kpi-badge kpi-badge--sample'
+  if (kind === 'unavailable') return 'kpi-badge kpi-badge--unavailable'
+  return 'kpi-badge kpi-badge--estimate'
 }
 
 function KindBadge({ kind }: { kind: ValueKind }) {
-  const className =
-    kind === 'from_you' ? 'kpi-badge kpi-badge--fact' : 'kpi-badge kpi-badge--estimate'
-  return <span className={className}>{kindLabel(kind)}</span>
+  return <span className={kindClass(kind)}>{kindLabel(kind)}</span>
 }
 
-export function DashboardView({ profile, onEditProfile, onLogoClick }: Props) {
+/**
+ * DashboardView
+ * @param props.profile - Saved household answers used to build the KPI report
+ * @param props.onEditProfile - Jump to the profile editor
+ * @returns JSX.Element
+ *
+ * Figures are estimates unless the badge says otherwise.
+ * VPP Suggestions sit under the charts and do not use the leftover
+ * dollar-ranked matcher in this file.
+ */
+export function DashboardView({
+  profile,
+  hasProfile,
+  onEditProfile,
+  onStartSetup,
+  onLogoClick,
+}: Props) {
   const [timeframe, setTimeframe] = useState<Timeframe>('weekly')
-  const report = useMemo(() => buildKpiReport(profile), [profile])
-  const place = locationFromPostcode(profile.postcode) || report.locationLabel
-  const { weekly } = report
-  const assumptions = report.assumptions.filter((item) => !HIDDEN_ASSUMPTIONS.has(item.title))
+  const [bundle, setBundle] = useState<MethodologyBundle | null>(null)
+  const [loadError, setLoadError] = useState('')
 
-  const kpis = [
-    {
-      eyebrow: 'Estimated energy consumption',
-      value: formatKwh(scaleKwh(weekly.consumptionKwh, timeframe)),
-      kind: report.consumptionKind,
-      icon: BoltIcon,
-      note: 'How much electricity this home is likely using over the selected period.',
-    },
-    {
-      eyebrow: 'Estimated savings',
-      value: formatAud(scaleAud(weekly.savingsAud, timeframe)),
-      kind: 'estimate' as ValueKind,
-      icon: SunIcon,
-      note: 'Potential value from solar you use in the home, plus a typical VPP credit on leftover energy.',
-    },
-  ]
+  useEffect(() => {
+    let cancelled = false
+    void fetchMethodology().then((result) => {
+      if (cancelled) return
+      if (result.ok) {
+        setBundle(result.data)
+        setLoadError('')
+      } else {
+        setLoadError(result.error)
+      }
+    })
+    return () => {
+      cancelled = true
+    }
+  }, [])
+
+  const report = useMemo(
+    () => (hasProfile && bundle ? buildKpiReport(profile, bundle) : null),
+    [bundle, hasProfile, profile],
+  )
+  const place =
+    locationFromPostcode(profile.postcode) || report?.locationLabel || ''
+  const weekly = report?.weekly
+
+  const solarInputs = useMemo(() => {
+    if (!bundle) return null
+    const systemKw =
+      report && !report.solarIsPotential
+        ? (parseCount(profile.panelCount) * parseCount(profile.panelWatts)) / 1000
+        : bundle.methodology.typicalPotentialKw
+    const orientationFactor =
+      bundle.orientationFactors[profile.solarDirection] ??
+      bundle.orientationFactors.not_sure ??
+      1
+    const { lat, lon } = coordsFromPostcode(profile.postcode)
+    return {
+      lat,
+      lon,
+      systemKw,
+      orientationFactor,
+      performanceRatio: bundle.methodology.solarPerformanceRatio,
+    }
+  }, [bundle, report, profile.panelCount, profile.panelWatts, profile.solarDirection, profile.postcode])
+
+  const kpis =
+    report && weekly
+      ? [
+          {
+            eyebrow: 'Energy use',
+            value: formatKwh(scaleKwh(weekly.consumptionKwh, timeframe)),
+            kind: report.consumptionKind,
+            icon: BoltIcon,
+            note: '',
+            signed: undefined,
+          },
+          {
+            eyebrow: weekly.netEnergyValueAud >= 0 ? 'Estimated savings' : 'Net energy cost',
+            value: formatAud(scaleAud(weekly.netEnergyValueAud, timeframe)),
+            kind: 'estimate' as ValueKind,
+            icon: BulbIcon,
+            signed: weekly.netEnergyValueAud >= 0 ? 'surplus' : 'deficit',
+            note: weekly.netEnergyValueAud >= 0 ? '' : 'Home uses more than it makes',
+          },
+          {
+            eyebrow: 'Carbon avoided',
+            value: formatKg(scaleWeekly(weekly.carbonAvoidedKg, timeframe)),
+            kind: 'estimate' as ValueKind,
+            icon: LeafIcon,
+            note: '',
+            signed: undefined,
+          },
+        ]
+      : []
 
   return (
     <div className="dashboard">
@@ -80,114 +162,118 @@ export function DashboardView({ profile, onEditProfile, onLogoClick }: Props) {
           </span>
           MyPowerPlant
         </button>
-        <span className="location-pill">
-          <span className="location-pill__dot" />
-          {place}
-        </span>
       </header>
 
       <div className="dashboard__intro">
-        <p className="eyebrow">Key insights · {place}</p>
         <h1>Your household energy picture</h1>
-        <p>
-          Estimated consumption and savings, modelled from your saved profile. No meter or IoT
-          device is connected.
-        </p>
       </div>
 
-      <Callout
-        tone="accent"
-        title={`Report generated from your profile · ${formatUpdatedAt(profile.lastUpdated)}`}
-        action={
-          <Button variant="edit" onClick={onEditProfile}>
-            Edit profile
-          </Button>
-        }
-      >
-        Change household details and come back — this report updates automatically.
-      </Callout>
+      {hasProfile && loadError ? (
+        <p className="app-notice" role="status">
+          Dashboard rates could not be loaded. {loadError}
+        </p>
+      ) : null}
+      {hasProfile && !bundle && !loadError ? (
+        <p className="app-notice" role="status">
+          Loading rates and appliance ratings…
+        </p>
+      ) : null}
 
-      <div className="dashboard__time" role="radiogroup" aria-label="Timeframe">
-        {TIMEFRAMES.map((option) => (
-          <button
-            key={option.value}
-            type="button"
-            role="radio"
-            aria-checked={timeframe === option.value}
-            className={`ui-toggle__option${timeframe === option.value ? ' is-selected' : ''}`}
-            onClick={() => setTimeframe(option.value)}
+      {hasProfile ? (
+        <>
+          <div className="dashboard__time" role="radiogroup" aria-label="Timeframe">
+            {TIMEFRAMES.map((option) => (
+              <button
+                key={option.value}
+                type="button"
+                role="radio"
+                aria-checked={timeframe === option.value}
+                className={`ui-toggle__option${timeframe === option.value ? ' is-selected' : ''}`}
+                onClick={() => setTimeframe(option.value)}
+              >
+                {option.label}
+              </button>
+            ))}
+          </div>
+
+          <section className="kpi-grid" aria-label="Key insights">
+            {kpis.map((card) => {
+              const Icon = card.icon
+              return (
+                <article key={card.eyebrow} className="kpi-card">
+                  <span className="kpi-card__icon">
+                    <Icon />
+                  </span>
+                  <p className="eyebrow">{card.eyebrow}</p>
+                  <p
+                    className={
+                      card.signed
+                        ? `kpi-card__value kpi-card__value--${card.signed}`
+                        : 'kpi-card__value'
+                    }
+                  >
+                    {card.value}
+                    <KindBadge kind={card.kind} />
+                  </p>
+                  {card.note ? <p className="kpi-card__note">{card.note}</p> : null}
+                </article>
+              )
+            })}
+          </section>
+
+          {report && weekly ? (
+            <div className="dashboard__split">
+              <section className="dashboard-card">
+                <p className="eyebrow">Where your energy goes</p>
+                <h2>Energy consumption breakdown</h2>
+                <ConsumptionDonut appliances={report.appliances} timeframe={timeframe} />
+              </section>
+
+              <section className="dashboard-card">
+                <p className="eyebrow">
+                  {report.solarIsPotential ? 'Solar potential' : 'Solar generation'} · weather
+                  forecast
+                </p>
+                <h2>Predicted solar generation</h2>
+                {solarInputs ? (
+                  <SolarForecastChart
+                    inputs={solarInputs}
+                    view={timeframe}
+                    isPotential={report.solarIsPotential}
+                    placeLabel={place}
+                  />
+                ) : null}
+              </section>
+            </div>
+          ) : null}
+        </>
+      ) : null}
+
+      {!hasProfile || bundle ? (
+        <VppSuggestions
+          hasProfile={hasProfile}
+          profile={profile}
+          plans={bundle?.vppSuggestionPlans ?? []}
+          batteryModels={bundle?.batteryModels ?? []}
+          onStartSetup={onStartSetup}
+        />
+      ) : null}
+
+      {hasProfile ? (
+        <footer className="dashboard__footer">
+          <Callout
+            tone="accent"
+            title={`Report generated from your profile · ${formatUpdatedAt(profile.lastUpdated)}`}
+            action={
+              <Button variant="edit" onClick={onEditProfile}>
+                Edit profile
+              </Button>
+            }
           >
-            {option.label}
-          </button>
-        ))}
-      </div>
-
-      <section className="kpi-grid" aria-label="Key insights">
-        {kpis.map((card) => {
-          const Icon = card.icon
-          return (
-            <article key={card.eyebrow} className="kpi-card">
-              <span className="kpi-card__icon">
-                <Icon />
-              </span>
-              <p className="eyebrow">{card.eyebrow}</p>
-              <p className="kpi-card__value">
-                {card.value}
-                <KindBadge kind={card.kind} />
-              </p>
-              <p className="kpi-card__note">{card.note}</p>
-            </article>
-          )
-        })}
-      </section>
-
-      <section className="dashboard-card" id="transparency">
-        <p className="eyebrow">Transparency</p>
-        <h2>How these dashboard results were calculated</h2>
-        <p className="dashboard-card__lede">
-          Every figure is simulated from what you told us, plus published typical ratings. Nothing
-          here is a live meter reading.
-        </p>
-        <ol className="assumption-list">
-          {assumptions.map((item) => (
-            <li key={item.title}>
-              <div className="assumption-list__title">
-                {item.title}
-                <KindBadge kind={item.kind} />
-              </div>
-              <p>{item.detail}</p>
-            </li>
-          ))}
-        </ol>
-        <h3 className="assumption-list__sub">Appliance model this period</h3>
-        <div className="appliance-table-wrap">
-          <table className="appliance-table">
-            <thead>
-              <tr>
-                <th>Appliance</th>
-                <th>Units</th>
-                <th>kW</th>
-                <th>Hours / week</th>
-                <th>kWh / week</th>
-              </tr>
-            </thead>
-            <tbody>
-              {report.appliances.map((line) => (
-                <tr key={line.spec.id}>
-                  <td>
-                    {line.spec.name}
-                    {line.fromYou ? <KindBadge kind="from_you" /> : <KindBadge kind="estimate" />}
-                  </td>
-                  <td>{line.units}</td>
-                  <td>{line.spec.powerKw}</td>
-                  <td>{line.hoursPerWeek.toFixed(0)}</td>
-                  <td>{line.weeklyKwh.toFixed(1)}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </section>
+            Change household details and come back — this report updates automatically.
+          </Callout>
+        </footer>
+      ) : null}
     </div>
   )
 }

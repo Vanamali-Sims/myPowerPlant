@@ -1,0 +1,181 @@
+# Deploys the frontend and backend to AWS. Runs only on push to main, plus
+# a manual trigger for verifying the pipeline before trusting it to run on
+# every push. Pushes to development do not trigger this workflow. Merge
+# development into main only when ready to go live.
+#
+# Authentication uses OIDC federation (see terraform/oidc.tf), so no AWS
+# access key is stored in GitHub. No database secret is stored either, see
+# the image tagging and secrets notes below.
+#
+# Required repository variables (Settings > Secrets and variables >
+# Actions > Variables):
+#   AWS_DEPLOY_ROLE_ARN       Role ARN this workflow assumes via OIDC.
+#                             Terraform output: github_actions_role_arn
+#   API_BASE_URL              Live API Gateway URL, set as the frontend
+#                             build's VITE_API_BASE_URL.
+#                             Terraform output: api_gateway_endpoint
+#   FRONTEND_BUCKET_NAME      S3 bucket the built frontend is synced to.
+#                             Terraform output: frontend_bucket_name
+#   CLOUDFRONT_DISTRIBUTION_ID  Distribution to invalidate after a sync.
+#                             Find it with:
+#                             aws cloudfront list-distributions
+#   ECR_REPOSITORY_URL        Repository the backend image is pushed to.
+#                             Terraform output: ecr_repository_url
+#
+# None of the above are secret values (an ARN, a URL, a bucket name, an
+# ID), so they are stored as repository variables, not secrets.
+#
+# Required repository secrets (Settings > Secrets and variables >
+# Actions > Secrets):
+#   BASIC_AUTH_PASSWORD       Shared password for the frontend's CloudFront
+#                             Function Basic Auth gate (see
+#                             terraform/variables.tf basic_auth_password
+#                             and the basic_auth function in
+#                             terraform/cloudfront.tf). Must be set before
+#                             this workflow ever runs terraform apply: an
+#                             unset secret resolves to an empty string, not
+#                             an error, which would deploy an always-401
+#                             function that locks out every request,
+#                             including with the correct password.
+#
+# Image tagging: every push builds and pushes an image tagged with the
+# full git commit SHA, never latest or any other mutable tag. Terraform
+# detects a Lambda update by comparing the image_uri string, so a stale
+# mutable tag would show no diff on a genuinely new image and silently
+# leave the Lambda running old code. If a deployed Lambda ever looks
+# stale, compare its running image tag against the latest commit SHA on
+# main, rather than assuming a tag called latest is actually the latest
+# build.
+#
+# Image retention: because every deploy pushes a new, permanently tagged
+# image rather than overwriting one, terraform/ecr.tf keeps only the 10
+# most recently pushed tagged images (see the second lifecycle rule
+# there). Older tagged images are expired automatically. Roll back
+# manually by re-running terraform apply with an older SHA as
+# lambda_image_tag, as long as that image is still within the last 10.
+
+name: Deploy
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch: {}
+
+env:
+  AWS_REGION: ap-southeast-2
+  TERRAFORM_VERSION: 1.16.0
+
+permissions:
+  contents: read
+
+jobs:
+  frontend:
+    name: Deploy frontend
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install dependencies
+        working-directory: frontend
+        run: npm ci
+
+      - name: Build
+        working-directory: frontend
+        env:
+          VITE_API_BASE_URL: ${{ vars.API_BASE_URL }}
+        run: npm run build
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.AWS_DEPLOY_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Sync build output to S3
+        run: |
+          aws s3 sync frontend/dist "s3://${{ vars.FRONTEND_BUCKET_NAME }}" --delete
+
+      - name: Invalidate CloudFront cache
+        run: |
+          aws cloudfront create-invalidation \
+            --distribution-id "${{ vars.CLOUDFRONT_DISTRIBUTION_ID }}" \
+            --paths "/*"
+
+  backend:
+    name: Deploy backend
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.AWS_DEPLOY_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Log in to ECR
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      # provenance and sbom are disabled because Lambda's container image
+      # support rejects the OCI format attestations that docker build
+      # attaches by default otherwise. Tagged with the full commit SHA,
+      # see the image tagging note at the top of this file for why that
+      # matters. PLATFORM must be passed as both --platform and
+      # --build-arg, see backend/Dockerfile for why the two need to agree.
+      - name: Build and push backend image
+        working-directory: backend
+        run: |
+          docker buildx build \
+            --platform linux/arm64 \
+            --build-arg PLATFORM=linux/arm64 \
+            --provenance=false \
+            --sbom=false \
+            --tag "${{ vars.ECR_REPOSITORY_URL }}:${{ github.sha }}" \
+            --push \
+            .
+
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ env.TERRAFORM_VERSION }}
+
+      - name: Terraform init
+        working-directory: terraform
+        run: terraform init -input=false
+
+      # neon_database_url has no default and this variable is required for
+      # Terraform to evaluate a plan, but terraform/ssm.tf ignores changes
+      # to the SSM parameter's value, so this placeholder is accepted at
+      # plan time and never actually written anywhere. The real value is
+      # only ever set by a deliberate manual apply from a local machine.
+      - name: Terraform apply
+        working-directory: terraform
+        run: |
+          terraform apply -auto-approve -input=false \
+            -var="lambda_image_tag=${{ github.sha }}" \
+            -var="neon_database_url=ci-apply-placeholder-not-written-see-ssm-tf" \
+            -var="basic_auth_password=${{ secrets.BASIC_AUTH_PASSWORD }}"

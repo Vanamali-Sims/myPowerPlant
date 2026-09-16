@@ -1,3 +1,8 @@
+/**
+ * Typical Kew household used when the user skips a step or chooses “Not sure”.
+ */
+import { STEP_FIELDS } from '../constants/setup'
+import { NOT_SURE_VALUE } from './profileOptions'
 import type { ProfileData, SetupStepId } from '../types/profile'
 
 /** Typical Kew household used when the user skips a step or chooses “Not sure”. */
@@ -8,11 +13,15 @@ export const BASELINE_PROFILE: Omit<ProfileData, 'fieldSources' | 'lastUpdated'>
     rooms: '6',
     gas: 'yes',
     refrigerators: '2',
+    tvHoursPerWeek: '',
+    washerCyclesPerWeek: '',
+    dishwasherCyclesPerWeek: '',
     dryer: 'yes',
     dryerWeek: '2',
     dryerWeekend: '1',
     heating: 'gas',
     cooling: 'air_conditioning',
+    airconHoursPerWeek: '',
     hotWater: 'yes',
     monthlyBill: '180',
     monthlyKwh: '540',
@@ -30,32 +39,21 @@ export const BASELINE_PROFILE: Omit<ProfileData, 'fieldSources' | 'lastUpdated'>
     provider: 'AGL Energy',
   }
 
-const stepFields: Record<SetupStepId, (keyof ProfileData)[]> = {
-  household: [
-    'postcode',
-    'people',
-    'rooms',
-    'gas',
-    'refrigerators',
-    'dryer',
-    'dryerWeek',
-    'dryerWeekend',
-    'heating',
-    'cooling',
-    'hotWater',
-  ],
-  usage: ['monthlyBill', 'monthlyKwh', 'peakPeriod', 'usageLevel', 'wfh'],
-  solar: ['hasSolar', 'solarDirection', 'panelCount', 'panelWatts'],
-  battery: ['batteryUnits', 'reservePercent', 'batteryAge', 'batteryModel'],
-  provider: ['provider'],
-}
-
+/**
+ * applyBaseline
+ * @param profile - Current answers
+ * @param step - Wizard step being skipped
+ * @returns Profile with that step’s fields filled from BASELINE_PROFILE
+ *
+ * Marks each filled field as baseline so the UI can show an Estimate badge.
+ * Other steps are left untouched.
+ */
 export function applyBaseline(
   profile: ProfileData,
   step: SetupStepId,
 ): ProfileData {
   const next: ProfileData = { ...profile, fieldSources: { ...profile.fieldSources } }
-  for (const field of stepFields[step]) {
+  for (const field of STEP_FIELDS[step]) {
     if (field === 'fieldSources' || field === 'lastUpdated') continue
     const value = BASELINE_PROFILE[field]
     ;(next[field] as typeof value) = value
@@ -64,6 +62,15 @@ export function applyBaseline(
   return next
 }
 
+/**
+ * markUserFields
+ * @param profile - Current answers
+ * @param fields - Fields the user just confirmed on this step
+ * @returns Profile with those fields tagged user or baseline
+ *
+ * “Not sure” and not_sure still count as baseline so estimates stay labelled.
+ * Called when the user continues a step rather than skipping it.
+ */
 export function markUserFields(
   profile: ProfileData,
   fields: (keyof ProfileData)[],
@@ -73,7 +80,7 @@ export function markUserFields(
     if (field === 'fieldSources' || field === 'lastUpdated') continue
     const value = profile[field]
     const unsure =
-      value === 'not_sure' || value === 'Not sure'
+      value === 'not_sure' || value === NOT_SURE_VALUE
     fieldSources[field] = unsure ? 'baseline' : 'user'
   }
   return { ...profile, fieldSources }

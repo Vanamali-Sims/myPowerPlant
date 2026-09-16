@@ -13,13 +13,13 @@ The FastAPI `app` object lives in `backend/app/main.py` and is already wrapped w
 
 ## Run locally
 
-Open three terminals.
+Open three terminals and do not run the API before docker is up.
 
 ### 1. Postgres
 
 ```bash
 cd backend
-docker compose up -d
+docker compose up -d (Can run it visa the GUI too)
 ```
 
 Copy the env file once:
@@ -62,23 +62,6 @@ npm run dev
 
 Open `http://localhost:5173`. The form POSTs to `${VITE_API_BASE_URL}/api/submit`.
 
-## Project layout
-
-```
-.
-├── frontend/                 Vite 8 + React 19.2 + TypeScript
-├── backend/
-│   ├── app/
-│   │   ├── main.py           FastAPI app + Mangum handler
-│   │   ├── models.py         SQLModel tables + request/response schemas
-│   │   ├── db.py             async engine / session (SQLAlchemy 2 + asyncpg)
-│   │   └── routes/
-│   ├── alembic/              migrations (initial submissions table)
-│   ├── requirements.txt
-│   ├── .env.example
-│   └── docker-compose.yml    postgres:16 + named volume
-└── README.md
-```
 
 ## Environment
 

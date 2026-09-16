@@ -1,6 +1,10 @@
+/**
+ * Wizard step: current electricity retailer.
+ */
+import { DEVICE_STORAGE_NOTE } from '../../constants'
 import type { ProfileData } from '../../types/profile'
 import type { FieldErrors } from '../../lib/validateProfile'
-import { energyProviders } from '../../data/profileOptions'
+import { energyProviders, NOT_SURE_VALUE, OTHER_VALUE } from '../../data/profileOptions'
 import { Button } from '../ui/Button'
 import { Callout } from '../ui/Callout'
 import { LockIcon, QuestionIcon } from '../ui/icons'
@@ -12,6 +16,15 @@ type Props = {
   onChange: <K extends keyof ProfileData>(field: K, value: ProfileData[K]) => void
 }
 
+/**
+ * EnergyProviderStep
+ * @param props.profile - Current answers
+ * @param props.onChange - Patch a single profile field
+ * @returns JSX.Element
+ *
+ * Other and Not sure are first-class extra options, not free text only.
+ * The retailer is used to mark a “current” VPP plan on the dashboard.
+ */
 export function EnergyProviderStep({ profile, errors, onChange }: Props) {
   return (
     <>
@@ -20,7 +33,7 @@ export function EnergyProviderStep({ profile, errors, onChange }: Props) {
         placeholder="Search or select your provider"
         heading="Popular providers"
         options={energyProviders}
-        extraOptions={['Other', 'Not sure']}
+        extraOptions={[OTHER_VALUE, NOT_SURE_VALUE]}
         value={profile.provider}
         onChange={(value) => onChange('provider', value)}
         error={errors.provider}
@@ -31,7 +44,7 @@ export function EnergyProviderStep({ profile, errors, onChange }: Props) {
         icon={<QuestionIcon />}
         title="Not sure?"
         action={
-          <Button variant="outline-accent" onClick={() => onChange('provider', 'Not sure')}>
+          <Button variant="outline-accent" onClick={() => onChange('provider', NOT_SURE_VALUE)}>
             Not sure
           </Button>
         }
@@ -41,7 +54,7 @@ export function EnergyProviderStep({ profile, errors, onChange }: Props) {
       </Callout>
       <p className="setup-secure">
         <LockIcon width={14} height={14} />
-        Your information is secure and used only to generate your personalised energy insights.
+        {DEVICE_STORAGE_NOTE}
       </p>
     </>
   )
