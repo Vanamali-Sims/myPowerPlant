@@ -1,5 +1,5 @@
 :root {
-  /* Eucalypt — structure, trust, surplus */
+  /* Eucalypt — structure, trust, surplus (third accent; leave semantic meaning) */
   --euc-50: #edf2ee;
   --euc-100: #d3e0d6;
   --euc-200: #a3bca9;
@@ -13,32 +13,48 @@
   --terra-100: #f2d5c2;
   --terra-200: #e4ae8c;
   --terra-400: #d4834f;
-  --terra-600: #c86a3c;
-  --terra-800: #934826;
+  --terra-600: #de6a34;
+  --terra-800: #b94f21;
   --terra-900: #5e2d17;
 
+  /* Named palette (home / dashboard visual pass) */
+  --green-deep: #14312a;
+  --green-deeper: #0e241e;
+  --cream-page: #e7e2d3;
+  --cream-card: #f7f4ec;
+  --ink-soft: #55605a;
+  --paper: #f4f1e8;
+  --paper-soft: #a9bbb2;
+  --muted: #918d80;
+  --accent: #de6a34;
+  --accent-deep: #b94f21;
+  --accent-tint: rgba(222, 106, 52, 0.12);
+  --blue: #4fa3d1;
+  --track-dark: rgba(244, 241, 232, 0.16);
+  --track-light: #e3dfd0;
+
   /* Surfaces — warm neutrals, not tinted green */
-  --canvas: #faf8f3;
+  --canvas: var(--cream-page);
   --surface: #ffffff;
-  --surface-sunken: #f2ede3;
-  --surface-deep: #163529;
+  --surface-sunken: var(--cream-card);
+  --surface-deep: var(--green-deep);
   --border: #e4ded2;
   --border-strong: #d2c9b8;
 
   /* Text */
-  --ink: #14231d;
-  --ink-secondary: #4b5a52;
-  --ink-muted: #7d8a82;
-  --on-deep: #f2ede3;
-  --on-deep-muted: #a3bca9;
+  --ink: #1e2420;
+  --ink-secondary: var(--ink-soft);
+  --ink-muted: var(--muted);
+  --on-deep: var(--paper);
+  --on-deep-muted: var(--paper-soft);
 
-  /* Semantic */
-  --primary: var(--terra-600);
-  --primary-hover: var(--terra-800);
-  --on-primary: #ffffff;
+  /* Semantic — orange = action / money; blue = data (use --blue directly) */
+  --primary: var(--accent);
+  --primary-hover: var(--accent-deep);
+  --on-primary: var(--paper);
   --structure: var(--euc-600);
   --surplus: var(--euc-600);
-  --deficit: var(--terra-600);
+  --deficit: var(--accent);
   --success: #2f7d5c;
   --warning: #a9761a;
   --danger: #b3392f;
@@ -46,7 +62,7 @@
 
   /* Chart series — alternate hue families */
   --chart-1: #1f4a3c;
-  --chart-2: #c86a3c;
+  --chart-2: var(--accent);
   --chart-3: #4a7a63;
   --chart-4: #e4ae8c;
   --chart-5: #a3bca9;
@@ -59,6 +75,6 @@
   --radius-card: 12px;
   --radius-input: 10px;
 
-  /* Data-URI glyphs cannot use var(); this stroke matches --ink-muted. */
-  --select-chevron: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='18' height='18' viewBox='0 0 24 24' fill='none' stroke='%237D8A82' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  /* Data-URI glyphs cannot use var(); this stroke matches --muted. */
+  --select-chevron: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='18' height='18' viewBox='0 0 24 24' fill='none' stroke='%23918D80' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
 }

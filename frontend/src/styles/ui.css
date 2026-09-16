@@ -180,6 +180,7 @@
 }
 
 .ui-toggle {
+  position: relative;
   display: flex;
   background: var(--surface-sunken);
   border-radius: var(--radius-pill);
@@ -187,7 +188,33 @@
   gap: 0.15rem;
 }
 
+.ui-toggle__highlight {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 0;
+  box-sizing: border-box;
+  border-radius: var(--radius-pill);
+  background: var(--surface);
+  border: 0.5px solid var(--border-strong);
+  opacity: 0;
+  pointer-events: none;
+}
+
+.ui-toggle__highlight.is-visible {
+  opacity: 1;
+}
+
+.ui-toggle__highlight.is-ready {
+  transition:
+    transform 0.22s var(--ease-out, cubic-bezier(0.22, 1, 0.36, 1)),
+    width 0.22s var(--ease-out, cubic-bezier(0.22, 1, 0.36, 1)),
+    height 0.22s var(--ease-out, cubic-bezier(0.22, 1, 0.36, 1));
+}
+
 .ui-toggle__option {
+  position: relative;
+  z-index: 1;
   flex: 1;
   border: 1px solid transparent;
   background: transparent;
@@ -201,10 +228,13 @@
 }
 
 .ui-toggle__option.is-selected {
-  background: var(--surface);
-  border: 0.5px solid var(--border-strong);
   color: var(--ink);
   font-weight: 600;
+}
+
+.ui-toggle:not(:has(.ui-toggle__highlight.is-visible)) .ui-toggle__option.is-selected {
+  background: var(--surface);
+  border: 0.5px solid var(--border-strong);
 }
 
 .ui-progress {
@@ -313,16 +343,22 @@
   place-items: center;
 }
 
-.ui-radio-list__row.is-selected .ui-radio-list__mark {
-  border-color: var(--euc-800);
-}
-
-.ui-radio-list__row.is-selected .ui-radio-list__mark::after {
+.ui-radio-list__mark::after {
   content: "";
   width: 0.55rem;
   height: 0.55rem;
   border-radius: 50%;
   background: var(--euc-800);
+  transform: scale(0);
+  transition: transform 0.18s var(--ease-out, cubic-bezier(0.22, 1, 0.36, 1));
+}
+
+.ui-radio-list__row.is-selected .ui-radio-list__mark {
+  border-color: var(--euc-800);
+}
+
+.ui-radio-list__row.is-selected .ui-radio-list__mark::after {
+  transform: scale(1);
 }
 
 .ui-radio-list__meta {
@@ -415,6 +451,8 @@
 }
 
 .ui-dir__mark {
+  position: relative;
+  z-index: 0;
   width: 1.85rem;
   height: 1.85rem;
   border-radius: 50%;
@@ -423,12 +461,27 @@
   place-items: center;
   font-size: 0.75rem;
   font-weight: 700;
+  overflow: hidden;
+}
+
+.ui-dir__mark::before {
+  content: "";
+  position: absolute;
+  inset: -1px;
+  z-index: -1;
+  border-radius: inherit;
+  background: var(--euc-800);
+  transform: scale(0);
+  transition: transform 0.18s var(--ease-out, cubic-bezier(0.22, 1, 0.36, 1));
 }
 
 .ui-dir.is-selected .ui-dir__mark {
-  background: var(--euc-800);
   border-color: var(--euc-800);
   color: var(--on-deep);
+}
+
+.ui-dir.is-selected .ui-dir__mark::before {
+  transform: scale(1);
 }
 
 .ui-dir--wide {

@@ -1,6 +1,7 @@
 /**
  * Horizontal yes/no (or similar) radio group styled as a segmented toggle.
  */
+import { useSlidingHighlight } from '../../lib/useSlidingHighlight'
 import { Field } from './Field'
 
 type Option<T extends string> = { value: T; label: string }
@@ -33,9 +34,22 @@ export function SegmentedToggle<T extends string>({
   options,
   onChange,
 }: Props<T>) {
+  const { setRef, box } = useSlidingHighlight(value || null, '[aria-checked="true"]')
+
   return (
     <Field label={label} hint={hint} error={error} info={info}>
-      <div className="ui-toggle" role="radiogroup" aria-label={label}>
+      <div ref={setRef} className="ui-toggle" role="radiogroup" aria-label={label}>
+        <span
+          aria-hidden="true"
+          className={`ui-toggle__highlight${box.visible ? ' is-visible' : ''}${
+            box.ready ? ' is-ready' : ''
+          }`}
+          style={{
+            transform: `translate3d(${box.left}px, ${box.top}px, 0)`,
+            width: box.width,
+            height: box.height,
+          }}
+        />
         {options.map((option) => (
           <button
             key={option.value}

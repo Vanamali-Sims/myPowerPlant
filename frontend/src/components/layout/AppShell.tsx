@@ -4,8 +4,9 @@
 import type { ReactNode } from 'react'
 import { DEFAULT_LOCATION_LABEL, NAV, type AppNavId } from '../../constants'
 import { locationFromPostcode } from '../../data/profileOptions'
+import { useSlidingHighlight } from '../../lib/useSlidingHighlight'
 import { useTransientPopover } from '../../lib/useTransientPopover'
-import { BoltIcon } from '../ui/icons'
+import { MyPowerPlantMark } from '../ui/MyPowerPlantMark'
 import { Popover } from '../ui/Popover'
 
 export type { AppNavId }
@@ -40,6 +41,7 @@ export function AppShell({
 }: Props) {
   const place = locationFromPostcode(postcode)
   const [openPopover, setOpenPopover] = useTransientPopover()
+  const { setRef: setNavRef, box: navBox } = useSlidingHighlight(active, '.app-rail__item.is-active')
 
   function isAvailable(id: AppNavId) {
     if (id === 'home' || id === 'dashboard' || id === 'reminders') return true
@@ -64,12 +66,22 @@ export function AppShell({
           onClick={onLogoClick}
           aria-label="MyPowerPlant home"
         >
-          <span className="brand__mark">
-            <BoltIcon width={14} height={14} />
+          <span className="brand__mark brand__mark--logo">
+            <MyPowerPlantMark width={28} height={28} />
           </span>
           <span className="brand__word">MyPowerPlant</span>
         </button>
-        <nav className="app-rail__nav">
+        <nav ref={setNavRef} className="app-rail__nav">
+          <span
+            aria-hidden="true"
+            className={`app-rail__highlight${navBox.visible ? ' is-visible' : ''}${
+              navBox.ready ? ' is-ready' : ''
+            }`}
+            style={{
+              transform: `translate3d(0, ${navBox.top}px, 0)`,
+              height: navBox.height,
+            }}
+          />
           {NAV.map((item) => {
             const Icon = item.icon
             const available = isAvailable(item.id)

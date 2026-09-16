@@ -23,6 +23,8 @@ import {
   type MatchReasonCode,
   type SuggestionMatch,
 } from '../../lib/vppSuggestions'
+import { VPP_DEFAULT_HEADING, VPP_STORY_HEADINGS } from '../../constants'
+import type { RiverFork } from '../../lib/energyRiver'
 import type { ProfileData } from '../../types/profile'
 import { Button } from '../ui/Button'
 import { Callout } from '../ui/Callout'
@@ -39,7 +41,10 @@ type Props = {
   profile: ProfileData
   plans: VppSuggestionPlan[]
   batteryModels: BatteryModelRow[]
+  fork?: RiverFork | null
   onStartSetup: () => void
+  /** Tighter layout when rendered directly under the annual savings card. */
+  fromSavings?: boolean
 }
 
 const EMPTY_REASON: Record<MatchReasonCode, string> = {
@@ -70,15 +75,18 @@ type OpenDialog = {
  * @param props.profile - Household answers used only for matching, never sent
  * @returns JSX.Element
  *
- * Cards stay compact. Why-it-suits-you (US-3.7) and full terms (US-3.1/3.2)
- * each open in their own dialog so the dashboard report is not regenerated.
+ * Cards stay compact at the mouth of the energy river. Why-it-suits-you
+ * (US-3.7) and full terms (US-3.1/3.2) each open in their own dialog so the
+ * dashboard report is not regenerated.
  */
 export function VppSuggestions({
   hasProfile,
   profile,
   plans,
   batteryModels,
+  fork = null,
   onStartSetup,
+  fromSavings = false,
 }: Props) {
   const [dialog, setDialog] = useState<OpenDialog | null>(null)
   const openerRef = useRef<HTMLButtonElement | null>(null)
@@ -97,11 +105,13 @@ export function VppSuggestions({
     setDialog(null)
   }
 
+  const heading = fork ? VPP_STORY_HEADINGS[fork] : VPP_DEFAULT_HEADING
+
   if (!hasProfile) {
     return (
       <section className="vpp-suggestions" aria-labelledby="vpp-suggestions-heading">
-        <p className="eyebrow">Plans that could fit this home</p>
-        <h2 id="vpp-suggestions-heading">VPP Suggestions</h2>
+        <p className="eyebrow">{VPP_DEFAULT_HEADING.eyebrow}</p>
+        <h2 id="vpp-suggestions-heading">{VPP_DEFAULT_HEADING.title}</h2>
         <Callout
           tone="action"
           icon={<AlertIcon />}
@@ -123,9 +133,14 @@ export function VppSuggestions({
   const openMatch = dialog?.match ?? null
 
   return (
-    <section className="vpp-suggestions" aria-labelledby="vpp-suggestions-heading">
-      <p className="eyebrow">Plans that could fit this home</p>
-      <h2 id="vpp-suggestions-heading">VPP Suggestions</h2>
+    <section
+      id="vpp-suggestions"
+      className={`vpp-suggestions${fromSavings ? ' vpp-suggestions--from-savings' : ''}`}
+      aria-labelledby="vpp-suggestions-heading"
+    >
+      <p className="eyebrow">{heading.eyebrow}</p>
+      <h2 id="vpp-suggestions-heading">{heading.title}</h2>
+      {heading.lede ? <p className="vpp-suggestions__lede">{heading.lede}</p> : null}
 
       {emptyReason ? (
         <Callout tone="neutral" icon={<AlertIcon />} title="No matching plans yet">
@@ -181,17 +196,24 @@ function PlanSummaryCard({ match, featured = false, onOpen }: CardProps) {
       <p className="eyebrow">{match.plan.brand}</p>
       <h3 className="vpp-plan-card__name">{match.plan.name}</h3>
       <div className="vpp-stat-row">
-        {facts.map((fact) => (
-          <div key={fact.label} className="vpp-stat">
-            <p className="eyebrow">{fact.label}</p>
-            <p className="kpi-card__value">{fact.value}</p>
-          </div>
-        ))}
+        {facts.map((fact) => {
+          const missing = fact.value === 'Not listed'
+          return (
+            <div key={fact.label} className="vpp-stat">
+              <p className="eyebrow">{fact.label}</p>
+              <p
+                className={`kpi-card__value${missing ? ' kpi-card__value--unknown' : ''}`}
+              >
+                {fact.value}
+              </p>
+            </div>
+          )
+        })}
       </div>
       <div className="vpp-plan-card__actions">
         <button
           type="button"
-          className="vpp-plan-card__cta"
+          className="vpp-plan-card__cta vpp-plan-card__cta--primary"
           aria-haspopup="dialog"
           aria-label={`Why ${match.plan.name} may suit this home`}
           onClick={handleOpen('why')}
@@ -200,7 +222,7 @@ function PlanSummaryCard({ match, featured = false, onOpen }: CardProps) {
         </button>
         <button
           type="button"
-          className="vpp-plan-card__cta"
+          className="vpp-plan-card__cta vpp-plan-card__cta--ghost"
           aria-haspopup="dialog"
           aria-label={`Learn more about terms for ${match.plan.name}`}
           onClick={handleOpen('terms')}

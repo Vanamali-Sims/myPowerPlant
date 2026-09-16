@@ -1,4 +1,5 @@
 import { defineConfig, loadEnv, type Plugin, type PreviewServer, type ViteDevServer } from 'vite'
+import tailwindcss from '@tailwindcss/vite'
 import react from '@vitejs/plugin-react'
 
 function applyHeaders(server: ViteDevServer | PreviewServer, csp: string) {
@@ -48,6 +49,6 @@ export default defineConfig(({ mode }) => {
   ].join('; ')
 
   return {
-    plugins: [react(), securityHeaders(devCsp, previewCsp)],
+    plugins: [tailwindcss(), react(), securityHeaders(devCsp, previewCsp)],
   }
 })

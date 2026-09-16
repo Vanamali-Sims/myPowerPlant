@@ -1,0 +1,406 @@
+/**
+ * Motion and hover polish. Custom cursor lives here too.
+ * All animation is gated by prefers-reduced-motion.
+ */
+
+:root {
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --motion-fast: 0.18s;
+  --motion: 0.28s;
+}
+
+.view-enter {
+  animation: view-in 0.42s var(--ease-out) both;
+}
+
+@keyframes view-in {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.popover {
+  animation: popover-in 0.18s var(--ease-out) both;
+}
+
+@keyframes popover-in {
+  from {
+    opacity: 0;
+    transform: translateY(-50%) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(-50%) scale(1);
+  }
+}
+
+.popover--bottom,
+.popover--bottom-end {
+  animation-name: popover-in-down;
+}
+
+@keyframes popover-in-down {
+  from {
+    opacity: 0;
+    transform: translateY(-4px) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.ui-progress__fill {
+  transition: width 0.45s var(--ease-out);
+}
+
+.ui-input:focus,
+.ui-select:focus,
+.ui-search__input:focus,
+.location-control__input:focus {
+  border-color: var(--euc-400);
+}
+
+.ui-btn,
+.ui-choice,
+.ui-dir,
+.ui-radio-list__row,
+.ui-toggle__option,
+.ui-stepper__btn,
+.ui-input,
+.ui-select,
+.ui-search__input,
+.ui-callout,
+.app-rail__item,
+.feature-card,
+.article-card,
+.kpi-card,
+.dashboard-card,
+.profile-card,
+.vpp-plan-card,
+.vpp-plan-card__cta,
+.vpp-helps__quote,
+.vpp-flow-cards__item,
+.location-control,
+.location-control__locate,
+.brand--button {
+  transition:
+    background-color var(--motion-fast) ease,
+    color var(--motion-fast) ease,
+    border-color var(--motion-fast) ease,
+    box-shadow 0.42s var(--ease-out),
+    transform 0.42s var(--ease-out),
+    opacity var(--motion-fast) ease;
+}
+
+.feature-card,
+.article-card,
+.kpi-card,
+.profile-card,
+.vpp-plan-card,
+.vpp-helps__quote,
+.vpp-flow-cards__item,
+.ui-choice,
+.ui-dir,
+.ui-btn,
+.app-rail__item,
+.brand--button {
+  position: relative;
+  transform: translate3d(var(--hover-x, 0px), var(--hover-y, 0px), 0)
+    scale(var(--hover-scale, 1));
+  transform-origin: center center;
+}
+
+.is-hover-grow {
+  z-index: 3;
+  --hover-scale: 1.07;
+}
+
+.app-rail__item.is-hover-grow {
+  --hover-scale: 1.12;
+}
+
+.ui-btn.is-hover-grow,
+.brand--button.is-hover-grow {
+  --hover-scale: 1.06;
+}
+
+.feature-card.is-hover-grow,
+.article-card.is-hover-grow,
+.kpi-card.is-hover-grow,
+.profile-card.is-hover-grow,
+.vpp-plan-card.is-hover-grow,
+.vpp-helps__quote.is-hover-grow,
+.vpp-flow-cards__item.is-hover-grow,
+.ui-choice.is-hover-grow {
+  box-shadow: 0 18px 40px rgba(20, 35, 29, 0.12);
+  border-color: var(--border-strong);
+}
+
+.vpp-helps__quote.is-hover-grow,
+.vpp-flow-cards__item.is-hover-grow {
+  box-shadow: 0 18px 40px rgba(8, 16, 14, 0.35);
+  border-color: rgb(242 237 227 / 0.38);
+}
+
+.ui-btn--primary.is-hover-grow {
+  box-shadow: 0 12px 24px rgba(200, 106, 60, 0.3);
+}
+
+.ui-btn--color-hover.is-hover-grow {
+  --hover-scale: 1;
+  box-shadow: none;
+}
+
+.hero-house__face {
+  transition: fill 0.25s ease, stroke 0.25s ease, stroke-width 0.25s ease;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .feature-card:hover,
+  .article-card:hover,
+  .kpi-card:hover,
+  .profile-card:hover,
+  .vpp-plan-card:hover,
+  .vpp-helps__quote:hover,
+  .vpp-flow-cards__item:hover,
+  .ui-choice:hover {
+    z-index: 3;
+    border-color: var(--border-strong);
+  }
+
+  .vpp-helps__quote:hover,
+  .vpp-flow-cards__item:hover {
+    border-color: rgb(242 237 227 / 0.38);
+  }
+
+  .ui-btn--primary:hover:not(:disabled) {
+    box-shadow: 0 12px 24px rgba(200, 106, 60, 0.3);
+  }
+
+  .ui-btn--color-hover:hover:not(:disabled),
+  .ui-btn--color-hover:active:not(:disabled) {
+    --hover-scale: 1;
+    box-shadow: none;
+  }
+
+  .ui-btn--primary:active:not(:disabled),
+  .ui-btn--secondary:active:not(:disabled),
+  .ui-btn--outline-accent:active:not(:disabled),
+  .ui-btn--edit:active:not(:disabled) {
+    --hover-scale: 0.98;
+  }
+
+  .ui-btn--secondary:hover:not(:disabled),
+  .ui-btn--outline-accent:hover:not(:disabled),
+  .ui-btn--edit:hover:not(:disabled) {
+    background: var(--euc-50);
+    border-color: var(--euc-400);
+  }
+
+  .ui-choice:hover,
+  .ui-dir:hover {
+    border-color: var(--euc-400);
+    background: var(--euc-50);
+  }
+
+  .ui-radio-list__row:hover {
+    background: var(--surface-sunken);
+  }
+
+  .ui-toggle__option:hover:not(.is-selected) {
+    color: var(--ink);
+  }
+
+  .app-rail__item:active:not(.is-unavailable) {
+    --hover-scale: 0.96;
+  }
+}
+
+/* Custom cursor — mouse + hover only. Native cursor stays for touch, text, dialogs. */
+.custom-cursor {
+  position: fixed;
+  inset: 0;
+  z-index: 2147483646;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.18s ease;
+}
+
+.custom-cursor.is-visible {
+  opacity: 1;
+}
+
+.custom-cursor__dot,
+.custom-cursor__ring {
+  position: fixed;
+  top: 0;
+  left: 0;
+  border-radius: 50%;
+  pointer-events: none;
+  will-change: transform;
+}
+
+.custom-cursor__dot {
+  width: 8px;
+  height: 8px;
+  margin: -4px 0 0 -4px;
+  background: var(--terra-600);
+  border: 2px solid var(--canvas);
+  box-shadow: 0 0 0 1px var(--euc-800);
+  transition:
+    width 0.2s var(--ease-out),
+    height 0.2s var(--ease-out),
+    margin 0.2s var(--ease-out),
+    background-color 0.2s ease,
+    opacity 0.2s ease;
+}
+
+.custom-cursor__ring {
+  width: 36px;
+  height: 36px;
+  margin: -18px 0 0 -18px;
+  border: 1.5px solid var(--euc-400);
+  background: rgba(200, 106, 60, 0.08);
+  transition:
+    width 0.22s var(--ease-out),
+    height 0.22s var(--ease-out),
+    margin 0.22s var(--ease-out),
+    background-color 0.22s ease,
+    border-color 0.22s ease,
+    opacity 0.2s ease;
+}
+
+.custom-cursor.is-hover .custom-cursor__dot {
+  width: 12px;
+  height: 12px;
+  margin: -6px 0 0 -6px;
+  background: var(--terra-400);
+}
+
+.custom-cursor.is-hover .custom-cursor__ring {
+  width: 52px;
+  height: 52px;
+  margin: -26px 0 0 -26px;
+  border-color: var(--terra-600);
+  background: rgba(200, 106, 60, 0.14);
+}
+
+.custom-cursor.is-down .custom-cursor__dot {
+  width: 6px;
+  height: 6px;
+  margin: -3px 0 0 -3px;
+}
+
+.custom-cursor.is-down .custom-cursor__ring {
+  width: 28px;
+  height: 28px;
+  margin: -14px 0 0 -14px;
+  background: rgba(31, 74, 60, 0.16);
+  border-color: var(--euc-600);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  html.has-custom-cursor,
+  html.has-custom-cursor * {
+    cursor: none !important;
+  }
+
+  html.has-custom-cursor :is(input, textarea):not([type="button"]):not([type="submit"]):not(
+      [type="checkbox"]
+    ):not([type="radio"]):not([type="file"]) {
+    cursor: text !important;
+  }
+
+  html.has-custom-cursor.custom-cursor-paused,
+  html.has-custom-cursor.custom-cursor-paused * {
+    cursor: auto !important;
+  }
+
+  html.has-custom-cursor.custom-cursor-paused :is(a, button, [role="button"], [role="radio"], label, select) {
+    cursor: pointer !important;
+  }
+
+  html.has-custom-cursor.custom-cursor-paused :is(input, textarea):not([type="button"]):not(
+      [type="submit"]
+    ) {
+    cursor: text !important;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  .view-enter,
+  .popover,
+  .popover--bottom,
+  .popover--bottom-end {
+    animation: none;
+  }
+
+  .ui-btn,
+  .ui-choice,
+  .ui-dir,
+  .ui-radio-list__row,
+  .ui-toggle__option,
+  .ui-stepper__btn,
+  .ui-input,
+  .ui-select,
+  .ui-search__input,
+  .ui-callout,
+  .app-rail__item,
+  .feature-card,
+  .article-card,
+  .kpi-card,
+  .dashboard-card,
+  .profile-card,
+  .vpp-plan-card,
+  .vpp-plan-card__cta,
+  .vpp-helps__quote,
+  .vpp-flow-cards__item,
+  .location-control,
+  .location-control__locate,
+  .brand--button,
+  .hero-house__face,
+  .ui-progress__fill {
+    transition: none;
+  }
+
+  .custom-cursor__dot,
+  .custom-cursor__ring,
+  .ui-toggle__highlight,
+  .ui-toggle__highlight.is-ready,
+  .app-rail__highlight,
+  .app-rail__highlight.is-ready,
+  .ui-radio-list__mark::after,
+  .ui-dir__mark::before,
+  .vpp-dialog,
+  .vpp-dialog::backdrop {
+    transition: none;
+  }
+
+  .kpi-card__figure,
+  .energy-balance__share,
+  .energy-legend__value--accent,
+  .energy-bar__slice,
+  .energy-savings-tip,
+  .donut__draw,
+  .forecast__draw .forecast__area,
+  .forecast__draw .forecast__line {
+    animation: none;
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+
+  .forecast__draw .forecast__line {
+    stroke-dashoffset: 0;
+  }
+}

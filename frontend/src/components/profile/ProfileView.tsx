@@ -1,11 +1,14 @@
 /**
  * Saved-profile review screen with per-section edit and a reset path.
  */
-import { useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { PROFILE_SECTIONS, DEVICE_STORAGE_NOTE } from '../../constants'
 import type { ProfileData, SetupStepId } from '../../types/profile'
 import { displayValue, formatUpdatedAt, isBaseline } from '../../lib/formatProfile'
+import { buildKpiReport } from '../../lib/kpis'
+import { fetchMethodology, type MethodologyBundle } from '../../lib/methodologyApi'
 import { hasErrors, validateStep, type FieldErrors } from '../../lib/validateProfile'
+import { ConsumptionDonut } from '../dashboard/ConsumptionDonut'
 import { Button } from '../ui/Button'
 import { Callout } from '../ui/Callout'
 import { BoltIcon, CheckIcon, LockIcon, PencilIcon, ResetIcon } from '../ui/icons'
@@ -46,6 +49,23 @@ export function ProfileView({
   const [editing, setEditing] = useState<SetupStepId | null>(null)
   const [errors, setErrors] = useState<FieldErrors>({})
   const [confirmReset, setConfirmReset] = useState(false)
+  const [bundle, setBundle] = useState<MethodologyBundle | null>(null)
+
+  useEffect(() => {
+    let cancelled = false
+    void fetchMethodology().then((result) => {
+      if (cancelled) return
+      if (result.ok) setBundle(result.data)
+    })
+    return () => {
+      cancelled = true
+    }
+  }, [])
+
+  const usageReport = useMemo(
+    () => (bundle && profile.lastUpdated ? buildKpiReport(draft, bundle) : null),
+    [bundle, draft, profile.lastUpdated],
+  )
 
   function patch<K extends keyof ProfileData>(field: K, value: ProfileData[K]) {
     const next = {
@@ -138,6 +158,17 @@ export function ProfileView({
           Your profile is saved on this device. The dashboard uses these answers — no need to
           enter them again.
         </Callout>
+
+        {usageReport ? (
+          <section className="dashboard-card profile-usage" aria-labelledby="profile-usage-heading">
+            <p className="eyebrow">House · closer look</p>
+            <h2 id="profile-usage-heading">Where that energy goes</h2>
+            <p className="dashboard-card__lede">
+              Modelled from this profile. Edit a section below and this split updates.
+            </p>
+            <ConsumptionDonut appliances={usageReport.appliances} timeframe="weekly" />
+          </section>
+        ) : null}
 
         <div className="profile__sections">
           {PROFILE_SECTIONS.map((section) => {

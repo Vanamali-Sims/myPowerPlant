@@ -201,6 +201,17 @@ export function HomeIcon(props: IconProps) {
   )
 }
 
+export function ClusterIcon(props: IconProps) {
+  return (
+    <svg {...icon(props)}>
+      <path d="m4 12 3.5-3 3.5 3" />
+      <path d="M5.2 11.5V17h5.6v-5.5" />
+      <path d="m13 13 3.2-2.7 3.2 2.7" />
+      <path d="M14.1 12.6V17H19v-4.2" />
+    </svg>
+  )
+}
+
 export function DashboardIcon(props: IconProps) {
   return (
     <svg {...icon(props)}>
