@@ -1,0 +1,10 @@
+# Security Plan R21: two-person review on any change to the provider dataset.
+# These files seed the VPP plan / provider information (brand, href, rates,
+# terms) the dashboard's recommendations are built from. GitHub adds the
+# owners below as requested reviewers automatically on any PR that touches
+# them - see the repo's branch protection settings for whether that review
+# is actually required before merging.
+
+/backend/alembic/versions/003_create_methodology_tables.py @Jai-Negi @Vanamali-Sims
+/backend/alembic/versions/006_vpp_suggestion_terms.py @Jai-Negi @Vanamali-Sims
+/backend/alembic/versions/*vpp*.py @Jai-Negi @Vanamali-Sims
