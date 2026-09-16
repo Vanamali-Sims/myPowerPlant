@@ -4,9 +4,8 @@
  * Built from the KPI weekly totals, then scaled to the dashboard timeframe.
  * Dollars are modelled estimates — never a live meter or a promised payout.
  */
+import { WEEKS_PER_YEAR } from '../constants/kpiMethodology'
 import {
-  formatAud,
-  formatKwh,
   scaleAud,
   scaleKwh,
   type KpiReport,
@@ -30,6 +29,8 @@ export type EnergyRiverModel = {
   coveredKwh: number
   forkKwh: number
   forkValueAud: number
+  /** Annual estimate for the savings card (weekly model × 52, not scaled by timeframe). */
+  annualValueAud: number
   feedInValueAud: number
   /** Share of use (borrow) or generation (discharge) that a VPP would handle. */
   share: number
@@ -64,6 +65,7 @@ export function buildEnergyRiver({ report, timeframe, feedInRate }: RiverSource)
   const vppRate = report.recommended.plan.exportRate
   const rateForValue = fork === 'deficit' ? report.retailRate : vppRate
   const weeklyFork = fork === 'balanced' ? 0 : Math.abs(report.weekly.generationKwh - report.weekly.consumptionKwh)
+  const weeklyAud = weeklyFork * rateForValue
   const shareBase = fork === 'surplus' ? generatedKwh : usedKwh
   const share = shareBase > 0 && fork !== 'balanced' ? forkKwh / shareBase : 0
 
@@ -75,7 +77,8 @@ export function buildEnergyRiver({ report, timeframe, feedInRate }: RiverSource)
     usedKwh,
     coveredKwh: Math.min(generatedKwh, usedKwh),
     forkKwh,
-    forkValueAud: scaleAud(weeklyFork * rateForValue, timeframe),
+    forkValueAud: scaleAud(weeklyAud, timeframe),
+    annualValueAud: weeklyAud * WEEKS_PER_YEAR,
     feedInValueAud: scaleAud(weeklyFork * feedInRate, timeframe),
     share,
   }

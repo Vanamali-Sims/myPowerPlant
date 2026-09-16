@@ -37,9 +37,9 @@ type Props = {
  * @param props.onEditProfile - Jump to the profile editor
  * @returns JSX.Element
  *
- * The balance card is the story: generation, use, leftover or gap, then
- * estimated savings on a joined card. Donut and forecast sit underneath
- * as detail. Figures are estimates unless a badge says otherwise.
+ * The balance card is the story: generation, use, leftover or gap, annual
+ * savings, then VPP plans. Donut and forecast sit underneath as detail.
+ * Figures are estimates unless a badge says otherwise.
  */
 export function DashboardView({
   profile,
@@ -136,15 +136,35 @@ export function DashboardView({
 
       {hasProfile ? (
         <>
-          {river ? (
-            <EnergyRiver
-              key={timeframe}
-              model={river}
-              place={place}
-              timeframe={timeframe}
-              onTimeframe={setTimeframe}
-            />
-          ) : null}
+          <div className="dashboard__story">
+            {river ? (
+              <EnergyRiver
+                key={timeframe}
+                model={river}
+                place={place}
+                timeframe={timeframe}
+                onTimeframe={setTimeframe}
+              />
+            ) : null}
+
+            {bundle ? (
+              <>
+                <div className="dashboard__story-join" aria-hidden="true">
+                  <span className="dashboard__story-join__stem" />
+                  <span className="dashboard__story-join__knob" />
+                </div>
+                <VppSuggestions
+                  hasProfile
+                  profile={profile}
+                  plans={bundle.vppSuggestionPlans}
+                  batteryModels={bundle.batteryModels}
+                  fork={river?.fork ?? null}
+                  onStartSetup={onStartSetup}
+                  fromSavings
+                />
+              </>
+            ) : null}
+          </div>
 
           {report ? (
             <div className="dashboard__split">
@@ -173,13 +193,13 @@ export function DashboardView({
         </>
       ) : null}
 
-      {!hasProfile || bundle ? (
+      {!hasProfile && bundle ? (
         <VppSuggestions
-          hasProfile={hasProfile}
+          hasProfile={false}
           profile={profile}
-          plans={bundle?.vppSuggestionPlans ?? []}
-          batteryModels={bundle?.batteryModels ?? []}
-          fork={river?.fork ?? null}
+          plans={bundle.vppSuggestionPlans}
+          batteryModels={bundle.batteryModels}
+          fork={null}
           onStartSetup={onStartSetup}
         />
       ) : null}

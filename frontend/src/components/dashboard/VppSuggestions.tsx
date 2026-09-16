@@ -43,6 +43,8 @@ type Props = {
   batteryModels: BatteryModelRow[]
   fork?: RiverFork | null
   onStartSetup: () => void
+  /** Tighter layout when rendered directly under the annual savings card. */
+  fromSavings?: boolean
 }
 
 const EMPTY_REASON: Record<MatchReasonCode, string> = {
@@ -84,6 +86,7 @@ export function VppSuggestions({
   batteryModels,
   fork = null,
   onStartSetup,
+  fromSavings = false,
 }: Props) {
   const [dialog, setDialog] = useState<OpenDialog | null>(null)
   const openerRef = useRef<HTMLButtonElement | null>(null)
@@ -130,7 +133,10 @@ export function VppSuggestions({
   const openMatch = dialog?.match ?? null
 
   return (
-    <section className="vpp-suggestions" aria-labelledby="vpp-suggestions-heading">
+    <section
+      className={`vpp-suggestions${fromSavings ? ' vpp-suggestions--from-savings' : ''}`}
+      aria-labelledby="vpp-suggestions-heading"
+    >
       <p className="eyebrow">{heading.eyebrow}</p>
       <h2 id="vpp-suggestions-heading">{heading.title}</h2>
       {heading.lede ? <p className="vpp-suggestions__lede">{heading.lede}</p> : null}

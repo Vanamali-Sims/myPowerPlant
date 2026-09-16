@@ -79,6 +79,10 @@ assert(
 assert(deficit.coveredKwh === deficit.generatedKwh, 'deficit covered kWh is the roof output')
 assert(formatShare(0.54) === '54%', 'share formats as a whole percent')
 assert(riverPeriod('weekly') === 'This week', 'weekly eyebrow is This week')
+assert(
+  almostEqual(surplus.annualValueAud, surplus.forkValueAud * 52),
+  'annual savings are weekly VPP dollars × 52 on weekly view',
+)
 
 const evenGen = report.weekly.generationKwh
 const balancedProfile: ProfileData = {
@@ -99,6 +103,7 @@ assert(balanced.share === 0, 'break-even has no VPP share')
 const daily = buildEnergyRiver({ report: surplusReport, timeframe: 'daily', feedInRate: feedIn })
 assert(almostEqual(daily.generatedKwh, surplus.generatedKwh / 7), 'daily generation is weekly ÷ 7')
 assert(almostEqual(daily.forkKwh, surplus.forkKwh / 7), 'daily leftover is weekly ÷ 7')
+assert(almostEqual(daily.annualValueAud, surplus.annualValueAud), 'annual savings ignore the timeframe toggle')
 
 assert(riverForkStage('surplus').eyebrow === 'Possible discharge', 'surplus third stage is discharge')
 assert(riverForkStage('deficit').eyebrow === 'Possible borrow', 'deficit third stage is borrow')

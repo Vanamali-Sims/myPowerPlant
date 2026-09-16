@@ -25,19 +25,19 @@ export const VPP_STORY_HEADINGS: Record<
   { eyebrow: string; title: string; lede: string }
 > = {
   surplus: {
-    eyebrow: 'From that leftover',
-    title: 'Plans that can take that discharge',
-    lede: 'These Victorian plans fit this battery. They are how leftover power can be discharged into the VPP.',
+    eyebrow: 'Next step',
+    title: 'VPP plans that can help you achieve this saving',
+    lede: 'These Victorian plans fit this battery. They are how leftover power can go out through a VPP instead of a standard feed-in.',
   },
   deficit: {
-    eyebrow: 'From that gap',
-    title: 'Plans that can cover that borrow',
-    lede: 'These Victorian plans fit this battery. They are how this home can borrow from nearby batteries — and still earn when the grid calls.',
+    eyebrow: 'Next step',
+    title: 'VPP plans that can help you achieve this saving',
+    lede: 'These Victorian plans fit this battery. They can cover the gap from nearby batteries — and still earn when the grid calls.',
   },
   balanced: {
-    eyebrow: 'From this battery',
-    title: 'Plans that put this battery to work',
-    lede: 'The house already breaks even. These Victorian plans still pay when the network needs the battery.',
+    eyebrow: 'Next step',
+    title: 'VPP plans that can help you achieve this saving',
+    lede: 'The roof already covers use. These plans still pay when the network needs your battery.',
   },
 }
 

@@ -6,7 +6,7 @@ import { DEFAULT_LOCATION_LABEL, NAV, type AppNavId } from '../../constants'
 import { locationFromPostcode } from '../../data/profileOptions'
 import { useSlidingHighlight } from '../../lib/useSlidingHighlight'
 import { useTransientPopover } from '../../lib/useTransientPopover'
-import { BoltIcon } from '../ui/icons'
+import { MyPowerPlantMark } from '../ui/MyPowerPlantMark'
 import { Popover } from '../ui/Popover'
 
 export type { AppNavId }
@@ -66,8 +66,8 @@ export function AppShell({
           onClick={onLogoClick}
           aria-label="MyPowerPlant home"
         >
-          <span className="brand__mark">
-            <BoltIcon width={14} height={14} />
+          <span className="brand__mark brand__mark--logo">
+            <MyPowerPlantMark width={28} height={28} />
           </span>
           <span className="brand__word">MyPowerPlant</span>
         </button>

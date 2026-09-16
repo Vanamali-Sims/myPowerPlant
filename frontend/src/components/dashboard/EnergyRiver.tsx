@@ -66,7 +66,7 @@ export function EnergyRiver({ model, place, timeframe, onTimeframe }: EnergyRive
       id: 'vpp',
       tone: vppTone,
       kwh: model.forkKwh,
-      label: `${stage.eyebrow} ${formatKwh(model.forkKwh)} · ${formatAud(model.forkValueAud)}`,
+      label: `${stage.eyebrow} ${formatKwh(model.forkKwh)}`,
     })
   }
 
@@ -168,11 +168,7 @@ export function EnergyRiver({ model, place, timeframe, onTimeframe }: EnergyRive
             id="vpp"
             tone={vppTone}
             label={stage.eyebrow}
-            value={
-              model.forkKwh > 0
-                ? `${formatKwh(model.forkKwh)} · ${formatAud(model.forkValueAud)}`
-                : formatKwh(0)
-            }
+            value={formatKwh(model.forkKwh)}
             hint={stage.hint}
             active={active}
             pinned={pinned}
@@ -190,15 +186,18 @@ export function EnergyRiver({ model, place, timeframe, onTimeframe }: EnergyRive
 
       <article className={`energy-savings${vppOn ? ' is-lit' : ''}`}>
         <header className="energy-savings__head">
-          <p className="energy-savings__eyebrow">Possible money saved</p>
+          <p className="energy-savings__eyebrow">Possible money saved · annual</p>
           <span className="kpi-badge kpi-badge--estimate">Estimate</span>
         </header>
-        <p className="energy-savings__value">{formatAud(model.forkValueAud)}</p>
+        <p className="energy-savings__value">
+          {formatAud(model.annualValueAud)}
+          <span className="energy-savings__per">per year</span>
+        </p>
         <p className="energy-savings__hint">
           {isSurplus
-            ? 'If that leftover went out through a VPP instead of a standard feed-in.'
+            ? 'If that leftover went out through a VPP instead of a standard feed-in, over a year.'
             : isDeficit
-              ? 'If a VPP covered the gap instead of buying that much from the grid.'
+              ? 'If a VPP covered the gap instead of buying that much from the grid, over a year.'
               : 'The roof already covers use. A VPP still pays for grid events.'}
         </p>
       </article>
