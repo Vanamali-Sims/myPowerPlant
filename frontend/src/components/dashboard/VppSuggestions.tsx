@@ -23,6 +23,8 @@ import {
   type MatchReasonCode,
   type SuggestionMatch,
 } from '../../lib/vppSuggestions'
+import { VPP_DEFAULT_HEADING, VPP_STORY_HEADINGS } from '../../constants'
+import type { RiverFork } from '../../lib/energyRiver'
 import type { ProfileData } from '../../types/profile'
 import { Button } from '../ui/Button'
 import { Callout } from '../ui/Callout'
@@ -39,6 +41,7 @@ type Props = {
   profile: ProfileData
   plans: VppSuggestionPlan[]
   batteryModels: BatteryModelRow[]
+  fork?: RiverFork | null
   onStartSetup: () => void
 }
 
@@ -70,14 +73,16 @@ type OpenDialog = {
  * @param props.profile - Household answers used only for matching, never sent
  * @returns JSX.Element
  *
- * Cards stay compact. Why-it-suits-you (US-3.7) and full terms (US-3.1/3.2)
- * each open in their own dialog so the dashboard report is not regenerated.
+ * Cards stay compact at the mouth of the energy river. Why-it-suits-you
+ * (US-3.7) and full terms (US-3.1/3.2) each open in their own dialog so the
+ * dashboard report is not regenerated.
  */
 export function VppSuggestions({
   hasProfile,
   profile,
   plans,
   batteryModels,
+  fork = null,
   onStartSetup,
 }: Props) {
   const [dialog, setDialog] = useState<OpenDialog | null>(null)
@@ -97,11 +102,13 @@ export function VppSuggestions({
     setDialog(null)
   }
 
+  const heading = fork ? VPP_STORY_HEADINGS[fork] : VPP_DEFAULT_HEADING
+
   if (!hasProfile) {
     return (
       <section className="vpp-suggestions" aria-labelledby="vpp-suggestions-heading">
-        <p className="eyebrow">Plans that could fit this home</p>
-        <h2 id="vpp-suggestions-heading">VPP Suggestions</h2>
+        <p className="eyebrow">{VPP_DEFAULT_HEADING.eyebrow}</p>
+        <h2 id="vpp-suggestions-heading">{VPP_DEFAULT_HEADING.title}</h2>
         <Callout
           tone="action"
           icon={<AlertIcon />}
@@ -124,8 +131,9 @@ export function VppSuggestions({
 
   return (
     <section className="vpp-suggestions" aria-labelledby="vpp-suggestions-heading">
-      <p className="eyebrow">Plans that could fit this home</p>
-      <h2 id="vpp-suggestions-heading">VPP Suggestions</h2>
+      <p className="eyebrow">{heading.eyebrow}</p>
+      <h2 id="vpp-suggestions-heading">{heading.title}</h2>
+      {heading.lede ? <p className="vpp-suggestions__lede">{heading.lede}</p> : null}
 
       {emptyReason ? (
         <Callout tone="neutral" icon={<AlertIcon />} title="No matching plans yet">

@@ -1,8 +1,8 @@
 /**
- * Household energy dashboard: KPI cards, charts, and a short profile footer.
+ * Household energy dashboard: energy river, node details, and VPP plans.
  */
 import { useEffect, useMemo, useState } from 'react'
-import { KIND_LABELS, TIMEFRAMES } from '../../constants'
+import { TIMEFRAMES } from '../../constants'
 import { coordsFromPostcode, locationFromPostcode } from '../../data/profileOptions'
 import { formatUpdatedAt } from '../../lib/formatProfile'
 import { useSlidingHighlight } from '../../lib/useSlidingHighlight'
@@ -10,25 +10,20 @@ import {
   fetchMethodology,
   type MethodologyBundle,
 } from '../../lib/methodologyApi'
+import { buildEnergyRiver, riverTitle } from '../../lib/energyRiver'
 import {
   buildKpiReport,
-  formatAud,
-  formatKg,
-  formatKwh,
   parseCount,
-  scaleAud,
-  scaleKwh,
-  scaleWeekly,
   type Timeframe,
-  type ValueKind,
 } from '../../lib/kpis'
 import type { ProfileData } from '../../types/profile'
 import { Button } from '../ui/Button'
 import { Callout } from '../ui/Callout'
 import { ConsumptionDonut } from './ConsumptionDonut'
+import { EnergyRiver } from './EnergyRiver'
 import { SolarForecastChart } from './SolarForecastChart'
 import { VppSuggestions } from './VppSuggestions'
-import { BoltIcon, BulbIcon, LeafIcon } from '../ui/icons'
+import { BoltIcon } from '../ui/icons'
 
 type Props = {
   profile: ProfileData
@@ -38,31 +33,15 @@ type Props = {
   onLogoClick: () => void
 }
 
-function kindLabel(kind: ValueKind): string {
-  return KIND_LABELS[kind]
-}
-
-function kindClass(kind: ValueKind): string {
-  if (kind === 'from_you') return 'kpi-badge kpi-badge--fact'
-  if (kind === 'sourced') return 'kpi-badge kpi-badge--sourced'
-  if (kind === 'sample') return 'kpi-badge kpi-badge--sample'
-  if (kind === 'unavailable') return 'kpi-badge kpi-badge--unavailable'
-  return 'kpi-badge kpi-badge--estimate'
-}
-
-function KindBadge({ kind }: { kind: ValueKind }) {
-  return <span className={kindClass(kind)}>{kindLabel(kind)}</span>
-}
-
 /**
  * DashboardView
  * @param props.profile - Saved household answers used to build the KPI report
  * @param props.onEditProfile - Jump to the profile editor
  * @returns JSX.Element
  *
- * Figures are estimates unless the badge says otherwise.
- * VPP Suggestions sit under the charts and do not use the leftover
- * dollar-ranked matcher in this file.
+ * The river is the story: generation, use, leftover or gap, then VPP plans
+ * at the mouth. Donut and forecast sit under the house and roof as detail.
+ * Figures are estimates unless a badge says otherwise.
  */
 export function DashboardView({
   profile,
@@ -97,7 +76,18 @@ export function DashboardView({
   )
   const place =
     locationFromPostcode(profile.postcode) || report?.locationLabel || ''
-  const weekly = report?.weekly
+
+  const river = useMemo(
+    () =>
+      report && bundle
+        ? buildEnergyRiver({
+            report,
+            timeframe,
+            feedInRate: bundle.methodology.defaultFeedInRate,
+          })
+        : null,
+    [bundle, report, timeframe],
+  )
 
   const solarInputs = useMemo(() => {
     if (!bundle) return null
@@ -118,36 +108,6 @@ export function DashboardView({
       performanceRatio: bundle.methodology.solarPerformanceRatio,
     }
   }, [bundle, report, profile.panelCount, profile.panelWatts, profile.solarDirection, profile.postcode])
-
-  const kpis =
-    report && weekly
-      ? [
-          {
-            eyebrow: 'Energy use',
-            value: formatKwh(scaleKwh(weekly.consumptionKwh, timeframe)),
-            kind: report.consumptionKind,
-            icon: BoltIcon,
-            note: '',
-            signed: undefined,
-          },
-          {
-            eyebrow: weekly.netEnergyValueAud >= 0 ? 'Estimated savings' : 'Net energy cost',
-            value: formatAud(scaleAud(weekly.netEnergyValueAud, timeframe)),
-            kind: 'estimate' as ValueKind,
-            icon: BulbIcon,
-            signed: weekly.netEnergyValueAud >= 0 ? 'surplus' : 'deficit',
-            note: weekly.netEnergyValueAud >= 0 ? '' : 'Home uses more than it makes',
-          },
-          {
-            eyebrow: 'Carbon avoided',
-            value: formatKg(scaleWeekly(weekly.carbonAvoidedKg, timeframe)),
-            kind: 'estimate' as ValueKind,
-            icon: LeafIcon,
-            note: '',
-            signed: undefined,
-          },
-        ]
-      : []
 
   const { setRef: setTimeRef, box: timeBox } = useSlidingHighlight(
     hasProfile ? timeframe : null,
@@ -171,7 +131,8 @@ export function DashboardView({
       </header>
 
       <div className="dashboard__intro">
-        <h1>Your household energy picture</h1>
+        <p className="eyebrow">Your energy river</p>
+        <h1>{river ? riverTitle(river.fork) : 'See how this home’s power moves.'}</h1>
       </div>
 
       {hasProfile && loadError ? (
@@ -218,45 +179,13 @@ export function DashboardView({
             ))}
           </div>
 
-          <section className="kpi-grid" aria-label="Key insights">
-            {kpis.map((card) => {
-              const Icon = card.icon
-              return (
-                <article key={card.eyebrow} className="kpi-card">
-                  <span className="kpi-card__icon">
-                    <Icon />
-                  </span>
-                  <p className="eyebrow">{card.eyebrow}</p>
-                  <p
-                    className={
-                      card.signed
-                        ? `kpi-card__value kpi-card__value--${card.signed}`
-                        : 'kpi-card__value'
-                    }
-                  >
-                    <span key={`${timeframe}-${card.value}`} className="kpi-card__figure">
-                      {card.value}
-                    </span>
-                    <KindBadge kind={card.kind} />
-                  </p>
-                  {card.note ? <p className="kpi-card__note">{card.note}</p> : null}
-                </article>
-              )
-            })}
-          </section>
+          {river ? <EnergyRiver key={timeframe} model={river} /> : null}
 
-          {report && weekly ? (
+          {report ? (
             <div className="dashboard__split">
               <section className="dashboard-card">
-                <p className="eyebrow">Where your energy goes</p>
-                <h2>Energy consumption breakdown</h2>
-                <ConsumptionDonut appliances={report.appliances} timeframe={timeframe} />
-              </section>
-
-              <section className="dashboard-card">
                 <p className="eyebrow">
-                  {report.solarIsPotential ? 'Solar potential' : 'Solar generation'} · weather
-                  forecast
+                  {report.solarIsPotential ? 'Roof potential' : 'Roof'} · closer look
                 </p>
                 <h2>Predicted solar generation</h2>
                 {solarInputs ? (
@@ -267,6 +196,12 @@ export function DashboardView({
                     placeLabel={place}
                   />
                 ) : null}
+              </section>
+
+              <section className="dashboard-card">
+                <p className="eyebrow">House · closer look</p>
+                <h2>Where that energy goes</h2>
+                <ConsumptionDonut appliances={report.appliances} timeframe={timeframe} />
               </section>
             </div>
           ) : null}
@@ -279,6 +214,7 @@ export function DashboardView({
           profile={profile}
           plans={bundle?.vppSuggestionPlans ?? []}
           batteryModels={bundle?.batteryModels ?? []}
+          fork={river?.fork ?? null}
           onStartSetup={onStartSetup}
         />
       ) : null}

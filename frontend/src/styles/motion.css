@@ -365,12 +365,17 @@
   }
 
   .kpi-card__figure,
+  .energy-river__figure,
   .donut__draw,
   .forecast__draw .forecast__area,
   .forecast__draw .forecast__line {
     animation: none;
     opacity: 1;
     transform: none;
+  }
+
+  .energy-river__current {
+    animation: none;
   }
 
   .forecast__draw .forecast__line {
