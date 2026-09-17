@@ -1,0 +1,377 @@
+/* Voice-assisted questionnaire (Epic 5).
+   Two surfaces: the trigger sits in the page flow at the top of the step, and
+   only the live indicators are pinned. It was one fixed dock, which put every
+   panel it opened on top of the questions it was reporting on. */
+
+/* Sticky, not fixed. `position: fixed` cannot be trusted here: App.tsx wraps
+   every view in `.view-enter`, whose transform animation makes a fixed child
+   resolve against that wrapper instead of the viewport — the listening
+   indicator ended up at the bottom of the page content, so you had to scroll
+   to find it. Sticky is unaffected by a transformed ancestor, and it reserves
+   its own space, so it can never cover a question either. */
+.voice-bar {
+  position: sticky;
+  top: env(safe-area-inset-top, 0px);
+  z-index: 30;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  /* Opaque: the form scrolls underneath it. */
+  background: var(--canvas);
+  padding-block: 0.6rem;
+}
+
+
+/* -- the trigger ---------------------------------------------------- */
+
+.voice-dock__buttons {
+  display: flex;
+  justify-content: flex-start;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.voice-fab {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.6rem 0.95rem;
+  border-radius: 999px;
+  /* Secondary on purpose: Continue stays the primary action on the page. */
+  border: 1px solid var(--border-strong);
+  background: var(--surface);
+  color: var(--ink);
+  font: inherit;
+  font-size: 0.88rem;
+  font-weight: 500;
+  cursor: pointer;
+  box-shadow: 0 6px 18px rgb(20 35 29 / 12%);
+}
+
+.voice-fab:hover {
+  border-color: var(--structure);
+  color: var(--structure);
+}
+
+.voice-fab:focus-visible,
+.voice-off:focus-visible,
+.voice-status__controls button:focus-visible,
+.voice-error__actions button:focus-visible {
+  outline: 2px solid var(--structure);
+  outline-offset: 2px;
+}
+
+.voice-off {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.35rem 0.6rem;
+  border: none;
+  background: none;
+  color: var(--ink-muted);
+  font: inherit;
+  font-size: 0.78rem;
+  cursor: pointer;
+  text-decoration: underline;
+}
+
+.voice-off:hover {
+  color: var(--ink);
+}
+
+/* -- consent panel -------------------------------------------------- */
+
+.voice-panel,
+.voice-filled,
+.voice-confirm,
+.voice-error,
+.voice-status {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 0.85rem;
+  box-shadow: 0 10px 26px rgb(20 35 29 / 14%);
+}
+
+.voice-panel {
+  padding: 1rem;
+}
+
+.voice-panel__title {
+  margin: 0 0 0.45rem;
+  font-size: 1.05rem;
+}
+
+.voice-panel__body {
+  margin: 0 0 0.6rem;
+  font-size: 0.85rem;
+  line-height: 1.45;
+  color: var(--ink-secondary);
+}
+
+.voice-panel__body--note {
+  padding: 0.55rem 0.65rem;
+  border-radius: 0.5rem;
+  background: var(--terra-50);
+  color: var(--terra-900);
+}
+
+.voice-panel__actions,
+.voice-confirm__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+}
+
+/* -- what it heard -------------------------------------------------- */
+
+.voice-filled {
+  padding: 0.8rem 0.9rem;
+  max-height: 14rem;
+  overflow-y: auto;
+}
+
+/* A disclosure button rather than a heading: the receipt collapses so it can
+   never sit on top of the questions it is reporting on. */
+.voice-filled__title {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  width: 100%;
+  margin: 0 0 0.5rem;
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--structure);
+  text-align: left;
+  cursor: pointer;
+}
+
+.voice-filled__toggle {
+  margin-left: auto;
+  font-weight: 500;
+  color: var(--ink-muted);
+  text-decoration: underline;
+}
+
+.voice-filled--collapsed .voice-filled__title {
+  margin-bottom: 0;
+}
+
+.voice-filled__list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.voice-filled__item {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.35rem;
+  font-size: 0.82rem;
+}
+
+.voice-filled__label {
+  font-weight: 500;
+}
+
+.voice-filled__heard {
+  color: var(--ink-muted);
+  font-style: italic;
+}
+
+.voice-filled__flag {
+  padding: 0.05rem 0.4rem;
+  border-radius: 999px;
+  background: var(--terra-50);
+  color: var(--terra-800);
+  font-size: 0.7rem;
+  font-weight: 600;
+}
+
+.voice-filled__note {
+  margin: 0.6rem 0 0;
+  font-size: 0.75rem;
+  color: var(--ink-muted);
+}
+
+/* -- confirmation --------------------------------------------------- */
+
+.voice-confirm {
+  padding: 0.9rem;
+}
+
+.voice-confirm__question {
+  margin: 0 0 0.2rem;
+  font-size: 0.92rem;
+}
+
+.voice-confirm__heard {
+  margin: 0 0 0.7rem;
+  font-size: 0.8rem;
+  color: var(--ink-muted);
+  font-style: italic;
+}
+
+.voice-confirm__list {
+  margin-top: 0.6rem;
+  font-size: 0.8rem;
+}
+
+.voice-confirm__list summary {
+  cursor: pointer;
+  color: var(--ink-secondary);
+}
+
+.voice-confirm__list ul {
+  margin: 0.45rem 0 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+}
+
+.voice-confirm__list button {
+  width: 100%;
+  padding: 0.35rem 0.5rem;
+  border: none;
+  border-radius: 0.4rem;
+  background: none;
+  color: var(--ink);
+  font: inherit;
+  font-size: 0.82rem;
+  text-align: left;
+  cursor: pointer;
+}
+
+.voice-confirm__list button:hover {
+  background: var(--surface-sunken);
+}
+
+/* -- failures ------------------------------------------------------- */
+
+.voice-error {
+  display: flex;
+  gap: 0.5rem;
+  padding: 0.75rem 0.85rem;
+  border-color: var(--terra-200);
+  color: var(--terra-900);
+}
+
+.voice-error__body {
+  flex: 1;
+}
+
+.voice-error__message {
+  margin: 0;
+  font-size: 0.84rem;
+  line-height: 1.4;
+}
+
+.voice-error__hint {
+  margin: 0.35rem 0 0;
+  font-size: 0.78rem;
+  color: var(--ink-secondary);
+}
+
+.voice-error__actions {
+  display: flex;
+  gap: 0.75rem;
+  margin-top: 0.5rem;
+}
+
+.voice-error__actions button {
+  border: none;
+  background: none;
+  padding: 0;
+  font: inherit;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--primary);
+  cursor: pointer;
+  text-decoration: underline;
+}
+
+/* -- listening indicator -------------------------------------------- */
+
+.voice-status {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.55rem 0.7rem;
+}
+
+.voice-status__dot {
+  width: 0.55rem;
+  height: 0.55rem;
+  flex: none;
+  border-radius: 50%;
+  background: var(--primary);
+}
+
+.voice-status--listening .voice-status__dot {
+  animation: voice-pulse 1.4s ease-in-out infinite;
+}
+
+.voice-status--paused .voice-status__dot {
+  background: var(--ink-muted);
+}
+
+.voice-status__text {
+  flex: 1;
+  min-width: 0;
+  font-size: 0.82rem;
+  font-weight: 500;
+}
+
+.voice-status__partial {
+  color: var(--ink-muted);
+  font-weight: 400;
+}
+
+.voice-status__controls {
+  display: flex;
+  gap: 0.15rem;
+}
+
+.voice-status__controls button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.9rem;
+  height: 1.9rem;
+  border: none;
+  border-radius: 0.45rem;
+  background: none;
+  color: var(--ink-secondary);
+  cursor: pointer;
+}
+
+.voice-status__controls button:hover {
+  background: var(--surface-sunken);
+  color: var(--ink);
+}
+
+@keyframes voice-pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.35; transform: scale(0.8); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .voice-status--listening .voice-status__dot { animation: none; }
+}
+
+/* On a phone, keep an expanded receipt from filling the screen. */
+@media (max-width: 30rem) {
+  .voice-filled {
+    max-height: 9rem;
+  }
+}

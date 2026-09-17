@@ -105,7 +105,7 @@ describe('escapeIcsText via buildIcsFile - injection attempts through reason', (
     )
     const overLong = ics
       .split('\r\n')
-      .filter((line) => !line.startsWith(' ') && Buffer.byteLength(line, 'utf8') > 75)
+      .filter((line) => !line.startsWith(' ') && new TextEncoder().encode(line).length > 75)
     expect(overLong).toHaveLength(0)
   })
 })

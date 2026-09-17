@@ -252,11 +252,49 @@ export function BulbIcon(props: IconProps) {
   )
 }
 
+export function MicIcon(props: IconProps) {
+  return (
+    <svg {...icon(props)}>
+      <rect x="9" y="2.5" width="6" height="11" rx="3" />
+      <path d="M5.5 11a6.5 6.5 0 0 0 13 0" />
+      <path d="M12 17.5V21" />
+    </svg>
+  )
+}
+
 export function CloseIcon(props: IconProps) {
   return (
     <svg {...icon(props)}>
       <path d="m6 6 12 12" />
       <path d="m18 6-12 12" />
+    </svg>
+  )
+}
+
+export function MicOffIcon(props: IconProps) {
+  return (
+    <svg {...icon(props)}>
+      <path d="M15 5.2A3 3 0 0 0 9 6v4.2" />
+      <path d="M9 13.2a3 3 0 0 0 5.2 1" />
+      <path d="M5.5 11a6.5 6.5 0 0 0 10.2 5.3M18.5 11v.6" />
+      <path d="M12 17.5V21" />
+      <path d="M4 3l16 18" />
+    </svg>
+  )
+}
+
+export function PauseIcon(props: IconProps) {
+  return (
+    <svg {...icon(props)}>
+      <path d="M9.5 5v14M14.5 5v14" />
+    </svg>
+  )
+}
+
+export function StopIcon(props: IconProps) {
+  return (
+    <svg {...icon(props)}>
+      <rect x="6" y="6" width="12" height="12" rx="2" />
     </svg>
   )
 }
