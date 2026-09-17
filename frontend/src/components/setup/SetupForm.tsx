@@ -4,6 +4,7 @@
 import { useState } from 'react'
 import { SETUP_STEPS, STEP_FIELDS } from '../../constants'
 import { applyBaseline, markUserFields } from '../../data/baselines'
+import { formProgress } from '../../lib/formProgress'
 import { hasErrors, validateStep, type FieldErrors } from '../../lib/validateProfile'
 import { useVoiceInput } from '../../lib/voice/useVoiceInput'
 import type { ProfileData } from '../../types/profile'
@@ -39,6 +40,8 @@ export function SetupForm({ profile, onChange, onComplete, onExit, onLogoClick }
   const [errors, setErrors] = useState<FieldErrors>({})
   const step = SETUP_STEPS[stepIndex]
   const total = SETUP_STEPS.length
+  // Measured from answers, not from which step is open.
+  const progress = formProgress(profile)
 
   function patch<K extends keyof ProfileData>(field: K, value: ProfileData[K]) {
     const next: ProfileData = { ...profile, [field]: value }
@@ -58,7 +61,30 @@ export function SetupForm({ profile, onChange, onComplete, onExit, onLogoClick }
     }
   }
 
-  const voice = useVoiceInput({ stepId: step.id, onFill: patch })
+  /**
+   * Apply several answers in ONE write.
+   *
+   * `patch` closes over `profile`, so calling it once per field in the same
+   * tick makes every call spread the same stale object and only the last one
+   * survives. Voice routinely fills three or four fields from one sentence,
+   * which is exactly that case.
+   */
+  function patchMany(updates: Partial<ProfileData>) {
+    const next: ProfileData = { ...profile, ...updates }
+    if (updates.hasSolar === 'no') {
+      next.solarDirection = ''
+      next.panelCount = ''
+      next.panelWatts = ''
+    }
+    onChange(next)
+    setErrors((current) => {
+      const copy = { ...current }
+      for (const field of Object.keys(updates)) delete copy[field as keyof ProfileData]
+      return copy
+    })
+  }
+
+  const voice = useVoiceInput({ stepId: step.id, onFill: patchMany })
 
   /**
    * Typing over a spoken answer replaces it, and drops the "we heard" note with
@@ -112,7 +138,14 @@ export function SetupForm({ profile, onChange, onComplete, onExit, onLogoClick }
         onPostcodeChange={(postcode) => changeField('postcode', postcode)}
         onLogoClick={onLogoClick}
       />
-      <StepProgress step={stepIndex + 1} total={total} />
+      <StepProgress
+        step={stepIndex + 1}
+        total={total}
+        answered={progress.answered}
+        fields={progress.total}
+        percent={progress.percent}
+        minutesLeft={progress.minutesLeft}
+      />
       <div className="setup__intro">
         <h1>{step.title}</h1>
         <p>{step.lede}</p>

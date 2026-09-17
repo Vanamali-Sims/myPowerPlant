@@ -29,6 +29,12 @@ export type ExtractedSlot = {
   confidence: SlotConfidence
   /** Present for closed-list fields, so a rejected match can offer the list. */
   options?: string[]
+  /**
+   * Inferred rather than said, for a question the form is not even showing.
+   * The value is still written; it just has no business appearing in a list
+   * headed "Filled from what you said".
+   */
+  derived?: true
 }
 
 export type ExtractResult = {
@@ -268,7 +274,7 @@ const ALL_ANCHORS = [
   'fridge', 'fridges', 'refrigerator', 'refrigerators', 'freezer',
   'panel', 'panels', 'battery', 'batteries', 'powerwall',
   'dryer', 'tv', 'television', 'washing', 'washer', 'dishwasher',
-  'aircon', 'ac', 'hours', 'loads',
+  'aircon', 'ac', 'conditioner', 'conditioning', 'hours', 'loads',
 ]
 
 function yesNoRule(
@@ -285,7 +291,16 @@ function yesNoRule(
       if (allowNotSure && /(not sure|no idea|dunno|don t know|not certain)/.test(joined)) {
         return { value: 'not_sure', heard: 'not sure', confidence: 'accept' }
       }
-      const value = negatedBefore(tokens, at) ? 'no' : 'yes'
+      // "no gas but yes we have a dryer": the negation belongs to the clause
+      // before, and an explicit yes standing closer to the cue outranks it.
+      const window = 4
+      let negAt = -1
+      let yesAt = -1
+      for (let i = Math.max(0, at - window); i < at; i += 1) {
+        if (NEGATORS.includes(tokens[i])) negAt = i
+        if (tokens[i] === 'yes') yesAt = i
+      }
+      const value = negAt !== -1 && negAt > yesAt ? 'no' : 'yes'
       return { value, heard: tokens[at], confidence: 'accept' }
     },
   }
@@ -299,14 +314,8 @@ function enumRule(
   return {
     field,
     run: (_tokens, text) => {
-      for (const row of table) {
-        for (const cue of row.cues) {
-          if (text.includes(cue)) {
-            return { value: row.value, heard: cue, confidence }
-          }
-        }
-      }
-      return null
+      const hit = lastCue(text, table)
+      return hit ? { ...hit, confidence } : null
     },
   }
 }
@@ -324,6 +333,150 @@ function countRule(
       return { value: String(hit.value), heard: hit.heard, confidence: 'accept' }
     },
   }
+}
+
+
+/**
+ * applianceRule
+ * @param field - The profile field to fill
+ * @param subject - Words that name the appliance, e.g. heating / heater
+ * @param table - Specific systems, checked in order
+ * @returns Rule
+ *
+ * `enumRule` only matches literal cues, which meant "we don't have heating"
+ * filled nothing: the contraction normalises to "not", so the cue "no heating"
+ * never appears. Negation and uncertainty are handled here the way `yesNoRule`
+ * already handles them, and only when they sit near the appliance being named —
+ * "not sure about the dryer" must not decide the heating.
+ */
+
+/**
+ * lastCue
+ * @param text - The whole normalised window
+ * @param table - Values and the phrases that indicate them
+ * @returns The value whose phrase was said LAST
+ *
+ * Table order used to decide, which meant the window's first mention won and a
+ * correction could never land: saying "wood heater, no actually electric" kept
+ * wood, because wood sat higher in the table. The rolling window holds the
+ * whole utterance, so the later phrase is the one the speaker meant.
+ */
+function lastCue(
+  text: string,
+  table: { value: string; cues: string[] }[],
+): { value: string; heard: string; confidence: SlotConfidence } | null {
+  let best: { value: string; cue: string; at: number } | null = null
+  for (const row of table) {
+    for (const cue of row.cues) {
+      const at = text.lastIndexOf(cue)
+      if (at === -1) continue
+      if (!best || at > best.at) best = { value: row.value, cue, at }
+    }
+  }
+  if (!best) return null
+  return { value: best.value, heard: best.cue, confidence: 'accept' }
+}
+
+function applianceRule(
+  field: keyof ProfileData,
+  subject: string[],
+  table: { value: string; cues: string[] }[],
+): Rule {
+  return {
+    field,
+    run: (tokens, text) => {
+      const at = firstCueIndex(tokens, subject)
+
+      if (at !== -1) {
+        const near = tokens.slice(Math.max(0, at - 4), at + 5).join(' ')
+        if (/(not sure|no idea|dunno|not certain)/.test(near)) {
+          return { value: 'not_sure', heard: 'not sure', confidence: 'accept' }
+        }
+        if (negatedBefore(tokens, at)) {
+          return { value: 'none', heard: `no ${tokens[at]}`, confidence: 'accept' }
+        }
+      }
+
+      return lastCue(text, table)
+    },
+  }
+}
+
+
+/* ── Dryer counts ──────────────────────────────────────────────────
+   Two fields sharing one anchor, and the hardest thing in the whole extractor.
+   The rolling window means every other answer is in the same string, so these
+   must read a clause around the word "dryer" rather than the whole text —
+   otherwise "washing machine 5 times a week" answers the dryer. */
+
+/**
+ * dryerClause
+ * @param tokens - The normalised window
+ * @returns Just the part of it that can be about the dryer
+ *
+ * Looking back a fixed number of tokens is not enough: "washing machine 5
+ * times a week AND the dryer 2 times a week" reaches back over the conjunction
+ * and answers the dryer with the washing machine's five. So the clause starts
+ * after the last joining word before "dryer", when there is one.
+ */
+function dryerClause(tokens: string[]): string | null {
+  const at = tokens.indexOf('dryer')
+  if (at === -1) return null
+
+  const joiners = ['and', 'then', 'also', 'plus', 'but']
+  let start = Math.max(0, at - 6)
+  for (let i = at - 1; i >= start; i -= 1) {
+    if (joiners.includes(tokens[i])) {
+      start = i + 1
+      break
+    }
+  }
+  // Fourteen tokens forward was not enough: "for the clothes dryer i use it 5
+  // times during the week and 2 times on the weekend" puts "weekend" at 14, so
+  // the weekend count fell off the end. Reach further, but stop at whatever
+  // appliance is spoken about next.
+  const others = [
+    'washing', 'washer', 'dishwasher', 'tv', 'television',
+    'fridge', 'fridges', 'refrigerator', 'refrigerators',
+    'aircon', 'conditioner', 'conditioning', 'heating', 'heater', 'cooling',
+  ]
+  let end = Math.min(tokens.length, at + 24)
+  for (let i = at + 1; i < end; i += 1) {
+    if (others.includes(tokens[i])) {
+      end = i
+      break
+    }
+  }
+  return tokens.slice(start, end).join(' ')
+}
+
+const WEEKDAY = '(?:week ?days?|weekdays?|midweek|week)'
+const WEEKEND = '(?:week ?ends?|weekends?|saturdays?|sundays?)'
+
+/**
+ * periodCount
+ * @param clause - Text around the word "dryer"
+ * @param period - Which of the two period patterns to read
+ * @returns The count and the words it came from, or null
+ *
+ * Accepts the number on either side of the period word. People say both
+ * "three times a week" and "week three" — the second is common when the two
+ * labelled boxes are visible and they are reading them off.
+ */
+function periodCount(clause: string, period: 'week' | 'weekend') {
+  const word = period === 'weekend' ? WEEKEND : `${WEEKDAY}\\b(?!end)`
+  // After-form first, since in "week 3 weekend 1" the before-form would read
+  // "3 weekend" and hand the weekend the weekday's count. But it only applies
+  // where the period word is a label rather than the tail of a phrase: in
+  // "during the week 1 times on the weekend" the 1 belongs to what follows,
+  // hence the lookbehind.
+  const after = clause.match(
+    new RegExp(`(?<!\\b(?:a|per|the|during|on|in|every)\\s)${word}\\s*(?:is|are|it is)?\\s*(\\d+)`),
+  )
+  if (after) return { value: after[1], heard: after[0] }
+  const before = clause.match(new RegExp(`(\\d+)\\s*(?:times?\\s*)?(?:a|per|on|in|during)?\\s*(?:the\\s*)?${word}`))
+  if (before) return { value: before[1], heard: before[0] }
+  return null
 }
 
 const RULES: Rule[] = [
@@ -359,55 +512,103 @@ const RULES: Rule[] = [
   countRule('tvHoursPerWeek', ['tv', 'television'], { min: 0, max: 168 }),
   countRule('washerCyclesPerWeek', ['washing', 'washer', 'loads'], { min: 0, max: 40 }),
   countRule('dishwasherCyclesPerWeek', ['dishwasher'], { min: 0, max: 40 }),
-  countRule('airconHoursPerWeek', ['aircon', 'ac'], { min: 0, max: 168 }),
+  // "air conditioner" tokenises as two words, so anchoring on "aircon" alone
+  // matched nothing at all for anyone who said it in full.
+  countRule('airconHoursPerWeek', ['aircon', 'ac', 'conditioner', 'conditioning'], { min: 0, max: 168 }),
   yesNoRule('gas', ['gas']),
   yesNoRule('dryer', ['dryer', 'tumble']),
-  yesNoRule('hotWater', ['hot water']),
+  yesNoRule('hotWater', ['hot water', 'hot water system', 'hot water service', 'hws']),
   {
     field: 'dryerWeek',
     run: (tokens) => {
-      const text = tokens.join(' ')
-      if (!text.includes('dryer')) return null
-      // Both dryer fields share one anchor; without a weekday/weekend word we
-      // cannot split a single number across them, so we fill neither.
-      const m = text.match(/(\d+)\s*(?:times?\s*)?(?:a|per|during the)?\s*week(?!end)/)
-      if (!m) return null
-      return { value: m[1], heard: m[0], confidence: 'accept' }
+      const clause = dryerClause(tokens)
+      if (!clause) return null
+      const hit = periodCount(clause, 'week')
+      if (hit) return { value: hit.value, heard: hit.heard, confidence: 'accept' }
+      // Both boxes are on screen and labelled, so a bare pair is a real answer
+      // given in box order. Flagged, because the order is our assumption.
+      const pair = clause.match(/\b(\d+)\b[^\d]{1,12}\b(\d+)\b/)
+      if (pair && !/week/.test(clause)) {
+        return { value: pair[1], heard: `${pair[1]} and ${pair[2]}`, confidence: 'confirm' }
+      }
+      return null
     },
   },
   {
     field: 'dryerWeekend',
     run: (tokens) => {
-      const text = tokens.join(' ')
-      if (!text.includes('dryer')) return null
-      const m = text.match(/(\d+)\s*(?:times?\s*)?(?:a|per|on the)?\s*weekend/)
-      if (!m) return null
-      return { value: m[1], heard: m[0], confidence: 'accept' }
+      const clause = dryerClause(tokens)
+      if (!clause) return null
+      const hit = periodCount(clause, 'weekend')
+      if (hit) return { value: hit.value, heard: hit.heard, confidence: 'accept' }
+      const pair = clause.match(/\b(\d+)\b[^\d]{1,12}\b(\d+)\b/)
+      if (pair && !/week/.test(clause)) {
+        return { value: pair[2], heard: `${pair[1]} and ${pair[2]}`, confidence: 'confirm' }
+      }
+      return null
     },
   },
-  enumRule('heating', [
-    { value: 'electric', cues: ['reverse cycle', 'heat pump', 'split system', 'electric heat'] },
-    { value: 'gas', cues: ['gas heating', 'gas heater', 'ducted gas', 'gas ducted'] },
-    { value: 'wood', cues: ['wood', 'fireplace', 'fire place'] },
-    { value: 'none', cues: ['no heating'] },
-  ]),
-  enumRule('cooling', [
-    { value: 'evaporative', cues: ['evaporative', 'evap'] },
-    { value: 'air_conditioning', cues: ['air conditioning', 'air con', 'aircon', 'reverse cycle', 'split system'] },
-    { value: 'fans', cues: ['fans only', 'just fans', 'fans'] },
-    { value: 'none', cues: ['no cooling'] },
-  ]),
+  applianceRule(
+    'heating',
+    ['heating', 'heater', 'heaters', 'heat'],
+    [
+      // Gas stays qualified: a bare "gas" answers the gas connection question,
+      // not this one.
+      { value: 'gas', cues: ['gas heating', 'gas heater', 'ducted gas', 'gas ducted', 'gas central', 'gas fire'] },
+      {
+        value: 'electric',
+        cues: [
+          'reverse cycle',
+          'heat pump',
+          'split system',
+          'electric heat',
+          'electric heater',
+          'hydronic',
+          'panel heater',
+          'column heater',
+          // Every other cue was a compound, so the single commonest answer to
+          // "how do you heat your home" matched nothing at all.
+          'electricity',
+          'electric',
+        ],
+      },
+      { value: 'wood', cues: ['wood', 'fireplace', 'fire place', 'combustion', 'pot belly'] },
+      { value: 'none', cues: ['no heating', 'no heater'] },
+    ],
+  ),
+  applianceRule(
+    'cooling',
+    ['cooling', 'cooler', 'aircon', 'air'],
+    [
+      { value: 'evaporative', cues: ['evaporative', 'evap'] },
+      {
+        value: 'air_conditioning',
+        cues: ['air conditioning', 'air con', 'aircon', 'reverse cycle', 'split system', 'ducted cooling'],
+      },
+      { value: 'fans', cues: ['fans only', 'just fans', 'ceiling fan', 'pedestal fan', 'fans', 'fan'] },
+      { value: 'none', cues: ['no cooling', 'no air con'] },
+    ],
+  ),
 
   /* -- usage ----------------------------------------------------- */
   {
     field: 'monthlyBill',
     run: (_tokens, text) => {
-      const m = text.match(/(\d+(?:\.\d+)?)\s*(?:dollars?)?\s*(?:a|per|every)?\s*(month|quarter|fortnight|week)?/)
       const money = text.match(/(?:\$\s*)?(\d{2,5})\s*(?:dollars?)?/)
       if (!money) return null
       const amount = Number(money[1])
       if (amount < 20 || amount > 20000) return null
-      const period = m?.[2]
+
+      // The period is at least as often said BEFORE the amount — "my monthly
+      // bill is 300" — as after it. Reading only the tail flagged every one of
+      // those as an unknown period.
+      const after = text.match(/\d+\s*(?:dollars?)?\s*(?:a|per|every)\s*(month|quarter|fortnight|week)/)
+      const phrase = text.match(/\b(monthly|month|quarterly|quarter|fortnightly|fortnight|weekly|week)\b/)
+      const said = after?.[1] ?? phrase?.[1]
+      const period = said
+        ? said.replace(/ly$/, '').replace('quarter', 'quarter')
+        : null
+
       if (period === 'quarter') {
         return { value: String(Math.round(amount / 3)), heard: `${amount} a quarter`, confidence: 'accept' }
       }
@@ -420,8 +621,8 @@ const RULES: Rule[] = [
       if (period === 'month') {
         return { value: String(amount), heard: `${amount} a month`, confidence: 'accept' }
       }
-      // No period stated. Australian bills are usually quarterly, so guessing
-      // monthly risks a silent 3x error through the whole dashboard — flag it.
+      // No period anywhere. Australian bills are usually quarterly, so guessing
+      // monthly risks a silent 3x error through the whole dashboard.
       return { value: String(amount), heard: String(amount), confidence: 'confirm' }
     },
   },
@@ -451,21 +652,60 @@ const RULES: Rule[] = [
     { value: 'E', cues: ['east'] },
     { value: 'W', cues: ['west'] },
   ]),
-  countRule('panelCount', ['panel', 'panels'], { min: 1, max: 100 }),
+  {
+    field: 'panelCount',
+    run: (tokens, text) => {
+      const hit = anchoredNumber(tokens, ['panel', 'panels'], ALL_ANCHORS, { min: 1, max: 100 })
+      if (!hit) return null
+      // A count is a whole number of things. "7.1 kilowatts of panels" is a
+      // system size, and a numeric input renders 7.1 as 71 — a wrong answer
+      // that looks like a typed one.
+      if (!Number.isInteger(hit.value)) return null
+      // Nor is a figure that carries a power unit a count of anything.
+      const asText = String(hit.value).replace('.', '\\.')
+      if (new RegExp(`${asText}\\s*(?:kilo\\s*watts?|kw|watts?|w)\\b`).test(text)) return null
+      return { value: String(hit.value), heard: hit.heard, confidence: 'accept' }
+    },
+  },
   {
     field: 'panelWatts',
     run: (_tokens, text) => {
-      const watts = text.match(/(\d{3,4})\s*(?:watt|watts|w)\b/)
-      if (watts) return { value: watts[1], heard: watts[0], confidence: 'accept' }
+      // "watts" is transcribed as "what's" or "wats" often enough that not
+      // handling it reads to the user as the field simply being broken.
+      const WATT = "(?:watts?|watt's|what's|whats|wats|wat|w)"
+      const direct = text.match(new RegExp(`(\\d{2,4})\\s*${WATT}\\b`))
+      if (direct) {
+        const each = Number(direct[1])
+        if (each >= 80 && each <= 900) {
+          return { value: direct[1], heard: direct[0], confidence: 'accept' }
+        }
+      }
+
       // Households know their array as "6.6 kilowatt", not as per-panel watts.
-      const kw = text.match(/(\d+(?:\.\d+)?)\s*(?:kilowatt|kw)/)
-      const panels = text.match(/(\d+)\s*panels?/)
+      const kw = text.match(/(\d+(?:\.\d+)?)\s*(?:kilo\s*watts?|kw)\b/)
+      const panels = text.match(/(\d+)\s*panels?\b/)
       if (kw && panels) {
         const each = Math.round((Number(kw[1]) * 1000) / Number(panels[1]))
         if (each >= 100 && each <= 1000) {
-          return { value: String(each), heard: `${kw[0]} over ${panels[1]} panels`, confidence: 'confirm' }
+          return {
+            value: String(each),
+            heard: `${kw[0]} over ${panels[1]} panels`,
+            confidence: 'confirm',
+          }
         }
       }
+
+      // A bare three-digit number on this step cannot be the panel count,
+      // which caps at 100, and nothing else here is numeric. Flagged, because
+      // the user never actually said what it was.
+      const bare = text.match(/\b(\d{3})\b/)
+      if (bare) {
+        const each = Number(bare[1])
+        if (each >= 150 && each <= 800) {
+          return { value: bare[1], heard: bare[1], confidence: 'confirm' }
+        }
+      }
+
       return null
     },
   },
@@ -485,9 +725,13 @@ const RULES: Rule[] = [
   {
     field: 'batteryAge',
     run: (_tokens, text) => {
-      const m = text.match(/(\d{1,2})\s*(?:years?|yrs?)\s*old/)
-      if (!m) return null
-      return { value: m[1], heard: m[0], confidence: 'accept' }
+      // "old" was mandatory, so "the battery is about two years" read nothing.
+      const said = text.match(/(\d{1,2})\s*(?:years?|yrs?)(?:\s*old)?/)
+      if (said) return { value: said[1], heard: said[0], confidence: 'accept' }
+      // "battery age 4", which is how people answer a labelled box.
+      const labelled = text.match(/age\s*(?:is|of)?\s*(\d{1,2})\b/)
+      if (labelled) return { value: labelled[1], heard: labelled[0], confidence: 'accept' }
+      return null
     },
   },
   {
@@ -551,7 +795,7 @@ export function extractSlots(transcript: string, stepId: SetupStepId): ExtractRe
   if (dryer?.value === 'no') {
     for (const field of ['dryerWeek', 'dryerWeekend'] as const) {
       if (inStep.has(field) && !slots.some((s) => s.field === field)) {
-        slots.push({ field, value: '0', heard: 'no dryer', confidence: 'accept' })
+        slots.push({ field, value: '0', heard: 'no dryer', confidence: 'accept', derived: true })
       }
     }
   }

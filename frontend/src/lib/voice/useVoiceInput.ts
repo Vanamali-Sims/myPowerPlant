@@ -36,8 +36,12 @@ export type PendingChoice = {
 
 type Options = {
   stepId: SetupStepId
-  /** Write a value into the form. Called once per accepted slot. */
-  onFill: (field: keyof ProfileData, value: string | number) => void
+  /**
+   * Write answers into the form. Takes every field from one utterance at once,
+   * because the form's patch closes over its own state — one call per field in
+   * the same tick and only the last one lands.
+   */
+  onFill: (updates: Partial<ProfileData>) => void
 }
 
 const MESSAGES: Record<RecognizerError | 'no-match', string> = {
@@ -64,6 +68,15 @@ export function useVoiceInput({ stepId, onFill }: Options) {
   const supported = useMemo(() => isRecognitionSupported(), [])
   const recognizerRef = useRef<Recognizer | null>(null)
   const failCount = useRef(0)
+  /* Fast speech is chunked by the engine at arbitrary points, often mid-phrase.
+     Extracting each chunk alone breaks anchor binding — "there's four" and "of
+     us in a three bedroom place" arrive separately and `people` never binds.
+     So finals are kept in a short rolling window and extraction runs over the
+     join, which lets a phrase split across chunks still be seen whole. */
+  const windowRef = useRef<{ text: string; at: number }[]>([])
+  /** What this window has already written, so a re-extract does not re-fire. */
+  const appliedRef = useRef<Map<string, string>>(new Map())
+  const settleTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
   // Read inside the recogniser callbacks, which are built once and would
   // otherwise close over the step and writer from the render that made them.
   const stepRef = useRef(stepId)
@@ -86,23 +99,32 @@ export function useVoiceInput({ stepId, onFill }: Options) {
   // Each step gets its own budget before we suggest typing instead.
   useEffect(() => {
     failCount.current = 0
+    windowRef.current = []
+    appliedRef.current.clear()
   }, [stepId])
 
   const applySlots = useCallback((slots: ExtractedSlot[]) => {
-    if (slots.length === 0) {
-      failCount.current += 1
-      setFailure({
-        code: 'no-match',
-        message: MESSAGES['no-match'],
-        suggestTyping: failCount.current >= 2,
-      })
-      return
-    }
+    // A window that yields nothing is not reported here any more: mid-sentence
+    // chunks legitimately extract to nothing, and raising an error on each one
+    // buried the user in "could not match that" while they were still talking.
+    // The settle timer decides that, once speech has actually stopped.
+    if (slots.length === 0) return
 
     failCount.current = 0
     setFailure(null)
 
+    // Gathered first, written once. See the note on `onFill`.
+    const updates: Partial<ProfileData> = {}
+    const words: Partial<Record<keyof ProfileData, string>> = {}
+    const toFlag: Partial<Record<keyof ProfileData, true>> = {}
+
     for (const slot of slots) {
+      // Re-extracting a growing window re-finds slots already written. Skip the
+      // unchanged ones; a different value is a correction and does go through.
+      const seen = appliedRef.current.get(slot.field as string)
+      if (seen === String(slot.value)) continue
+      appliedRef.current.set(slot.field as string, String(slot.value))
+
       // A closed-list guess is the one place a silent wrong answer is plausible,
       // so it waits for a yes rather than landing in the field.
       if (slot.options) {
@@ -114,21 +136,56 @@ export function useVoiceInput({ stepId, onFill }: Options) {
         })
         continue
       }
-      fillRef.current(slot.field, slot.value)
-      setHeard((current) => ({ ...current, [slot.field]: slot.heard }))
-      if (slot.confidence === 'confirm') {
-        setFlagged((current) => ({ ...current, [slot.field]: true }))
-      }
+
+      Object.assign(updates, { [slot.field]: slot.value })
+      // Derived answers fill their field but stay out of the "what you said"
+      // list — the user did not say them, and the question is not on screen.
+      if (!slot.derived) words[slot.field] = slot.heard
+      if (slot.confidence === 'confirm') toFlag[slot.field] = true
+    }
+
+    if (Object.keys(updates).length === 0) return
+    fillRef.current(updates)
+    setHeard((current) => ({ ...current, ...words }))
+    if (Object.keys(toFlag).length > 0) {
+      setFlagged((current) => ({ ...current, ...toFlag }))
     }
   }, [])
 
   const ensureRecognizer = useCallback((): Recognizer => {
     if (recognizerRef.current) return recognizerRef.current
     const created = createBrowserRecognizer({
-      onPartial: (text) => setPartial(text),
+      onPartial: (text) => {
+        setPartial(text)
+        // Simply talking again clears a "could not match that". Requiring a
+        // click on Try again before carrying on made a miss feel like a wall,
+        // when recognition never actually stopped listening.
+        setFailure((current) => (current ? null : current))
+      },
       onResult: (text) => {
         setPartial('')
-        applySlots(extractSlots(text, stepRef.current).slots)
+
+        const now = Date.now()
+        windowRef.current.push({ text, at: now })
+        // Nine seconds is long enough to span a chunked sentence and short
+        // enough that an answer given a minute ago cannot resurface.
+        windowRef.current = windowRef.current.filter((part) => now - part.at < 9000)
+
+        const joined = windowRef.current.map((part) => part.text).join(' ')
+        const found = extractSlots(joined, stepRef.current).slots
+        applySlots(found)
+
+        // Only call it a miss once the speaker has actually stopped.
+        if (settleTimer.current) clearTimeout(settleTimer.current)
+        settleTimer.current = setTimeout(() => {
+          if (appliedRef.current.size > 0) return
+          failCount.current += 1
+          setFailure({
+            code: 'no-match',
+            message: MESSAGES['no-match'],
+            suggestTyping: failCount.current >= 2,
+          })
+        }, 1400)
       },
       onError: (code) => {
         failCount.current += 1
@@ -163,18 +220,30 @@ export function useVoiceInput({ stepId, onFill }: Options) {
     start()
   }, [start])
 
+  /** A new utterance starts from a clean window. */
+  const resetWindow = useCallback(() => {
+    windowRef.current = []
+    appliedRef.current.clear()
+    if (settleTimer.current) {
+      clearTimeout(settleTimer.current)
+      settleTimer.current = null
+    }
+  }, [])
+
   const pause = useCallback(() => {
+    resetWindow()
     recognizerRef.current?.pause()
     setPartial('')
     setState('paused')
-  }, [])
+  }, [resetWindow])
 
   const stop = useCallback(() => {
+    resetWindow()
     recognizerRef.current?.stop()
     recognizerRef.current = null
     setPartial('')
     setState('idle')
-  }, [])
+  }, [resetWindow])
 
   /** Revokes consent on this device; the next press explains itself again. */
   const turnOff = useCallback(() => {
@@ -189,7 +258,7 @@ export function useVoiceInput({ stepId, onFill }: Options) {
 
   const confirmPending = useCallback(() => {
     if (!pending) return
-    fillRef.current(pending.field, pending.value)
+    fillRef.current({ [pending.field]: pending.value })
     setHeard((current) => ({ ...current, [pending.field]: pending.heard }))
     setPending(null)
   }, [pending])
@@ -198,7 +267,7 @@ export function useVoiceInput({ stepId, onFill }: Options) {
 
   const chooseInstead = useCallback((option: string) => {
     if (!pending) return
-    fillRef.current(pending.field, option)
+    fillRef.current({ [pending.field]: option })
     setHeard((current) => ({ ...current, [pending.field]: 'chosen from the list' }))
     setPending(null)
   }, [pending])
@@ -223,6 +292,7 @@ export function useVoiceInput({ stepId, onFill }: Options) {
   useEffect(() => () => {
     recognizerRef.current?.stop()
     recognizerRef.current = null
+    if (settleTimer.current) clearTimeout(settleTimer.current)
   }, [])
 
   return {

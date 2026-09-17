@@ -203,3 +203,217 @@ describe('must reject', () => {
     expect(extractSlots('about two hundred', 'household').slots).toHaveLength(0)
   })
 })
+
+describe('chunked speech — why the rolling window exists', () => {
+  /* The recogniser splits fast speech at arbitrary points. These two tests are
+     the bug report: alone, a fragment loses the binding; joined, it survives.
+     useVoiceInput extracts over a 9s window of finals for exactly this reason. */
+
+  it('gets an answer WRONG when a phrase is split across two finals', () => {
+    // "there is 4" has a number with no anchor, so it is correctly dropped.
+    const first = slotsFor('there is 4', 'household')
+    expect(first.get('people')).toBeUndefined()
+
+    // The orphaned remainder is the real damage: "us" and "3" are now adjacent
+    // with nothing between them, so the household size binds to the bedroom
+    // count. The user said four people and the form says three.
+    const second = slotsFor('of us in a 3 bedroom place', 'household')
+    expect(second.get('people')).toBe('3')
+    expect(second.get('rooms')).toBe('3')
+  })
+
+  it('recovers it when the finals are joined before extracting', () => {
+    const joined = slotsFor('there is 4 of us in a 3 bedroom place', 'household')
+    expect(joined.get('people')).toBe('4')
+    expect(joined.get('rooms')).toBe('3')
+  })
+
+  it('re-extracting a growing window is stable, so nothing double-fires', () => {
+    const partial = slotsFor('we have got gas', 'household')
+    const grown = slotsFor('we have got gas and 2 fridges', 'household')
+    expect(partial.get('gas')).toBe('yes')
+    expect(grown.get('gas')).toBe('yes')
+    expect(grown.get('refrigerators')).toBe('2')
+  })
+})
+
+describe('solar: panel count vs panel wattage', () => {
+  it('does not turn a system size into a panel count', () => {
+    // "7.1 kilowatts of panels" bound 7.1 to panelCount, and a numeric input
+    // renders that as 71. A count is a whole number of things.
+    expect(value('seven point one kilowatts of panels', 'solar', 'panelCount')).toBeUndefined()
+  })
+
+  it('still reads a real panel count', () => {
+    expect(value('i have 18 panels', 'solar', 'panelCount')).toBe('18')
+  })
+
+  it('reads wattage when the recogniser mangles "watts"', () => {
+    // "watts" comes back as "what's" often enough to be worth handling.
+    expect(value('the panels are 400 whats each', 'solar', 'panelWatts')).toBe('400')
+    expect(value("each panel is 370 what's", 'solar', 'panelWatts')).toBe('370')
+  })
+
+  it('reads a plain wattage', () => {
+    expect(value('18 panels at 400 watts', 'solar', 'panelWatts')).toBe('400')
+    expect(value('each panel is 370 w', 'solar', 'panelWatts')).toBe('370')
+  })
+
+  it('derives per-panel wattage from a system size and a count', () => {
+    expect(value('six point six kilowatt system with 18 panels', 'solar', 'panelWatts')).toBe('367')
+  })
+
+  it('takes a bare three-digit number as wattage, but flags it', () => {
+    // On this step it cannot be the panel count, which caps at 100.
+    const slot = extractSlots('about 370', 'solar').slots.find((s) => s.field === 'panelWatts')
+    expect(slot?.value).toBe('370')
+    expect(slot?.confidence).toBe('confirm')
+  })
+})
+
+describe('heating and cooling: the ways people actually say it', () => {
+  it('understands not having heating, however it is phrased', () => {
+    expect(value('we do not have heating', 'household', 'heating')).toBe('none')
+    expect(value('no heater in this place', 'household', 'heating')).toBe('none')
+    expect(value('no heating', 'household', 'heating')).toBe('none')
+  })
+
+  it('understands not being sure', () => {
+    expect(value('not sure what the heating is', 'household', 'heating')).toBe('not_sure')
+  })
+
+  it('reads the common systems', () => {
+    expect(value('we have got an electric heater', 'household', 'heating')).toBe('electric')
+    expect(value('gas ducted heating', 'household', 'heating')).toBe('gas')
+    expect(value('we heat with a wood fire', 'household', 'heating')).toBe('wood')
+    expect(value('hydronic heating', 'household', 'heating')).toBe('electric')
+  })
+
+  it('does not take a gas connection as a gas heater', () => {
+    // "we have gas" answers the gas question, not the heating one.
+    expect(value('we have gas', 'household', 'heating')).toBeUndefined()
+  })
+
+  it('handles cooling the same way', () => {
+    expect(value('we do not have cooling', 'household', 'cooling')).toBe('none')
+    expect(value('just a ceiling fan', 'household', 'cooling')).toBe('fans')
+    expect(value('evaporative', 'household', 'cooling')).toBe('evaporative')
+    expect(value('ducted air conditioning', 'household', 'cooling')).toBe('air_conditioning')
+  })
+
+  it('still fills both from one phrase', () => {
+    const slots = slotsFor('we have reverse cycle', 'household')
+    expect(slots.get('heating')).toBe('electric')
+    expect(slots.get('cooling')).toBe('air_conditioning')
+  })
+})
+
+describe('dryer: weekday and weekend counts', () => {
+  it('reads the plain phrasing', () => {
+    const s = slotsFor('i use the dryer 3 times a week and once on the weekend', 'household')
+    expect(s.get('dryerWeek')).toBe('3')
+    expect(s.get('dryerWeekend')).toBe('1')
+  })
+
+  it('reads the number after the period word', () => {
+    const s = slotsFor('for the dryer week 3 weekend 1', 'household')
+    expect(s.get('dryerWeek')).toBe('3')
+    expect(s.get('dryerWeekend')).toBe('1')
+  })
+
+  it('understands weekdays and weekends', () => {
+    const s = slotsFor('dryer 4 weekdays and 2 weekends', 'household')
+    expect(s.get('dryerWeek')).toBe('4')
+    expect(s.get('dryerWeekend')).toBe('2')
+  })
+
+  it('takes two bare numbers in box order, and flags them', () => {
+    // Both boxes are on screen and labelled, so "3 and 1" is a real answer.
+    const slots = extractSlots('the dryer 3 and 1', 'household').slots
+    const week = slots.find((s) => s.field === 'dryerWeek')
+    expect(week?.value).toBe('3')
+    expect(week?.confidence).toBe('confirm')
+  })
+
+  it('does not steal another appliance\'s number', () => {
+    // The rolling window means every other answer is in the same text.
+    const s = slotsFor(
+      'washing machine 5 times a week and the dryer 2 times a week',
+      'household',
+    )
+    expect(s.get('dryerWeek')).toBe('2')
+    expect(s.get('washerCyclesPerWeek')).toBe('5')
+  })
+
+  it('still refuses to split a single unlabelled number', () => {
+    const s = slotsFor('we use the dryer about three times', 'household')
+    expect(s.get('dryerWeek')).toBeUndefined()
+    expect(s.get('dryerWeekend')).toBeUndefined()
+  })
+})
+
+describe('the reports from testing', () => {
+  it('reads air conditioner hours however it is named', () => {
+    // "air conditioner" is two tokens, so anchoring on "aircon" alone found
+    // nothing at all.
+    expect(value('the air conditioner is used 20 hours a week', 'household', 'airconHoursPerWeek')).toBe('20')
+    expect(value('aircon about 12 hours a week', 'household', 'airconHoursPerWeek')).toBe('12')
+    expect(value('air conditioning 8 hours', 'household', 'airconHoursPerWeek')).toBe('8')
+  })
+
+  it('reads hot water however it is named', () => {
+    expect(value('we have hot water', 'household', 'hotWater')).toBe('yes')
+    expect(value('gas hot water service', 'household', 'hotWater')).toBe('yes')
+    expect(value('there is a hot water system', 'household', 'hotWater')).toBe('yes')
+  })
+
+  it('reaches the weekend at the end of a long dryer sentence', () => {
+    const s = slotsFor(
+      'for the clothes dryer i use it 5 times during the week and 2 times on the weekend',
+      'household',
+    )
+    expect(s.get('dryerWeek')).toBe('5')
+    expect(s.get('dryerWeekend')).toBe('2')
+  })
+
+  it('reads battery age without the word "old"', () => {
+    expect(value('the battery is 3 years old', 'battery', 'batteryAge')).toBe('3')
+    expect(value('the battery is about 2 years', 'battery', 'batteryAge')).toBe('2')
+    expect(value('battery age 4', 'battery', 'batteryAge')).toBe('4')
+  })
+
+  it('takes the period from the phrase, not just from after the number', () => {
+    // "my monthly bill is 300" says monthly up front, so it should not be
+    // flagged as an unknown period.
+    const slot = extractSlots('my monthly bill is 300', 'usage').slots
+      .find((s) => s.field === 'monthlyBill')
+    expect(slot?.value).toBe('300')
+    expect(slot?.confidence).toBe('accept')
+    expect(value('my quarterly bill is 540', 'usage', 'monthlyBill')).toBe('180')
+  })
+})
+
+describe('corrections and plain words', () => {
+  it('reads plain "electric"', () => {
+    // Every electric cue was a compound — "electric heat", "heat pump" — so
+    // simply saying "electric" matched nothing.
+    expect(value('electric', 'household', 'heating')).toBe('electric')
+    expect(value('we heat with electricity', 'household', 'heating')).toBe('electric')
+  })
+
+  it('lets a later answer correct an earlier one', () => {
+    // The rolling window holds both, so the one said LAST has to win.
+    expect(value('we have a wood heater no actually electric', 'household', 'heating')).toBe('electric')
+    expect(value('electric heating sorry i mean wood', 'household', 'heating')).toBe('wood')
+    // Not "evaporative no air conditioning" — that genuinely means none, and
+    // reading it as a correction would be the wrong call.
+    expect(value('evaporative sorry i mean air conditioning', 'household', 'cooling')).toBe(
+      'air_conditioning',
+    )
+  })
+
+  it('an explicit yes beats a negation further away', () => {
+    expect(value('no gas but yes we have a dryer', 'household', 'dryer')).toBe('yes')
+    expect(value('i do not have a dryer', 'household', 'dryer')).toBe('no')
+  })
+})
