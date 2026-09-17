@@ -26,6 +26,8 @@ const FOLD_LIMIT = 75
  */
 function escapeIcsText(value: string): string {
   return value
+    // eslint-disable-next-line no-control-regex -- strips control chars RFC 5545 forbids in TEXT
+    .replace(/[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]/g, '')
     .replace(/\\/g, '\\\\')
     .replace(/;/g, '\\;')
     .replace(/,/g, '\\,')
@@ -50,6 +52,24 @@ function foldIcsLine(line: string): string {
     rest = rest.slice(FOLD_LIMIT - 1)
   }
   return folded
+}
+
+const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/
+
+/**
+ * assertValidIsoDate
+ * @param iso - entry.date, sourced from the Open-Meteo forecast response
+ *
+ * entry.date is never escaped before use in UID/DTSTART/DTEND (R22) - a
+ * malformed value from a compromised or misbehaving forecast response
+ * could otherwise inject raw calendar syntax into the exported file.
+ * Validating the shape here, once, before any use is cheaper and safer
+ * than escaping three separate call sites.
+ */
+function assertValidIsoDate(iso: string): void {
+  if (!ISO_DATE.test(iso) || Number.isNaN(new Date(`${iso}T00:00:00`).getTime())) {
+    throw new Error(`Refusing to build a calendar event for an invalid date: "${iso}"`)
+  }
 }
 
 /** ISO date (YYYY-MM-DD) to the compact YYYYMMDD form iCalendar uses. */
@@ -82,6 +102,7 @@ function timestampNow(): string {
  * expanded, so the calendar reminder and the tab never say different things.
  */
 function buildEventBlock(entry: ReminderRecommendation, eventType: EventType): string {
+  assertValidIsoDate(entry.date)
   const summary = EVENT_TYPE_TITLE[eventType]
   const description = `${summary} for ${entry.dayLabel}.\n\n${entry.reason}\n\nEstimated generation, not a live meter reading. Downloaded from MyPowerPlant.`
   const lines = [
