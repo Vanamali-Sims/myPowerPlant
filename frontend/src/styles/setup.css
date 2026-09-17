@@ -1,23 +1,15 @@
 .setup {
   width: min(28.5rem, 100%);
   margin: 0 auto;
-  /* The voice dock is fixed over this column. Without a reserve the last
-     question sits under it with no way to scroll clear — on a phone that made
-     the hot-water question unreachable. */
-  padding: 1.25rem 1.15rem
-    calc(2.5rem + var(--voice-dock-reserve, 0rem) + env(safe-area-inset-bottom, 0px));
+  /* No reserve needed any more: the voice bar is sticky, so it takes its own
+     space in the column instead of floating over the last question. */
+  padding: 1.25rem 1.15rem calc(2.5rem + env(safe-area-inset-bottom, 0px));
   display: flex;
   flex-direction: column;
   gap: 1.25rem;
 }
 
-@media (max-width: 30rem) {
-  .setup {
-    /* Only the live indicator is pinned now, so this reserve just keeps it
-       off the field you are dictating into. */
-    --voice-dock-reserve: 3.25rem;
-  }
-}
+
 
 .setup__intro h1 {
   margin: 0 0 0.45rem;

@@ -185,15 +185,17 @@ export function VoiceDock({
             </p>
           </div>
         ) : null}
-      </div>
 
       {/*
-        These three stay pinned. A listening indicator that scrolls away breaks
-        AC-5.c, and a confirmation the user has scrolled past is a question
-        nobody answers.
+        These live in the bar too, not in a fixed layer. `position: fixed` is
+        not reliable here: App.tsx wraps every view in `.view-enter`, whose
+        transform animation makes a fixed child resolve against that wrapper
+        rather than the viewport — so the listening indicator sat at the bottom
+        of the page content and you had to scroll to find it. The bar is sticky
+        instead, which is unaffected by a transformed ancestor.
       */}
       {active || pending || failure ? (
-        <div className="voice-live">
+        <>
           {active ? (
             <div className={`voice-status voice-status--${state}`} aria-live="polite">
               <span className="voice-status__dot" aria-hidden="true" />
@@ -267,8 +269,9 @@ export function VoiceDock({
               </div>
             </div>
           ) : null}
-        </div>
+        </>
       ) : null}
+      </div>
     </>
   )
 }
