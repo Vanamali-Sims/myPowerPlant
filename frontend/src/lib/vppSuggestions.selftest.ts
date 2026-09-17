@@ -14,6 +14,7 @@ import {
   planFitCopy,
   regionFromPostcode,
   reserveHeadroomKwh,
+  safeProviderUrl,
 } from './vppSuggestions'
 
 function assert(condition: unknown, message: string): asserts condition {
@@ -155,5 +156,37 @@ assert(
   noticeFit.tradeoffs.some((line) => /notice period/i.test(line)),
   'notice plans list leaving delay as a trade-off',
 )
+
+// R20: outbound provider links must be gated by the domain allow-list.
+assert(
+  safeProviderUrl('https://www.agl.com.au/solar-batteries/batteries/virtual-power-plant') ===
+    'https://www.agl.com.au/solar-batteries/batteries/virtual-power-plant',
+  'an allow-listed https provider host is returned unchanged',
+)
+assert(
+  safeProviderUrl('https://agl.com.au/') === 'https://agl.com.au/',
+  'the bare allow-listed domain (no subdomain) is accepted',
+)
+assert(
+  safeProviderUrl('https://evil.example.com/agl.com.au') === null,
+  'a non-allow-listed host is rejected even when it mentions an allowed domain',
+)
+assert(
+  safeProviderUrl('https://not-agl.com.au/') === null,
+  'a lookalike host that merely ends with the allowed suffix without a dot boundary is rejected',
+)
+assert(
+  safeProviderUrl('https://agl.com.au.evil.example/') === null,
+  'an allow-listed domain used as a subdomain of an attacker host is rejected',
+)
+assert(
+  safeProviderUrl('http://www.agl.com.au/') === null,
+  'non-https provider links are rejected even on an allow-listed host',
+)
+assert(
+  safeProviderUrl('javascript:alert(1)') === null,
+  'a javascript: URL is rejected, not just filtered by host',
+)
+assert(safeProviderUrl('not a url') === null, 'a malformed URL is rejected without throwing')
 
 console.log('vpp suggestion self-test passed')

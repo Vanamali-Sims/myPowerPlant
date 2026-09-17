@@ -1,0 +1,794 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>MyPowerPlant — Test Report</title>
+<style>
+  @page { size: A4; margin: 18mm 16mm 16mm 16mm; }
+
+  :root {
+    --ink:      #14181f;
+    --ink-soft: #4a5361;
+    --ink-faint:#77808f;
+    --rule:     #d9dde4;
+    --rule-soft:#eceff3;
+    --accent:   #0f5c4a;
+    --accent-bg:#eef5f2;
+    --warn:     #8a4b12;
+    --warn-bg:  #fdf4ea;
+    --crit:     #8f2233;
+    --crit-bg:  #fbeef0;
+  }
+
+  * { box-sizing: border-box; }
+
+  html { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+
+  body {
+    margin: 0;
+    font-family: "Charter", "Iowan Old Style", Georgia, "Times New Roman", serif;
+    font-size: 10.2pt;
+    line-height: 1.5;
+    color: var(--ink);
+    background: #fff;
+  }
+
+  h1, h2, h3, h4, .ui {
+    font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+  }
+
+  /* ---------- cover ---------- */
+  .cover {
+    page-break-after: always;
+    height: 250mm;
+    display: flex;
+    flex-direction: column;
+  }
+  .cover-rule { height: 4px; background: var(--accent); width: 64px; margin-bottom: 14mm; }
+  .cover-eyebrow {
+    font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+    font-size: 9pt; letter-spacing: .16em; text-transform: uppercase;
+    color: var(--accent); font-weight: 600; margin-bottom: 6mm;
+  }
+  .cover h1 {
+    font-size: 30pt; line-height: 1.12; margin: 0 0 5mm 0;
+    font-weight: 700; letter-spacing: -0.015em;
+  }
+  .cover .sub {
+    font-size: 13pt; color: var(--ink-soft); margin: 0 0 auto 0;
+    max-width: 118mm; line-height: 1.45;
+  }
+  .cover-meta {
+    border-top: 1px solid var(--rule);
+    padding-top: 6mm;
+    display: grid; grid-template-columns: repeat(3, 1fr); gap: 6mm 8mm;
+  }
+  .cover-meta div { font-size: 9pt; }
+  .cover-meta dt {
+    font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+    font-size: 7.6pt; letter-spacing: .1em; text-transform: uppercase;
+    color: var(--ink-faint); margin-bottom: 1.5mm;
+  }
+  .cover-meta dd { margin: 0; font-weight: 600; }
+
+  .headline-stats {
+    display: grid; grid-template-columns: repeat(4, 1fr);
+    gap: 4mm; margin: 10mm 0;
+  }
+  .stat {
+    border: 1px solid var(--rule); border-radius: 3px;
+    padding: 5mm 4mm; text-align: center;
+  }
+  .stat .n {
+    font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+    font-size: 21pt; font-weight: 700; line-height: 1; display: block;
+    letter-spacing: -0.02em;
+  }
+  .stat .l {
+    font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+    font-size: 7.4pt; letter-spacing: .08em; text-transform: uppercase;
+    color: var(--ink-faint); margin-top: 2.5mm; display: block;
+  }
+  .stat.good .n { color: var(--accent); }
+  .stat.warn .n { color: var(--warn); }
+
+  /* ---------- structure ---------- */
+  section { page-break-inside: auto; }
+  h2 {
+    font-size: 15pt; margin: 9mm 0 4mm; padding-bottom: 2mm;
+    border-bottom: 2px solid var(--ink); font-weight: 700;
+    letter-spacing: -0.01em; page-break-after: avoid;
+  }
+  h2 .num { color: var(--accent); margin-right: 3mm; }
+  h3 {
+    font-size: 11pt; margin: 6mm 0 2.5mm; font-weight: 700;
+    page-break-after: avoid;
+  }
+  h4 {
+    font-size: 9.4pt; margin: 4mm 0 2mm; font-weight: 700;
+    text-transform: uppercase; letter-spacing: .06em; color: var(--ink-soft);
+    page-break-after: avoid;
+  }
+  p { margin: 0 0 3mm; }
+  ul, ol { margin: 0 0 3mm; padding-left: 5mm; }
+  li { margin-bottom: 1.5mm; }
+  strong { font-weight: 700; }
+
+  code, .mono {
+    font-family: "SF Mono", Menlo, Consolas, monospace;
+    font-size: 8.6pt; background: #f4f6f8; padding: 0.5mm 1.2mm;
+    border-radius: 2px; color: #24303f;
+  }
+
+  pre {
+    font-family: "SF Mono", Menlo, Consolas, monospace;
+    font-size: 8.4pt; line-height: 1.45; background: #f7f9fa;
+    border-left: 2px solid var(--rule); padding: 3mm 4mm;
+    margin: 0 0 3mm; overflow: hidden; white-space: pre-wrap;
+    page-break-inside: avoid;
+  }
+  pre code { background: none; padding: 0; font-size: inherit; }
+
+  /* ---------- tables ---------- */
+  table {
+    width: 100%; border-collapse: collapse; margin: 0 0 4mm;
+    font-size: 9pt; page-break-inside: auto;
+  }
+  thead { display: table-header-group; }
+  tr { page-break-inside: avoid; }
+  th {
+    font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+    font-size: 7.6pt; letter-spacing: .07em; text-transform: uppercase;
+    text-align: left; color: var(--ink-faint); font-weight: 600;
+    border-bottom: 1px solid var(--ink); padding: 2mm 2.5mm 1.5mm 0;
+  }
+  td {
+    padding: 2mm 2.5mm 2mm 0; border-bottom: 1px solid var(--rule-soft);
+    vertical-align: top;
+  }
+  td.num, th.num { text-align: right; padding-right: 3mm; font-variant-numeric: tabular-nums; }
+  tbody tr:last-child td { border-bottom: 1px solid var(--rule); }
+  tr.total td { font-weight: 700; border-top: 1px solid var(--ink); border-bottom: none; }
+
+  .pass { color: var(--accent); font-weight: 700; }
+  .fail { color: var(--crit); font-weight: 700; }
+
+  .pill {
+    font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+    font-size: 7.4pt; font-weight: 700; letter-spacing: .05em;
+    padding: 0.8mm 2mm; border-radius: 2px; white-space: nowrap;
+  }
+  .pill.s2 { background: var(--crit-bg); color: var(--crit); }
+  .pill.s3 { background: var(--warn-bg); color: var(--warn); }
+  .pill.ok { background: var(--accent-bg); color: var(--accent); }
+
+  /* ---------- callouts ---------- */
+  .note {
+    border-left: 3px solid var(--accent); background: var(--accent-bg);
+    padding: 3.5mm 4mm; margin: 0 0 4mm; font-size: 9.2pt;
+    page-break-inside: avoid;
+  }
+  .note.warn { border-color: var(--warn); background: var(--warn-bg); }
+  .note .lbl {
+    font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+    display: block; font-size: 7.6pt; letter-spacing: .1em;
+    text-transform: uppercase; font-weight: 700; margin-bottom: 1.5mm;
+    color: var(--accent);
+  }
+  .note.warn .lbl { color: var(--warn); }
+
+  .defect {
+    border: 1px solid var(--rule); border-radius: 3px; padding: 5mm;
+    margin: 0 0 5mm; page-break-inside: avoid;
+  }
+  .defect-head {
+    display: flex; justify-content: space-between; align-items: baseline;
+    gap: 4mm; border-bottom: 1px solid var(--rule-soft);
+    padding-bottom: 2.5mm; margin-bottom: 3mm;
+  }
+  .defect-head h3 { margin: 0; font-size: 11.5pt; }
+  .defect dl {
+    display: grid; grid-template-columns: 28mm 1fr; gap: 1.5mm 3mm;
+    margin: 0 0 3mm; font-size: 8.8pt;
+  }
+  .defect dt {
+    font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+    font-size: 7.6pt; letter-spacing: .06em; text-transform: uppercase;
+    color: var(--ink-faint); padding-top: 0.5mm;
+  }
+  .defect dd { margin: 0; }
+
+  .toc { font-size: 10pt; }
+  .toc ol { list-style: none; padding: 0; counter-reset: toc; }
+  .toc li {
+    counter-increment: toc; display: flex; gap: 3mm; align-items: baseline;
+    padding: 1.8mm 0; border-bottom: 1px dotted var(--rule);
+  }
+  .toc li::before {
+    content: counter(toc); font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+    color: var(--accent); font-weight: 700; font-size: 8.5pt; min-width: 5mm;
+  }
+  .toc .t { flex: 1; }
+  .toc .d { color: var(--ink-faint); font-size: 8.6pt; }
+
+  .break { page-break-before: always; }
+  .avoid { page-break-inside: avoid; }
+  .caption {
+    font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+    font-size: 8pt; color: var(--ink-faint); margin: -2mm 0 5mm;
+  }
+  footer.doc {
+    margin-top: 10mm; padding-top: 4mm; border-top: 1px solid var(--rule);
+    font-size: 8.4pt; color: var(--ink-faint);
+  }
+</style>
+</head>
+<body>
+
+<!-- ============ COVER ============ -->
+<div class="cover">
+  <div class="cover-rule"></div>
+  <div class="cover-eyebrow">Test Report</div>
+  <h1>MyPowerPlant<br>Testing &amp; Verification</h1>
+  <p class="sub">Automated test suite construction, execution results, and defects
+  identified across the React frontend and FastAPI backend.</p>
+
+  <div class="headline-stats">
+    <div class="stat good"><span class="n">244</span><span class="l">Tests run</span></div>
+    <div class="stat good"><span class="n">244</span><span class="l">Passing</span></div>
+    <div class="stat warn"><span class="n">3</span><span class="l">Defects found</span></div>
+    <div class="stat"><span class="n">177</span><span class="l">Tests added</span></div>
+  </div>
+
+  <div class="cover-meta">
+    <div><dt>Project</dt><dd>MyPowerPlant</dd></div>
+    <div><dt>Branch</dt><dd>sec</dd></div>
+    <div><dt>Date</dt><dd>10 September 2026</dd></div>
+    <div><dt>Scope</dt><dd>Automated unit &amp; integration</dd></div>
+    <div><dt>Stacks</dt><dd>React 19 / TS · FastAPI</dd></div>
+    <div><dt>Status</dt><dd>Suite green, 3 defects open</dd></div>
+  </div>
+</div>
+
+<!-- ============ CONTENTS ============ -->
+<section>
+  <h2><span class="num">—</span>Contents</h2>
+  <div class="toc">
+    <ol>
+      <li><span class="t">Executive summary</span><span class="d">What was built, what it found</span></li>
+      <li><span class="t">Testing approach</span><span class="d">Levels, techniques, risk prioritisation</span></li>
+      <li><span class="t">Automated test results</span><span class="d">244 tests across two stacks</span></li>
+      <li><span class="t">Defects identified</span><span class="d">Two Major, one Moderate</span></li>
+      <li><span class="t">Verification by hand calculation</span><span class="d">Independent check of the KPI engine</span></li>
+      <li><span class="t">Continuous integration</span><span class="d">How the evidence stays in the build</span></li>
+      <li><span class="t">Testing not yet executed</span><span class="d">Manual and usability status</span></li>
+      <li><span class="t">Coverage gaps and recommendations</span><span class="d">What to do next</span></li>
+      <li><span class="t">Appendix A — Test inventory</span><span class="d">Full suite breakdown</span></li>
+      <li><span class="t">Appendix B — Reproducing these results</span><span class="d">Commands</span></li>
+    </ol>
+  </div>
+
+  <h2><span class="num">1</span>Executive summary</h2>
+
+  <p>This report covers the construction and execution of an automated test suite for
+  MyPowerPlant, a Victorian household solar, battery and VPP profiling application.
+  Before this work the backend held 67 tests and the frontend had <strong>no test
+  runner at all</strong> — the validation rules and KPI calculations that drive the
+  product's financial estimates had no automated regression protection.</p>
+
+  <p>177 frontend tests were added across two suites, bringing the project to
+  <strong>244 automated tests, all passing</strong>. Executing them surfaced
+  <strong>three defects</strong>, two of which materially affect the numbers shown to
+  users.</p>
+
+  <table>
+    <thead>
+      <tr><th>Suite</th><th>Layer</th><th class="num">Tests</th><th>Result</th></tr>
+    </thead>
+    <tbody>
+      <tr><td><code>validateProfile.test.ts</code></td><td>Frontend · new</td><td class="num">83</td><td class="pass">Pass</td></tr>
+      <tr><td><code>kpis.test.ts</code></td><td>Frontend · new</td><td class="num">94</td><td class="pass">Pass</td></tr>
+      <tr><td><code>test_access_control.py</code></td><td>Backend · existing</td><td class="num">21</td><td class="pass">Pass</td></tr>
+      <tr><td><code>test_input_validation.py</code></td><td>Backend · existing</td><td class="num">32</td><td class="pass">Pass</td></tr>
+      <tr><td><code>test_headers_and_limits.py</code></td><td>Backend · existing</td><td class="num">14</td><td class="pass">Pass</td></tr>
+      <tr class="total"><td>Total</td><td></td><td class="num">244</td><td class="pass">All passing</td></tr>
+    </tbody>
+  </table>
+  <p class="caption">Backend per-file counts are apportioned from a 67-test collection across three files.</p>
+
+  <h3>Key findings</h3>
+
+  <p><strong>The appliance energy model overstates refrigerator consumption by roughly
+  30×.</strong> A single fridge is modelled at 322 kWh per week against a real-world
+  7–14 kWh. For any household that does not enter a monthly kWh figure — the least
+  informed user, and the one most reliant on the estimate — the headline consumption
+  figure is badly wrong.</p>
+
+  <p><strong>Households with no solar are shown dollar savings they are not making.</strong>
+  A household that answers "no solar" still receives a $33.69 per week saving and 51.7 kg
+  of avoided carbon, calculated from a hypothetical array. The engine flags this figure as
+  potential; the dashboard does not read that flag before rendering it as a dollar amount.</p>
+
+  <p>Neither defect was detectable by inspection or by using the app — both required
+  calculating expected values independently and comparing. That is the argument for the
+  suite existing.</p>
+
+  <div class="note">
+    <span class="lbl">Scope statement</span>
+    This report covers <strong>automated testing only</strong>. The manual functional
+    cases (FUN-01…FUN-12) and the usability sessions are documented and ready but
+    <strong>have not been executed</strong>. Section 7 states this position explicitly
+    rather than implying broader coverage than was achieved.
+  </div>
+</section>
+
+<!-- ============ 2. APPROACH ============ -->
+<section class="break">
+  <h2><span class="num">2</span>Testing approach</h2>
+
+  <p>MyPowerPlant has <strong>no user accounts</strong>. A household is addressed by a
+  server-generated identifier held in the browser. That single design decision drives the
+  prioritisation: the identifier <em>is</em> the access control, so its unguessability
+  carries more risk than any feature.</p>
+
+  <h3>2.1 Test levels</h3>
+  <table>
+    <thead><tr><th>Level</th><th>Covers</th><th>Location</th><th>Cadence</th></tr></thead>
+    <tbody>
+      <tr><td>Unit</td><td>Validation rules, KPI mathematics, formatters</td><td><code>frontend/src/lib/</code></td><td>Every push</td></tr>
+      <tr><td>Integration</td><td>API routes against a live DB session</td><td><code>backend/tests/</code></td><td>Every push</td></tr>
+      <tr><td>Security</td><td>Access control, input rejection, headers, rate limits</td><td><code>backend/tests/</code></td><td>Every push</td></tr>
+      <tr><td>System</td><td>Full browser journeys</td><td>Manual — FUN-01…FUN-12</td><td>Per iteration</td></tr>
+      <tr><td>Usability</td><td>Participants completing task scenarios unaided</td><td>Facilitated sessions</td><td>Per iteration</td></tr>
+    </tbody>
+  </table>
+
+  <h3>2.2 Design techniques</h3>
+  <p>Test cases were derived from named techniques rather than by walking the interface
+  and guessing. Each case records the technique that produced it, so the reasoning is
+  auditable.</p>
+
+  <table>
+    <thead><tr><th>Technique</th><th>Applied to</th><th>Example</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Equivalence partitioning</strong></td><td>Postcodes, allow-list fields</td><td>Victorian / non-Victorian / non-numeric — three classes, three cases, not thirty arbitrary postcodes</td></tr>
+      <tr><td><strong>Boundary value analysis</strong></td><td>All six bounded numeric fields</td><td>Panel count bounded 1–80, so 0, 1, 80, 81 are each tested</td></tr>
+      <tr><td><strong>Negative testing</strong></td><td>Server-side schema</td><td>Client-chosen identifiers, control characters, oversized payloads submitted directly to the API</td></tr>
+      <tr><td><strong>Path coverage</strong></td><td>Conditional fields</td><td>Dryer frequency appears only when <code>dryer = yes</code>; both branches tested</td></tr>
+      <tr><td><strong>Independent recalculation</strong></td><td>KPI engine</td><td>Expected values computed by hand from the methodology, then compared (Section 5)</td></tr>
+    </tbody>
+  </table>
+
+  <h3>2.3 Risk-based prioritisation</h3>
+  <p>Effort was allocated by likelihood × impact, not spread evenly across features.</p>
+
+  <table>
+    <thead><tr><th>Risk</th><th>Impact</th><th>Priority</th><th>Mitigating tests</th></tr></thead>
+    <tbody>
+      <tr><td>Data reachable by altering an identifier</td><td>Severe — privacy breach</td><td>P1</td><td>SEC-01…SEC-05</td></tr>
+      <tr><td>Identifiers guessable or sequential</td><td>Severe</td><td>P1</td><td><code>test_access_control.py</code></td></tr>
+      <tr><td>Invalid input accepted and corrupting KPIs</td><td>High</td><td>P1</td><td>VAL-01…VAL-28</td></tr>
+      <tr><td>User abandons the five-step wizard</td><td>High — product unusable</td><td>P1</td><td>Usability US-1, US-2</td></tr>
+      <tr><td>KPI figures wrong or misleading</td><td>High — drives a purchase decision</td><td>P2</td><td>FUN-07…FUN-10</td></tr>
+      <tr><td>Missing headers or rate limits</td><td>Medium</td><td>P2</td><td>SEC-11, SEC-12</td></tr>
+    </tbody>
+  </table>
+
+  <div class="note">
+    <span class="lbl">Why the KPI engine was tested this hard</span>
+    The KPIs inform a real financial decision — whether to spend thousands on solar or a
+    battery. "It rendered a number" is not evidence the number is right. Both Major
+    defects in Section 4 sit in this area and neither is visible from the interface.
+  </div>
+</section>
+
+<!-- ============ 3. RESULTS ============ -->
+<section class="break">
+  <h2><span class="num">3</span>Automated test results</h2>
+
+  <p>Both suites were executed on 10 September 2026 against branch <code>sec</code>.
+  Raw output is retained in <code>testing/05-evidence/</code>.</p>
+
+  <h3>3.1 Frontend — Vitest</h3>
+  <pre><code>$ npm test
+
+ ✓ src/lib/validateProfile.test.ts  (83 tests)   9ms
+ ✓ src/lib/kpis.test.ts             (94 tests)  20ms
+
+ Test Files  2 passed (2)
+      Tests  177 passed (177)
+   Duration  403ms</code></pre>
+
+  <h3>3.2 Backend — pytest</h3>
+  <pre><code>$ pytest tests/ -v
+
+ ======================== 67 passed, 3 warnings in 0.43s ========================</code></pre>
+
+  <h3>3.3 Coverage by area</h3>
+  <table>
+    <thead><tr><th>Area</th><th>Case IDs</th><th class="num">Tests</th><th>Notes</th></tr></thead>
+    <tbody>
+      <tr><td>Postcode equivalence classes</td><td>VAL-01…06</td><td class="num">14</td><td>Includes all eight non-Victorian state prefixes</td></tr>
+      <tr><td>Numeric boundary analysis</td><td>VAL-07…14</td><td class="num">40</td><td>Six fields × min−1 / min / max / max+1 / non-numeric / empty</td></tr>
+      <tr><td>Allow-list fields</td><td>VAL-15…20</td><td class="num">9</td><td>Battery models and energy providers</td></tr>
+      <tr><td>Conditional field paths</td><td>VAL-21…24</td><td class="num">5</td><td>Dryer and solar branches, both directions</td></tr>
+      <tr><td>Required-field gating</td><td>FUN-03</td><td class="num">14</td><td>Every required field blocks its step</td></tr>
+      <tr><td>KPI consumption &amp; generation</td><td>FUN-08</td><td class="num">10</td><td>Checked against hand calculations</td></tr>
+      <tr><td>Energy balance &amp; battery shifting</td><td>FUN-09</td><td class="num">7</td><td>Conservation of energy across the split</td></tr>
+      <tr><td>Retail rate &amp; plan comparison</td><td>FUN-08</td><td class="num">10</td><td>Includes division-by-zero guard</td></tr>
+      <tr><td>Appliance modelling</td><td>—</td><td class="num">11</td><td>E = N × P × H and every conditional appliance</td></tr>
+      <tr><td>No-solar households</td><td>FUN-07</td><td class="num">5</td><td>Surfaced defect KPI-02</td></tr>
+      <tr><td>Extreme-but-valid profiles</td><td>FUN-10</td><td class="num">16</td><td>Four profiles × finiteness, plans, appliances, assumptions</td></tr>
+      <tr><td>Formatters</td><td>—</td><td class="num">18</td><td>Boundary behaviour at 10 and 100</td></tr>
+      <tr><td>Access control</td><td>SEC-01…05</td><td class="num">21</td><td>Backend — identifier issuance and retrieval</td></tr>
+      <tr><td>Server-side input rejection</td><td>SEC-06…09</td><td class="num">32</td><td>Backend — includes SQL-injection-shaped payloads</td></tr>
+      <tr><td>Headers, CORS, rate limits</td><td>SEC-11…13</td><td class="num">14</td><td>Backend</td></tr>
+    </tbody>
+  </table>
+
+  <h3>3.4 Handling of known defects</h3>
+  <p>Two tests are marked <code>it.fails</code>. They assert the behaviour believed to be
+  <em>correct</em> for defects KPI-01 and KPI-02, and currently fail — so Vitest records
+  them as passing while the defect stands. Each is paired with a test pinning the
+  behaviour the code exhibits today.</p>
+
+  <p>When a defect is fixed, its <code>it.fails</code> case begins failing loudly,
+  prompting removal of the marker and its paired pin. This keeps the suite green
+  <strong>without encoding the buggy behaviour as if it were correct</strong> — a
+  distinction that matters, because a test asserting a bug silently blesses it.</p>
+</section>
+
+<!-- ============ 4. DEFECTS ============ -->
+<section class="break">
+  <h2><span class="num">4</span>Defects identified</h2>
+
+  <table>
+    <thead><tr><th>ID</th><th>Summary</th><th>Severity</th><th>Status</th></tr></thead>
+    <tbody>
+      <tr><td><strong>KPI-01</strong></td><td>Refrigerator power rating overstates modelled consumption ~30×</td><td><span class="pill s2">S2 Major</span></td><td>Open</td></tr>
+      <tr><td><strong>KPI-02</strong></td><td>Households with no solar shown dollar savings and avoided carbon</td><td><span class="pill s2">S2 Major</span></td><td>Open</td></tr>
+      <tr><td><strong>VAL-14</strong></td><td>Battery unit minimum differs between client and server</td><td><span class="pill s3">S3 Moderate</span></td><td>Open</td></tr>
+    </tbody>
+  </table>
+
+  <div class="defect">
+    <div class="defect-head">
+      <h3>KPI-01 · Refrigerator power rating</h3>
+      <span class="pill s2">S2 — Major</span>
+    </div>
+    <dl>
+      <dt>Location</dt><dd><code>frontend/src/data/appliances.ts</code> — <code>refrigerator.powerKw</code></dd>
+      <dt>Found by</dt><dd><code>kpis.test.ts</code> → <em>a single refrigerator should use a realistic 5–20 kWh per week</em></dd>
+      <dt>Detected via</dt><dd>Independent plausibility check of modelled output</dd>
+    </dl>
+
+    <p>The refrigerator is assigned <code>powerKw: 1.92</code> — the identical value to
+    the air conditioner — and run for 168 h/week. Running continuously is correct for a
+    fridge; the power figure is not.</p>
+
+    <pre><code>1.92 kW × 168 h = 322.56 kWh per refrigerator per week</code></pre>
+
+    <p>A domestic refrigerator uses roughly 1–2 kWh <em>per day</em>, i.e. 7–14 kWh per
+    week. The model is out by a factor of about 30. On the baseline two-fridge profile,
+    refrigeration alone accounts for 645 kWh of a 687 kWh modelled week —
+    <strong>94% of total household consumption</strong>, which is implausible on its face.</p>
+
+    <p><strong>Cause.</strong> <code>1.92</code> appears to be a rated input power rather
+    than an average draw. A fridge cycles at roughly a 15–25% duty cycle, giving an
+    effective figure near 0.05 kW.</p>
+
+    <p><strong>Impact.</strong> Affects only the modelled consumption path, used when a
+    household has not entered a monthly kWh figure. That is precisely the least-informed
+    user and the one most dependent on the estimate. Every downstream KPI inherits the error.</p>
+
+    <p><strong>Recommended fix.</strong> Replace <code>powerKw</code> with a duty-cycle
+    adjusted average draw, or retain rated power and set <code>typicalHoursPerWeek</code>
+    to compressor run-hours. The first is clearer. Verify against the GEMS dataset the
+    file cites.</p>
+  </div>
+
+  <div class="defect">
+    <div class="defect-head">
+      <h3>KPI-02 · Savings shown to households without solar</h3>
+      <span class="pill s2">S2 — Major</span>
+    </div>
+    <dl>
+      <dt>Location</dt><dd><code>frontend/src/lib/kpis.ts</code> and <code>DashboardView.tsx:62</code></dd>
+      <dt>Found by</dt><dd><code>kpis.test.ts</code> → <em>a household with no solar should not be shown dollar savings</em></dd>
+      <dt>Detected via</dt><dd>FUN-07 — deliberate test of the no-system household</dd>
+    </dl>
+
+    <p>When a household answers <code>hasSolar: 'no'</code>, <code>buildKpiReport</code>
+    still models a typical 6.6 kW array and carries those figures into
+    <code>weekly.savingsAud</code> and <code>weekly.carbonAvoidedKg</code>. Measured
+    output for a no-solar profile:</p>
+
+    <table>
+      <thead><tr><th>Figure</th><th class="num">Value returned</th></tr></thead>
+      <tbody>
+        <tr><td><code>generationKwh</code></td><td class="num">131.95 kWh</td></tr>
+        <tr><td><code>savingsAud</code></td><td class="num">$33.69</td></tr>
+        <tr><td><code>carbonAvoidedKg</code></td><td class="num">51.70 kg</td></tr>
+      </tbody>
+    </table>
+
+    <p>The report does set <code>solarIsPotential: true</code>, but
+    <code>DashboardView.tsx:62</code> renders <code>weekly.savingsAud</code> as a dollar
+    KPI without consulting that flag. A household that has just told the product it has no
+    panels is shown <strong>$33.69 per week it is not saving</strong> and 51.7 kg of carbon
+    it is not avoiding.</p>
+
+    <p><strong>Impact.</strong> The product's stated audience is households
+    <em>considering</em> solar, so this is not an edge case — it is the main path for a
+    large share of users. Presenting a hypothetical as an achieved figure could reasonably
+    be read as misleading, which matters more than the arithmetic.</p>
+
+    <p><strong>Recommended fix.</strong> Either zero these figures when
+    <code>solarIsPotential</code> is true, or — better, since the potential figure is
+    genuinely useful — relabel the cards in that case: <em>"You could save ~$34/week"</em>
+    rather than <em>"You saved $34"</em>. This is a product decision; the test currently
+    pins existing behaviour so any change is deliberate.</p>
+  </div>
+
+  <div class="defect">
+    <div class="defect-head">
+      <h3>VAL-14 · Client and server disagree on minimum battery units</h3>
+      <span class="pill s3">S3 — Moderate</span>
+    </div>
+    <dl>
+      <dt>Location</dt><dd><code>validateProfile.ts</code> vs <code>backend/app/models.py:165</code></dd>
+      <dt>Found by</dt><dd>Cross-referencing both validation suites</dd>
+    </dl>
+
+    <p>The browser rejects <code>batteryUnits &lt; 1</code>; the API schema permits
+    <code>ge=0</code>. A value of <code>0</code> is therefore rejected in the interface and
+    accepted by the API. The backend suite tests <code>−1</code> and <code>9</code> but has
+    no case for <code>0</code>.</p>
+
+    <p><strong>Impact.</strong> Low in practice, since the UI is the only caller. It
+    matters as a policy question: should a household with no battery record zero units, or
+    is "no battery" expressed another way? Whichever is right, the layers should agree.</p>
+
+    <p><strong>Recommended fix.</strong> Decide the intended minimum, align both layers,
+    and add a backend case for <code>0</code> asserting the decision.</p>
+  </div>
+</section>
+
+<!-- ============ 5. WORKED EXAMPLE ============ -->
+<section class="break">
+  <h2><span class="num">5</span>Verification by hand calculation</h2>
+
+  <p>To verify the KPI engine independently rather than merely observing that it produces
+  output, expected values for a representative household were calculated by hand from the
+  documented methodology, then compared against the engine.</p>
+
+  <h4>Inputs — baseline Kew household</h4>
+  <table>
+    <thead><tr><th>Field</th><th>Value</th><th>Field</th><th>Value</th></tr></thead>
+    <tbody>
+      <tr><td>Postcode</td><td>3101</td><td>Solar</td><td>12 panels × 400 W, facing S</td></tr>
+      <tr><td>Monthly bill</td><td>$180</td><td>Battery</td><td>Tesla Powerwall 2, 20% reserve</td></tr>
+      <tr><td>Monthly usage</td><td>540 kWh</td><td>Provider</td><td>AGL Energy</td></tr>
+      <tr><td>Peak period</td><td>Evening</td><td>Grid factor</td><td>0.77 kg CO₂-e/kWh</td></tr>
+    </tbody>
+  </table>
+
+  <h4>Hand calculation</h4>
+  <pre><code>1. Weekly consumption      540 ÷ 4                        = 135.0000 kWh
+
+2. Solar generation        array  = 12 × 400 ÷ 1000       =   4.8 kW
+                           daily  = 4.8 × 4.2 × 0.8 × 0.55 =   8.8704 kWh
+                           weekly = 8.8704 × 7             =  62.0928 kWh
+
+3. Self-consumption        direct   = min(62.0928, 135 × 0.4)  = 54.0000 kWh
+                           leftover = 62.0928 − 54             =  8.0928 kWh
+                           battery  = 1 × 13.5 × (1 − 0.20)    = 10.8000 kWh usable
+                           shifted  = min(10.8, 4.0464, 54)    =  4.0464 kWh
+                           self     = 54 + 4.0464              = 58.0464 kWh
+
+4. Distributed to grid     62.0928 − 58.0464                   =  4.0464 kWh
+
+5. Retail rate             180 ÷ 540                           = $0.333333 / kWh
+
+6. Carbon avoided          4.0464 × 0.77                       =  3.1157 kg
+
+7. Weekly savings          58.0464 × 0.333333 + 4.0464 × 0.18  = $20.0772</code></pre>
+
+  <h4>Comparison against engine output</h4>
+  <table>
+    <thead><tr><th>KPI</th><th class="num">Hand-worked</th><th class="num">Engine</th><th>Match</th></tr></thead>
+    <tbody>
+      <tr><td>Weekly consumption</td><td class="num">135.0000 kWh</td><td class="num">135.0000 kWh</td><td class="pass">✓</td></tr>
+      <tr><td>Weekly generation</td><td class="num">62.0928 kWh</td><td class="num">62.0928 kWh</td><td class="pass">✓</td></tr>
+      <tr><td>Self-consumed</td><td class="num">58.0464 kWh</td><td class="num">58.0464 kWh</td><td class="pass">✓</td></tr>
+      <tr><td>Distributed</td><td class="num">4.0464 kWh</td><td class="num">4.0464 kWh</td><td class="pass">✓</td></tr>
+      <tr><td>Retail rate</td><td class="num">$0.333333</td><td class="num">$0.333333</td><td class="pass">✓</td></tr>
+      <tr><td>Carbon avoided</td><td class="num">3.1157 kg</td><td class="num">3.1157 kg</td><td class="pass">✓</td></tr>
+      <tr><td>Weekly savings</td><td class="num">$20.0772</td><td class="num">$20.0772</td><td class="pass">✓</td></tr>
+    </tbody>
+  </table>
+
+  <p><strong>Result: the solar, battery-shifting, export and carbon paths agree with the
+  documented methodology to six decimal places.</strong></p>
+
+  <div class="note warn">
+    <span class="lbl">Caveat</span>
+    This profile supplies a monthly kWh figure, so the appliance model is not used for the
+    consumption headline. Defect KPI-01 affects only the modelled path — a household that
+    leaves monthly kWh blank — and is therefore <strong>not exercised by this example</strong>.
+    A second worked example covering that path would strengthen the evidence.
+  </div>
+</section>
+
+<!-- ============ 6. CI ============ -->
+<section class="break">
+  <h2><span class="num">6</span>Continuous integration</h2>
+
+  <p>Tests that are not run are worse than no tests, because they present the appearance of
+  coverage. The suite is therefore wired into the existing <code>security</code> workflow
+  rather than left as a local command.</p>
+
+  <table>
+    <thead><tr><th>Job</th><th>Runs</th><th>Fails the build on</th></tr></thead>
+    <tbody>
+      <tr><td><code>secret-scan</code></td><td>gitleaks over full history</td><td>Any secret, including one removed in a later commit</td></tr>
+      <tr><td><code>frontend-audit</code></td><td><code>npm audit</code>, <code>tsc -b</code>, <code>lint</code>, <strong><code>npm test</code></strong></td><td>High-severity advisory, type error, lint error, failing unit test</td></tr>
+      <tr><td><code>backend-audit</code></td><td><code>pip-audit --strict</code></td><td>Any known vulnerable dependency</td></tr>
+      <tr><td><code>security-tests</code></td><td><code>pytest tests/ -v</code></td><td>Any failing test</td></tr>
+    </tbody>
+  </table>
+
+  <p>The <code>npm test</code> step was added as part of this work. The workflow triggers on
+  every push to <code>main</code>, <code>development</code> and <code>sec</code>, on every
+  pull request, and weekly on a schedule so that a newly disclosed advisory in an unchanged
+  dependency is still caught.</p>
+
+  <div class="note">
+    <span class="lbl">Placement decision</span>
+    Executable tests deliberately live beside the code they test — <code>backend/tests/</code>
+    and <code>frontend/src/lib/</code> — not inside the <code>testing/</code> documentation
+    folder. <code>pytest.ini</code> sets <code>testpaths = tests</code> and CI runs
+    <code>pytest tests/</code>; a suite relocated under <code>testing/</code> would be
+    collected by neither and would silently stop running.
+  </div>
+</section>
+
+<!-- ============ 7. NOT EXECUTED ============ -->
+<section>
+  <h2><span class="num">7</span>Testing not yet executed</h2>
+
+  <p>Stated plainly so that coverage is not overclaimed.</p>
+
+  <table>
+    <thead><tr><th>Activity</th><th>Artefacts</th><th>Status</th></tr></thead>
+    <tbody>
+      <tr><td>Manual functional cases FUN-01…FUN-12</td><td>Written with steps, expected results, priorities</td><td><span class="pill s3">Not executed</span></td></tr>
+      <tr><td>Usability sessions US-1…US-5</td><td>Goal-based scenarios, facilitator script, note template</td><td><span class="pill s3">No sessions run</span></td></tr>
+      <tr><td>Usability findings → user story revisions</td><td>Template with before/after story columns</td><td><span class="pill s3">Awaiting sessions</span></td></tr>
+      <tr><td>End-to-end browser automation</td><td>None</td><td><span class="pill s3">Not built</span></td></tr>
+    </tbody>
+  </table>
+
+  <p>Execution columns, session notes and usability evidence were left <strong>deliberately
+  blank</strong>. Recording a result that was not observed would make the entire body of
+  evidence unreliable, including the parts that are genuine.</p>
+
+  <p>The usability material is complete and ready to run: five scenarios written as
+  situations and goals rather than instructions (a scenario naming a button tests reading
+  comprehension, not the design), a facilitator script with a redirect table for handling
+  participant questions without coaching, and a note-taking template that separates
+  observation from interpretation.</p>
+</section>
+
+<!-- ============ 8. RECOMMENDATIONS ============ -->
+<section>
+  <h2><span class="num">8</span>Coverage gaps and recommendations</h2>
+
+  <table>
+    <thead><tr><th>Gap</th><th>Risk</th><th>Recommendation</th><th>Priority</th></tr></thead>
+    <tbody>
+      <tr><td>KPI-01 and KPI-02 open</td><td>Users shown materially wrong figures</td><td>Fix KPI-01 (data correction); decide KPI-02 policy (zero vs relabel)</td><td>P1</td></tr>
+      <tr><td>No end-to-end browser test</td><td>The primary journey has no automated guard</td><td>Playwright covering FUN-01 alone</td><td>P2</td></tr>
+      <tr><td>Usability sessions not run</td><td>Wizard abandonment risk unmeasured</td><td>Run US-1…US-5 with 5 participants</td><td>P1</td></tr>
+      <tr><td>CI uses SQLite, not Postgres</td><td>JSON column semantics and constraint text unverified</td><td>Verify locally before merge; consider a Postgres service container</td><td>P3</td></tr>
+      <tr><td>CI installs test deps inline</td><td>New test dependency must be added twice or CI breaks</td><td>Use <code>requirements-dev.txt</code> in the workflow</td><td>P3</td></tr>
+      <tr><td>Second worked example needed</td><td>Modelled-consumption path unverified by hand</td><td>Work a no-bill household example after KPI-01 is fixed</td><td>P2</td></tr>
+      <tr><td><code>kpis.selftest.ts</code> superseded</td><td>Dead code that CI never runs</td><td>Delete once nothing imports it</td><td>P3</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Closing assessment</h3>
+  <p>The automated layer is now in reasonable shape: 244 tests covering every documented
+  validation boundary, the KPI methodology, and the access-control model, all enforced on
+  every push. The two Major defects it surfaced were invisible from the interface and would
+  not have been found by manual testing, which is the clearest available evidence that the
+  investment was worthwhile.</p>
+
+  <p>The material gap is human testing. The scenarios and script are ready; what remains is
+  to run them and feed the findings back into the backlog.</p>
+</section>
+
+<!-- ============ APPENDICES ============ -->
+<section class="break">
+  <h2><span class="num">A</span>Appendix — Test inventory</h2>
+
+  <h3>Frontend · <code>validateProfile.test.ts</code> — 83 tests</h3>
+  <table>
+    <thead><tr><th>Group</th><th>Covers</th></tr></thead>
+    <tbody>
+      <tr><td>baseline profile</td><td>All five wizard steps validate cleanly for a known-good profile</td></tr>
+      <tr><td>VAL-01…06 postcode</td><td>Victorian 3xxx/8xxx, interstate, malformed, empty, whitespace</td></tr>
+      <tr><td>Boundary analysis (6 fields)</td><td>monthlyBill, monthlyKwh, panelCount, panelWatts, reservePercent, batteryAge</td></tr>
+      <tr><td>VAL-14 battery units</td><td>1, 8, 9 and the 0 divergence</td></tr>
+      <tr><td>VAL-15…17 battery models</td><td>Allow-list, "Not sure" escape hatch, off-list guidance text</td></tr>
+      <tr><td>VAL-18…20 providers</td><td>Allow-list, "Other", "Not sure", off-list</td></tr>
+      <tr><td>VAL-21…24 conditionals</td><td>Dryer and solar branches in both directions</td></tr>
+      <tr><td>FUN-03 gating</td><td>11 required fields; all errors reported at once; no empty messages</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Frontend · <code>kpis.test.ts</code> — 94 tests</h3>
+  <table>
+    <thead><tr><th>Group</th><th>Covers</th></tr></thead>
+    <tbody>
+      <tr><td>parseCount</td><td>"6+" forms, junk input, never returns NaN</td></tr>
+      <tr><td>Timeframe scaling</td><td>daily = weekly ÷ 7, monthly = weekly × 4, currency parity</td></tr>
+      <tr><td>FUN-08 consumption</td><td>Billed path, modelled fallback, provenance labelling, recalculation</td></tr>
+      <tr><td>FUN-08 generation</td><td>Full solar formula, orientation ordering, unknown-direction fallback</td></tr>
+      <tr><td>Energy balance</td><td>Conservation, no over-distribution, carbon derivation, period split</td></tr>
+      <tr><td>Retail rate</td><td>Bill ÷ kWh, default fallback, division-by-zero guard</td></tr>
+      <tr><td>Plan comparison</td><td>Ordering, single recommendation, battery compatibility, savings formula</td></tr>
+      <tr><td>Appliance modelling</td><td>E = N × P × H, every conditional appliance, provenance flags</td></tr>
+      <tr><td>FUN-07 no solar</td><td>Finiteness, no battery shifting, potential flag, <em>KPI-02</em></td></tr>
+      <tr><td>FUN-10 extremes</td><td>4 profiles × finiteness, non-negativity, plans, assumptions</td></tr>
+      <tr><td>Formatters</td><td>Boundary behaviour at 10 and 100 for kWh, AUD, kg</td></tr>
+      <tr><td>Report shape</td><td>Purity, no mutation of the input profile</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Backend · pytest — 67 tests</h3>
+  <table>
+    <thead><tr><th>File</th><th>Classes</th></tr></thead>
+    <tbody>
+      <tr><td><code>test_access_control.py</code></td><td>TestIdentifierIssuance · TestRetrieval · TestWrites</td></tr>
+      <tr><td><code>test_input_validation.py</code></td><td>TestPostcode · TestReferenceDataAllowlists · TestNumericBounds · TestHostileInput · TestConditionalRequirements</td></tr>
+      <tr><td><code>test_headers_and_limits.py</code></td><td>TestSecurityHeaders · TestCors · TestRateLimiting · TestErrorDisclosure</td></tr>
+    </tbody>
+  </table>
+
+  <h2><span class="num">B</span>Appendix — Reproducing these results</h2>
+
+  <h4>Frontend</h4>
+  <pre><code>cd frontend
+npm ci
+npm test           # 177 tests
+npm run test:watch # during development
+npx tsc -b &amp;&amp; npm run lint</code></pre>
+
+  <h4>Backend</h4>
+  <pre><code>cd backend
+python -m venv .venv &amp;&amp; source .venv/bin/activate
+pip install -r requirements-dev.txt
+pytest tests/ -v   # 67 tests</code></pre>
+
+  <h4>Supporting documentation</h4>
+  <table>
+    <thead><tr><th>Document</th><th>Contents</th></tr></thead>
+    <tbody>
+      <tr><td><code>testing/01-test-plan.md</code></td><td>Scope, levels, techniques, risk table, entry/exit criteria</td></tr>
+      <tr><td><code>testing/02-test-cases/</code></td><td>Validation, functional and security cases; traceability matrix; defect log</td></tr>
+      <tr><td><code>testing/03-usability/</code></td><td>Scenarios, facilitator script, session template, findings log</td></tr>
+      <tr><td><code>testing/04-automated/</code></td><td>Suite locations, CI enforcement, known gaps</td></tr>
+      <tr><td><code>testing/05-evidence/</code></td><td>Raw run output and the worked KPI example</td></tr>
+    </tbody>
+  </table>
+
+  <footer class="doc">
+    MyPowerPlant — Test Report · Branch <code>sec</code> · 10 September 2026 ·
+    244 automated tests, all passing · 3 defects open (2 Major, 1 Moderate).
+    Manual and usability testing documented but not yet executed.
+  </footer>
+</section>
+
+</body>
+</html>

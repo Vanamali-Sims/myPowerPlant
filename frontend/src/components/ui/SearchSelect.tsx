@@ -1,7 +1,7 @@
 /**
  * Searchable list for battery models and electricity retailers.
  */
-import { useEffect, useMemo, useState } from 'react'
+import { useMemo, useState } from 'react'
 import { NOT_SURE_VALUE, OTHER_VALUE } from '../../data/profileOptions'
 import { Field } from './Field'
 import { ChevronIcon, QuestionIcon, SearchIcon } from './icons'
@@ -44,10 +44,12 @@ export function SearchSelect({
 }: Props) {
   const [open, setOpen] = useState(false)
   const [query, setQuery] = useState(value)
-
-  useEffect(() => {
+  // Sync the edit buffer when the saved value changes externally.
+  const [shownValue, setShownValue] = useState(value)
+  if (value !== shownValue) {
+    setShownValue(value)
     setQuery(value)
-  }, [value])
+  }
 
   const catalogue = useMemo(() => [...options, ...extraOptions], [extraOptions, options])
 

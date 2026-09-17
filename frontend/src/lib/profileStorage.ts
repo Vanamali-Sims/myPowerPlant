@@ -12,6 +12,9 @@ import {
 import { isAllowedBatteryModel, isAllowedProvider } from '../data/profileOptions'
 import { emptyProfile, type FieldSource, type ProfileData } from '../types/profile'
 
+// Deliberate: strips control characters (null bytes, etc.) from stored
+// profile fields; not a typo.
+// eslint-disable-next-line no-control-regex
 const CONTROL_CHARS = /[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/g
 
 const PROFILE_KEYS = Object.keys(emptyProfile()) as (keyof ProfileData)[]
