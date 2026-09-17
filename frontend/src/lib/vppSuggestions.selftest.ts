@@ -127,9 +127,12 @@ assert(
 )
 
 const facts = compactCardFacts(agl, 10.8)
-assert(facts.some((fact) => fact.label === 'Leave' && fact.value === 'Anytime'), 'opt-out is a short chip')
+assert(facts.some((fact) => fact.label === 'Opt Out' && fact.value === 'Anytime'), 'opt-out is a short chip')
 assert(facts.some((fact) => fact.label === 'Reserve' && fact.value === '20% kept'), 'reserve is a short chip')
-assert(facts.some((fact) => fact.label === 'Events' && fact.value === '250 kWh/yr'), 'event cap is a short chip')
+assert(
+  facts.some((fact) => fact.label === 'Discharge Limit' && fact.value === '250 kWh/yr'),
+  'event cap is a short chip',
+)
 
 const aglFit = planFitCopy(teslaVic, teslaMatch.matches[0])
 assert(aglFit.why.some((line) => line.includes('Tesla Powerwall 2')), 'why names the household battery')

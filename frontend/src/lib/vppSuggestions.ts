@@ -361,8 +361,8 @@ export function compactCardFacts(
 ): CardFact[] {
   const facts: CardFact[] = [
     { label: 'Reserve', value: compactReserve(termByKey(plan, 'reserve_min')) },
-    { label: 'Leave', value: compactOptOut(termByKey(plan, 'opt_out')) },
-    { label: 'Events', value: compactEvent(termByKey(plan, 'event_cap')) },
+    { label: 'Opt Out', value: compactOptOut(termByKey(plan, 'opt_out')) },
+    { label: 'Discharge Limit', value: compactEvent(termByKey(plan, 'event_cap')) },
   ]
   if (headroomKwh != null) {
     facts.push({ label: 'Headroom', value: formatKwhShort(headroomKwh) })

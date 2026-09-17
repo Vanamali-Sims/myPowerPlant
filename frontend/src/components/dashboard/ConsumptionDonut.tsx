@@ -142,25 +142,27 @@ export function ConsumptionDonut({ appliances, timeframe }: Props) {
           aria-label="Energy consumption broken down by appliance. Hover or focus a slice for kWh and share."
         >
           <path className="donut__track" d={fullRing(INNER, OUTER)} />
-          {slices.items.map((slice) => {
-            const isActive = activeId === slice.id
-            const isDim = activeId !== null && !isActive
-            return (
-              <path
-                key={slice.id}
-                className={`donut__slice${isActive ? ' is-active' : ''}${isDim ? ' is-dim' : ''}`}
-                d={ringSector(INNER, isActive ? OUTER_ACTIVE : OUTER, slice.start, slice.end)}
-                fill={slice.color}
-                tabIndex={0}
-                role="img"
-                aria-label={`${slice.name}: ${formatKwh(slice.kwh)}, ${Math.round(slice.fraction * 100)} percent`}
-                onPointerEnter={() => setActiveId(slice.id)}
-                onPointerLeave={() => setActiveId(null)}
-                onFocus={() => setActiveId(slice.id)}
-                onBlur={() => setActiveId(null)}
-              />
-            )
-          })}
+          <g key={timeframe} className="donut__draw">
+            {slices.items.map((slice) => {
+              const isActive = activeId === slice.id
+              const isDim = activeId !== null && !isActive
+              return (
+                <path
+                  key={slice.id}
+                  className={`donut__slice${isActive ? ' is-active' : ''}${isDim ? ' is-dim' : ''}`}
+                  d={ringSector(INNER, isActive ? OUTER_ACTIVE : OUTER, slice.start, slice.end)}
+                  fill={slice.color}
+                  tabIndex={0}
+                  role="img"
+                  aria-label={`${slice.name}: ${formatKwh(slice.kwh)}, ${Math.round(slice.fraction * 100)} percent`}
+                  onPointerEnter={() => setActiveId(slice.id)}
+                  onPointerLeave={() => setActiveId(null)}
+                  onFocus={() => setActiveId(slice.id)}
+                  onBlur={() => setActiveId(null)}
+                />
+              )
+            })}
+          </g>
           <text x="100" y="96" className="donut__total">
             {formatKwh(active ? active.kwh : slices.total)}
           </text>

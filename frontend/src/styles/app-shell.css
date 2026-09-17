@@ -18,9 +18,20 @@
   color: var(--on-deep);
 }
 
-.app-rail .brand__mark {
-  background: var(--terra-600);
-  color: var(--on-primary);
+.app-rail .brand__mark--logo {
+  width: 1.85rem;
+  height: 1.85rem;
+  padding: 0;
+  overflow: hidden;
+  background: transparent;
+  border-radius: 0.45rem;
+}
+
+.app-rail .brand__mark--logo .ui-icon-img {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: cover;
 }
 
 @media (min-width: 900px) {
@@ -46,14 +57,41 @@
   }
 
   .app-rail__nav {
+    position: relative;
     display: flex;
     flex-direction: column;
     gap: 0.55rem;
     flex: 1;
     width: 100%;
+    overflow: visible;
+  }
+
+  .app-rail__highlight {
+    position: absolute;
+    left: 0;
+    top: 0;
+    z-index: 0;
+    width: 100%;
+    border-radius: 0.7rem;
+    background: var(--euc-800);
+    border-left: 3px solid var(--terra-600);
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  .app-rail__highlight.is-visible {
+    opacity: 1;
+  }
+
+  .app-rail__highlight.is-ready {
+    transition:
+      transform 0.22s var(--ease-out, cubic-bezier(0.22, 1, 0.36, 1)),
+      height 0.22s var(--ease-out, cubic-bezier(0.22, 1, 0.36, 1));
   }
 
   .app-rail__item-wrap {
+    position: relative;
+    z-index: 1;
     width: 100%;
   }
 
@@ -87,11 +125,14 @@
   }
 
   .app-rail__item:active {
-    transform: scale(0.96);
+    --hover-scale: 0.96;
   }
 
   .app-rail__item.is-active {
     color: var(--on-primary);
+  }
+
+  .app-rail:not(:has(.app-rail__highlight.is-visible)) .app-rail__item.is-active {
     background: var(--euc-800);
     border-left-color: var(--terra-600);
   }

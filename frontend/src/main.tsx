@@ -11,6 +11,8 @@ import './styles/welcome.css'
 import './styles/setup.css'
 import './styles/profile.css'
 import './styles/dashboard.css'
+import './styles/reminders.css'
+import './styles/motion.css'
 import App from './App.tsx'
 
 createRoot(document.getElementById('root')!).render(

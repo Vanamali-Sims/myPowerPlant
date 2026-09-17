@@ -42,6 +42,45 @@
   text-align: center;
 }
 
+.setup-intro {
+  width: min(28.5rem, calc(100vw - 1.5rem));
+  max-height: none;
+}
+
+.setup-intro .vpp-dialog__panel {
+  max-height: none;
+}
+
+.setup-intro .vpp-dialog__body {
+  overflow: visible;
+}
+
+.setup-intro__privacy {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.55rem;
+  margin: 0 0 0.85rem;
+  color: var(--ink);
+  font-size: 0.95rem;
+  line-height: 1.45;
+}
+
+.setup-intro__privacy svg {
+  flex-shrink: 0;
+  margin-top: 0.15rem;
+  color: var(--euc-600);
+}
+
+.setup-intro__accuracy {
+  margin: 0;
+  font-size: 0.95rem;
+  color: var(--ink-secondary);
+}
+
+.setup-intro__footer {
+  display: flex;
+}
+
 @media (min-width: 900px) {
   .setup {
     width: min(32rem, 100%);
