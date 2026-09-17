@@ -43,7 +43,10 @@ export function useAnimatedNumber(target: number, options: Options = {}): number
 
     const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
     if (reduceMotion) {
+      // matchMedia belongs to an external system, not derived-from-props
+      // state, and valueRef can't be written during render either way.
       valueRef.current = target
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setValue(target)
       return
     }

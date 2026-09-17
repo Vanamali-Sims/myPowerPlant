@@ -18,6 +18,7 @@ import {
   isTermStale,
   matchSuggestionPlans,
   planFitCopy,
+  safeProviderUrl,
   shortSource,
   termByKey,
   type MatchReasonCode,
@@ -353,10 +354,12 @@ function TermsDialog({ open, match, onClose }: TermsDialogProps) {
     Boolean(plan && termByKey(plan, 'payment') && exampleAud != null && plan.illustrativeRatePerKwh != null)
   const exampleId = useId()
   const [exampleOpen, setExampleOpen] = useState(false)
-
-  useEffect(() => {
+  // Reset the worked-example toggle when the dialog switches plans.
+  const [shownPlanId, setShownPlanId] = useState(plan?.id ?? null)
+  if ((plan?.id ?? null) !== shownPlanId) {
+    setShownPlanId(plan?.id ?? null)
     setExampleOpen(false)
-  }, [plan?.id])
+  }
 
   return (
     <VppModal
@@ -367,9 +370,22 @@ function TermsDialog({ open, match, onClose }: TermsDialogProps) {
       onClose={onClose}
       footer={
         plan ? (
-          <a href={plan.href} target="_blank" rel="noreferrer">
-            Confirm current terms with {plan.brand}
-          </a>
+          (() => {
+            const trustedHref = safeProviderUrl(plan.href)
+            return trustedHref ? (
+              <a href={trustedHref} target="_blank" rel="noopener noreferrer">
+                Confirm current terms with {plan.brand}
+              </a>
+            ) : (
+              <span className="vpp-term__unavailable-flag">
+                <AlertIcon width={16} height={16} />
+                <span>
+                  We couldn’t verify {plan.brand}’s link. Search for {plan.brand} directly to
+                  confirm current terms.
+                </span>
+              </span>
+            )
+          })()
         ) : null
       }
     >
