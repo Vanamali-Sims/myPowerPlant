@@ -116,8 +116,8 @@ export function formatShare(share: number): string {
  * @returns Labels for the VPP legend item
  */
 export function riverForkStage(fork: RiverFork): { eyebrow: string; hint: string } {
-  if (fork === 'surplus') return { eyebrow: 'Possible discharge', hint: 'to a VPP, estimate' }
-  if (fork === 'deficit') return { eyebrow: 'Possible borrow', hint: 'from a VPP, estimate' }
+  if (fork === 'surplus') return { eyebrow: 'Potential discharge', hint: 'to a VPP, estimate' }
+  if (fork === 'deficit') return { eyebrow: 'Potential borrow', hint: 'from a VPP, estimate' }
   return { eyebrow: 'VPP on standby', hint: 'event pay still applies' }
 }
 
