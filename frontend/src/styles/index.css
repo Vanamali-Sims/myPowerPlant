@@ -1,4 +1,51 @@
+/* Tailwind utilities only — skip preflight so existing component CSS stays intact. */
+@layer theme, base, components, utilities;
+@import "tailwindcss/theme.css" layer(theme);
+@import "tailwindcss/utilities.css" layer(utilities);
 @import "./tokens.css";
+
+@theme inline {
+  --color-canvas: var(--canvas);
+  --color-surface: var(--surface);
+  --color-surface-sunken: var(--surface-sunken);
+  --color-surface-deep: var(--surface-deep);
+  --color-border: var(--border);
+  --color-border-strong: var(--border-strong);
+  --color-ink: var(--ink);
+  --color-ink-secondary: var(--ink-secondary);
+  --color-ink-muted: var(--ink-muted);
+  --color-on-deep: var(--on-deep);
+  --color-on-deep-muted: var(--on-deep-muted);
+  --color-primary: var(--primary);
+  --color-primary-hover: var(--primary-hover);
+  --color-on-primary: var(--on-primary);
+  --color-structure: var(--structure);
+  --color-surplus: var(--surplus);
+  --color-deficit: var(--deficit);
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+  --color-danger: var(--danger);
+  --color-focus-ring: var(--focus-ring);
+  --color-euc-50: var(--euc-50);
+  --color-euc-100: var(--euc-100);
+  --color-euc-200: var(--euc-200);
+  --color-euc-400: var(--euc-400);
+  --color-euc-600: var(--euc-600);
+  --color-euc-800: var(--euc-800);
+  --color-euc-900: var(--euc-900);
+  --color-terra-50: var(--terra-50);
+  --color-terra-100: var(--terra-100);
+  --color-terra-200: var(--terra-200);
+  --color-terra-400: var(--terra-400);
+  --color-terra-600: var(--terra-600);
+  --color-terra-800: var(--terra-800);
+  --color-terra-900: var(--terra-900);
+  --font-display: var(--font-display);
+  --font-sans: var(--font-body);
+  --radius-card: var(--radius-card);
+  --radius-input: var(--radius-input);
+  --radius-pill: var(--radius-pill);
+}
 
 :root {
   font-family: var(--font-body);
@@ -16,6 +63,10 @@
 *::before,
 *::after {
   box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
 }
 
 html,
@@ -73,6 +124,18 @@ textarea:focus-visible,
   outline-offset: 2px;
 }
 
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
 .eyebrow {
   font-family: var(--font-body);
   font-size: 0.7rem;
@@ -80,4 +143,9 @@ textarea:focus-visible,
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--ink-muted);
+}
+
+::selection {
+  background: var(--euc-200);
+  color: var(--euc-900);
 }

@@ -8,5 +8,6 @@ import type { PeakPeriod } from '../types/profile'
 export const DAYS_PER_WEEK = 7
 export const WEEKS_PER_MONTH = 4
 export const WEEKS_PER_FORTNIGHT = 2
+export const WEEKS_PER_YEAR = 52
 
 export const DEFAULT_PEAK_PERIOD: PeakPeriod = 'evening'

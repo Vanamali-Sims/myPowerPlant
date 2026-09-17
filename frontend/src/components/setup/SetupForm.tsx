@@ -13,6 +13,7 @@ import { FormActions } from '../ui/FormActions'
 import { FormHeader } from '../ui/FormHeader'
 import { StepProgress } from '../ui/StepProgress'
 import { BatteryProfileStep } from './BatteryProfileStep'
+import { SetupIntroDialog } from './SetupIntroDialog'
 import { EnergyProviderStep } from './EnergyProviderStep'
 import { HouseholdProfileStep } from './HouseholdProfileStep'
 import { HouseholdUsageStep } from './HouseholdUsageStep'
@@ -38,6 +39,7 @@ type Props = {
 export function SetupForm({ profile, onChange, onComplete, onExit, onLogoClick }: Props) {
   const [stepIndex, setStepIndex] = useState(0)
   const [errors, setErrors] = useState<FieldErrors>({})
+  const [introOpen, setIntroOpen] = useState(true)
   const step = SETUP_STEPS[stepIndex]
   const total = SETUP_STEPS.length
   // Measured from answers, not from which step is open.
@@ -133,6 +135,7 @@ export function SetupForm({ profile, onChange, onComplete, onExit, onLogoClick }
 
   return (
     <div className="setup">
+      <SetupIntroDialog open={introOpen} onContinue={() => setIntroOpen(false)} />
       <FormHeader
         postcode={profile.postcode}
         onPostcodeChange={(postcode) => changeField('postcode', postcode)}
@@ -145,34 +148,6 @@ export function SetupForm({ profile, onChange, onComplete, onExit, onLogoClick }
         fields={progress.total}
         percent={progress.percent}
         minutesLeft={progress.minutesLeft}
-      />
-      <div className="setup__intro">
-        <h1>{step.title}</h1>
-        <p>{step.lede}</p>
-      </div>
-      <div className="setup__fields">
-        {step.id === 'household' ? (
-          <HouseholdProfileStep profile={profile} errors={errors} onChange={changeField} />
-        ) : null}
-        {step.id === 'usage' ? (
-          <HouseholdUsageStep profile={profile} errors={errors} onChange={changeField} />
-        ) : null}
-        {step.id === 'solar' ? (
-          <SolarDetailsStep profile={profile} errors={errors} onChange={changeField} />
-        ) : null}
-        {step.id === 'battery' ? (
-          <BatteryProfileStep profile={profile} errors={errors} onChange={changeField} />
-        ) : null}
-        {step.id === 'provider' ? (
-          <EnergyProviderStep profile={profile} errors={errors} onChange={changeField} />
-        ) : null}
-      </div>
-      <FormActions
-        continueLabel={step.id === 'provider' ? 'Complete Profile' : 'Continue'}
-        onBack={onExit || stepIndex > 0 ? goBack : undefined}
-        onContinue={continueStep}
-        onSkip={skipStep}
-        showSkip
       />
       <VoiceDock
         state={voice.state}
@@ -192,6 +167,36 @@ export function SetupForm({ profile, onChange, onComplete, onExit, onLogoClick }
         onRejectPending={voice.rejectPending}
         onChooseInstead={voice.chooseInstead}
         onDismissFailure={voice.dismissFailure}
+      />
+      <div key={step.id} className="view-enter flex flex-col gap-5">
+        <div className="setup__intro">
+          <h1>{step.title}</h1>
+          <p>{step.lede}</p>
+        </div>
+        <div className="setup__fields">
+          {step.id === 'household' ? (
+            <HouseholdProfileStep profile={profile} errors={errors} onChange={changeField} />
+          ) : null}
+          {step.id === 'usage' ? (
+            <HouseholdUsageStep profile={profile} errors={errors} onChange={changeField} />
+          ) : null}
+          {step.id === 'solar' ? (
+            <SolarDetailsStep profile={profile} errors={errors} onChange={changeField} />
+          ) : null}
+          {step.id === 'battery' ? (
+            <BatteryProfileStep profile={profile} errors={errors} onChange={changeField} />
+          ) : null}
+          {step.id === 'provider' ? (
+            <EnergyProviderStep profile={profile} errors={errors} onChange={changeField} />
+          ) : null}
+        </div>
+      </div>
+      <FormActions
+        continueLabel={step.id === 'provider' ? 'Complete Profile' : 'Continue'}
+        onBack={onExit || stepIndex > 0 ? goBack : undefined}
+        onContinue={continueStep}
+        onSkip={skipStep}
+        showSkip
       />
     </div>
   )
