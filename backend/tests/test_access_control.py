@@ -1,16 +1,8 @@
 """Access control without authentication - Security Plan S6.
 
-Iteration 1's write-capable /api/profile endpoint, and the household_id
-identifiers it issued, have been removed: the household profile now lives
-only in the browser (Iteration 2 Security Plan S1, "Key privacy decisions").
-There is no per-user record on the server, so IDOR against a household_id
-is no longer a meaningful category here.
-
-These tests instead guard the invariant behind that decision: no
-write-capable or record-addressed surface exists on this API, so one
-cannot silently reappear in a future change without this suite catching
-it (the scenario R24 warns about - a false "we don't store your data"
-claim if persistence is ever reintroduced without updating the plan).
+/api/profile and its household_id records are gone (profile now lives
+browser-only). These tests pin that no write-capable or record-addressed
+surface exists, guarding against R24 (a false "we don't store data" claim).
 """
 
 import uuid

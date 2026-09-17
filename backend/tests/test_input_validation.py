@@ -1,19 +1,8 @@
 """Input validation - Security Plan S3.
 
-The write-capable /api/profile endpoint this suite originally validated
-(postcode format, battery/provider allow-lists, numeric bounds, an
-explicit field allow-list, control characters, oversized payloads) has
-been removed: the household profile now lives only in the browser and is
-validated there (frontend/src/lib/validateProfile.ts,
-frontend/src/lib/profileStorage.ts). Neither remaining route
-(GET /api/health, GET /api/methodology) takes a body, query parameter, or
-path parameter, so there is no longer any user-controlled input reaching
-this API.
-
-These tests pin that "no input surface" invariant, so it is caught if a
-future endpoint reintroduces a parameter without validation, and confirm
-that garbage sent at the now-absent surface is handled safely rather than
-crashing or leaking internals.
+/api/profile is gone; profile validation now lives in the frontend.
+Neither remaining route takes a body/query/path parameter, so these tests
+pin that "no input surface" invariant and confirm garbage input is safe.
 """
 
 import pytest
@@ -43,9 +32,7 @@ class TestGarbageInputIsHandledSafely:
     )
     async def test_does_not_crash_or_leak_internals(self, client, path):
         r = await client.get(path)
-        # 503 (Database unavailable) is a controlled, intended response from
-        # the route's own exception handler - not a crash. A bare 500 would
-        # mean an unhandled exception reached the client.
+        # 503 is a controlled response, not a crash; only 500 would mean one.
         assert r.status_code != 500
         assert "traceback" not in r.text.lower()
 

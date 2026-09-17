@@ -8,12 +8,8 @@
  * merely that a number was produced. Worked examples are in
  * testing/05-evidence/kpi-worked-example-1.md.
  *
- * One test is marked `it.fails`: it encodes the behaviour we believe is
- * correct, and currently fails (KPI-02). It names the defect it is waiting
- * on. When the defect is fixed it turns red until `.fails` is removed -
- * which is the point. A second known defect, KPI-01 (refrigerator power
- * rating), was fixed since this suite was first written — see the
- * regression test below, which is a plain `it`.
+ * One test is marked `it.fails` (KPI-02, still open). KPI-01 (refrigerator
+ * power rating) has since been fixed upstream and is now a plain `it`.
  */
 import { describe, expect, it } from 'vitest'
 
@@ -30,8 +26,7 @@ import {
   scaleKwh,
 } from './kpis'
 
-// Mirrors the Alembic-seeded methodology data (see methodologyFixture.ts),
-// so these hand-worked figures do not depend on a running API.
+// Mirrors the Alembic-seeded methodology data — no running API needed.
 const data = seedMethodologyBundle()
 const {
   melbournePeakSunHours: MELBOURNE_PEAK_SUN_HOURS,
@@ -396,10 +391,8 @@ describe('appliance modelling', () => {
   })
 
   /**
-   * DEFECT KPI-01 (S2) is fixed: the published refrigerator powerKw moved
-   * from 1.92 (the same figure as the air conditioner, and a rated input
-   * power rather than an average draw) to a duty-cycle-adjusted 0.057,
-   * giving a realistic weekly total. Kept as a regression test.
+   * DEFECT KPI-01 (S2) is fixed: refrigerator powerKw moved from 1.92 (a
+   * rated input power) to a duty-cycle-adjusted 0.057. Kept as a regression.
    */
   it('KPI-01: a single refrigerator uses a realistic 5-20 kWh per week', () => {
     const line = lineFor(profile({ refrigerators: '1' }), 'refrigerator')!

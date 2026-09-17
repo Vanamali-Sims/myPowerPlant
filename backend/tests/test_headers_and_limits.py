@@ -22,9 +22,7 @@ class TestSecurityHeaders:
         assert "unsafe-eval" not in csp
 
     async def test_hsts_present_when_request_is_https(self, client):
-        """HSTS is conditional on the request being HTTPS (via the
-        CloudFront-set X-Forwarded-Proto) - sending it over plain HTTP would
-        be a no-op for the browser, so the app only sets it when it matters."""
+        """HSTS is conditional on X-Forwarded-Proto (set by CloudFront)."""
         r = await client.get("/api/health", headers={"X-Forwarded-Proto": "https"})
         assert "strict-transport-security" in {k.lower() for k in r.headers}
 
@@ -51,10 +49,7 @@ class TestCors:
 
 class TestRateLimiting:
     async def test_reads_are_throttled(self, client):
-        """R13 denial-of-wallet. In-process limiter only - API Gateway's
-        usage plan is the authoritative control (see app/rate_limit.py).
-        There is no write endpoint left to throttle harder than reads -
-        the API is read-only GET, so every request shares one limit."""
+        """R13. In-process limiter only - see app/rate_limit.py."""
         codes = [(await client.get("/api/health")).status_code for _ in range(80)]
         assert 429 in codes, "no throttling engaged"
 

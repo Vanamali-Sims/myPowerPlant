@@ -44,9 +44,7 @@ export function SearchSelect({
 }: Props) {
   const [open, setOpen] = useState(false)
   const [query, setQuery] = useState(value)
-  // Sync the edit buffer when the saved value changes externally (e.g. the
-  // profile reloads). Adjusted during render rather than in a useEffect,
-  // per React's documented pattern, so it doesn't cost an extra commit.
+  // Sync the edit buffer when the saved value changes externally.
   const [shownValue, setShownValue] = useState(value)
   if (value !== shownValue) {
     setShownValue(value)
