@@ -350,6 +350,90 @@ describe('dryer: weekday and weekend counts', () => {
     expect(s.get('dryerWeek')).toBeUndefined()
     expect(s.get('dryerWeekend')).toBeUndefined()
   })
+
+  // The reported "weekend never fills" bug. Every one of these was heard
+  // correctly by the recogniser and then dropped by the matcher, because the
+  // joining word between the count and the period was one we did not list.
+  // The weekday count landed each time, which is what made it look like the
+  // weekend box itself was broken.
+  it('accepts the joining words people actually use', () => {
+    const cases: [string, string, string][] = [
+      ['we use the dryer 5 times in the week and 2 at the weekend', '5', '2'],
+      ['dryer 5 times during the week and 2 over the weekend', '5', '2'],
+      ['dryer 5 times during the week and 2 every weekend', '5', '2'],
+      ['dryer 3 times throughout the week and 1 throughout the weekend', '3', '1'],
+      ['the dryer runs 5 times weekly and 2 times each weekend', '5', '2'],
+    ]
+    for (const [said, week, weekend] of cases) {
+      const s = slotsFor(said, 'household')
+      expect([said, s.get('dryerWeek')]).toEqual([said, week])
+      expect([said, s.get('dryerWeekend')]).toEqual([said, weekend])
+    }
+  })
+
+  // The boxes are labelled with the days, so people read the days back.
+  it('reads the periods the way the labels name them', () => {
+    const cases: [string, string, string][] = [
+      ['dryer 3 times monday to friday and 1 on saturday and sunday', '3', '1'],
+      ['i use the dryer 3 times mon to fri and twice sat sun', '3', '2'],
+      ['dryer 4 monday through friday 2 saturday sunday', '4', '2'],
+    ]
+    for (const [said, week, weekend] of cases) {
+      const s = slotsFor(said, 'household')
+      expect([said, s.get('dryerWeek')]).toEqual([said, week])
+      expect([said, s.get('dryerWeekend')]).toEqual([said, weekend])
+    }
+  })
+
+  it('reads a refusal as zero rather than as no answer', () => {
+    const cases: [string, string, string][] = [
+      ['i use the dryer 4 times during the week but never on the weekend', '4', '0'],
+      ['dryer 3 times a week and none on the weekend', '3', '0'],
+    ]
+    for (const [said, week, weekend] of cases) {
+      const s = slotsFor(said, 'household')
+      expect([said, s.get('dryerWeek')]).toEqual([said, week])
+      expect([said, s.get('dryerWeekend')]).toEqual([said, weekend])
+    }
+  })
+
+  // The reported "dryer says No when I said yes" bug. The negation is about
+  // using the dryer, not owning one, but it sits close enough to the cue to
+  // read as ownership — and a No hides both count boxes, so the user could
+  // never correct it by speaking.
+  it('does not let a usage negation turn the dryer off', () => {
+    const s = slotsFor(
+      'i do not use the dryer on weekends but 5 times during the week',
+      'household',
+    )
+    expect(s.get('dryer')).toBe('yes')
+    expect(s.get('dryerWeek')).toBe('5')
+    expect(s.get('dryerWeekend')).toBe('0')
+  })
+
+  it('still hears a genuine no', () => {
+    const s = slotsFor('no we do not have a dryer', 'household')
+    expect(s.get('dryer')).toBe('no')
+    expect(s.get('dryerWeek')).toBe('0')
+  })
+
+  it('splits "every day" across the two boxes, flagged', () => {
+    const slots = extractSlots('i use the dryer every day', 'household').slots
+    const week = slots.find((s) => s.field === 'dryerWeek')
+    const weekend = slots.find((s) => s.field === 'dryerWeekend')
+    expect(week?.value).toBe('5')
+    expect(weekend?.value).toBe('2')
+    // Our reading of it, not something they said — so it asks to be checked.
+    expect(week?.confidence).toBe('confirm')
+  })
+
+  it('keeps each count with its own period when the weekend is said first', () => {
+    // Order is not the cue — the period word is. Reading positionally here
+    // would put the weekend figure in the weekday box.
+    const s = slotsFor('i use the dryer 5 times at the weekend and 3 times during the week', 'household')
+    expect(s.get('dryerWeek')).toBe('3')
+    expect(s.get('dryerWeekend')).toBe('5')
+  })
 })
 
 describe('the reports from testing', () => {

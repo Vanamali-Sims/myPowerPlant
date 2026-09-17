@@ -1,6 +1,17 @@
-/* Voice-assisted questionnaire (Epic 5). Docked bottom-right on the setup steps. */
+/* Voice-assisted questionnaire (Epic 5).
+   Two surfaces: the trigger sits in the page flow at the top of the step, and
+   only the live indicators are pinned. It was one fixed dock, which put every
+   panel it opened on top of the questions it was reporting on. */
 
-.voice-dock {
+.voice-bar {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+/* Pinned, because a listening indicator that scrolls away is not an indicator
+   and a confirmation the user has scrolled past is never answered. */
+.voice-live {
   position: fixed;
   right: 1rem;
   bottom: 1rem;
@@ -10,11 +21,11 @@
   flex-direction: column;
   align-items: stretch;
   gap: 0.6rem;
-  /* The dock must never trap clicks meant for the form behind it. */
+  /* It must never trap clicks meant for the form behind it. */
   pointer-events: none;
 }
 
-.voice-dock > * {
+.voice-live > * {
   pointer-events: auto;
 }
 
@@ -22,7 +33,7 @@
 
 .voice-dock__buttons {
   display: flex;
-  justify-content: flex-end;
+  justify-content: flex-start;
   align-items: center;
   gap: 0.5rem;
   flex-wrap: wrap;
@@ -127,14 +138,34 @@
   overflow-y: auto;
 }
 
+/* A disclosure button rather than a heading: the receipt collapses so it can
+   never sit on top of the questions it is reporting on. */
 .voice-filled__title {
   display: flex;
   align-items: center;
   gap: 0.35rem;
+  width: 100%;
   margin: 0 0 0.5rem;
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
   font-size: 0.8rem;
   font-weight: 600;
   color: var(--structure);
+  text-align: left;
+  cursor: pointer;
+}
+
+.voice-filled__toggle {
+  margin-left: auto;
+  font-weight: 500;
+  color: var(--ink-muted);
+  text-decoration: underline;
+}
+
+.voice-filled--collapsed .voice-filled__title {
+  margin-bottom: 0;
 }
 
 .voice-filled__list {
@@ -345,12 +376,19 @@
   .voice-status--listening .voice-status__dot { animation: none; }
 }
 
-/* On a phone the dock spans the width so it never overlaps the controls. */
+/* On a phone only the pinned layer needs taming — the trigger is in the flow
+   now, so it keeps its label and covers nothing. */
 @media (max-width: 30rem) {
-  .voice-dock {
-    right: 0.5rem;
-    left: 0.5rem;
-    bottom: 0.5rem;
+  .voice-live {
+    right: 0.75rem;
+    left: 0.75rem;
+    /* Clear of the home indicator on a notched phone. */
+    bottom: calc(0.5rem + env(safe-area-inset-bottom, 0px));
     width: auto;
+  }
+
+  /* Expanded by choice, the receipt still must not fill the screen. */
+  .voice-filled {
+    max-height: 9rem;
   }
 }

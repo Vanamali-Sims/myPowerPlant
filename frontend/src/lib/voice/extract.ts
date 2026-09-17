@@ -450,8 +450,19 @@ function dryerClause(tokens: string[]): string | null {
   return tokens.slice(start, end).join(' ')
 }
 
-const WEEKDAY = '(?:week ?days?|weekdays?|midweek|week)'
-const WEEKEND = '(?:week ?ends?|weekends?|saturdays?|sundays?)'
+// The boxes are labelled "Week (Monday–Friday)" and "Weekend (Saturday–Sunday)",
+// so people read the days back rather than saying "week". Those spellings have
+// to be here or the commonest way of answering this question scores nothing.
+// "weekly" sits ahead of the bare "week" branch: alternation takes the first
+// branch that matches, and bare "week" would strand the "ly".
+const MON_FRI = '(?:mon(?:day)?s?\\s*(?:to|through|thru|until|till)\\s*fri(?:day)?s?)'
+const WEEKDAY = `(?:${MON_FRI}|week ?days?|weekdays?|midweek|weekly|week)`
+const WEEKEND = '(?:week ?ends?|weekends?|saturdays?|sundays?|sats?\\b|suns?\\b)'
+
+// The joining words people put between the count and the period. One missing
+// preposition drops the whole answer silently — "2 at the weekend" read
+// nothing, which looks like a broken weekend box rather than an unknown "at".
+const PERIOD_JOINERS = 'a|per|on|in|at|over|during|throughout|each|every'
 
 /**
  * periodCount
@@ -474,9 +485,63 @@ function periodCount(clause: string, period: 'week' | 'weekend') {
     new RegExp(`(?<!\\b(?:a|per|the|during|on|in|every)\\s)${word}\\s*(?:is|are|it is)?\\s*(\\d+)`),
   )
   if (after) return { value: after[1], heard: after[0] }
-  const before = clause.match(new RegExp(`(\\d+)\\s*(?:times?\\s*)?(?:a|per|on|in|during)?\\s*(?:the\\s*)?${word}`))
+  const before = clause.match(
+    new RegExp(`(\\d+)\\s*(?:times?|loads?|cycles?)?\\s*(?:${PERIOD_JOINERS})?\\s*(?:the\\s*)?${word}`),
+  )
   if (before) return { value: before[1], heard: before[0] }
+  // "never on the weekend" is an answer — zero — and was being dropped as a
+  // missing one, which left the box empty and the user repeating themselves.
+  // Up to three words of slack, because the refusal and the period are rarely
+  // adjacent: "I do not *use the dryer* on weekends". Digits are excluded from
+  // the slack, and this only runs once a real number has failed to match, so a
+  // stated count always wins over an inferred zero.
+  const none = clause.match(
+    new RegExp(
+      `(?:never|none|nothing|not|no)(?:\\s+[a-z]+){0,3}?\\s*(?:${PERIOD_JOINERS})?\\s*(?:the\\s*)?${word}`,
+    ),
+  )
+  if (none) return { value: '0', heard: none[0] }
   return null
+}
+
+const COUNT = '(\\d+)\\s*(?:times?|uses?|loads?|cycles?)?'
+const GAP = `\\s*(?:and\\s*)?(?:${PERIOD_JOINERS})?\\s*(?:the\\s*)?`
+
+/**
+ * bothCounts
+ * @param clause - Text around the word "dryer"
+ * @returns Both counts when the speaker read the two boxes in order
+ *
+ * The two boxes are on screen and labelled, so people answer them as one
+ * sentence — "4 Monday to Friday, 2 Saturday Sunday". Read one box at a time
+ * that is ambiguous: in "4 monday to friday 2 saturday sunday" the 2 sits
+ * directly after the weekday label and looks exactly like "week 3 weekend 1",
+ * where the number after the label *is* that label's answer. Matching the pair
+ * in one go is the only way to tell those apart, so it runs first.
+ */
+function bothCounts(clause: string): { week: string; weekend: string } | null {
+  const WD = `${WEEKDAY}\\b(?!end)`
+  const shapes: [string, boolean][] = [
+    [`${COUNT}${GAP}${WD}${GAP}${COUNT}${GAP}${WEEKEND}`, true],
+    [`${WD}${GAP}${COUNT}${GAP}${WEEKEND}${GAP}${COUNT}`, true],
+    [`${COUNT}${GAP}${WEEKEND}${GAP}${COUNT}${GAP}${WD}`, false],
+    [`${WEEKEND}${GAP}${COUNT}${GAP}${WD}${GAP}${COUNT}`, false],
+  ]
+  for (const [source, weekdayFirst] of shapes) {
+    const hit = clause.match(new RegExp(source))
+    if (hit) {
+      return weekdayFirst
+        ? { week: hit[1], weekend: hit[2] }
+        : { week: hit[2], weekend: hit[1] }
+    }
+  }
+  return null
+}
+
+/** "Every day" answers both boxes at once: five weekdays, two weekend days. */
+function everyDay(clause: string, period: 'week' | 'weekend') {
+  if (!/\bevery ?days?\b|\bdaily\b/.test(clause)) return null
+  return { value: period === 'week' ? '5' : '2', heard: 'every day' }
 }
 
 const RULES: Rule[] = [
@@ -523,8 +588,16 @@ const RULES: Rule[] = [
     run: (tokens) => {
       const clause = dryerClause(tokens)
       if (!clause) return null
+      const boxes = bothCounts(clause)
+      if (boxes) {
+        return { value: boxes.week, heard: `${boxes.week} and ${boxes.weekend}`, confidence: 'accept' }
+      }
       const hit = periodCount(clause, 'week')
       if (hit) return { value: hit.value, heard: hit.heard, confidence: 'accept' }
+      // Flagged, not accepted: splitting "every day" across the two boxes is
+      // our reading of it, not something the user said.
+      const daily = everyDay(clause, 'week')
+      if (daily) return { value: daily.value, heard: daily.heard, confidence: 'confirm' }
       // Both boxes are on screen and labelled, so a bare pair is a real answer
       // given in box order. Flagged, because the order is our assumption.
       const pair = clause.match(/\b(\d+)\b[^\d]{1,12}\b(\d+)\b/)
@@ -539,8 +612,16 @@ const RULES: Rule[] = [
     run: (tokens) => {
       const clause = dryerClause(tokens)
       if (!clause) return null
+      const boxes = bothCounts(clause)
+      if (boxes) {
+        return { value: boxes.weekend, heard: `${boxes.week} and ${boxes.weekend}`, confidence: 'accept' }
+      }
       const hit = periodCount(clause, 'weekend')
       if (hit) return { value: hit.value, heard: hit.heard, confidence: 'accept' }
+      // Flagged, not accepted: splitting "every day" across the two boxes is
+      // our reading of it, not something the user said.
+      const daily = everyDay(clause, 'weekend')
+      if (daily) return { value: daily.value, heard: daily.heard, confidence: 'confirm' }
       const pair = clause.match(/\b(\d+)\b[^\d]{1,12}\b(\d+)\b/)
       if (pair && !/week/.test(clause)) {
         return { value: pair[2], heard: `${pair[1]} and ${pair[2]}`, confidence: 'confirm' }
@@ -787,6 +868,22 @@ export function extractSlots(transcript: string, stepId: SetupStepId): ExtractRe
     const heating = slots.find((s) => s.field === 'heating')
     if (heating?.value === 'gas') {
       slots.push({ field: 'gas', value: 'yes', heard: 'gas heating', confidence: 'accept' })
+    }
+  }
+
+  // "I don't use the dryer on weekends" negates the *using*, not the owning —
+  // but the negation sits close enough to the cue to read as "no dryer", which
+  // then hides the two count boxes entirely. A count above zero is proof the
+  // appliance exists, so it overrules the negation. Flagged, because we are
+  // overriding something the user actually said.
+  const owned = slots.find((s) => s.field === 'dryer')
+  if (owned?.value === 'no') {
+    const used = slots.some(
+      (s) => (s.field === 'dryerWeek' || s.field === 'dryerWeekend') && Number(s.value) > 0,
+    )
+    if (used) {
+      owned.value = 'yes'
+      owned.confidence = 'confirm'
     }
   }
 
