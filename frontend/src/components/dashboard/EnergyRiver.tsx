@@ -1,4 +1,4 @@
-import { useId, useState } from 'react'
+import { useId, useState, type ReactNode } from 'react'
 import { TIMEFRAMES } from '../../constants/dashboard'
 import { formatAud, formatKwh, type Timeframe } from '../../lib/kpis'
 import {
@@ -10,6 +10,7 @@ import {
 } from '../../lib/energyRiver'
 import { useSlidingHighlight } from '../../lib/useSlidingHighlight'
 import { InfoIcon } from '../ui/icons'
+import { RollingKwh } from './RollingKwh'
 
 type SliceId = 'generated' | 'used' | 'vpp'
 
@@ -139,7 +140,7 @@ export function EnergyRiver({
             id="generated"
             tone="generated"
             label="Energy generated"
-            value={formatKwh(model.generatedKwh)}
+            value={<RollingKwh value={model.generatedKwh} />}
             hint={model.solarIsPotential ? 'modelled from the roof' : 'from the roof'}
             active={active}
             pinned={pinned}
@@ -150,7 +151,7 @@ export function EnergyRiver({
             id="used"
             tone="used"
             label="Energy used"
-            value={formatKwh(model.usedKwh)}
+            value={<RollingKwh value={model.usedKwh} delayMs={60} />}
             hint="by the house"
             active={active}
             pinned={pinned}
@@ -161,7 +162,7 @@ export function EnergyRiver({
             id="vpp"
             tone={vppTone}
             label={stage.eyebrow}
-            value={formatKwh(model.forkKwh)}
+            value={<RollingKwh value={model.forkKwh} delayMs={120} />}
             hint={stage.hint}
             active={active}
             pinned={pinned}
@@ -221,7 +222,7 @@ type LegendItemProps = {
   id: SliceId
   tone: string
   label: string
-  value: string
+  value: ReactNode
   hint: string
   active: SliceId | null
   pinned: SliceId | null

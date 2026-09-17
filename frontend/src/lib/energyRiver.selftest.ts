@@ -111,8 +111,8 @@ assert(almostEqual(daily.generatedKwh, surplus.generatedKwh / 7), 'daily generat
 assert(almostEqual(daily.forkKwh, surplus.forkKwh / 7), 'daily leftover is weekly ÷ 7')
 assert(almostEqual(daily.annualValueAud, surplus.annualValueAud), 'annual savings ignore the timeframe toggle')
 
-assert(riverForkStage('surplus').eyebrow === 'Possible discharge', 'surplus third stage is discharge')
-assert(riverForkStage('deficit').eyebrow === 'Possible borrow', 'deficit third stage is borrow')
+assert(riverForkStage('surplus').eyebrow === 'Potential discharge', 'surplus third stage is discharge')
+assert(riverForkStage('deficit').eyebrow === 'Potential borrow', 'deficit third stage is borrow')
 
 const surplusBar = riverBarSlices(surplus)
 assert(surplusBar.length === 3, 'surplus bar shows generated, used, and discharge')

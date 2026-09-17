@@ -9,9 +9,10 @@ import { buildKpiReport } from '../../lib/kpis'
 import { fetchMethodology, type MethodologyBundle } from '../../lib/methodologyApi'
 import { hasErrors, validateStep, type FieldErrors } from '../../lib/validateProfile'
 import { ConsumptionDonut } from '../dashboard/ConsumptionDonut'
+import { BrandWordmark } from '../ui/BrandWordmark'
 import { Button } from '../ui/Button'
 import { Callout } from '../ui/Callout'
-import { BoltIcon, CheckIcon, LockIcon, PencilIcon, ResetIcon } from '../ui/icons'
+import { CheckIcon, LockIcon, PencilIcon, ResetIcon } from '../ui/icons'
 import { LocationControl } from '../ui/LocationControl'
 import { BatteryProfileStep } from '../setup/BatteryProfileStep'
 import { EnergyProviderStep } from '../setup/EnergyProviderStep'
@@ -125,14 +126,11 @@ export function ProfileView({
       <header className="profile__top">
         <button
           type="button"
-          className="brand brand--button brand--desktop-hidden"
+          className="brand brand--button brand--wordmark"
           onClick={onLogoClick}
           aria-label="MyPowerPlant home"
         >
-          <span className="brand__mark">
-            <BoltIcon width={14} height={14} />
-          </span>
-          MyPowerPlant
+          <BrandWordmark variant="on-light" />
         </button>
         <LocationControl postcode={draft.postcode} onPostcodeChange={(value) => patch('postcode', value)} />
       </header>

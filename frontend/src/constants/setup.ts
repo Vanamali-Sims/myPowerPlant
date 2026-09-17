@@ -31,6 +31,16 @@ export type ProfileSection = {
   fields: ProfileSectionField[]
 }
 
+/** Shown once when the wizard opens, before household step 1. */
+export const SETUP_INTRO = {
+  eyebrow: 'Before you start',
+  title: 'Your details stay with you',
+  privacy:
+    'We do not store your information on our servers — it stays on this device only.',
+  accuracy: 'The more you fill in, the more accurate your prediction.',
+  action: 'Continue',
+} as const
+
 export const SETUP_STEPS: SetupStep[] = [
   {
     id: 'household',

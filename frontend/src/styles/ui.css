@@ -631,6 +631,17 @@
   cursor: pointer;
 }
 
+.brand--wordmark {
+  gap: 0;
+}
+
+.brand__logo {
+  display: block;
+  height: 2.1rem;
+  width: auto;
+  max-width: 13.5rem;
+}
+
 .brand--desktop-hidden {
   display: flex;
 }
