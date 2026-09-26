@@ -1,14 +1,11 @@
 /**
  * Household energy dashboard: balance card, cost compare, and VPP plans.
  */
-import { useEffect, useMemo, useState } from 'react'
+import { useMemo } from 'react'
 import { VPP_HOW_IT_HELPS } from '../../constants'
 import { locationFromPostcode } from '../../data/profileOptions'
 import { formatUpdatedAt } from '../../lib/formatProfile'
-import {
-  fetchMethodology,
-  type MethodologyBundle,
-} from '../../lib/methodologyApi'
+import { type MethodologyBundle } from '../../lib/methodologyApi'
 import { buildEnergyRiver } from '../../lib/energyRiver'
 import { buildKpiReport, type Timeframe } from '../../lib/kpis'
 import type { ProfileData } from '../../types/profile'
@@ -22,6 +19,10 @@ import { BoltIcon } from '../ui/icons'
 type Props = {
   profile: ProfileData
   hasProfile: boolean
+  bundle: MethodologyBundle | null
+  loadError: string
+  timeframe: Timeframe
+  onTimeframe: (next: Timeframe) => void
   onEditProfile: () => void
   onStartSetup: () => void
   onLogoClick: () => void
@@ -40,30 +41,14 @@ type Props = {
 export function DashboardView({
   profile,
   hasProfile,
+  bundle,
+  loadError,
+  timeframe,
+  onTimeframe,
   onEditProfile,
   onStartSetup,
   onLogoClick,
 }: Props) {
-  const [timeframe, setTimeframe] = useState<Timeframe>('weekly')
-  const [bundle, setBundle] = useState<MethodologyBundle | null>(null)
-  const [loadError, setLoadError] = useState('')
-
-  useEffect(() => {
-    let cancelled = false
-    void fetchMethodology().then((result) => {
-      if (cancelled) return
-      if (result.ok) {
-        setBundle(result.data)
-        setLoadError('')
-      } else {
-        setLoadError(result.error)
-      }
-    })
-    return () => {
-      cancelled = true
-    }
-  }, [])
-
   const report = useMemo(
     () => (hasProfile && bundle ? buildKpiReport(profile, bundle) : null),
     [bundle, hasProfile, profile],
@@ -135,7 +120,7 @@ export function DashboardView({
               model={river}
               place={place}
               timeframe={timeframe}
-              onTimeframe={setTimeframe}
+              onTimeframe={onTimeframe}
               onSeePlans={() => {
                 document.getElementById('vpp-suggestions')?.scrollIntoView({
                   behavior: 'smooth',

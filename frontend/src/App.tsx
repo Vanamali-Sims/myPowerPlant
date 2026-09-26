@@ -1,8 +1,9 @@
 /**
  * Client-side view router: welcome, setup, profile, and dashboard.
  */
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { AppShell, type AppNavId } from './components/layout/AppShell'
+import { ChatDock } from './components/chat/ChatDock'
 import { DashboardView } from './components/dashboard/DashboardView'
 import { Welcome } from './components/home/Welcome'
 import { ProfileView } from './components/profile/ProfileView'
@@ -10,6 +11,8 @@ import { RemindersView } from './components/reminders/RemindersView'
 import { SetupForm } from './components/setup/SetupForm'
 import { CustomCursor } from './components/ui/CustomCursor'
 import { StickyHover } from './components/ui/StickyHover'
+import { fetchMethodology, type MethodologyBundle } from './lib/methodologyApi'
+import type { Timeframe } from './lib/kpis'
 import { clearStoredProfile, loadProfile, saveProfile } from './lib/profileStorage'
 import { emptyProfile, type ProfileData } from './types/profile'
 
@@ -26,6 +29,26 @@ function App() {
   const [profile, setProfile] = useState<ProfileData>(loadProfile)
   const [view, setView] = useState<View>('welcome')
   const [notice, setNotice] = useState('')
+  const [timeframe, setTimeframe] = useState<Timeframe>('weekly')
+  const [bundle, setBundle] = useState<MethodologyBundle | null>(null)
+  const [methodologyError, setMethodologyError] = useState('')
+
+  useEffect(() => {
+    let cancelled = false
+    void fetchMethodology().then((result) => {
+      if (cancelled) return
+      if (result.ok) {
+        setBundle(result.data)
+        setMethodologyError('')
+      } else {
+        setMethodologyError(result.error)
+        setBundle(null)
+      }
+    })
+    return () => {
+      cancelled = true
+    }
+  }, [])
 
   function startSetup() {
     setView('setup')
@@ -99,6 +122,15 @@ function App() {
         hasProfile={Boolean(profile.lastUpdated)}
         onNavigate={goTo}
         onLogoClick={goHome}
+        chat={
+          <ChatDock
+            profile={profile}
+            hasProfile={Boolean(profile.lastUpdated)}
+            bundle={bundle}
+            methodologyError={methodologyError}
+            timeframe={timeframe}
+          />
+        }
       >
         {notice ? (
           <p className="app-notice" role="status">
@@ -143,6 +175,10 @@ function App() {
             <DashboardView
               profile={profile}
               hasProfile={Boolean(profile.lastUpdated)}
+              bundle={bundle}
+              loadError={methodologyError}
+              timeframe={timeframe}
+              onTimeframe={setTimeframe}
               onEditProfile={() => {
                 setView('profile')
                 setNotice('')
