@@ -13,8 +13,10 @@ import { CustomCursor } from './components/ui/CustomCursor'
 import { StickyHover } from './components/ui/StickyHover'
 import { fetchMethodology, type MethodologyBundle } from './lib/methodologyApi'
 import type { Timeframe } from './lib/kpis'
+import { DEFAULT_EVENT_TYPE, DEFAULT_REMINDER_PERIOD_DAYS } from './constants'
 import { clearStoredProfile, loadProfile, saveProfile } from './lib/profileStorage'
 import { emptyProfile, type ProfileData } from './types/profile'
+import type { EventType } from './types/reminders'
 
 type View = 'welcome' | 'setup' | 'profile' | 'dashboard' | 'reminders'
 
@@ -32,6 +34,8 @@ function App() {
   const [timeframe, setTimeframe] = useState<Timeframe>('weekly')
   const [bundle, setBundle] = useState<MethodologyBundle | null>(null)
   const [methodologyError, setMethodologyError] = useState('')
+  const [eventType, setEventType] = useState<EventType>(DEFAULT_EVENT_TYPE)
+  const [reminderPeriodDays, setReminderPeriodDays] = useState(DEFAULT_REMINDER_PERIOD_DAYS)
 
   useEffect(() => {
     let cancelled = false
@@ -129,6 +133,8 @@ function App() {
             bundle={bundle}
             methodologyError={methodologyError}
             timeframe={timeframe}
+            eventType={eventType}
+            reminderPeriodDays={reminderPeriodDays}
           />
         }
       >
@@ -187,7 +193,16 @@ function App() {
               onLogoClick={goHome}
             />
           ) : null}
-          {view === 'reminders' ? <RemindersView profile={profile} onLogoClick={goHome} /> : null}
+          {view === 'reminders' ? (
+            <RemindersView
+              profile={profile}
+              onLogoClick={goHome}
+              eventType={eventType}
+              onEventType={setEventType}
+              reminderPeriodDays={reminderPeriodDays}
+              onReminderPeriodDays={setReminderPeriodDays}
+            />
+          ) : null}
         </div>
       </AppShell>
     </>
