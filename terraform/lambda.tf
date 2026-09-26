@@ -26,7 +26,7 @@ resource "aws_lambda_function" "backend" {
     variables = {
       ENVIRONMENT = var.environment
       # domain_name always returns the original *.cloudfront.net address,
-      # even once an alias (local.app_domain_name) is attached - CloudFront
+      # even once an alias (var.root_domain) is attached - CloudFront
       # never disables or replaces it, adding an alias only adds another
       # way to reach the same distribution. So both stay permanently live
       # regardless of what's allowed here, and both are allowed: there is
@@ -38,7 +38,7 @@ resource "aws_lambda_function" "backend" {
       # delay, without an emergency apply just to restore API access.
       CORS_ORIGINS = join(",", [
         "https://${aws_cloudfront_distribution.frontend.domain_name}",
-        "https://${local.app_domain_name}",
+        "https://${var.root_domain}",
       ])
       # Sourced from SSM at apply time, never a literal string in this repo.
       DATABASE_URL = aws_ssm_parameter.database_url.value
