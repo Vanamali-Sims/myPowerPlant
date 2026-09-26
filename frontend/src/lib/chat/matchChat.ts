@@ -10,6 +10,8 @@ export type ChatIntent =
   | 'balance'
   | 'plan_first'
   | 'plan_terms'
+  | 'reminder_days'
+  | 'download_calendar'
 
 export const CHAT_UNMATCHED =
   'We could not match that to a question we know. Nothing has changed.'
@@ -23,6 +25,8 @@ export function matchChatIntent(message: string): ChatIntent | null {
   const text = normalise(message)
   if (!text) return null
 
+  if (matchesDownloadCalendar(text)) return 'download_calendar'
+  if (matchesReminderDays(text)) return 'reminder_days'
   if (matchesPlanTerms(text)) return 'plan_terms'
   if (matchesPlanFirst(text)) return 'plan_first'
   if (matchesAppliances(text)) return 'appliances'
@@ -30,6 +34,24 @@ export function matchChatIntent(message: string): ChatIntent | null {
   if (matchesEnergyPicture(text)) return 'energy_picture'
 
   return null
+}
+
+function matchesDownloadCalendar(text: string): boolean {
+  return (
+    /\badd (these |those |the )?days to (my )?calendar\b/.test(text) ||
+    /\badd reminders to (my )?calendar\b/.test(text) ||
+    /\bdownload (the )?calendar\b/.test(text) ||
+    (/\bdownload\b/.test(text) && /\b(reminder|calendar)\b/.test(text))
+  )
+}
+
+function matchesReminderDays(text: string): boolean {
+  return (
+    /\breminder days\b/.test(text) ||
+    /\bforecast days\b/.test(text) ||
+    (/\bwhich days\b/.test(text) && /\b(join|opt out|remind|discharge)\b/.test(text)) ||
+    (/\bsolar forecast\b/.test(text) && /\bdays?\b/.test(text))
+  )
 }
 
 function matchesPlanTerms(text: string): boolean {

@@ -64,6 +64,19 @@ function saved(overrides: Partial<ProfileData> = {}): ProfileData {
   }
 }
 
+function chatCtx(overrides: Partial<Parameters<typeof buildChatReply>[1]> = {}) {
+  return {
+    profile: emptyProfile(),
+    hasProfile: false,
+    bundle,
+    methodologyError: '',
+    timeframe: 'weekly' as const,
+    eventType: 'discharge' as const,
+    reminderPeriodDays: '7',
+    ...overrides,
+  }
+}
+
 describe('matchChatIntent', () => {
   it('maps common energy and plan phrases', () => {
     expect(matchChatIntent('What is my weekly picture?')).toBe('energy_picture')
@@ -71,6 +84,8 @@ describe('matchChatIntent', () => {
     expect(matchChatIntent('Am I ahead or behind?')).toBe('balance')
     expect(matchChatIntent('Which plan is first?')).toBe('plan_first')
     expect(matchChatIntent('What are the reserve terms?')).toBe('plan_terms')
+    expect(matchChatIntent('Which reminder days?')).toBe('reminder_days')
+    expect(matchChatIntent('Download the calendar')).toBe('download_calendar')
   })
 
   it('returns null for unknown sentences', () => {
@@ -80,13 +95,7 @@ describe('matchChatIntent', () => {
 
 describe('buildChatReply', () => {
   it('points to setup when there is no profile', () => {
-    const reply = buildChatReply('energy_picture', {
-      profile: emptyProfile(),
-      hasProfile: false,
-      bundle,
-      methodologyError: '',
-      timeframe: 'weekly',
-    })
+    const reply = buildChatReply('energy_picture', chatCtx())
     expect(reply).toMatch(/profile/i)
     expect(reply).not.toMatch(/\d kWh/)
   })
@@ -94,13 +103,7 @@ describe('buildChatReply', () => {
   it('matches dashboard weekly figures for the energy picture', () => {
     const p = saved()
     const report = buildKpiReport(p, bundle)
-    const reply = buildChatReply('energy_picture', {
-      profile: p,
-      hasProfile: true,
-      bundle,
-      methodologyError: '',
-      timeframe: 'weekly',
-    })
+    const reply = buildChatReply('energy_picture', chatCtx({ profile: p, hasProfile: true }))
     expect(reply).toContain(formatKwh(report.weekly.consumptionKwh))
     expect(reply).toContain(formatKwh(report.weekly.generationKwh))
     expect(reply).toContain(formatKg(report.weekly.carbonAvoidedKg))
@@ -113,13 +116,10 @@ describe('buildChatReply', () => {
 
   it('names the first matched plan', () => {
     const p = saved()
-    const reply = buildChatReply('plan_first', {
-      profile: p,
-      hasProfile: true,
-      bundle: bundleWithPlans,
-      methodologyError: '',
-      timeframe: 'weekly',
-    })
+    const reply = buildChatReply(
+      'plan_first',
+      chatCtx({ profile: p, hasProfile: true, bundle: bundleWithPlans }),
+    )
     expect(reply).toMatch(/Top match:/)
     expect(reply).toMatch(/not a guaranteed return/i)
   })

@@ -1,12 +1,14 @@
 /**
- * Chat dock (Epic 6.1–6.3): on-device matcher and transcript.
+ * Chat dock (Epic 6.1–6.4): on-device matcher and transcript.
  */
 import { useId, useRef, useState, type FormEvent } from 'react'
 import type { MethodologyBundle } from '../../lib/methodologyApi'
 import { buildChatReply, type ChatReplyContext } from '../../lib/chat/buildChatReply'
+import { buildAsyncChatReply, isAsyncChatIntent } from '../../lib/chat/reminderChatReply'
 import { CHAT_UNMATCHED, matchChatIntent } from '../../lib/chat/matchChat'
 import type { Timeframe } from '../../lib/kpis'
 import type { ProfileData } from '../../types/profile'
+import type { EventType } from '../../types/reminders'
 import { Button } from '../ui/Button'
 
 const MAX_MESSAGES = 20
@@ -23,6 +25,8 @@ type Props = {
   bundle: MethodologyBundle | null
   methodologyError: string
   timeframe: Timeframe
+  eventType: EventType
+  reminderPeriodDays: string
 }
 
 /**
@@ -38,10 +42,13 @@ export function ChatDock({
   bundle,
   methodologyError,
   timeframe,
+  eventType,
+  reminderPeriodDays,
 }: Props) {
   const [open, setOpen] = useState(false)
   const [draft, setDraft] = useState('')
   const [messages, setMessages] = useState<ChatMessage[]>([])
+  const [busy, setBusy] = useState(false)
   const listRef = useRef<HTMLDivElement>(null)
   const seqRef = useRef(0)
   const inputId = useId()
@@ -67,7 +74,7 @@ export function ChatDock({
   function handleSend(event: FormEvent) {
     event.preventDefault()
     const sentence = draft.trim()
-    if (!sentence) return
+    if (!sentence || busy) return
     setDraft('')
     append('user', sentence)
 
@@ -83,7 +90,21 @@ export function ChatDock({
       bundle,
       methodologyError,
       timeframe,
+      eventType,
+      reminderPeriodDays,
     }
+
+    if (isAsyncChatIntent(intent)) {
+      setBusy(true)
+      void buildAsyncChatReply(intent, ctx)
+        .then((say) => append('assistant', say))
+        .catch(() =>
+          append('assistant', 'Could not load the solar forecast. Nothing has changed.'),
+        )
+        .finally(() => setBusy(false))
+      return
+    }
+
     append('assistant', buildChatReply(intent, ctx))
   }
 
@@ -108,7 +129,7 @@ export function ChatDock({
           <div ref={listRef} className="chat-panel__log" role="log" aria-live="polite" aria-relevant="additions">
             {messages.length === 0 ? (
               <p className="chat-panel__hint">
-                Try “What is my weekly picture?” or “Which plan is first?”
+                Try “What is my weekly picture?”, “Which reminder days?”, or “Download the calendar”.
               </p>
             ) : null}
             {messages.map((msg) => (
@@ -132,9 +153,10 @@ export function ChatDock({
               value={draft}
               onChange={(event) => setDraft(event.target.value)}
               autoComplete="off"
-              placeholder="Ask about your energy picture or plans…"
+              placeholder="Ask about your energy picture, plans, or reminders…"
+              disabled={busy}
             />
-            <Button type="submit" variant="primary" className="chat-panel__send">
+            <Button type="submit" variant="primary" className="chat-panel__send" disabled={busy}>
               Send
             </Button>
           </form>

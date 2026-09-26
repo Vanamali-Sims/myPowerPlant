@@ -27,7 +27,7 @@ import {
   UNAVAILABLE_TERM,
 } from '../vppSuggestions'
 import type { ProfileData } from '../../types/profile'
-import type { ChatIntent } from './matchChat'
+import type { EventType } from '../../types/reminders'
 
 const MATCH_EMPTY: Record<MatchReasonCode, string> = {
   battery:
@@ -43,6 +43,8 @@ export type ChatReplyContext = {
   bundle: MethodologyBundle | null
   methodologyError: string
   timeframe: Timeframe
+  eventType: EventType
+  reminderPeriodDays: string
 }
 
 function scaleCarbonKg(weeklyKg: number, timeframe: Timeframe): number {
