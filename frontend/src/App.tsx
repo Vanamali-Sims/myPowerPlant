@@ -15,7 +15,7 @@ import { fetchMethodology, type MethodologyBundle } from './lib/methodologyApi'
 import type { Timeframe } from './lib/kpis'
 import { DEFAULT_EVENT_TYPE, DEFAULT_REMINDER_PERIOD_DAYS } from './constants'
 import { clearStoredProfile, loadProfile, saveProfile } from './lib/profileStorage'
-import { emptyProfile, type ProfileData } from './types/profile'
+import { emptyProfile, type ProfileData, type SetupStepId } from './types/profile'
 import type { EventType } from './types/reminders'
 
 type View = 'welcome' | 'setup' | 'profile' | 'dashboard' | 'reminders'
@@ -36,6 +36,7 @@ function App() {
   const [methodologyError, setMethodologyError] = useState('')
   const [eventType, setEventType] = useState<EventType>(DEFAULT_EVENT_TYPE)
   const [reminderPeriodDays, setReminderPeriodDays] = useState(DEFAULT_REMINDER_PERIOD_DAYS)
+  const [setupStepId, setSetupStepId] = useState<SetupStepId | null>(null)
 
   useEffect(() => {
     let cancelled = false
@@ -57,6 +58,7 @@ function App() {
   function startSetup() {
     setView('setup')
     setNotice('')
+    setSetupStepId('household')
   }
 
   function goHome() {
@@ -130,11 +132,19 @@ function App() {
           <ChatDock
             profile={profile}
             hasProfile={Boolean(profile.lastUpdated)}
+            view={view}
+            setupStepId={view === 'setup' ? setupStepId : null}
             bundle={bundle}
             methodologyError={methodologyError}
             timeframe={timeframe}
             eventType={eventType}
             reminderPeriodDays={reminderPeriodDays}
+            onNavigate={goTo}
+            onGoSetup={startSetup}
+            onSetTimeframe={setTimeframe}
+            onPatchProfile={setProfile}
+            onSaveProfile={saveEdits}
+            onResetProfile={resetProfile}
           />
         }
       >
@@ -161,6 +171,7 @@ function App() {
               onChange={setProfile}
               onComplete={completeSetup}
               onLogoClick={goHome}
+              onStepChange={setSetupStepId}
             />
           ) : null}
           {view === 'profile' ? (
