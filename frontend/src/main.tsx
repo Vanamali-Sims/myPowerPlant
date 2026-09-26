@@ -13,6 +13,7 @@ import './styles/voice.css'
 import './styles/profile.css'
 import './styles/dashboard.css'
 import './styles/reminders.css'
+import './styles/chat.css'
 import './styles/motion.css'
 import App from './App.tsx'
 

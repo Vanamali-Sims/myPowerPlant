@@ -18,6 +18,7 @@ type Props = {
   onNavigate: (id: AppNavId) => void
   onLogoClick: () => void
   children: ReactNode
+  chat?: ReactNode
 }
 
 /**
@@ -38,6 +39,7 @@ export function AppShell({
   onNavigate,
   onLogoClick,
   children,
+  chat,
 }: Props) {
   const place = locationFromPostcode(postcode)
   const [openPopover, setOpenPopover] = useTransientPopover()
@@ -114,7 +116,10 @@ export function AppShell({
           {place || DEFAULT_LOCATION_LABEL}
         </span>
       </aside>
-      <div className="app-shell__main">{children}</div>
+      <div className="app-shell__main">
+        {children}
+        {chat}
+      </div>
     </div>
   )
 }
