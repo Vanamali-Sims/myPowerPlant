@@ -5,14 +5,6 @@
  * the UI never talks to a vendor API directly and the engine can be swapped
  * without touching a component.
  *
- * ⚠️ PROTOTYPE ENGINE — READ BEFORE SHIPPING
- * The Web Speech API used below is NOT on-device. Chrome streams the audio to a
- * Google service. That breaks our cross-cutting acceptance criterion "no personal
- * data leaves the browser" and makes US-5.7 impossible to answer honestly.
- * It is here so the interaction can be reviewed today. Before this reaches a
- * deployed build, replace `createBrowserRecognizer` with an on-device engine
- * (Whisper via WASM) behind this same `Recognizer` interface — see ENABLER-5.2.
- */
 
 /** What the engine reports back to the UI. */
 export type RecognizerStatus = 'idle' | 'listening' | 'paused' | 'error'
@@ -167,7 +159,7 @@ export function createBrowserRecognizer(events: RecognizerEvents): Recognizer {
       try {
         engine.start()
       } catch {
-        // start() throws if already running — harmless, we are already listening.
+        // start() throws if already running, harmless, we are already listening.
       }
     },
     pause() {

@@ -35,9 +35,9 @@ describe('baseline profile', () => {
   )
 })
 
-// -------------------------------------------------------------------------
+
 // VAL-01 .. VAL-06 - postcode equivalence classes
-// -------------------------------------------------------------------------
+
 
 describe('VAL-01..06 postcode equivalence classes', () => {
   const cases: [string, string, boolean, string][] = [
@@ -71,9 +71,9 @@ describe('VAL-01..06 postcode equivalence classes', () => {
   })
 })
 
-// -------------------------------------------------------------------------
+
 // VAL-07 .. VAL-14 - boundary value analysis on bounded numerics
-// -------------------------------------------------------------------------
+
 
 type BoundarySpec = {
   id: string
@@ -168,9 +168,9 @@ describe('VAL-14 battery units boundaries', () => {
   })
 })
 
-// -------------------------------------------------------------------------
+
 // VAL-15 .. VAL-20 - allow-list fields
-// -------------------------------------------------------------------------
+
 
 describe('VAL-15..17 battery model allow-list', () => {
   it('VAL-15 accepts a model on the list', () => {
@@ -232,9 +232,9 @@ describe('VAL-18..20 provider allow-list', () => {
   })
 })
 
-// -------------------------------------------------------------------------
+
 // VAL-21 .. VAL-24 - conditional fields, both branches
-// -------------------------------------------------------------------------
+
 
 describe('VAL-21/22 dryer conditional fields', () => {
   it('VAL-21 does not require dryer frequency when the home has no dryer', () => {
@@ -293,9 +293,9 @@ describe('VAL-23/24 solar conditional fields', () => {
   })
 })
 
-// -------------------------------------------------------------------------
+
 // Required-field coverage (supports FUN-03 step gating)
-// -------------------------------------------------------------------------
+
 
 describe('FUN-03 required fields block step advancement', () => {
   const required: [string, keyof ProfileData, 'household' | 'usage'][] = [
