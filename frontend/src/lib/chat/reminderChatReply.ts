@@ -5,7 +5,7 @@ import { DEFAULT_RESERVE_PERCENT, FIELD_BOUNDS, clampNumber } from '../../consta
 import { buildIcsFile, downloadIcsFile } from '../calendarExport'
 import { formatReminderDaysReply, loadReminderRecommendations } from '../reminderRecommendations'
 import type { ChatReplyContext } from './buildChatReply'
-import type { ChatIntent } from './matchChat'
+import type { ChatDataIntent } from './matchChat'
 
 function reservePercent(profile: ChatReplyContext['profile']): number {
   return clampNumber(
@@ -30,7 +30,7 @@ function reminderInput(ctx: ChatReplyContext) {
  * @param intent - Matched chat intent
  * @returns True when the reply needs a forecast fetch
  */
-export function isAsyncChatIntent(intent: ChatIntent): boolean {
+export function isAsyncChatIntent(intent: ChatDataIntent): boolean {
   return intent === 'reminder_days' || intent === 'download_calendar'
 }
 
@@ -40,7 +40,7 @@ export function isAsyncChatIntent(intent: ChatIntent): boolean {
  * @param ctx - Shared chat context including reminder settings
  */
 export async function buildAsyncChatReply(
-  intent: ChatIntent,
+  intent: ChatDataIntent,
   ctx: ChatReplyContext,
 ): Promise<string> {
   if (!ctx.hasProfile) {

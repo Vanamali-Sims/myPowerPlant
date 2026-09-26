@@ -1,13 +1,13 @@
 /**
  * Five-step household setup wizard.
  */
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { SETUP_STEPS, STEP_FIELDS } from '../../constants'
 import { applyBaseline, markUserFields } from '../../data/baselines'
 import { formProgress } from '../../lib/formProgress'
 import { hasErrors, validateStep, type FieldErrors } from '../../lib/validateProfile'
 import { useVoiceInput } from '../../lib/voice/useVoiceInput'
-import type { ProfileData } from '../../types/profile'
+import type { ProfileData, SetupStepId } from '../../types/profile'
 import { VoiceDock } from '../voice/VoiceDock'
 import { FormActions } from '../ui/FormActions'
 import { FormHeader } from '../ui/FormHeader'
@@ -25,6 +25,7 @@ type Props = {
   onComplete: (profile: ProfileData) => void
   onExit?: () => void
   onLogoClick: () => void
+  onStepChange?: (stepId: SetupStepId) => void
 }
 
 /**
@@ -36,7 +37,7 @@ type Props = {
  * Continue validates the current step; skip fills Kew baselines for that step.
  * Clearing solar fields when the user says they have no panels avoids stale data.
  */
-export function SetupForm({ profile, onChange, onComplete, onExit, onLogoClick }: Props) {
+export function SetupForm({ profile, onChange, onComplete, onExit, onLogoClick, onStepChange }: Props) {
   const [stepIndex, setStepIndex] = useState(0)
   const [errors, setErrors] = useState<FieldErrors>({})
   const [introOpen, setIntroOpen] = useState(true)
@@ -44,6 +45,10 @@ export function SetupForm({ profile, onChange, onComplete, onExit, onLogoClick }
   const total = SETUP_STEPS.length
   // Measured from answers, not from which step is open.
   const progress = formProgress(profile)
+
+  useEffect(() => {
+    onStepChange?.(step.id)
+  }, [step.id, onStepChange])
 
   function patch<K extends keyof ProfileData>(field: K, value: ProfileData[K]) {
     const next: ProfileData = { ...profile, [field]: value }
