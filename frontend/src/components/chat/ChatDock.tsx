@@ -1,7 +1,7 @@
 /**
- * Chat dock (Epic 6): on-device matcher, actions, and transcript.
+ * Chat dock (Epic 6): on-device matcher, actions, transcript, and a11y (6.7).
  */
-import { useId, useRef, useState, type FormEvent } from 'react'
+import { useEffect, useId, useRef, useState, type FormEvent } from 'react'
 import type { AppNavId } from '../../constants/navigation'
 import type { MethodologyBundle } from '../../lib/methodologyApi'
 import { applyProfilePatch } from '../../lib/chat/applyProfilePatch'
@@ -77,15 +77,25 @@ export function ChatDock({
   const [messages, setMessages] = useState<ChatMessage[]>([])
   const [busy, setBusy] = useState(false)
   const [pendingReset, setPendingReset] = useState(false)
+  const [liveStatus, setLiveStatus] = useState('')
   const listRef = useRef<HTMLDivElement>(null)
+  const toggleRef = useRef<HTMLButtonElement>(null)
+  const inputRef = useRef<HTMLInputElement>(null)
+  const cancelResetRef = useRef<HTMLButtonElement>(null)
   const seqRef = useRef(0)
   const inputId = useId()
-  const liveId = useId()
+  const logId = useId()
   const confirmId = useId()
+  const confirmTitleId = useId()
+  const statusLiveId = useId()
 
   function nextId(): string {
     seqRef.current += 1
     return `chat-${seqRef.current}`
+  }
+
+  function announceStatus(text: string) {
+    setLiveStatus(text)
   }
 
   function trimHistory(next: ChatMessage[]): ChatMessage[] {
@@ -95,14 +105,52 @@ export function ChatDock({
 
   function append(role: ChatMessage['role'], text: string) {
     setMessages((prev) => trimHistory([...prev, { id: nextId(), role, text }]))
+    if (role === 'assistant') {
+      announceStatus(`Assistant: ${text}`)
+    }
     queueMicrotask(() => {
       listRef.current?.scrollTo({ top: listRef.current.scrollHeight, behavior: 'smooth' })
     })
   }
 
+  function closePanel() {
+    setOpen(false)
+    setPendingReset(false)
+    queueMicrotask(() => toggleRef.current?.focus())
+  }
+
+  function openPanel() {
+    setOpen(true)
+    queueMicrotask(() => inputRef.current?.focus())
+  }
+
   function dismissPendingReset() {
+    if (pendingReset) {
+      announceStatus('Reset cancelled. Your profile is unchanged.')
+    }
     setPendingReset(false)
   }
+
+  useEffect(() => {
+    if (!open) return
+    function onKeyDown(event: KeyboardEvent) {
+      if (event.key !== 'Escape') return
+      event.preventDefault()
+      if (pendingReset) {
+        dismissPendingReset()
+        inputRef.current?.focus()
+        return
+      }
+      closePanel()
+    }
+    document.addEventListener('keydown', onKeyDown)
+    return () => document.removeEventListener('keydown', onKeyDown)
+  }, [open, pendingReset])
+
+  useEffect(() => {
+    if (!pendingReset) return
+    queueMicrotask(() => cancelResetRef.current?.focus())
+  }, [pendingReset])
 
   function handleSend(event: FormEvent) {
     event.preventDefault()
@@ -196,6 +244,7 @@ export function ChatDock({
     const dataIntent = matched.intent as ChatDataIntent
     if (isAsyncChatIntent(dataIntent)) {
       setBusy(true)
+      announceStatus('Working on your answer.')
       void buildAsyncChatReply(dataIntent, ctx)
         .then((say) => append('assistant', say))
         .catch(() =>
@@ -209,21 +258,29 @@ export function ChatDock({
   }
 
   function confirmReset() {
-    dismissPendingReset()
+    setPendingReset(false)
     onResetProfile()
     append('assistant', 'Profile cleared on this device. Setup is open so you can start again.')
+    queueMicrotask(() => inputRef.current?.focus())
   }
 
   return (
     <div className={`chat-dock${open ? ' is-open' : ''}`}>
       {open ? (
-        <section id="chat-panel-main" className="chat-panel" aria-label="Chat assistant">
+        <section
+          id="chat-panel-main"
+          className="chat-panel"
+          aria-label="Chat assistant"
+          aria-busy={busy}
+        >
           <header className="chat-panel__head">
-            <h2 className="chat-panel__title">Ask MyPowerPlant</h2>
+            <h2 className="chat-panel__title" id={logId}>
+              Ask MyPowerPlant
+            </h2>
             <button
               type="button"
               className="chat-panel__close"
-              onClick={() => setOpen(false)}
+              onClick={closePanel}
               aria-label="Close chat"
             >
               Close
@@ -232,7 +289,22 @@ export function ChatDock({
           <p className="chat-panel__notice">
             Answers are worked out on this device. Your full profile stays on this device.
           </p>
-          <div ref={listRef} className="chat-panel__log" role="log" aria-live="polite" aria-relevant="additions">
+          <p
+            id={statusLiveId}
+            className="chat-panel__live"
+            role="status"
+            aria-live="polite"
+            aria-atomic="true"
+          >
+            {liveStatus}
+          </p>
+          <div
+            ref={listRef}
+            className="chat-panel__log"
+            role="log"
+            aria-labelledby={logId}
+            aria-describedby={statusLiveId}
+          >
             {messages.length === 0 ? (
               <p className="chat-panel__hint">
                 Try “What is my weekly picture?”, “Open reminders”, or “Change my postcode to 3121”.
@@ -242,9 +314,11 @@ export function ChatDock({
               <p
                 key={msg.id}
                 className={`chat-bubble chat-bubble--${msg.role}`}
-                id={msg.id === messages[messages.length - 1]?.id ? liveId : undefined}
+                aria-label={msg.role === 'user' ? `You said: ${msg.text}` : `Assistant said: ${msg.text}`}
               >
-                <span className="chat-bubble__label">{msg.role === 'user' ? 'You' : 'Assistant'}</span>
+                <span className="chat-bubble__label" aria-hidden="true">
+                  {msg.role === 'user' ? 'You' : 'Assistant'}
+                </span>
                 {msg.text}
               </p>
             ))}
@@ -253,15 +327,30 @@ export function ChatDock({
             <div
               id={confirmId}
               className="chat-panel__confirm"
-              role="group"
-              aria-label="Confirm profile reset"
+              role="alertdialog"
+              aria-labelledby={confirmTitleId}
+              aria-describedby={`${confirmTitleId}-detail`}
             >
-              <p className="chat-panel__confirm-text">Reset clears every answer on this device.</p>
+              <p id={confirmTitleId} className="chat-panel__confirm-text">
+                Reset this profile?
+              </p>
+              <p id={`${confirmTitleId}-detail`} className="chat-panel__confirm-detail">
+                This clears every answer on this device. Confirm to reset, or Cancel to keep your
+                profile. Press Escape to cancel.
+              </p>
               <div className="chat-panel__confirm-actions">
                 <Button type="button" variant="danger" onClick={confirmReset}>
                   Confirm reset
                 </Button>
-                <button type="button" className="chat-panel__confirm-dismiss" onClick={dismissPendingReset}>
+                <button
+                  ref={cancelResetRef}
+                  type="button"
+                  className="chat-panel__confirm-dismiss"
+                  onClick={() => {
+                    dismissPendingReset()
+                    inputRef.current?.focus()
+                  }}
+                >
                   Cancel
                 </button>
               </div>
@@ -272,6 +361,7 @@ export function ChatDock({
               Ask a question
             </label>
             <input
+              ref={inputRef}
               id={inputId}
               className="chat-panel__input"
               value={draft}
@@ -279,18 +369,27 @@ export function ChatDock({
               autoComplete="off"
               placeholder="Ask about your energy picture, plans, or reminders…"
               disabled={busy}
-              aria-describedby={pendingReset ? confirmId : undefined}
+              aria-describedby={
+                pendingReset ? `${confirmId} ${statusLiveId}` : statusLiveId
+              }
             />
-            <Button type="submit" variant="primary" className="chat-panel__send" disabled={busy}>
+            <Button
+              type="submit"
+              variant="primary"
+              className="chat-panel__send"
+              disabled={busy}
+              aria-disabled={busy}
+            >
               Send
             </Button>
           </form>
         </section>
       ) : null}
       <button
+        ref={toggleRef}
         type="button"
         className="chat-dock__toggle"
-        onClick={() => setOpen((value) => !value)}
+        onClick={() => (open ? closePanel() : openPanel())}
         aria-expanded={open}
         aria-controls={open ? 'chat-panel-main' : undefined}
       >
