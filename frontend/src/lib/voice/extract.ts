@@ -42,9 +42,7 @@ export type ExtractResult = {
   slots: ExtractedSlot[]
 }
 
-/* ------------------------------------------------------------------ *
- * Normalisation
- * ------------------------------------------------------------------ */
+/* Normalisation */
 
 const NUMBER_WORDS: Record<string, number> = {
   zero: 0, one: 1, two: 2, three: 3, four: 4, five: 5, six: 6, seven: 7,
@@ -135,9 +133,7 @@ export function normalise(text: string): string {
   return wordsToDigits(t).replace(/\s+/g, ' ').trim()
 }
 
-/* ------------------------------------------------------------------ *
- * Primitives
- * ------------------------------------------------------------------ */
+/* Primitives*/
 
 const NEGATORS = ['not', 'no', 'never', 'without', 'none']
 
@@ -209,9 +205,7 @@ function anchoredNumber(
   return null
 }
 
-/* ------------------------------------------------------------------ *
- * Closed-list matching
- * ------------------------------------------------------------------ */
+/* Closed-list matching*/
 
 const BATTERY_ALIASES: Record<string, string[]> = {
   'Tesla Powerwall 2': ['tesla', 'powerwall', 'power wall', 'pw2'],
@@ -258,9 +252,7 @@ function matchFromList(
   return null
 }
 
-/* ------------------------------------------------------------------ *
- * Field rules
- * ------------------------------------------------------------------ */
+/*Field rules*/
 
 type Rule = {
   field: keyof ProfileData
@@ -403,7 +395,7 @@ function applianceRule(
 }
 
 
-/* ── Dryer counts ──────────────────────────────────────────────────
+/* Dryer counts
    Two fields sharing one anchor, and the hardest thing in the whole extractor.
    The rolling window means every other answer is in the same string, so these
    must read a clause around the word "dryer" rather than the whole text —
@@ -545,7 +537,7 @@ function everyDay(clause: string, period: 'week' | 'weekend') {
 }
 
 const RULES: Rule[] = [
-  /* -- household ------------------------------------------------- */
+  /* household */
   {
     field: 'postcode',
     // A postcode is dictated in as many shapes as there are speakers — "3121",
@@ -671,7 +663,7 @@ const RULES: Rule[] = [
     ],
   ),
 
-  /* -- usage ----------------------------------------------------- */
+  /* usage */
   {
     field: 'monthlyBill',
     run: (_tokens, text) => {
@@ -721,7 +713,7 @@ const RULES: Rule[] = [
   ], 'confirm'),
   yesNoRule('wfh', ['work from home', 'working from home', 'study from home', 'wfh']),
 
-  /* -- solar ----------------------------------------------------- */
+  /* solar */
   yesNoRule('hasSolar', ['solar'], false),
   enumRule('solarDirection', [
     { value: 'NE', cues: ['north east', 'northeast'] },
@@ -791,7 +783,7 @@ const RULES: Rule[] = [
     },
   },
 
-  /* -- battery --------------------------------------------------- */
+  /* battery */
   countRule('batteryUnits', ['battery', 'batteries', 'powerwall'], { min: 1, max: 6 }),
   {
     field: 'reservePercent',
@@ -824,7 +816,7 @@ const RULES: Rule[] = [
     },
   },
 
-  /* -- provider -------------------------------------------------- */
+  /* provider */
   {
     field: 'provider',
     run: (_tokens, text) => {
@@ -835,9 +827,7 @@ const RULES: Rule[] = [
   },
 ]
 
-/* ------------------------------------------------------------------ *
- * Entry point
- * ------------------------------------------------------------------ */
+/* Entry point */
 
 /**
  * extractSlots

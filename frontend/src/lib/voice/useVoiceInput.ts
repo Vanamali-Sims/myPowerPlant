@@ -1,9 +1,8 @@
 /**
  * Voice input state for the setup wizard.
  *
- * Owns the listening lifecycle (US-5.2), the consent gate (US-5.3), what was
- * heard per field (US-5.4) and the failure paths (US-5.5). Components below it
- * stay presentational.
+ * Owns the listening lifecycle, the consent gate, what was
+ * heard per field and the failure paths. Components below it stay presentational.
  */
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
@@ -38,7 +37,7 @@ type Options = {
   stepId: SetupStepId
   /**
    * Write answers into the form. Takes every field from one utterance at once,
-   * because the form's patch closes over its own state — one call per field in
+   * because the form's patch closes over its own state - one call per field in
    * the same tick and only the last one lands.
    */
   onFill: (updates: Partial<ProfileData>) => void

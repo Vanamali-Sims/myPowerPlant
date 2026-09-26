@@ -52,9 +52,9 @@ function weeklyValues(report: ReturnType<typeof buildKpiReport>): [string, numbe
   return Object.entries(report.weekly)
 }
 
-// -------------------------------------------------------------------------
+
 // parseCount
-// -------------------------------------------------------------------------
+
 
 describe('parseCount', () => {
   it.each([
@@ -77,10 +77,10 @@ describe('parseCount', () => {
   })
 })
 
-// -------------------------------------------------------------------------
+
 // Timeframe scaling - the documented rule is daily = weekly / 7,
 // fortnightly = weekly x 2
-// -------------------------------------------------------------------------
+
 
 describe('timeframe scaling', () => {
   it('daily is weekly divided by 7', () => {
@@ -108,9 +108,9 @@ describe('timeframe scaling', () => {
   })
 })
 
-// -------------------------------------------------------------------------
+
 // FUN-08 - consumption against a hand-worked figure
-// -------------------------------------------------------------------------
+
 
 describe('FUN-08 consumption', () => {
   it('derives weekly consumption from the billed monthly figure (540 / 4 = 135)', () => {
@@ -149,9 +149,9 @@ describe('FUN-08 consumption', () => {
   })
 })
 
-// -------------------------------------------------------------------------
+
 // FUN-08 - solar generation against the documented formula
-// -------------------------------------------------------------------------
+
 
 describe('FUN-08 solar generation', () => {
   it('applies kW x peak sun hours x performance ratio x orientation x 7', () => {
@@ -196,9 +196,9 @@ describe('FUN-08 solar generation', () => {
   })
 })
 
-// -------------------------------------------------------------------------
+
 // Energy balance
-// -------------------------------------------------------------------------
+
 
 describe('energy balance', () => {
   const report = buildKpiReport(profile(), data)
@@ -255,9 +255,9 @@ describe('energy balance', () => {
   })
 })
 
-// -------------------------------------------------------------------------
+
 // Retail rate and plan comparison
-// -------------------------------------------------------------------------
+
 
 describe('retail rate', () => {
   it('derives the rate from bill divided by kWh (180 / 540)', () => {
@@ -326,9 +326,9 @@ describe('plan comparison', () => {
   })
 })
 
-// -------------------------------------------------------------------------
+
 // Appliance modelling - E = N x P x H, and the conditional branches
-// -------------------------------------------------------------------------
+
 
 describe('appliance modelling', () => {
   const lineFor = (p: ProfileData, id: string) =>
@@ -401,9 +401,9 @@ describe('appliance modelling', () => {
   })
 })
 
-// -------------------------------------------------------------------------
+
 // FUN-07 - households without solar
-// -------------------------------------------------------------------------
+
 
 describe('FUN-07 household without solar or battery', () => {
   const noSystem = profile({
@@ -451,9 +451,9 @@ describe('FUN-07 household without solar or battery', () => {
   })
 })
 
-// -------------------------------------------------------------------------
+
 // FUN-10 - extreme but valid inputs
-// -------------------------------------------------------------------------
+
 
 describe('FUN-10 boundary profiles produce usable output', () => {
   const profiles: [string, ProfileData][] = [
@@ -516,9 +516,9 @@ describe('FUN-10 boundary profiles produce usable output', () => {
   })
 })
 
-// -------------------------------------------------------------------------
+
 // Formatters - boundary behaviour
-// -------------------------------------------------------------------------
+
 
 describe('formatters', () => {
   it.each([
@@ -560,9 +560,9 @@ describe('formatters', () => {
   })
 })
 
-// -------------------------------------------------------------------------
+
 // Report shape
-// -------------------------------------------------------------------------
+
 
 describe('report shape', () => {
   it('labels the location from the postcode', () => {

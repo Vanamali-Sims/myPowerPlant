@@ -1,5 +1,5 @@
 output "cloudfront_domain_name" {
-  description = "CloudFront distribution's default domain. Stays live as a fallback alongside local.app_domain_name (see cloudfront.tf/lambda.tf) even after the custom domain alias is attached - CloudFront never disables it."
+  description = "CloudFront distribution's default domain. Stays live as a fallback alongside var.root_domain (see cloudfront.tf/lambda.tf) even after the custom domain alias is attached - CloudFront never disables it."
   value       = aws_cloudfront_distribution.frontend.domain_name
 }
 
@@ -29,5 +29,14 @@ output "acm_validation_record" {
     name  = tolist(aws_acm_certificate.app_domain.domain_validation_options)[0].resource_record_name
     type  = tolist(aws_acm_certificate.app_domain.domain_validation_options)[0].resource_record_type
     value = tolist(aws_acm_certificate.app_domain.domain_validation_options)[0].resource_record_value
+  }
+}
+
+output "acm_root_validation_record" {
+  description = "DNS validation CNAME for root_domain's ACM certificate. Add this at the registrar (Terraform cannot); the certificate will not move to Issued until it's live and has propagated."
+  value = {
+    name  = tolist(aws_acm_certificate.root_domain.domain_validation_options)[0].resource_record_name
+    type  = tolist(aws_acm_certificate.root_domain.domain_validation_options)[0].resource_record_type
+    value = tolist(aws_acm_certificate.root_domain.domain_validation_options)[0].resource_record_value
   }
 }
