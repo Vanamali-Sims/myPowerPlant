@@ -4,8 +4,6 @@
  */
 import { useEffect, useMemo, useState } from 'react'
 import {
-  DEFAULT_EVENT_TYPE,
-  DEFAULT_REMINDER_PERIOD_DAYS,
   EVENT_TYPE_OPTIONS,
   EVENT_TYPE_RESULTS_HEADING,
   REMINDER_PERIOD_OPTIONS,
@@ -44,6 +42,10 @@ const DEFAULT_LOCATION_PLACE = 'Melbourne, VIC'
 type Props = {
   profile: ProfileData
   onLogoClick: () => void
+  eventType: EventType
+  onEventType: (next: EventType) => void
+  reminderPeriodDays: string
+  onReminderPeriodDays: (next: string) => void
 }
 
 /**
@@ -74,9 +76,14 @@ function nextDayDetail(entry: ReminderRecommendation, eventType: EventType): str
  * profile but can be changed on this page alone, to preview a different
  * location's forecast without editing the profile.
  */
-export function RemindersView({ profile, onLogoClick }: Props) {
-  const [reminderPeriodDays, setReminderPeriodDays] = useState(DEFAULT_REMINDER_PERIOD_DAYS)
-  const [eventType, setEventType] = useState<EventType>(DEFAULT_EVENT_TYPE)
+export function RemindersView({
+  profile,
+  onLogoClick,
+  eventType,
+  onEventType,
+  reminderPeriodDays,
+  onReminderPeriodDays,
+}: Props) {
   const [postcode, setPostcode] = useState(profile.postcode)
   const [openDate, setOpenDate] = useState<string | null>(null)
   const [dismissedKeys, setDismissedKeys] = useState<Set<string>>(new Set())
@@ -323,14 +330,14 @@ export function RemindersView({ profile, onLogoClick }: Props) {
             label="Reminder period"
             value={reminderPeriodDays}
             options={REMINDER_PERIOD_OPTIONS}
-            onChange={setReminderPeriodDays}
+            onChange={onReminderPeriodDays}
           />
         </div>
         <SegmentedToggle
           label="Alert type"
           value={eventType}
           options={EVENT_TYPE_OPTIONS}
-          onChange={setEventType}
+          onChange={onEventType}
         />
       </div>
 

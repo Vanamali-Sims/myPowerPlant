@@ -4,9 +4,17 @@
  * Bounds and the Victorian postcode rule live in constants/validation so the
  * form UI and this file cannot drift apart.
  */
+import { STEP_FIELDS } from '../constants/setup'
 import { FIELD_BOUNDS, VIC_POSTCODE } from '../constants/validation'
 import { isAllowedBatteryModel, isAllowedProvider } from '../data/profileOptions'
 import type { ProfileData, SetupStepId } from '../types/profile'
+
+const FIELD_TO_STEP: Partial<Record<keyof ProfileData, SetupStepId>> = {}
+for (const [step, fields] of Object.entries(STEP_FIELDS) as [SetupStepId, (keyof ProfileData)[]][]) {
+  for (const field of fields) {
+    FIELD_TO_STEP[field] = step
+  }
+}
 
 export type FieldErrors = Partial<Record<keyof ProfileData, string>>
 
@@ -239,6 +247,34 @@ export function validateStep(
     }
   }
 
+  return errors
+}
+
+/**
+ * validateProfileFields
+ * @param profile - Household answers after a chat or setup patch
+ * @param fields - Fields that changed
+ * @returns Wizard-style errors for those fields only
+ *
+ * Used by chat profile edits and typed setup sentences so rejections match
+ * the form.
+ */
+export function validateProfileFields(
+  profile: ProfileData,
+  fields: (keyof ProfileData)[],
+): FieldErrors {
+  const errors: FieldErrors = {}
+  const steps = new Set<SetupStepId>()
+  for (const field of fields) {
+    const step = FIELD_TO_STEP[field]
+    if (step) steps.add(step)
+  }
+  for (const step of steps) {
+    const stepErrors = validateStep(step, profile)
+    for (const field of fields) {
+      if (stepErrors[field]) errors[field] = stepErrors[field]
+    }
+  }
   return errors
 }
 

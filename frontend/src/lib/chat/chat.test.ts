@@ -4,8 +4,11 @@ import { emptyProfile, type ProfileData } from '../../types/profile'
 import { seedMethodologyBundle } from '../methodologyFixture'
 import type { MethodologyBundle, VppSuggestionPlan } from '../methodologyApi'
 import { buildKpiReport, formatKg, formatKwh } from '../kpis'
+import { applyProfilePatch } from './applyProfilePatch'
 import { buildChatReply } from './buildChatReply'
-import { matchChatIntent } from './matchChat'
+import { buildProfileDisplayReply } from './buildProfileDisplayReply'
+import { matchChat, matchChatIntent, parseNavigateTarget, parseTimeframe } from './matchChat'
+import { parseProfilePatch } from './parseProfilePatch'
 
 const bundle = seedMethodologyBundle()
 
@@ -64,6 +67,19 @@ function saved(overrides: Partial<ProfileData> = {}): ProfileData {
   }
 }
 
+function chatCtx(overrides: Partial<Parameters<typeof buildChatReply>[1]> = {}) {
+  return {
+    profile: emptyProfile(),
+    hasProfile: false,
+    bundle,
+    methodologyError: '',
+    timeframe: 'weekly' as const,
+    eventType: 'discharge' as const,
+    reminderPeriodDays: '7',
+    ...overrides,
+  }
+}
+
 describe('matchChatIntent', () => {
   it('maps common energy and plan phrases', () => {
     expect(matchChatIntent('What is my weekly picture?')).toBe('energy_picture')
@@ -71,6 +87,18 @@ describe('matchChatIntent', () => {
     expect(matchChatIntent('Am I ahead or behind?')).toBe('balance')
     expect(matchChatIntent('Which plan is first?')).toBe('plan_first')
     expect(matchChatIntent('What are the reserve terms?')).toBe('plan_terms')
+    expect(matchChatIntent('Which reminder days?')).toBe('reminder_days')
+    expect(matchChatIntent('Download the calendar')).toBe('download_calendar')
+  })
+
+  it('maps navigation, timeframe, profile, and reset phrases', () => {
+    expect(matchChat('Open reminders')?.intent).toBe('navigate')
+    expect(parseNavigateTarget('go to dashboard')).toBe('dashboard')
+    expect(matchChatIntent('Switch to daily view')).toBe('set_timeframe')
+    expect(parseTimeframe('switch to weekly view')).toBe('weekly')
+    expect(matchChatIntent('Show my profile')).toBe('profile_display')
+    expect(matchChatIntent('Change my postcode to 3121')).toBe('set_profile')
+    expect(matchChatIntent('Reset my profile')).toBe('reset_profile')
   })
 
   it('returns null for unknown sentences', () => {
@@ -78,29 +106,40 @@ describe('matchChatIntent', () => {
   })
 })
 
+describe('applyProfilePatch', () => {
+  it('rejects a non-Victorian postcode with the wizard message', () => {
+    const result = applyProfilePatch(saved(), { postcode: '2000' })
+    expect(result.ok).toBe(false)
+    if (!result.ok) expect(result.message).toMatch(/Victorian postcode/i)
+  })
+
+  it('accepts a valid postcode patch', () => {
+    const result = applyProfilePatch(saved(), { postcode: '3121' })
+    expect(result.ok).toBe(true)
+    if (result.ok) expect(result.profile.postcode).toBe('3121')
+  })
+})
+
 describe('buildChatReply', () => {
   it('points to setup when there is no profile', () => {
-    const reply = buildChatReply('energy_picture', {
-      profile: emptyProfile(),
-      hasProfile: false,
-      bundle,
-      methodologyError: '',
-      timeframe: 'weekly',
-    })
+    const reply = buildChatReply('energy_picture', chatCtx())
     expect(reply).toMatch(/profile/i)
+    expect(reply).not.toMatch(/\d kWh/)
+  })
+
+  it('reports methodology failure without inventing figures', () => {
+    const reply = buildChatReply(
+      'energy_picture',
+      chatCtx({ profile: saved(), hasProfile: true, methodologyError: 'Offline', bundle: null }),
+    )
+    expect(reply).toMatch(/could not be loaded/i)
     expect(reply).not.toMatch(/\d kWh/)
   })
 
   it('matches dashboard weekly figures for the energy picture', () => {
     const p = saved()
     const report = buildKpiReport(p, bundle)
-    const reply = buildChatReply('energy_picture', {
-      profile: p,
-      hasProfile: true,
-      bundle,
-      methodologyError: '',
-      timeframe: 'weekly',
-    })
+    const reply = buildChatReply('energy_picture', chatCtx({ profile: p, hasProfile: true }))
     expect(reply).toContain(formatKwh(report.weekly.consumptionKwh))
     expect(reply).toContain(formatKwh(report.weekly.generationKwh))
     expect(reply).toContain(formatKg(report.weekly.carbonAvoidedKg))
@@ -113,14 +152,20 @@ describe('buildChatReply', () => {
 
   it('names the first matched plan', () => {
     const p = saved()
-    const reply = buildChatReply('plan_first', {
-      profile: p,
-      hasProfile: true,
-      bundle: bundleWithPlans,
-      methodologyError: '',
-      timeframe: 'weekly',
-    })
+    const reply = buildChatReply(
+      'plan_first',
+      chatCtx({ profile: p, hasProfile: true, bundle: bundleWithPlans }),
+    )
     expect(reply).toMatch(/Top match:/)
     expect(reply).toMatch(/not a guaranteed return/i)
+  })
+})
+
+describe('buildProfileDisplayReply', () => {
+  it('uses profile screen labels only', () => {
+    const p = saved({ postcode: '3121' })
+    const reply = buildProfileDisplayReply(p)
+    expect(reply).toContain('Postcode: 3121')
+    expect(parseProfilePatch('show my profile')).toBeNull()
   })
 })

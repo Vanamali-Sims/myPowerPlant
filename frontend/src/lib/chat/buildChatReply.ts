@@ -11,11 +11,7 @@ import {
   scaleKwh,
   type Timeframe,
 } from '../kpis'
-import type { MethodologyBundle } from '../methodologyApi'
-import type {
-  MatchReasonCode,
-  VppSuggestionTermKey,
-} from '../methodologyApi'
+import type { MethodologyBundle, VppSuggestionTermKey } from '../methodologyApi'
 import {
   formatVerifiedDate,
   isTermStale,
@@ -25,9 +21,12 @@ import {
   termByKey,
   TERM_LABELS,
   UNAVAILABLE_TERM,
+  type MatchReasonCode,
 } from '../vppSuggestions'
 import type { ProfileData } from '../../types/profile'
-import type { ChatIntent } from './matchChat'
+import type { EventType } from '../../types/reminders'
+import { buildProfileDisplayReply } from './buildProfileDisplayReply'
+import type { ChatDataIntent } from './matchChat'
 
 const MATCH_EMPTY: Record<MatchReasonCode, string> = {
   battery:
@@ -43,6 +42,8 @@ export type ChatReplyContext = {
   bundle: MethodologyBundle | null
   methodologyError: string
   timeframe: Timeframe
+  eventType: EventType
+  reminderPeriodDays: string
 }
 
 function scaleCarbonKg(weeklyKg: number, timeframe: Timeframe): number {
@@ -74,7 +75,14 @@ function methodologyGate(ctx: ChatReplyContext): string | null {
  * @param ctx - Profile, timeframe, and methodology bundle
  * @returns Reply text for the transcript
  */
-export function buildChatReply(intent: ChatIntent, ctx: ChatReplyContext): string {
+export function buildChatReply(intent: ChatDataIntent | 'profile_display', ctx: ChatReplyContext): string {
+  if (intent === 'profile_display') {
+    if (!ctx.hasProfile) {
+      return 'Your profile is not saved yet. Complete Setup first, then ask again.'
+    }
+    return buildProfileDisplayReply(ctx.profile)
+  }
+
   const profileBlock = profileGate(ctx)
   if (profileBlock) return profileBlock
 
