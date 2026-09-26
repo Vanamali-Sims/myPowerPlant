@@ -403,8 +403,8 @@ data "aws_iam_policy_document" "github_actions_ssm" {
   }
 }
 
-# Full CRUD for the ACM certificate in acm.tf, scoped to that one
-# certificate. Note this is an IAM policy, not tied to any region - the
+# Full CRUD for the ACM certificates in acm.tf, scoped to those two
+# certificates. Note this is an IAM policy, not tied to any region - the
 # certificate itself lives in us-east-1 (see the aws.us_east_1 provider
 # alias in versions.tf and acm.tf), but this role's permissions apply
 # wherever its ARN is referenced, including from a plan/apply that
@@ -423,7 +423,10 @@ data "aws_iam_policy_document" "github_actions_acm" {
       "acm:RemoveTagsFromCertificate",
       "acm:ListTagsForCertificate",
     ]
-    resources = [aws_acm_certificate.app_domain.arn]
+    resources = [
+      aws_acm_certificate.app_domain.arn,
+      aws_acm_certificate.root_domain.arn,
+    ]
   }
 }
 
