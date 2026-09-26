@@ -147,14 +147,17 @@
 
 .chat-panel__form {
   display: flex;
+  align-items: center;
   gap: 0.5rem;
   padding: 0.75rem 1rem 1rem;
   border-top: 1px solid var(--border);
 }
 
 .chat-panel__input {
-  flex: 1;
+  flex: 1 1 auto;
+  width: 100%;
   min-width: 0;
+  min-height: 44px;
   border: 1px solid var(--border-strong);
   border-radius: 999px;
   padding: 0.55rem 0.85rem;
@@ -164,13 +167,22 @@
   color: var(--ink);
 }
 
+.chat-panel__input::placeholder {
+  color: var(--ink-muted);
+}
+
 .chat-panel__input:focus-visible {
   outline: 2px solid var(--focus-ring);
   outline-offset: 2px;
 }
 
-.chat-panel__send {
-  flex-shrink: 0;
+/* Shared .ui-btn is width: 100% for wizard forms; here it must sit beside the field. */
+.chat-panel__send.ui-btn {
+  width: auto;
+  flex: 0 0 auto;
+  white-space: nowrap;
+  padding: 0.55rem 1.1rem;
+  min-height: 44px;
 }
 
 @media (max-width: 720px) {
