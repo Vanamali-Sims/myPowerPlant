@@ -26,9 +26,7 @@ export function trySetupChatFill(
 
   const patch: Partial<ProfileData> = {}
   for (const slot of slots) {
-    const field = slot.field
-    const value = String(slot.value) as ProfileData[typeof field]
-    patch[field] = value
+    Object.assign(patch, { [slot.field]: slot.value })
   }
 
   const result = applyProfilePatch(profile, patch)
