@@ -60,7 +60,7 @@ resource "aws_cloudfront_response_headers_policy" "frontend_security" {
 # checks only the password half of the decoded credentials, since this
 # gates the site behind one shared password rather than per-user accounts.
 # After the check it also routes the /iteration-1/ and /iteration-2/
-# snapshots (see routeIterationSnapshot below); nothing else is rewritten.
+# snapshots (see routeIterationSnapshot below).
 #
 # var.basic_auth_password is interpolated directly into the function
 # source below by Terraform before this is ever sent to AWS, so the
