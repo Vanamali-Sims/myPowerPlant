@@ -59,6 +59,8 @@ resource "aws_cloudfront_response_headers_policy" "frontend_security" {
 # viewer request before cache/origin is touched. Accepts any username and
 # checks only the password half of the decoded credentials, since this
 # gates the site behind one shared password rather than per-user accounts.
+# After the check it also routes the /iteration-1/ and /iteration-2/
+# snapshots (see routeIterationSnapshot below).
 #
 # var.basic_auth_password is interpolated directly into the function
 # source below by Terraform before this is ever sent to AWS, so the
@@ -104,6 +106,37 @@ resource "aws_cloudfront_function" "basic_auth" {
             return unauthorized();
         }
 
+        return routeIterationSnapshot(request);
+    }
+
+    // Frozen builds of past iterations live under /iteration-1/ and
+    // /iteration-2/ in the same bucket, each built with a matching Vite
+    // base. Every other URI, including the root app, passes through
+    // unchanged. A bare /iteration-N is redirected to /iteration-N/, and
+    // any extension-less path under a prefix is served that prefix's
+    // index.html; without this, both would miss in S3 and the global
+    // 403/404 fallback would hand back the root app's index.html instead.
+    function routeIterationSnapshot(request) {
+        var match = request.uri.match(/^\/(iteration-[12])(\/.*)?$/);
+        if (!match) {
+            return request;
+        }
+
+        var prefix = "/" + match[1] + "/";
+        if (match[2] === undefined) {
+            return {
+                statusCode: 302,
+                statusDescription: "Found",
+                headers: {
+                    "location": { value: prefix }
+                }
+            };
+        }
+
+        var lastSegment = request.uri.substring(request.uri.lastIndexOf("/") + 1);
+        if (lastSegment.indexOf(".") === -1) {
+            request.uri = prefix + "index.html";
+        }
         return request;
     }
 

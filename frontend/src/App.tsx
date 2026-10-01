@@ -1,8 +1,9 @@
 /**
  * Client-side view router: welcome, setup, profile, and dashboard.
  */
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { AppShell, type AppNavId } from './components/layout/AppShell'
+import { ChatDock } from './components/chat/ChatDock'
 import { DashboardView } from './components/dashboard/DashboardView'
 import { Welcome } from './components/home/Welcome'
 import { ProfileView } from './components/profile/ProfileView'
@@ -10,8 +11,12 @@ import { RemindersView } from './components/reminders/RemindersView'
 import { SetupForm } from './components/setup/SetupForm'
 import { CustomCursor } from './components/ui/CustomCursor'
 import { StickyHover } from './components/ui/StickyHover'
+import { fetchMethodology, type MethodologyBundle } from './lib/methodologyApi'
+import type { Timeframe } from './lib/kpis'
+import { DEFAULT_EVENT_TYPE, DEFAULT_REMINDER_PERIOD_DAYS } from './constants'
 import { clearStoredProfile, loadProfile, saveProfile } from './lib/profileStorage'
-import { emptyProfile, type ProfileData } from './types/profile'
+import { emptyProfile, type ProfileData, type SetupStepId } from './types/profile'
+import type { EventType } from './types/reminders'
 
 type View = 'welcome' | 'setup' | 'profile' | 'dashboard' | 'reminders'
 
@@ -26,10 +31,34 @@ function App() {
   const [profile, setProfile] = useState<ProfileData>(loadProfile)
   const [view, setView] = useState<View>('welcome')
   const [notice, setNotice] = useState('')
+  const [timeframe, setTimeframe] = useState<Timeframe>('weekly')
+  const [bundle, setBundle] = useState<MethodologyBundle | null>(null)
+  const [methodologyError, setMethodologyError] = useState('')
+  const [eventType, setEventType] = useState<EventType>(DEFAULT_EVENT_TYPE)
+  const [reminderPeriodDays, setReminderPeriodDays] = useState(DEFAULT_REMINDER_PERIOD_DAYS)
+  const [setupStepId, setSetupStepId] = useState<SetupStepId | null>(null)
+
+  useEffect(() => {
+    let cancelled = false
+    void fetchMethodology().then((result) => {
+      if (cancelled) return
+      if (result.ok) {
+        setBundle(result.data)
+        setMethodologyError('')
+      } else {
+        setMethodologyError(result.error)
+        setBundle(null)
+      }
+    })
+    return () => {
+      cancelled = true
+    }
+  }, [])
 
   function startSetup() {
     setView('setup')
     setNotice('')
+    setSetupStepId('household')
   }
 
   function goHome() {
@@ -99,6 +128,25 @@ function App() {
         hasProfile={Boolean(profile.lastUpdated)}
         onNavigate={goTo}
         onLogoClick={goHome}
+        chat={
+          <ChatDock
+            profile={profile}
+            hasProfile={Boolean(profile.lastUpdated)}
+            view={view}
+            setupStepId={view === 'setup' ? setupStepId : null}
+            bundle={bundle}
+            methodologyError={methodologyError}
+            timeframe={timeframe}
+            eventType={eventType}
+            reminderPeriodDays={reminderPeriodDays}
+            onNavigate={goTo}
+            onGoSetup={startSetup}
+            onSetTimeframe={setTimeframe}
+            onPatchProfile={setProfile}
+            onSaveProfile={saveEdits}
+            onResetProfile={resetProfile}
+          />
+        }
       >
         {notice ? (
           <p className="app-notice" role="status">
@@ -123,6 +171,7 @@ function App() {
               onChange={setProfile}
               onComplete={completeSetup}
               onLogoClick={goHome}
+              onStepChange={setSetupStepId}
             />
           ) : null}
           {view === 'profile' ? (
@@ -143,6 +192,10 @@ function App() {
             <DashboardView
               profile={profile}
               hasProfile={Boolean(profile.lastUpdated)}
+              bundle={bundle}
+              loadError={methodologyError}
+              timeframe={timeframe}
+              onTimeframe={setTimeframe}
               onEditProfile={() => {
                 setView('profile')
                 setNotice('')
@@ -151,7 +204,16 @@ function App() {
               onLogoClick={goHome}
             />
           ) : null}
-          {view === 'reminders' ? <RemindersView profile={profile} onLogoClick={goHome} /> : null}
+          {view === 'reminders' ? (
+            <RemindersView
+              profile={profile}
+              onLogoClick={goHome}
+              eventType={eventType}
+              onEventType={setEventType}
+              reminderPeriodDays={reminderPeriodDays}
+              onReminderPeriodDays={setReminderPeriodDays}
+            />
+          ) : null}
         </div>
       </AppShell>
     </>

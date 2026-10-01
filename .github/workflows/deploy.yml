@@ -104,9 +104,13 @@ jobs:
           role-to-assume: ${{ vars.AWS_DEPLOY_ROLE_ARN }}
           aws-region: ${{ env.AWS_REGION }}
 
+      # The iteration-1/ and iteration-2/ prefixes hold frozen builds of past
+      # iterations (uploaded by hand, routed by the basic_auth CloudFront
+      # Function), so --delete must leave them alone.
       - name: Sync build output to S3
         run: |
-          aws s3 sync frontend/dist "s3://${{ vars.FRONTEND_BUCKET_NAME }}" --delete
+          aws s3 sync frontend/dist "s3://${{ vars.FRONTEND_BUCKET_NAME }}" --delete \
+            --exclude "iteration-1/*" --exclude "iteration-2/*"
 
       - name: Invalidate CloudFront cache
         run: |
