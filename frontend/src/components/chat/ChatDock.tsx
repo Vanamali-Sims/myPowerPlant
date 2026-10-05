@@ -16,8 +16,6 @@ import {
   formatPlanColumn,
   formatSolarKpiLines,
   type WhatIfKind,
-  type WhatIfTab,
-  whatIfTabForKind,
 } from '../../lib/chat/whatIfCompare'
 import { buildIcsFile, downloadIcsFile } from '../../lib/calendarExport'
 import { buildKpiReport, parseCount } from '../../lib/kpis'
@@ -33,6 +31,7 @@ import { BulbIcon, DownloadIcon, PencilIcon } from '../ui/icons'
 
 type PanelMode = 'actions' | 'whatif' | null
 type ActionsTab = 'location' | 'reminders' | 'profile'
+type WhatIfTab = 'household' | 'battery' | 'solar'
 
 type CompareState = {
   kind: WhatIfKind
@@ -179,10 +178,6 @@ export function ChatDock({
   }, [panel, actionsTab, trayReady, bundle, profile, eventType, reminderPeriodDays])
 
   useEffect(() => {
-    setCompare(null)
-  }, [whatIfTab])
-
-  useEffect(() => {
     if (!panel && !compare) return
     function onKeyDown(event: KeyboardEvent) {
       if (event.key !== 'Escape') return
@@ -198,17 +193,8 @@ export function ChatDock({
   }, [panel, compare])
 
   function openPanel(mode: PanelMode) {
-    setPanel((current) => {
-      const next = current === mode ? null : mode
-      if (next !== 'whatif') setCompare(null)
-      return next
-    })
+    setPanel((current) => (current === mode ? null : mode))
     setStatus('')
-  }
-
-  function closeWhatIfPanel() {
-    setCompare(null)
-    setPanel(null)
   }
 
   function savePostcode(event: FormEvent) {
@@ -335,15 +321,9 @@ export function ChatDock({
       : null
   const bestDir = bundle ? bestSolarDirection(bundle.orientationFactors) : null
 
-  const compareDataReady =
+  const compareOpen =
     Boolean(compare && reportNow && reportDraft && bundle) &&
     (compare?.kind !== 'battery' || Boolean(plansNow && plansDraft))
-
-  const compareOpen =
-    compareDataReady &&
-    panel === 'whatif' &&
-    compare !== null &&
-    whatIfTabForKind(compare.kind) === whatIfTab
 
   function linesForSide(kind: WhatIfKind, side: 'now' | 'draft'): string[] {
     const report = side === 'now' ? reportNow! : reportDraft!
@@ -373,6 +353,61 @@ export function ChatDock({
 
   return (
     <div className={`chat-dock${panel ? ' is-open' : ''}`}>
+      {compareOpen && compare ? (
+        <div
+          className="chat-compare"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby={compareTitleId}
+        >
+          <header className="chat-panel__head">
+            <h2 className="chat-panel__title" id={compareTitleId}>
+              Now vs this change
+            </h2>
+            <button type="button" className="chat-panel__close" onClick={() => setCompare(null)}>
+              Close
+            </button>
+          </header>
+          <p className="chat-panel__notice">{compare.summary}</p>
+          <div className="chat-compare__grid">
+            <div className="chat-compare__col">
+              <h3 className="chat-compare__heading">Now</h3>
+              {compare.kind === 'battery' ? (
+                <pre className="chat-compare__body">{linesForSide('battery', 'now')[0]}</pre>
+              ) : (
+                <CompareMetricLines lines={linesForSide(compare.kind, 'now')} />
+              )}
+            </div>
+            <div className="chat-compare__col chat-compare__col--after">
+              <h3 className="chat-compare__heading">This change</h3>
+              {compare.kind === 'battery' ? (
+                <pre className="chat-compare__body">{linesForSide('battery', 'draft')[0]}</pre>
+              ) : (
+                <CompareMetricLines lines={linesForSide(compare.kind, 'draft')} />
+              )}
+            </div>
+          </div>
+          {compareFootnote(compare.kind) ? (
+            <p className="chat-panel__notice chat-compare__note">{compareFootnote(compare.kind)}</p>
+          ) : null}
+          {compare.kind === 'direction' && bestDir ? (
+            <p className="chat-panel__notice chat-compare__note">
+              {compare.draftProfile.solarDirection === bestDir.value
+                ? `This direction (${bestDir.label}) is the strongest for generation in this model.`
+                : `Strongest direction in this model: ${bestDir.label}.`}
+            </p>
+          ) : null}
+          <div className="chat-compare__actions">
+            <Button type="button" variant="primary" onClick={applyWhatIf}>
+              Use this setup
+            </Button>
+            <button type="button" className="chat-panel__confirm-dismiss" onClick={() => setCompare(null)}>
+              Keep current setup
+            </button>
+          </div>
+        </div>
+      ) : null}
+
       {panel === 'actions' && trayReady ? (
         <section
           id="chat-panel-actions"
@@ -486,65 +521,10 @@ export function ChatDock({
       ) : null}
 
       {panel === 'whatif' && trayReady ? (
-        <div className="chat-dock__stack">
-          {compareOpen && compare ? (
-            <div
-              className="chat-compare chat-compare--enter"
-              role="dialog"
-              aria-modal="true"
-              aria-labelledby={compareTitleId}
-            >
-              <header className="chat-panel__head">
-                <h2 className="chat-panel__title" id={compareTitleId}>
-                  Now vs this change
-                </h2>
-                <button type="button" className="chat-panel__close" onClick={() => setCompare(null)}>
-                  Close
-                </button>
-              </header>
-              <p className="chat-panel__notice">{compare.summary}</p>
-              <div className="chat-compare__grid">
-                <div className="chat-compare__col">
-                  <h3 className="chat-compare__heading">Now</h3>
-                  {compare.kind === 'battery' ? (
-                    <pre className="chat-compare__body">{linesForSide('battery', 'now')[0]}</pre>
-                  ) : (
-                    <CompareMetricLines lines={linesForSide(compare.kind, 'now')} />
-                  )}
-                </div>
-                <div className="chat-compare__col chat-compare__col--after">
-                  <h3 className="chat-compare__heading">This change</h3>
-                  {compare.kind === 'battery' ? (
-                    <pre className="chat-compare__body">{linesForSide('battery', 'draft')[0]}</pre>
-                  ) : (
-                    <CompareMetricLines lines={linesForSide(compare.kind, 'draft')} />
-                  )}
-                </div>
-              </div>
-              {compareFootnote(compare.kind) ? (
-                <p className="chat-panel__notice chat-compare__note">{compareFootnote(compare.kind)}</p>
-              ) : null}
-              {compare.kind === 'direction' && bestDir ? (
-                <p className="chat-panel__notice chat-compare__note">
-                  {compare.draftProfile.solarDirection === bestDir.value
-                    ? `This direction (${bestDir.label}) is the strongest for generation in this model.`
-                    : `Strongest direction in this model: ${bestDir.label}.`}
-                </p>
-              ) : null}
-              <div className="chat-compare__actions">
-                <Button type="button" variant="primary" onClick={applyWhatIf}>
-                  Use this setup
-                </Button>
-                <button type="button" className="chat-panel__confirm-dismiss" onClick={() => setCompare(null)}>
-                  Keep current setup
-                </button>
-              </div>
-            </div>
-          ) : null}
         <section id="chat-panel-whatif" className="chat-panel" aria-label="What if">
           <header className="chat-panel__head">
             <h2 className="chat-panel__title">What if</h2>
-            <button type="button" className="chat-panel__close" onClick={closeWhatIfPanel}>
+            <button type="button" className="chat-panel__close" onClick={() => setPanel(null)}>
               Close
             </button>
           </header>
@@ -577,108 +557,110 @@ export function ChatDock({
           <div className="chat-panel__body">
             {whatIfTab === 'household' ? (
               <>
-                <div className="chat-whatif__field">
-                  <label className="chat-actions__label" htmlFor="whatif-people">People in the home</label>
-                  <input
-                    id="whatif-people"
-                    className="chat-panel__input chat-whatif__input"
-                    inputMode="numeric"
-                    value={peopleDraft}
-                    onChange={(event) => setPeopleDraft(event.target.value)}
-                  />
-                  <Button type="button" variant="secondary" className="chat-whatif__compare" onClick={comparePeople}>
-                    See comparison for people
-                  </Button>
+                <div className="chat-actions__block">
+                  <h3 className="chat-actions__label">People in the home</h3>
+                  <div className="chat-actions__row">
+                    <input
+                      className="chat-panel__input"
+                      inputMode="numeric"
+                      value={peopleDraft}
+                      onChange={(event) => setPeopleDraft(event.target.value)}
+                      aria-label="People in household"
+                    />
+                    <Button type="button" variant="primary" className="chat-panel__send" onClick={comparePeople}>
+                      Compare
+                    </Button>
+                  </div>
                 </div>
-                <div className="chat-whatif__field">
-                  <label className="chat-actions__label" htmlFor="whatif-dishwasher">
-                    Dishwasher cycles per week
-                  </label>
-                  <input
-                    id="whatif-dishwasher"
-                    className="chat-panel__input chat-whatif__input"
-                    inputMode="numeric"
-                    value={dishwasherDraft}
-                    onChange={(event) => setDishwasherDraft(event.target.value)}
-                  />
-                  <Button type="button" variant="secondary" className="chat-whatif__compare" onClick={compareDishwasher}>
-                    See comparison for dishwasher
-                  </Button>
+                <div className="chat-actions__block">
+                  <h3 className="chat-actions__label">Dishwasher cycles per week</h3>
+                  <div className="chat-actions__row">
+                    <input
+                      className="chat-panel__input"
+                      inputMode="numeric"
+                      value={dishwasherDraft}
+                      onChange={(event) => setDishwasherDraft(event.target.value)}
+                      aria-label="Dishwasher cycles per week"
+                    />
+                    <Button type="button" variant="primary" className="chat-panel__send" onClick={compareDishwasher}>
+                      Compare
+                    </Button>
+                  </div>
                 </div>
-                <div className="chat-whatif__field">
-                  <label className="chat-actions__label" htmlFor="whatif-washer">
-                    Washing machine cycles per week
-                  </label>
-                  <input
-                    id="whatif-washer"
-                    className="chat-panel__input chat-whatif__input"
-                    inputMode="numeric"
-                    value={washerDraft}
-                    onChange={(event) => setWasherDraft(event.target.value)}
-                  />
-                  <Button type="button" variant="secondary" className="chat-whatif__compare" onClick={compareWasher}>
-                    See comparison for washing machine
-                  </Button>
+                <div className="chat-actions__block">
+                  <h3 className="chat-actions__label">Washing machine cycles per week</h3>
+                  <div className="chat-actions__row">
+                    <input
+                      className="chat-panel__input"
+                      inputMode="numeric"
+                      value={washerDraft}
+                      onChange={(event) => setWasherDraft(event.target.value)}
+                      aria-label="Washing machine cycles per week"
+                    />
+                    <Button type="button" variant="primary" className="chat-panel__send" onClick={compareWasher}>
+                      Compare
+                    </Button>
+                  </div>
                 </div>
               </>
             ) : null}
             {whatIfTab === 'battery' ? (
-              <div className="chat-whatif__field">
-                <label className="chat-actions__label" htmlFor="whatif-battery">Different battery</label>
-                <select
-                  id="whatif-battery"
-                  className="chat-whatif__select chat-whatif__input"
-                  value={batteryDraft}
-                  onChange={(event) => setBatteryDraft(event.target.value)}
-                >
-                  <option value="">Select battery</option>
-                  {batteryModels.map((model) => (
-                    <option key={model} value={model}>{model}</option>
-                  ))}
-                </select>
-                <Button type="button" variant="secondary" className="chat-whatif__compare" onClick={compareBattery}>
-                  See comparison for this battery
-                </Button>
+              <div className="chat-actions__block">
+                <h3 className="chat-actions__label">Different battery</h3>
+                <div className="chat-actions__row">
+                  <select
+                    className="chat-whatif__select"
+                    value={batteryDraft}
+                    onChange={(event) => setBatteryDraft(event.target.value)}
+                  >
+                    <option value="">Select battery</option>
+                    {batteryModels.map((model) => (
+                      <option key={model} value={model}>{model}</option>
+                    ))}
+                  </select>
+                  <Button type="button" variant="primary" className="chat-panel__send" onClick={compareBattery}>
+                    Compare
+                  </Button>
+                </div>
               </div>
             ) : null}
             {whatIfTab === 'solar' ? (
               <>
-                <div className="chat-whatif__field">
+                <div className="chat-actions__block">
                   <h3 className="chat-actions__label">One more solar panel</h3>
                   <Button
                     type="button"
-                    variant="secondary"
-                    className="chat-whatif__compare"
+                    variant="primary"
                     disabled={profile.hasSolar !== 'yes'}
                     onClick={compareExtraPanel}
                   >
-                    See comparison for +1 panel
+                    Compare +1 panel
                   </Button>
                 </div>
-                <div className="chat-whatif__field">
-                  <label className="chat-actions__label" htmlFor="whatif-direction">Panel direction</label>
-                  <select
-                    id="whatif-direction"
-                    className="chat-whatif__select chat-whatif__input"
-                    value={directionDraft}
-                    onChange={(event) =>
-                      setDirectionDraft(event.target.value as ProfileData['solarDirection'])
-                    }
-                  >
-                    <option value="">Direction</option>
-                    {solarDirections.map((row) => (
-                      <option key={row.value} value={row.value}>{row.label}</option>
-                    ))}
-                  </select>
-                  <Button type="button" variant="secondary" className="chat-whatif__compare" onClick={compareDirection}>
-                    See comparison for direction
-                  </Button>
+                <div className="chat-actions__block">
+                  <h3 className="chat-actions__label">Panel direction</h3>
+                  <div className="chat-actions__row">
+                    <select
+                      className="chat-whatif__select"
+                      value={directionDraft}
+                      onChange={(event) =>
+                        setDirectionDraft(event.target.value as ProfileData['solarDirection'])
+                      }
+                    >
+                      <option value="">Direction</option>
+                      {solarDirections.map((row) => (
+                        <option key={row.value} value={row.value}>{row.label}</option>
+                      ))}
+                    </select>
+                    <Button type="button" variant="primary" className="chat-panel__send" onClick={compareDirection}>
+                      Compare
+                    </Button>
+                  </div>
                 </div>
               </>
             ) : null}
           </div>
         </section>
-        </div>
       ) : null}
 
       <div className="chat-dock__tray" role="group" aria-label="Quick tools">

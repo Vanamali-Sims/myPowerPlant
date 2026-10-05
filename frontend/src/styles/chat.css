@@ -24,14 +24,6 @@
   max-width: min(420px, calc(100vw - 5.5rem - 2rem));
 }
 
-.chat-dock__stack {
-  display: flex;
-  flex-direction: column;
-  align-items: stretch;
-  gap: 0.5rem;
-  width: min(420px, calc(100vw - 5.5rem - 2rem));
-}
-
 .chat-dock__tray {
   display: flex;
   flex-direction: row;
@@ -287,70 +279,16 @@
   outline-offset: 2px;
 }
 
-@keyframes chat-compare-enter {
-  from {
-    opacity: 0;
-    transform: translateY(10px);
-  }
-
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
 .chat-compare {
-  width: 100%;
-  max-height: min(48dvh, 420px);
+  width: min(420px, calc(100vw - 5.5rem - 2rem));
+  max-height: min(85dvh, 560px);
   display: flex;
   flex-direction: column;
   border: 1px solid var(--border-strong);
   border-radius: 14px;
   background: var(--surface);
-  box-shadow: 0 12px 32px rgb(20 35 29 / 16%);
+  box-shadow: 0 16px 40px rgb(20 35 29 / 18%);
   overflow: auto;
-  transform-origin: bottom center;
-}
-
-.chat-compare--enter {
-  animation: chat-compare-enter 0.24s ease-out;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .chat-compare--enter {
-    animation: none;
-  }
-}
-
-.chat-whatif__field {
-  display: flex;
-  flex-direction: column;
-  align-items: stretch;
-  gap: 0.4rem;
-  margin-bottom: 1rem;
-  padding-bottom: 1rem;
-  border-bottom: 1px solid var(--border);
-}
-
-.chat-whatif__field:last-child {
-  margin-bottom: 0;
-  padding-bottom: 0;
-  border-bottom: none;
-}
-
-.chat-whatif__input {
-  width: 100%;
-  min-height: 44px;
-  border-radius: 10px;
-}
-
-.chat-whatif__select.chat-whatif__input {
-  border-radius: 10px;
-}
-
-.chat-whatif__compare.ui-btn {
-  width: 100%;
-  margin-top: 0.15rem;
 }
 
 .chat-compare__grid {
