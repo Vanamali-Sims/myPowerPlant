@@ -4,11 +4,12 @@
  * Actions commits immediately. What if keeps a draft profile until the user
  * chooses Use this setup or Keep current setup.
  */
-import { useEffect, useId, useState, type FormEvent } from 'react'
+import { useEffect, useId, useState, type Dispatch, type FormEvent, type SetStateAction } from 'react'
 import { batteryModels, solarDirections } from '../../data/profileOptions'
 import type { MethodologyBundle } from '../../lib/methodologyApi'
 import { applyProfilePatch } from '../../lib/chat/applyProfilePatch'
 import type { ChatReplyContext } from '../../lib/chat/buildChatReply'
+import { hasHouseholdDraftChanges } from '../../lib/chat/householdDraft'
 import { buildAsyncChatReply } from '../../lib/chat/reminderChatReply'
 import {
   compareFootnote,
@@ -28,7 +29,7 @@ import type { ProfileData, SolarDirection } from '../../types/profile'
 import type { EventType } from '../../types/reminders'
 import { ActionsProfileChat } from './ActionsProfileChat'
 import { TrayPanelCloseButton, TrayPanelLayout } from './TrayPanelLayout'
-import { hasHouseholdDraftChanges, WhatIfHouseholdTab } from './WhatIfHouseholdTab'
+import { WhatIfHouseholdTab } from './WhatIfHouseholdTab'
 import { Button } from '../ui/Button'
 import { BulbIcon, DownloadIcon, PencilIcon } from '../ui/icons'
 
@@ -69,6 +70,20 @@ function chatContext(
     eventType,
     reminderPeriodDays,
   }
+}
+
+/**
+ * Draft field that follows the saved profile value when that value changes.
+ * Updating during render avoids a setState effect when the profile is saved.
+ */
+function useSyncedDraft<T>(saved: T): [T, Dispatch<SetStateAction<T>>] {
+  const [draft, setDraft] = useState(saved)
+  const [prevSaved, setPrevSaved] = useState(saved)
+  if (!Object.is(saved, prevSaved)) {
+    setPrevSaved(saved)
+    setDraft(saved)
+  }
+  return [draft, setDraft]
 }
 
 function bestSolarDirection(factors: Record<string, number>): { value: SolarDirection | ''; label: string } {
@@ -142,47 +157,45 @@ export function ChatDock({
   const [panel, setPanel] = useState<PanelMode>(null)
   const [actionsTab, setActionsTab] = useState<ActionsTab>('location')
   const [whatIfTab, setWhatIfTab] = useState<WhatIfTab>('household')
-  const [postcodeDraft, setPostcodeDraft] = useState(profile.postcode)
+  const [postcodeDraft, setPostcodeDraft] = useSyncedDraft(profile.postcode)
   const [status, setStatus] = useState('')
   const [busy, setBusy] = useState(false)
   const [reminders, setReminders] = useState<ReminderRecommendation[]>([])
   const [reminderError, setReminderError] = useState('')
-  const [batteryDraft, setBatteryDraft] = useState(profile.batteryModel)
-  const [directionDraft, setDirectionDraft] = useState(profile.solarDirection)
-  const [peopleDraft, setPeopleDraft] = useState(profile.people)
-  const [dishwasherDraft, setDishwasherDraft] = useState(profile.dishwasherCyclesPerWeek)
-  const [washerDraft, setWasherDraft] = useState(profile.washerCyclesPerWeek)
+  const [appliedReminderQuery, setAppliedReminderQuery] = useState('')
+  const [reminderLoadGen, setReminderLoadGen] = useState(0)
+  const [reminderSettledGen, setReminderSettledGen] = useState(0)
+  const [batteryDraft, setBatteryDraft] = useSyncedDraft(profile.batteryModel)
+  const [directionDraft, setDirectionDraft] = useSyncedDraft(profile.solarDirection)
+  const [peopleDraft, setPeopleDraft] = useSyncedDraft(profile.people)
+  const [dishwasherDraft, setDishwasherDraft] = useSyncedDraft(profile.dishwasherCyclesPerWeek)
+  const [washerDraft, setWasherDraft] = useSyncedDraft(profile.washerCyclesPerWeek)
   const [compare, setCompare] = useState<CompareState | null>(null)
   const postcodeId = useId()
   const statusId = useId()
   const compareTitleId = useId()
 
   const trayReady = hasProfile && Boolean(bundle) && !methodologyError
+  const remindersActive = panel === 'actions' && actionsTab === 'reminders' && trayReady && bundle != null
+  const reminderQuery = remindersActive
+    ? `${eventType}|${reminderPeriodDays}|${JSON.stringify(profile)}`
+    : ''
+
+  // Clear the previous list when the reminder query changes. Doing this while
+  // rendering keeps the reset out of the fetch effect.
+  if (reminderQuery !== appliedReminderQuery) {
+    setAppliedReminderQuery(reminderQuery)
+    setReminders([])
+    setReminderError('')
+    setReminderLoadGen((gen) => gen + 1)
+  }
+
+  const remindersLoading = remindersActive && reminderLoadGen !== reminderSettledGen
 
   useEffect(() => {
-    setPostcodeDraft(profile.postcode)
-    setBatteryDraft(profile.batteryModel)
-    setDirectionDraft(profile.solarDirection)
-    setPeopleDraft(profile.people)
-    setDishwasherDraft(profile.dishwasherCyclesPerWeek)
-    setWasherDraft(profile.washerCyclesPerWeek)
-  }, [
-    profile.postcode,
-    profile.batteryModel,
-    profile.solarDirection,
-    profile.people,
-    profile.dishwasherCyclesPerWeek,
-    profile.washerCyclesPerWeek,
-  ])
-
-  useEffect(() => {
-    if (panel !== 'actions' || actionsTab !== 'reminders' || !trayReady || !bundle) {
-      setReminders([])
-      setReminderError('')
-      return
-    }
+    if (!remindersActive || !bundle) return
+    const gen = reminderLoadGen
     let cancelled = false
-    setBusy(true)
     void loadReminderRecommendations({
       profile,
       bundle,
@@ -207,12 +220,12 @@ export function ChatDock({
         }
       })
       .finally(() => {
-        if (!cancelled) setBusy(false)
+        if (!cancelled) setReminderSettledGen(gen)
       })
     return () => {
       cancelled = true
     }
-  }, [panel, actionsTab, trayReady, bundle, profile, eventType, reminderPeriodDays])
+  }, [remindersActive, reminderLoadGen, bundle, profile, eventType, reminderPeriodDays])
 
   useEffect(() => {
     if (!panel && !compare) return
@@ -486,7 +499,7 @@ export function ChatDock({
           showStatus={actionsTab !== 'profile'}
           onClose={closeTray}
           closeLabel="Close Actions"
-          busy={busy}
+          busy={busy || remindersLoading}
         >
             {actionsTab === 'location' ? (
               <form className="chat-actions__block" onSubmit={savePostcode}>
@@ -526,7 +539,7 @@ export function ChatDock({
                   you need a different list.
                 </p>
                 {reminderError ? <p className="chat-actions__error">{reminderError}</p> : null}
-                {!reminderError && !busy && reminders.length === 0 ? (
+                {!reminderError && !remindersLoading && !busy && reminders.length === 0 ? (
                   <p className="chat-panel__hint">No qualifying days in this period.</p>
                 ) : null}
                 <ul className="chat-actions__list">
@@ -548,7 +561,7 @@ export function ChatDock({
                   type="button"
                   variant="primary"
                   className="chat-actions__all"
-                  disabled={busy || !reminders.length}
+                  disabled={busy || remindersLoading || !reminders.length}
                   onClick={downloadAllReminders}
                 >
                   Download all reminders

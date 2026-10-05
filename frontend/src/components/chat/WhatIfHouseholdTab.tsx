@@ -3,6 +3,7 @@
  * then run one combined comparison against the saved profile.
  */
 import { FIELD_BOUNDS, clampNumber } from '../../constants/validation'
+import { hasHouseholdDraftChanges } from '../../lib/chat/householdDraft'
 import { parseCount } from '../../lib/kpis'
 import type { ProfileData } from '../../types/profile'
 import { Button } from '../ui/Button'
@@ -86,22 +87,6 @@ function HouseholdStepperRow({ label, saved, draft, min, max, startAt, onDraft }
         </button>
       </div>
     </div>
-  )
-}
-
-/** True when the user has edited a field away from the saved profile value. */
-export function hasHouseholdDraftChanges(
-  profile: ProfileData,
-  peopleDraft: string,
-  dishwasherDraft: string,
-  washerDraft: string,
-): boolean {
-  const changed = (draft: string, saved: string) =>
-    draft.trim() !== '' && draft.trim() !== saved.trim()
-  return (
-    changed(peopleDraft, profile.people) ||
-    changed(dishwasherDraft, profile.dishwasherCyclesPerWeek) ||
-    changed(washerDraft, profile.washerCyclesPerWeek)
   )
 }
 
