@@ -10,6 +10,15 @@ import { formatKwhShort, type SuggestionMatch } from '../vppSuggestions'
 
 export type WhatIfKind = 'battery' | 'panel' | 'direction' | 'household'
 
+export type WhatIfTab = 'household' | 'battery' | 'solar'
+
+/** Which What if tab should show a given compare scenario. */
+export function whatIfTabForKind(kind: WhatIfKind): WhatIfTab {
+  if (kind === 'household') return 'household'
+  if (kind === 'battery') return 'battery'
+  return 'solar'
+}
+
 /** VPP suggestion list for the battery scenario. */
 export function formatPlanColumn(matches: SuggestionMatch[], emptyReason: string | null): string {
   if (!matches.length) {
