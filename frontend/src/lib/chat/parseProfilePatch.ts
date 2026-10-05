@@ -32,9 +32,22 @@ export function parseProfilePatch(message: string): Partial<ProfileData> | null 
   if (people) patch.people = people
 
   const rooms =
+    text.match(/\b(?:change|set|update)\s+(?:my\s+)?rooms?\s+to\s+(\d+)\b/)?.[1] ??
     text.match(/\b(\d+)\s+rooms?\b/)?.[1] ??
     text.match(/\brooms?\s+(?:is|are|to)\s+(\d+)\b/)?.[1]
   if (rooms) patch.rooms = rooms
+
+  const dishwasher =
+    text.match(/\b(?:change|set|update)\s+(?:my\s+)?dishwasher\s+to\s+(\d+)\b/)?.[1] ??
+    text.match(/\bdishwasher\s+(?:to\s+)?(\d+)\s+(?:times?|cycles?|loads?)(?:\s+(?:a|per)\s+week)?\b/)?.[1] ??
+    text.match(/\b(\d+)\s+dishwasher\s+(?:cycles?|loads?)\b/)?.[1]
+  if (dishwasher) patch.dishwasherCyclesPerWeek = dishwasher
+
+  const washer =
+    text.match(/\b(?:change|set|update)\s+(?:my\s+)?(?:washing\s+machine|washer)\s+to\s+(\d+)\b/)?.[1] ??
+    text.match(/\b(?:washing\s+machine|washer)\s+(?:to\s+)?(\d+)\s+(?:times?|cycles?|loads?)(?:\s+(?:a|per)\s+week)?\b/)?.[1] ??
+    text.match(/\b(\d+)\s+(?:washer|washing)\s+(?:cycles?|loads?)\b/)?.[1]
+  if (washer) patch.washerCyclesPerWeek = washer
 
   const refrigerators =
     text.match(/\b(\d+)\s+fridges?\b/)?.[1] ??

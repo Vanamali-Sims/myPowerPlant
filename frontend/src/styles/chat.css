@@ -148,28 +148,40 @@
   outline-offset: 2px;
 }
 
-.chat-profile-editor__lede {
-  margin: 0 0 0.65rem;
+.chat-profile-chat {
+  display: flex;
+  flex-direction: column;
+  min-height: 200px;
+  gap: 0.5rem;
 }
 
-.chat-profile-editor__form {
-  max-height: min(42dvh, 280px);
+.chat-profile-chat__log {
+  flex: 1;
+  min-height: 100px;
+  max-height: min(36dvh, 220px);
   overflow: auto;
-  margin-bottom: 0.75rem;
-  padding-right: 0.15rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  padding: 0.15rem 0;
 }
 
-.chat-whatif__group-label {
-  margin: 0.85rem 0 0.35rem;
-  font-size: 0.72rem;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--ink-secondary);
+.chat-profile-chat__empty {
+  margin: 0;
 }
 
-.chat-whatif__group-label:first-child {
-  margin-top: 0;
+.chat-profile-chat__form {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  padding-top: 0.35rem;
+  border-top: 1px solid var(--border);
+}
+
+.chat-profile-chat__form .chat-panel__input {
+  flex: 1 1 auto;
+  min-width: 0;
 }
 
 .chat-actions__block {

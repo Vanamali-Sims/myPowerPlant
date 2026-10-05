@@ -25,12 +25,13 @@ import { matchSuggestionPlans } from '../../lib/vppSuggestions'
 import { FIELD_BOUNDS } from '../../constants/validation'
 import type { ProfileData, SolarDirection } from '../../types/profile'
 import type { EventType } from '../../types/reminders'
-import { ActionsProfileEditor } from './ActionsProfileEditor'
+import { ActionsProfileChat } from './ActionsProfileChat'
 import { Button } from '../ui/Button'
 import { BulbIcon, DownloadIcon, PencilIcon } from '../ui/icons'
 
 type PanelMode = 'actions' | 'whatif' | null
 type ActionsTab = 'location' | 'reminders' | 'profile'
+type WhatIfTab = 'household' | 'battery' | 'solar'
 
 type CompareState = {
   kind: WhatIfKind
@@ -103,6 +104,7 @@ export function ChatDock({
 }: Props) {
   const [panel, setPanel] = useState<PanelMode>(null)
   const [actionsTab, setActionsTab] = useState<ActionsTab>('location')
+  const [whatIfTab, setWhatIfTab] = useState<WhatIfTab>('household')
   const [postcodeDraft, setPostcodeDraft] = useState(profile.postcode)
   const [status, setStatus] = useState('')
   const [busy, setBusy] = useState(false)
@@ -442,9 +444,11 @@ export function ChatDock({
               </button>
             ))}
           </div>
-          <p id={statusId} className="chat-panel__status" role="status" aria-live="polite">
-            {status}
-          </p>
+          {actionsTab !== 'profile' ? (
+            <p id={statusId} className="chat-panel__status" role="status" aria-live="polite">
+              {status}
+            </p>
+          ) : null}
           <div className="chat-panel__body">
             {actionsTab === 'location' ? (
               <form className="chat-actions__block" onSubmit={savePostcode}>
@@ -506,7 +510,7 @@ export function ChatDock({
               </section>
             ) : null}
             {actionsTab === 'profile' ? (
-              <ActionsProfileEditor
+              <ActionsProfileChat
                 profile={profile}
                 onSave={onSaveProfile}
                 onStatus={setStatus}
@@ -527,106 +531,134 @@ export function ChatDock({
           <p className="chat-panel__notice">
             Compare household, battery, or solar changes before anything is saved.
           </p>
+          <div className="chat-actions__tabs chat-actions__tabs--primary" role="tablist" aria-label="What if category">
+            {(
+              [
+                { id: 'household' as const, label: 'Household' },
+                { id: 'battery' as const, label: 'Battery' },
+                { id: 'solar' as const, label: 'Solar' },
+              ] as const
+            ).map((tab) => (
+              <button
+                key={tab.id}
+                type="button"
+                role="tab"
+                aria-selected={whatIfTab === tab.id}
+                className={`chat-actions__tab${whatIfTab === tab.id ? ' is-active' : ''}`}
+                onClick={() => setWhatIfTab(tab.id)}
+              >
+                {tab.label}
+              </button>
+            ))}
+          </div>
           <p className="chat-panel__status" role="status" aria-live="polite">
             {status}
           </p>
           <div className="chat-panel__body">
-            <p className="chat-whatif__group-label">Household</p>
-            <div className="chat-actions__block">
-              <h3 className="chat-actions__label">People in the home</h3>
-              <div className="chat-actions__row">
-                <input
-                  className="chat-panel__input"
-                  inputMode="numeric"
-                  value={peopleDraft}
-                  onChange={(event) => setPeopleDraft(event.target.value)}
-                  aria-label="People in household"
-                />
-                <Button type="button" variant="primary" className="chat-panel__send" onClick={comparePeople}>
-                  Compare
-                </Button>
+            {whatIfTab === 'household' ? (
+              <>
+                <div className="chat-actions__block">
+                  <h3 className="chat-actions__label">People in the home</h3>
+                  <div className="chat-actions__row">
+                    <input
+                      className="chat-panel__input"
+                      inputMode="numeric"
+                      value={peopleDraft}
+                      onChange={(event) => setPeopleDraft(event.target.value)}
+                      aria-label="People in household"
+                    />
+                    <Button type="button" variant="primary" className="chat-panel__send" onClick={comparePeople}>
+                      Compare
+                    </Button>
+                  </div>
+                </div>
+                <div className="chat-actions__block">
+                  <h3 className="chat-actions__label">Dishwasher cycles per week</h3>
+                  <div className="chat-actions__row">
+                    <input
+                      className="chat-panel__input"
+                      inputMode="numeric"
+                      value={dishwasherDraft}
+                      onChange={(event) => setDishwasherDraft(event.target.value)}
+                      aria-label="Dishwasher cycles per week"
+                    />
+                    <Button type="button" variant="primary" className="chat-panel__send" onClick={compareDishwasher}>
+                      Compare
+                    </Button>
+                  </div>
+                </div>
+                <div className="chat-actions__block">
+                  <h3 className="chat-actions__label">Washing machine cycles per week</h3>
+                  <div className="chat-actions__row">
+                    <input
+                      className="chat-panel__input"
+                      inputMode="numeric"
+                      value={washerDraft}
+                      onChange={(event) => setWasherDraft(event.target.value)}
+                      aria-label="Washing machine cycles per week"
+                    />
+                    <Button type="button" variant="primary" className="chat-panel__send" onClick={compareWasher}>
+                      Compare
+                    </Button>
+                  </div>
+                </div>
+              </>
+            ) : null}
+            {whatIfTab === 'battery' ? (
+              <div className="chat-actions__block">
+                <h3 className="chat-actions__label">Different battery</h3>
+                <div className="chat-actions__row">
+                  <select
+                    className="chat-whatif__select"
+                    value={batteryDraft}
+                    onChange={(event) => setBatteryDraft(event.target.value)}
+                  >
+                    <option value="">Select battery</option>
+                    {batteryModels.map((model) => (
+                      <option key={model} value={model}>{model}</option>
+                    ))}
+                  </select>
+                  <Button type="button" variant="primary" className="chat-panel__send" onClick={compareBattery}>
+                    Compare
+                  </Button>
+                </div>
               </div>
-            </div>
-            <div className="chat-actions__block">
-              <h3 className="chat-actions__label">Dishwasher cycles per week</h3>
-              <div className="chat-actions__row">
-                <input
-                  className="chat-panel__input"
-                  inputMode="numeric"
-                  value={dishwasherDraft}
-                  onChange={(event) => setDishwasherDraft(event.target.value)}
-                  aria-label="Dishwasher cycles per week"
-                />
-                <Button type="button" variant="primary" className="chat-panel__send" onClick={compareDishwasher}>
-                  Compare
-                </Button>
-              </div>
-            </div>
-            <div className="chat-actions__block">
-              <h3 className="chat-actions__label">Washing machine cycles per week</h3>
-              <div className="chat-actions__row">
-                <input
-                  className="chat-panel__input"
-                  inputMode="numeric"
-                  value={washerDraft}
-                  onChange={(event) => setWasherDraft(event.target.value)}
-                  aria-label="Washing machine cycles per week"
-                />
-                <Button type="button" variant="primary" className="chat-panel__send" onClick={compareWasher}>
-                  Compare
-                </Button>
-              </div>
-            </div>
-            <p className="chat-whatif__group-label">Battery and solar</p>
-            <div className="chat-actions__block">
-              <h3 className="chat-actions__label">Different battery</h3>
-              <div className="chat-actions__row">
-                <select
-                  className="chat-whatif__select"
-                  value={batteryDraft}
-                  onChange={(event) => setBatteryDraft(event.target.value)}
-                >
-                  <option value="">Select battery</option>
-                  {batteryModels.map((model) => (
-                    <option key={model} value={model}>{model}</option>
-                  ))}
-                </select>
-                <Button type="button" variant="primary" className="chat-panel__send" onClick={compareBattery}>
-                  Compare
-                </Button>
-              </div>
-            </div>
-            <div className="chat-actions__block">
-              <h3 className="chat-actions__label">One more solar panel</h3>
-              <Button
-                type="button"
-                variant="primary"
-                disabled={profile.hasSolar !== 'yes'}
-                onClick={compareExtraPanel}
-              >
-                Compare +1 panel
-              </Button>
-            </div>
-            <div className="chat-actions__block">
-              <h3 className="chat-actions__label">Panel direction</h3>
-              <div className="chat-actions__row">
-                <select
-                  className="chat-whatif__select"
-                  value={directionDraft}
-                  onChange={(event) =>
-                    setDirectionDraft(event.target.value as ProfileData['solarDirection'])
-                  }
-                >
-                  <option value="">Direction</option>
-                  {solarDirections.map((row) => (
-                    <option key={row.value} value={row.value}>{row.label}</option>
-                  ))}
-                </select>
-                <Button type="button" variant="primary" className="chat-panel__send" onClick={compareDirection}>
-                  Compare
-                </Button>
-              </div>
-            </div>
+            ) : null}
+            {whatIfTab === 'solar' ? (
+              <>
+                <div className="chat-actions__block">
+                  <h3 className="chat-actions__label">One more solar panel</h3>
+                  <Button
+                    type="button"
+                    variant="primary"
+                    disabled={profile.hasSolar !== 'yes'}
+                    onClick={compareExtraPanel}
+                  >
+                    Compare +1 panel
+                  </Button>
+                </div>
+                <div className="chat-actions__block">
+                  <h3 className="chat-actions__label">Panel direction</h3>
+                  <div className="chat-actions__row">
+                    <select
+                      className="chat-whatif__select"
+                      value={directionDraft}
+                      onChange={(event) =>
+                        setDirectionDraft(event.target.value as ProfileData['solarDirection'])
+                      }
+                    >
+                      <option value="">Direction</option>
+                      {solarDirections.map((row) => (
+                        <option key={row.value} value={row.value}>{row.label}</option>
+                      ))}
+                    </select>
+                    <Button type="button" variant="primary" className="chat-panel__send" onClick={compareDirection}>
+                      Compare
+                    </Button>
+                  </div>
+                </div>
+              </>
+            ) : null}
           </div>
         </section>
       ) : null}
