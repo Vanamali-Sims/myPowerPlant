@@ -26,6 +26,7 @@ import { FIELD_BOUNDS } from '../../constants/validation'
 import type { ProfileData, SolarDirection } from '../../types/profile'
 import type { EventType } from '../../types/reminders'
 import { ActionsProfileChat } from './ActionsProfileChat'
+import { WhatIfHouseholdTab } from './WhatIfHouseholdTab'
 import { Button } from '../ui/Button'
 import { BulbIcon, DownloadIcon, PencilIcon } from '../ui/icons'
 
@@ -268,38 +269,63 @@ export function ChatDock({
     openWhatIf('direction', { solarDirection: directionDraft }, `Direction: ${label}`)
   }
 
-  function comparePeople() {
-    const trimmed = peopleDraft.trim()
-    if (!trimmed || trimmed === profile.people) {
-      setStatus('Enter a different number of people to compare.')
-      return
+  function resolvedHouseholdDraft(field: 'people' | 'dishwasher' | 'washer'): string {
+    const bounds = {
+      people: FIELD_BOUNDS.people,
+      dishwasher: FIELD_BOUNDS.dishwasherCyclesPerWeek,
+      washer: FIELD_BOUNDS.washerCyclesPerWeek,
     }
-    openWhatIf('household', { people: trimmed }, `People: ${profile.people || '—'} → ${trimmed}`)
+    const saved = {
+      people: profile.people,
+      dishwasher: profile.dishwasherCyclesPerWeek,
+      washer: profile.washerCyclesPerWeek,
+    }
+    const draft = {
+      people: peopleDraft,
+      dishwasher: dishwasherDraft,
+      washer: washerDraft,
+    }
+    const b = bounds[field]
+    const d = draft[field].trim()
+    const s = saved[field].trim()
+    if (d) return d
+    if (s) return s
+    return String(b.min)
   }
 
-  function compareDishwasher() {
-    const trimmed = dishwasherDraft.trim()
-    if (!trimmed || trimmed === profile.dishwasherCyclesPerWeek) {
-      setStatus('Enter a different dishwasher figure to compare.')
-      return
-    }
-    openWhatIf(
-      'household',
-      { dishwasherCyclesPerWeek: trimmed },
-      `Dishwasher: ${profile.dishwasherCyclesPerWeek || '—'} → ${trimmed} cycles/week`,
-    )
-  }
+  function compareHousehold() {
+    const nextPeople = resolvedHouseholdDraft('people')
+    const nextDishwasher = resolvedHouseholdDraft('dishwasher')
+    const nextWasher = resolvedHouseholdDraft('washer')
 
-  function compareWasher() {
-    const trimmed = washerDraft.trim()
-    if (!trimmed || trimmed === profile.washerCyclesPerWeek) {
-      setStatus('Enter a different washing machine figure to compare.')
+    const unchanged =
+      nextPeople === profile.people.trim() &&
+      nextDishwasher === profile.dishwasherCyclesPerWeek.trim() &&
+      nextWasher === profile.washerCyclesPerWeek.trim()
+    if (unchanged) {
+      setStatus('Change at least one household figure to compare.')
       return
     }
+
+    const parts: string[] = []
+    if (nextPeople !== profile.people.trim()) {
+      parts.push(`People: ${profile.people || '—'} → ${nextPeople}`)
+    }
+    if (nextDishwasher !== profile.dishwasherCyclesPerWeek.trim()) {
+      parts.push(`Dishwasher: ${profile.dishwasherCyclesPerWeek || '—'} → ${nextDishwasher}/week`)
+    }
+    if (nextWasher !== profile.washerCyclesPerWeek.trim()) {
+      parts.push(`Washing machine: ${profile.washerCyclesPerWeek || '—'} → ${nextWasher}/week`)
+    }
+
     openWhatIf(
       'household',
-      { washerCyclesPerWeek: trimmed },
-      `Washing machine: ${profile.washerCyclesPerWeek || '—'} → ${trimmed} cycles/week`,
+      {
+        people: nextPeople,
+        dishwasherCyclesPerWeek: nextDishwasher,
+        washerCyclesPerWeek: nextWasher,
+      },
+      parts.join(' · '),
     )
   }
 
@@ -556,53 +582,16 @@ export function ChatDock({
           </p>
           <div className="chat-panel__body">
             {whatIfTab === 'household' ? (
-              <>
-                <div className="chat-actions__block">
-                  <h3 className="chat-actions__label">People in the home</h3>
-                  <div className="chat-actions__row">
-                    <input
-                      className="chat-panel__input"
-                      inputMode="numeric"
-                      value={peopleDraft}
-                      onChange={(event) => setPeopleDraft(event.target.value)}
-                      aria-label="People in household"
-                    />
-                    <Button type="button" variant="primary" className="chat-panel__send" onClick={comparePeople}>
-                      Compare
-                    </Button>
-                  </div>
-                </div>
-                <div className="chat-actions__block">
-                  <h3 className="chat-actions__label">Dishwasher cycles per week</h3>
-                  <div className="chat-actions__row">
-                    <input
-                      className="chat-panel__input"
-                      inputMode="numeric"
-                      value={dishwasherDraft}
-                      onChange={(event) => setDishwasherDraft(event.target.value)}
-                      aria-label="Dishwasher cycles per week"
-                    />
-                    <Button type="button" variant="primary" className="chat-panel__send" onClick={compareDishwasher}>
-                      Compare
-                    </Button>
-                  </div>
-                </div>
-                <div className="chat-actions__block">
-                  <h3 className="chat-actions__label">Washing machine cycles per week</h3>
-                  <div className="chat-actions__row">
-                    <input
-                      className="chat-panel__input"
-                      inputMode="numeric"
-                      value={washerDraft}
-                      onChange={(event) => setWasherDraft(event.target.value)}
-                      aria-label="Washing machine cycles per week"
-                    />
-                    <Button type="button" variant="primary" className="chat-panel__send" onClick={compareWasher}>
-                      Compare
-                    </Button>
-                  </div>
-                </div>
-              </>
+              <WhatIfHouseholdTab
+                profile={profile}
+                peopleDraft={peopleDraft}
+                dishwasherDraft={dishwasherDraft}
+                washerDraft={washerDraft}
+                onPeopleDraft={setPeopleDraft}
+                onDishwasherDraft={setDishwasherDraft}
+                onWasherDraft={setWasherDraft}
+                onCompare={compareHousehold}
+              />
             ) : null}
             {whatIfTab === 'battery' ? (
               <div className="chat-actions__block">

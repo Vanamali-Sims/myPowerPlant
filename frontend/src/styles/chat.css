@@ -279,6 +279,40 @@
   outline-offset: 2px;
 }
 
+.chat-whatif-household__row {
+  margin-bottom: 1rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.chat-whatif-household__row:last-of-type {
+  margin-bottom: 0.75rem;
+  padding-bottom: 0;
+  border-bottom: none;
+}
+
+.chat-whatif-household__head {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  margin-bottom: 0.45rem;
+}
+
+.chat-whatif-household__current {
+  font-size: 0.78rem;
+  color: var(--ink-secondary);
+}
+
+.chat-whatif-household__stepper {
+  width: 100%;
+  justify-content: space-between;
+  max-width: 12rem;
+}
+
+.chat-whatif-household__stepper svg {
+  display: none;
+}
+
 .chat-compare {
   width: min(420px, calc(100vw - 5.5rem - 2rem));
   max-height: min(85dvh, 560px);
