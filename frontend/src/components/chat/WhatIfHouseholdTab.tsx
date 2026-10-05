@@ -13,45 +13,95 @@ type RowProps = {
   draft: string
   min: number
   max: number
+  startAt: number
   onDraft: (value: string) => void
 }
 
-function stepperValue(draft: string, saved: string, min: number, max: number): number {
+function stepperDisplay(
+  draft: string,
+  saved: string,
+  min: number,
+  max: number,
+): number | null {
   if (draft.trim()) return clampNumber(parseCount(draft), min, max)
   if (saved.trim()) return clampNumber(parseCount(saved), min, max)
-  return min
+  return null
 }
 
-function HouseholdStepperRow({ label, saved, draft, min, max, onDraft }: RowProps) {
-  const savedLabel = saved.trim() ? saved.trim() : 'not set'
-  const shown = stepperValue(draft, saved, min, max)
+function nowLine(saved: string, startAt: number): string {
+  if (saved.trim()) return `Now: ${saved.trim()}`
+  return `Now: not set · start at ${startAt}`
+}
+
+function HouseholdStepperRow({ label, saved, draft, min, max, startAt, onDraft }: RowProps) {
+  const shown = stepperDisplay(draft, saved, min, max)
+  const decreaseDisabled = shown === null || shown <= min
+
+  function decrease() {
+    if (shown === null) return
+    if (!saved.trim() && draft.trim() === String(shown) && shown === startAt) {
+      onDraft('')
+      return
+    }
+    const next = shown - 1
+    if (next < min) return
+    onDraft(String(next))
+  }
+
+  function increase() {
+    if (shown === null) {
+      onDraft(String(startAt))
+      return
+    }
+    onDraft(String(Math.min(max, shown + 1)))
+  }
 
   return (
     <div className="chat-whatif-household__row">
-      <div className="chat-whatif-household__head">
-        <span className="chat-actions__label">{label}</span>
-        <span className="chat-whatif-household__current">Currently {savedLabel}</span>
+      <div className="chat-whatif-household__label-block">
+        <p className="chat-whatif-household__label">{label}</p>
+        <p className="chat-whatif-household__current">{nowLine(saved, startAt)}</p>
       </div>
       <div className="ui-stepper chat-whatif-household__stepper">
         <button
           type="button"
           className="ui-stepper__btn"
           aria-label={`Decrease ${label}`}
-          onClick={() => onDraft(String(Math.max(min, shown - 1)))}
+          disabled={decreaseDisabled}
+          onClick={decrease}
         >
           −
         </button>
-        <span className="ui-stepper__value" aria-live="polite">{shown}</span>
+        <span className="ui-stepper__value" aria-live="polite">
+          {shown === null ? '–' : shown}
+        </span>
         <button
           type="button"
           className="ui-stepper__btn"
           aria-label={`Increase ${label}`}
-          onClick={() => onDraft(String(Math.min(max, shown + 1)))}
+          disabled={shown !== null && shown >= max}
+          onClick={increase}
         >
           +
         </button>
       </div>
     </div>
+  )
+}
+
+/** True when the user has edited a field away from the saved profile value. */
+export function hasHouseholdDraftChanges(
+  profile: ProfileData,
+  peopleDraft: string,
+  dishwasherDraft: string,
+  washerDraft: string,
+): boolean {
+  const changed = (draft: string, saved: string) =>
+    draft.trim() !== '' && draft.trim() !== saved.trim()
+  return (
+    changed(peopleDraft, profile.people) ||
+    changed(dishwasherDraft, profile.dishwasherCyclesPerWeek) ||
+    changed(washerDraft, profile.washerCyclesPerWeek)
   )
 }
 
@@ -79,46 +129,55 @@ export function WhatIfHouseholdTab({
   onWasherDraft,
   onCompare,
 }: Props) {
-  const hasChanges =
-    peopleDraft.trim() !== profile.people.trim() ||
-    dishwasherDraft.trim() !== profile.dishwasherCyclesPerWeek.trim() ||
-    washerDraft.trim() !== profile.washerCyclesPerWeek.trim()
+  const hasChanges = hasHouseholdDraftChanges(
+    profile,
+    peopleDraft,
+    dishwasherDraft,
+    washerDraft,
+  )
 
   return (
     <div className="chat-whatif-household">
-      <HouseholdStepperRow
-        label="People in the home"
-        saved={profile.people}
-        draft={peopleDraft}
-        min={FIELD_BOUNDS.people.min}
-        max={FIELD_BOUNDS.people.max}
-        onDraft={onPeopleDraft}
-      />
-      <HouseholdStepperRow
-        label="Dishwasher cycles per week"
-        saved={profile.dishwasherCyclesPerWeek}
-        draft={dishwasherDraft}
-        min={FIELD_BOUNDS.dishwasherCyclesPerWeek.min}
-        max={FIELD_BOUNDS.dishwasherCyclesPerWeek.max}
-        onDraft={onDishwasherDraft}
-      />
-      <HouseholdStepperRow
-        label="Washing machine cycles per week"
-        saved={profile.washerCyclesPerWeek}
-        draft={washerDraft}
-        min={FIELD_BOUNDS.washerCyclesPerWeek.min}
-        max={FIELD_BOUNDS.washerCyclesPerWeek.max}
-        onDraft={onWasherDraft}
-      />
-      <Button
-        type="button"
-        variant="primary"
-        className="chat-actions__all"
-        disabled={!hasChanges}
-        onClick={onCompare}
-      >
-        Compare household change
-      </Button>
+      <div className="chat-whatif-household__body">
+        <HouseholdStepperRow
+          label="People in the home"
+          saved={profile.people}
+          draft={peopleDraft}
+          min={FIELD_BOUNDS.people.min}
+          max={FIELD_BOUNDS.people.max}
+          startAt={FIELD_BOUNDS.people.example}
+          onDraft={onPeopleDraft}
+        />
+        <HouseholdStepperRow
+          label="Dishwasher cycles per week"
+          saved={profile.dishwasherCyclesPerWeek}
+          draft={dishwasherDraft}
+          min={FIELD_BOUNDS.dishwasherCyclesPerWeek.min}
+          max={FIELD_BOUNDS.dishwasherCyclesPerWeek.max}
+          startAt={2}
+          onDraft={onDishwasherDraft}
+        />
+        <HouseholdStepperRow
+          label="Washing machine cycles per week"
+          saved={profile.washerCyclesPerWeek}
+          draft={washerDraft}
+          min={FIELD_BOUNDS.washerCyclesPerWeek.min}
+          max={FIELD_BOUNDS.washerCyclesPerWeek.max}
+          startAt={2}
+          onDraft={onWasherDraft}
+        />
+      </div>
+      <footer className="chat-whatif-household__footer">
+        <Button
+          type="button"
+          variant="primary"
+          className="chat-actions__all"
+          disabled={!hasChanges}
+          onClick={onCompare}
+        >
+          Compare household change
+        </Button>
+      </footer>
     </div>
   )
 }

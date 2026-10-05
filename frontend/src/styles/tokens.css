@@ -28,7 +28,11 @@
   --muted: #918d80;
   --accent: #de6a34;
   --accent-deep: #b94f21;
+  /* Slightly darker terracotta for small bold text on buttons (~4.5:1 on cream). */
+  --accent-contrast: #c4551f;
+  --accent-contrast-hover: #a8481a;
   --accent-tint: rgba(222, 106, 52, 0.12);
+  --dock-panel: #fbf8f1;
   --blue: #4fa3d1;
   --track-dark: rgba(244, 241, 232, 0.16);
   --track-light: #e3dfd0;

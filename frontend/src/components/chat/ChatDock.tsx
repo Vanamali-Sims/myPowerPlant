@@ -12,9 +12,10 @@ import type { ChatReplyContext } from '../../lib/chat/buildChatReply'
 import { buildAsyncChatReply } from '../../lib/chat/reminderChatReply'
 import {
   compareFootnote,
-  formatHouseholdKpiLines,
   formatPlanColumn,
-  formatSolarKpiLines,
+  householdCompareRows,
+  solarCompareRows,
+  type MetricCompareRow,
   type WhatIfKind,
 } from '../../lib/chat/whatIfCompare'
 import { buildIcsFile, downloadIcsFile } from '../../lib/calendarExport'
@@ -26,7 +27,8 @@ import { FIELD_BOUNDS } from '../../constants/validation'
 import type { ProfileData, SolarDirection } from '../../types/profile'
 import type { EventType } from '../../types/reminders'
 import { ActionsProfileChat } from './ActionsProfileChat'
-import { WhatIfHouseholdTab } from './WhatIfHouseholdTab'
+import { TrayPanelCloseButton, TrayPanelLayout } from './TrayPanelLayout'
+import { hasHouseholdDraftChanges, WhatIfHouseholdTab } from './WhatIfHouseholdTab'
 import { Button } from '../ui/Button'
 import { BulbIcon, DownloadIcon, PencilIcon } from '../ui/icons'
 
@@ -79,14 +81,48 @@ function bestSolarDirection(factors: Record<string, number>): { value: SolarDire
   return { value: top[0] as SolarDirection, label }
 }
 
-function CompareMetricLines({ lines }: { lines: string[] }) {
+function CompareMetricRow({ row, side }: { row: MetricCompareRow; side: 'now' | 'after' }) {
+  const value = side === 'now' ? row.nowDisplay : row.afterDisplay
+  return (
+    <p className="chat-compare__metric">
+      <span className="chat-compare__metric-label">{row.label}</span>
+      <span className="chat-compare__metric-value">
+        {value}
+        {side === 'after' && row.delta ? (
+          <span className={`chat-compare__delta chat-compare__delta--${row.deltaTone}`}>{row.delta}</span>
+        ) : null}
+      </span>
+    </p>
+  )
+}
+
+function CompareKpiColumns({
+  kind,
+  reportNow,
+  reportDraft,
+}: {
+  kind: WhatIfKind
+  reportNow: ReturnType<typeof buildKpiReport>
+  reportDraft: ReturnType<typeof buildKpiReport>
+}) {
+  const rows =
+    kind === 'household'
+      ? householdCompareRows(reportNow, reportDraft)
+      : solarCompareRows(reportNow, reportDraft)
   return (
     <>
-      {lines.map((line) => (
-        <p key={line} className={line.startsWith('Weekly use') || line.startsWith('Weekly solar') ? 'chat-compare__metric' : 'chat-compare__detail'}>
-          {line}
-        </p>
-      ))}
+      <div className="chat-compare__col">
+        <h3 className="chat-compare__heading">Now</h3>
+        {rows.map((row) => (
+          <CompareMetricRow key={row.label} row={row} side="now" />
+        ))}
+      </div>
+      <div className="chat-compare__col chat-compare__col--after">
+        <h3 className="chat-compare__heading">This change</h3>
+        {rows.map((row) => (
+          <CompareMetricRow key={row.label} row={row} side="after" />
+        ))}
+      </div>
     </>
   )
 }
@@ -193,7 +229,14 @@ export function ChatDock({
     return () => document.removeEventListener('keydown', onKeyDown)
   }, [panel, compare])
 
+  function closeTray() {
+    setCompare(null)
+    setPanel(null)
+    setStatus('')
+  }
+
   function openPanel(mode: PanelMode) {
+    setCompare(null)
     setPanel((current) => (current === mode ? null : mode))
     setStatus('')
   }
@@ -269,43 +312,26 @@ export function ChatDock({
     openWhatIf('direction', { solarDirection: directionDraft }, `Direction: ${label}`)
   }
 
-  function resolvedHouseholdDraft(field: 'people' | 'dishwasher' | 'washer'): string {
-    const bounds = {
-      people: FIELD_BOUNDS.people,
-      dishwasher: FIELD_BOUNDS.dishwasherCyclesPerWeek,
-      washer: FIELD_BOUNDS.washerCyclesPerWeek,
-    }
-    const saved = {
-      people: profile.people,
-      dishwasher: profile.dishwasherCyclesPerWeek,
-      washer: profile.washerCyclesPerWeek,
-    }
-    const draft = {
-      people: peopleDraft,
-      dishwasher: dishwasherDraft,
-      washer: washerDraft,
-    }
-    const b = bounds[field]
-    const d = draft[field].trim()
-    const s = saved[field].trim()
+  function resolvedHouseholdValue(draft: string, saved: string): string {
+    const d = draft.trim()
     if (d) return d
-    if (s) return s
-    return String(b.min)
+    return saved.trim()
   }
 
   function compareHousehold() {
-    const nextPeople = resolvedHouseholdDraft('people')
-    const nextDishwasher = resolvedHouseholdDraft('dishwasher')
-    const nextWasher = resolvedHouseholdDraft('washer')
-
-    const unchanged =
-      nextPeople === profile.people.trim() &&
-      nextDishwasher === profile.dishwasherCyclesPerWeek.trim() &&
-      nextWasher === profile.washerCyclesPerWeek.trim()
-    if (unchanged) {
+    if (
+      !hasHouseholdDraftChanges(profile, peopleDraft, dishwasherDraft, washerDraft)
+    ) {
       setStatus('Change at least one household figure to compare.')
       return
     }
+
+    const nextPeople = resolvedHouseholdValue(peopleDraft, profile.people)
+    const nextDishwasher = resolvedHouseholdValue(
+      dishwasherDraft,
+      profile.dishwasherCyclesPerWeek,
+    )
+    const nextWasher = resolvedHouseholdValue(washerDraft, profile.washerCyclesPerWeek)
 
     const parts: string[] = []
     if (nextPeople !== profile.people.trim()) {
@@ -351,14 +377,9 @@ export function ChatDock({
     Boolean(compare && reportNow && reportDraft && bundle) &&
     (compare?.kind !== 'battery' || Boolean(plansNow && plansDraft))
 
-  function linesForSide(kind: WhatIfKind, side: 'now' | 'draft'): string[] {
-    const report = side === 'now' ? reportNow! : reportDraft!
-    if (kind === 'battery') {
-      const plans = side === 'now' ? plansNow! : plansDraft!
-      return [formatPlanColumn(plans.matches, plans.emptyReason)]
-    }
-    if (kind === 'household') return formatHouseholdKpiLines(report)
-    return formatSolarKpiLines(report)
+  function batteryPlanText(side: 'now' | 'draft'): string {
+    const plans = side === 'now' ? plansNow! : plansDraft!
+    return formatPlanColumn(plans.matches, plans.emptyReason)
   }
 
   const disabledReason = !hasProfile
@@ -377,11 +398,26 @@ export function ChatDock({
     ? 'Compare household, battery, or solar changes before anything is saved.'
     : disabledReason
 
+  const traySurfaceOpen = Boolean(panel || compareOpen)
+
+  const postcodeDigits = postcodeDraft.trim()
+  const canSavePostcode =
+    /^\d{4}$/.test(postcodeDigits) && postcodeDigits !== profile.postcode.trim()
+
   return (
-    <div className={`chat-dock${panel ? ' is-open' : ''}`}>
+    <div className={`chat-dock${traySurfaceOpen ? ' is-open' : ''}`}>
+      {traySurfaceOpen && trayReady ? (
+        <button
+          type="button"
+          className="chat-dock__backdrop"
+          aria-label="Close tray"
+          onClick={closeTray}
+        />
+      ) : null}
+      <div className="chat-dock__stack">
       {compareOpen && compare ? (
         <div
-          className="chat-compare"
+          className="chat-compare chat-compare--whatif chat-dock__surface"
           role="dialog"
           aria-modal="true"
           aria-labelledby={compareTitleId}
@@ -390,28 +426,24 @@ export function ChatDock({
             <h2 className="chat-panel__title" id={compareTitleId}>
               Now vs this change
             </h2>
-            <button type="button" className="chat-panel__close" onClick={() => setCompare(null)}>
-              Close
-            </button>
+            <TrayPanelCloseButton onClick={() => setCompare(null)} label="Close comparison" />
           </header>
           <p className="chat-panel__notice">{compare.summary}</p>
           <div className="chat-compare__grid">
-            <div className="chat-compare__col">
-              <h3 className="chat-compare__heading">Now</h3>
-              {compare.kind === 'battery' ? (
-                <pre className="chat-compare__body">{linesForSide('battery', 'now')[0]}</pre>
-              ) : (
-                <CompareMetricLines lines={linesForSide(compare.kind, 'now')} />
-              )}
-            </div>
-            <div className="chat-compare__col chat-compare__col--after">
-              <h3 className="chat-compare__heading">This change</h3>
-              {compare.kind === 'battery' ? (
-                <pre className="chat-compare__body">{linesForSide('battery', 'draft')[0]}</pre>
-              ) : (
-                <CompareMetricLines lines={linesForSide(compare.kind, 'draft')} />
-              )}
-            </div>
+            {compare.kind === 'battery' ? (
+              <>
+                <div className="chat-compare__col">
+                  <h3 className="chat-compare__heading">Now</h3>
+                  <pre className="chat-compare__body">{batteryPlanText('now')}</pre>
+                </div>
+                <div className="chat-compare__col chat-compare__col--after">
+                  <h3 className="chat-compare__heading">This change</h3>
+                  <pre className="chat-compare__body">{batteryPlanText('draft')}</pre>
+                </div>
+              </>
+            ) : (
+              <CompareKpiColumns kind={compare.kind} reportNow={reportNow!} reportDraft={reportDraft!} />
+            )}
           </div>
           {compareFootnote(compare.kind) ? (
             <p className="chat-panel__notice chat-compare__note">{compareFootnote(compare.kind)}</p>
@@ -424,76 +456,64 @@ export function ChatDock({
             </p>
           ) : null}
           <div className="chat-compare__actions">
-            <Button type="button" variant="primary" onClick={applyWhatIf}>
+            <Button type="button" variant="primary" className="chat-compare__apply" onClick={applyWhatIf}>
               Use this setup
             </Button>
-            <button type="button" className="chat-panel__confirm-dismiss" onClick={() => setCompare(null)}>
+            <Button type="button" variant="outline-accent" onClick={() => setCompare(null)}>
               Keep current setup
-            </button>
+            </Button>
           </div>
         </div>
       ) : null}
 
-      {panel === 'actions' && trayReady ? (
-        <section
-          id="chat-panel-actions"
-          className="chat-panel"
-          aria-label="Actions"
-          aria-busy={busy}
+      {panel === 'actions' && trayReady && !compareOpen ? (
+        <TrayPanelLayout
+          sectionId="chat-panel-actions"
+          sectionLabel="Actions"
+          panelClassName="chat-panel--actions chat-dock__surface"
+          title="Actions"
+          subtitle="Edit questionnaire answers, postcode, or reminders without leaving this page."
+          tabs={[
+            { id: 'location', label: 'Location' },
+            { id: 'reminders', label: 'Reminders' },
+            { id: 'profile', label: 'Profile' },
+          ]}
+          activeTab={actionsTab}
+          onTabChange={setActionsTab}
+          tabsAriaLabel="Action type"
+          status={status}
+          statusId={statusId}
+          showStatus={actionsTab !== 'profile'}
+          onClose={closeTray}
+          closeLabel="Close Actions"
+          busy={busy}
         >
-          <header className="chat-panel__head">
-            <h2 className="chat-panel__title">Actions</h2>
-            <button type="button" className="chat-panel__close" onClick={() => setPanel(null)}>
-              Close
-            </button>
-          </header>
-          <p className="chat-panel__notice">
-            Edit questionnaire answers, postcode, or reminders without leaving this page.
-          </p>
-          <div className="chat-actions__tabs chat-actions__tabs--primary" role="tablist" aria-label="Action type">
-            {(
-              [
-                { id: 'location' as const, label: 'Location' },
-                { id: 'reminders' as const, label: 'Reminders' },
-                { id: 'profile' as const, label: 'Profile' },
-              ] as const
-            ).map((tab) => (
-              <button
-                key={tab.id}
-                type="button"
-                role="tab"
-                aria-selected={actionsTab === tab.id}
-                className={`chat-actions__tab${actionsTab === tab.id ? ' is-active' : ''}`}
-                onClick={() => setActionsTab(tab.id)}
-              >
-                {tab.label}
-              </button>
-            ))}
-          </div>
-          {actionsTab !== 'profile' ? (
-            <p id={statusId} className="chat-panel__status" role="status" aria-live="polite">
-              {status}
-            </p>
-          ) : null}
-          <div className="chat-panel__body">
             {actionsTab === 'location' ? (
               <form className="chat-actions__block" onSubmit={savePostcode}>
-                <h3 className="chat-actions__label">Postcode</h3>
-                <div className="chat-actions__row">
-                  <label className="sr-only" htmlFor={postcodeId}>Postcode</label>
-                  <input
-                    id={postcodeId}
-                    className="chat-panel__input"
-                    inputMode="numeric"
-                    maxLength={4}
-                    value={postcodeDraft}
-                    onChange={(event) => setPostcodeDraft(event.target.value)}
-                    autoComplete="postal-code"
-                  />
-                  <Button type="submit" variant="primary" className="chat-panel__send">
-                    Save
-                  </Button>
+                <div className="chat-field__label-row">
+                  <h3 className="chat-actions__label chat-actions__label--row">Postcode</h3>
+                  <span className="chat-field__now">
+                    Now: {profile.postcode.trim() || 'not set'}
+                  </span>
                 </div>
+                <label className="sr-only" htmlFor={postcodeId}>Postcode</label>
+                <input
+                  id={postcodeId}
+                  className="chat-panel__input chat-panel__input--block"
+                  inputMode="numeric"
+                  maxLength={4}
+                  value={postcodeDraft}
+                  onChange={(event) => setPostcodeDraft(event.target.value)}
+                  autoComplete="postal-code"
+                />
+                <Button
+                  type="submit"
+                  variant="primary"
+                  className="chat-panel__action"
+                  disabled={!canSavePostcode}
+                >
+                  Save
+                </Button>
               </form>
             ) : null}
             {actionsTab === 'reminders' ? (
@@ -542,45 +562,33 @@ export function ChatDock({
                 onStatus={setStatus}
               />
             ) : null}
-          </div>
-        </section>
+        </TrayPanelLayout>
       ) : null}
 
-      {panel === 'whatif' && trayReady ? (
-        <section id="chat-panel-whatif" className="chat-panel" aria-label="What if">
-          <header className="chat-panel__head">
-            <h2 className="chat-panel__title">What if</h2>
-            <button type="button" className="chat-panel__close" onClick={() => setPanel(null)}>
-              Close
-            </button>
-          </header>
-          <p className="chat-panel__notice">
-            Compare household, battery, or solar changes before anything is saved.
-          </p>
-          <div className="chat-actions__tabs chat-actions__tabs--primary" role="tablist" aria-label="What if category">
-            {(
-              [
-                { id: 'household' as const, label: 'Household' },
-                { id: 'battery' as const, label: 'Battery' },
-                { id: 'solar' as const, label: 'Solar' },
-              ] as const
-            ).map((tab) => (
-              <button
-                key={tab.id}
-                type="button"
-                role="tab"
-                aria-selected={whatIfTab === tab.id}
-                className={`chat-actions__tab${whatIfTab === tab.id ? ' is-active' : ''}`}
-                onClick={() => setWhatIfTab(tab.id)}
-              >
-                {tab.label}
-              </button>
-            ))}
-          </div>
-          <p className="chat-panel__status" role="status" aria-live="polite">
-            {status}
-          </p>
-          <div className="chat-panel__body">
+      {panel === 'whatif' && trayReady && !compareOpen ? (
+        <TrayPanelLayout
+          sectionId="chat-panel-whatif"
+          sectionLabel="What if"
+          panelClassName="chat-panel--whatif chat-dock__surface"
+          title="What if"
+          badge={<span className="chat-panel__badge">Draft, not saved</span>}
+          subtitle="Compare household, battery, or solar changes before anything is saved."
+          tabs={[
+            { id: 'household', label: 'Household' },
+            { id: 'battery', label: 'Battery' },
+            { id: 'solar', label: 'Solar' },
+          ]}
+          activeTab={whatIfTab}
+          onTabChange={(id) => {
+            setCompare(null)
+            setWhatIfTab(id)
+          }}
+          tabsAriaLabel="What if category"
+          status={status}
+          bodyClassName={whatIfTab === 'household' ? 'chat-panel__body--household' : ''}
+          onClose={closeTray}
+          closeLabel="Close What if"
+        >
             {whatIfTab === 'household' ? (
               <WhatIfHouseholdTab
                 profile={profile}
@@ -648,14 +656,14 @@ export function ChatDock({
                 </div>
               </>
             ) : null}
-          </div>
-        </section>
+        </TrayPanelLayout>
       ) : null}
+      </div>
 
       <div className="chat-dock__tray" role="group" aria-label="Quick tools">
         <button
           type="button"
-          className={`chat-dock__icon${panel === 'actions' ? ' is-active' : ''}`}
+          className={`chat-dock__icon chat-dock__icon--actions${panel === 'actions' ? ' is-active' : ''}`}
           disabled={!trayReady}
           title={actionsTooltip}
           aria-expanded={panel === 'actions'}
@@ -667,7 +675,7 @@ export function ChatDock({
         </button>
         <button
           type="button"
-          className={`chat-dock__icon${panel === 'whatif' ? ' is-active' : ''}`}
+          className={`chat-dock__icon chat-dock__icon--whatif${panel === 'whatif' ? ' is-active' : ''}`}
           disabled={!trayReady}
           title={whatIfTooltip}
           aria-expanded={panel === 'whatif'}
