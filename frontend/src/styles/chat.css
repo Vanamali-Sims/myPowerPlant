@@ -112,6 +112,66 @@
   min-height: 1.25rem;
 }
 
+.chat-actions__tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  padding: 0 1rem 0.65rem;
+}
+
+.chat-actions__tabs--primary {
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 0.15rem;
+}
+
+.chat-actions__tab {
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 0.4rem 0.75rem;
+  background: var(--canvas);
+  color: var(--ink-secondary);
+  font: inherit;
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+  min-height: 36px;
+}
+
+.chat-actions__tab.is-active {
+  color: var(--ink);
+  border-color: rgb(19 46 38 / 28%);
+  background: rgb(19 46 38 / 8%);
+}
+
+.chat-actions__tab:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
+}
+
+.chat-profile-editor__lede {
+  margin: 0 0 0.65rem;
+}
+
+.chat-profile-editor__form {
+  max-height: min(42dvh, 280px);
+  overflow: auto;
+  margin-bottom: 0.75rem;
+  padding-right: 0.15rem;
+}
+
+.chat-whatif__group-label {
+  margin: 0.85rem 0 0.35rem;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-secondary);
+}
+
+.chat-whatif__group-label:first-child {
+  margin-top: 0;
+}
+
 .chat-actions__block {
   margin-bottom: 1rem;
 }

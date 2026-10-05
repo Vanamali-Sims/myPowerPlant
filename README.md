@@ -62,6 +62,14 @@ npm run dev
 
 Open `http://localhost:5173`. The form POSTs to `${VITE_API_BASE_URL}/api/submit`.
 
+### Corner tray (Actions and What if)
+
+After setup, the bottom-right tray exposes two tools (see `frontend/src/components/chat/ChatDock.tsx`):
+
+- **Actions** — saves or downloads without leaving the current page. Tabs: **Location** (postcode), **Reminders** (calendar `.ics` files), **Profile** (questionnaire sections reuse the setup step components via `ActionsProfileEditor.tsx`).
+- **What if** — previews a change in a **Now vs this change** dialog. Household inputs (people, dishwasher, washing machine) and hardware inputs (battery, panels, direction) call the same on-device KPI and VPP helpers as the dashboard. Nothing is written to localStorage until **Use this setup**.
+
+Compare copy and formatting live in `frontend/src/lib/chat/whatIfCompare.ts`.
 
 ## Environment
 
