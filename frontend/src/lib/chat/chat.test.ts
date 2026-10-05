@@ -104,6 +104,15 @@ describe('matchChatIntent', () => {
   it('returns null for unknown sentences', () => {
     expect(matchChatIntent('tell me a joke')).toBeNull()
   })
+
+  it('maps change rooms to a set_profile patch', () => {
+    expect(matchChatIntent('change rooms to 5')).toBe('set_profile')
+    const match = matchChat('change rooms to 5')
+    expect(match?.intent).toBe('set_profile')
+    if (match?.intent === 'set_profile') {
+      expect(match.patch.rooms).toBe('5')
+    }
+  })
 })
 
 describe('applyProfilePatch', () => {
