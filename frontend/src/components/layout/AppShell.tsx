@@ -28,8 +28,8 @@ type Props = {
  * @returns JSX.Element
  *
  * Profile stays locked until a profile is saved.
- * Home, Dashboard, and Reminders are always available so Matt can open VPP
- * Suggestions or get reminders and see the onboarding prompt before
+ * Home, Dashboard, What if, and Reminders are always available so Matt can
+ * open VPP Suggestions or get reminders and see the onboarding prompt before
  * completing setup.
  */
 export function AppShell({
@@ -46,7 +46,7 @@ export function AppShell({
   const { setRef: setNavRef, box: navBox } = useSlidingHighlight(active, '.app-rail__item.is-active')
 
   function isAvailable(id: AppNavId) {
-    if (id === 'home' || id === 'dashboard' || id === 'reminders') return true
+    if (id === 'home' || id === 'dashboard' || id === 'whatif' || id === 'reminders') return true
     return hasProfile
   }
 
