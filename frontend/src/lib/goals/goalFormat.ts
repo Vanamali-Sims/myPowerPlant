@@ -1,0 +1,69 @@
+/**
+ * Display formatting for goal figures.
+ *
+ * Uses en-AU grouping so larger goals read as "$1,200" rather than "$1200".
+ */
+import type { GoalKind } from '../../types/goals'
+
+const WHOLE = new Intl.NumberFormat('en-AU', { maximumFractionDigits: 0 })
+const ONE_DECIMAL = new Intl.NumberFormat('en-AU', { maximumFractionDigits: 1 })
+const TWO_DECIMALS = new Intl.NumberFormat('en-AU', {
+  minimumFractionDigits: 2,
+  maximumFractionDigits: 2,
+})
+
+/**
+ * formatGoalAud
+ * @param value - Dollars
+ * @returns "$1,200" for whole amounts, "$12.50" when there are cents
+ */
+export function formatGoalAud(value: number): string {
+  const hasCents = Math.round(value * 100) % 100 !== 0
+  return `$${hasCents ? TWO_DECIMALS.format(value) : WHOLE.format(value)}`
+}
+
+/**
+ * formatGoalKg
+ * @param value - Kilograms of CO2e
+ * @returns "1,200 kg CO2e", keeping one decimal for small figures
+ */
+export function formatGoalKg(value: number): string {
+  const text = value >= 100 ? WHOLE.format(value) : ONE_DECIMAL.format(value)
+  return `${text} kg CO2e`
+}
+
+/** Savings in dollars, carbon in kilograms. */
+export function formatGoalValue(kind: GoalKind, value: number): string {
+  return kind === 'savings' ? formatGoalAud(value) : formatGoalKg(value)
+}
+
+/** Whole kilowatt-hours with grouping, for worked examples. */
+export function formatExampleKwh(value: number): string {
+  return `${WHOLE.format(value)} kWh`
+}
+
+/**
+ * progressPercent
+ * @param total - Counted so far
+ * @param target - The goal
+ * @returns The real percentage, which can be over 100
+ */
+export function progressPercent(total: number, target: number): number {
+  if (!(target > 0)) return 0
+  return (total / target) * 100
+}
+
+/** Whole percent for display; the real figure can exceed 100. */
+export function formatPercent(value: number): string {
+  return `${WHOLE.format(Math.floor(value))} percent`
+}
+
+/**
+ * progressText
+ * @returns Plain sentence such as "$120 of $300, 40 percent"
+ */
+export function progressText(kind: GoalKind, total: number, target: number): string {
+  return `${formatGoalValue(kind, total)} of ${formatGoalValue(kind, target)}, ${formatPercent(
+    progressPercent(total, target),
+  )}`
+}
