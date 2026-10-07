@@ -9,7 +9,6 @@ come back as "not available" and the page uses its fixed line.
 
 import json
 import os
-import re
 from typing import Any
 
 import httpx
@@ -51,31 +50,46 @@ def _key() -> str:
 
 
 def _prompt(body: dict[str, Any]) -> str:
-    lines = [f"- {fact['label']}: {fact['display']}" for fact in body["facts"]]
+    lines = [
+        f"- {fact['label']}: {fact['display']}"
+        for fact in body["facts"]
+        if not str(fact.get("id", "")).startswith(("change.", "reserve."))
+    ]
+    if body["decision"] == "change":
+        opening = "This setup is recommended."
+        reason = "Say why: the yearly and weekly payment is higher than the saved setup, and mention the spare-solar hours."
+    elif body["decision"] == "unclear":
+        opening = "This setup isn't recommended."
+        reason = "Say why: there is no matched plan, so there is no payment to compare."
+    elif body.get("quiet"):
+        opening = "This setup isn't recommended."
+        reason = "Say why: the weekly payment barely moves, so it is not worth switching."
+    else:
+        opening = "This setup isn't recommended."
+        reason = "Say why: the yearly payment is lower than the saved setup."
     caveats = []
     if body.get("lowControl"):
-        caveats.append("The matched plan leaves the household less say over the battery.")
+        caveats.append("Also say the matched plan leaves the household less say over the battery.")
     if body.get("staleTerms"):
-        caveats.append("Some plan terms have not been checked in over 90 days.")
+        caveats.append("Also say some plan terms have not been checked in over 90 days.")
     return "\n".join(
         [
-            "You explain a household energy comparison that has already been decided.",
-            "Write two or three short sentences.",
-            "Use only the figures listed. Do not add numbers, dollars, or kWh.",
-            "The word was means the saved setup. The word now means the setup on screen.",
-            "Never swap them. Do not call the saved number now, and do not call the on-screen number after.",
-            "People are people in the home. Dishwasher and washing figures are cycles per week, not a count of machines.",
-            "If weekly use before and weekly use now match, do not say the household size changed how much power the home uses.",
-            "Describe the day chart using the spare-solar hours given, which are clock words.",
-            "Say the figures are a model, not a bill. Do not start with the words the model shows.",
+            "You write a recommendation for a household energy setup. The decision is already made.",
+            f'The first sentence must be exactly: "{opening}"',
+            "The second sentence is the reason, in plain words.",
+            reason,
+            "Copy dollar amounts and clock times exactly as written below, including the $ sign, such as $40.61 and 6am to 6pm.",
+            "Never spell a number as a word. Never write sixam.",
+            "Do not mention people, cycles, panels, battery names, or reserve.",
+            "Do not say 'go with the setup on screen'.",
+            "End by saying these figures are a model, not a bill.",
             "",
             f"Decision: {body['decision']}",
-            f"What changed: {'; '.join(body['changes'])}",
             f"Spare solar before: {body['surplusNow']}",
             f"Spare solar now: {body['surplusDraft']}",
             *caveats,
             "",
-            "Figures you may use:",
+            "Figures you may copy:",
             *lines,
         ]
     )
@@ -160,10 +174,12 @@ async def write_advice(body: dict[str, Any]) -> str | None:
         return None
     if not text:
         return None
-    allowed = [fact["numeric"] for fact in body["facts"] if isinstance(fact.get("numeric"), (int, float))]
-    for line in body.get("changes") or []:
-        for raw in re.findall(r"\d+(?:\.\d+)?", str(line)):
-            allowed.append(float(raw))
+    allowed = [
+        fact["numeric"]
+        for fact in body["facts"]
+        if isinstance(fact.get("numeric"), (int, float))
+        and not str(fact.get("id", "")).startswith(("change.", "reserve."))
+    ]
     if not numbers_are_known(text, allowed):
         return None
     return text

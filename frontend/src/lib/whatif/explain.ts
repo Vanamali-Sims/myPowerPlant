@@ -138,9 +138,6 @@ export function buildExplainInput(
   if (top) {
     facts.push(fact('plan.name', 'Matched plan', `${top.plan.brand} ${top.plan.name}`, null))
   }
-  for (const figure of changeFigures(changes)) {
-    facts.push(figure)
-  }
 
   const lowControl = top != null && householdControlScore(top.plan) < LOW_CONTROL
   const staleTerms = (top?.plan.terms ?? []).some((term) => term.lastVerified && isTermStale(term.lastVerified))
@@ -172,31 +169,24 @@ export function templateExplain(input: ExplainInput): string {
 
   let lead: string
   if (input.decision === 'change') {
-    lead = `Worth changing. This is about ${annual} more over a year — ${weeklyDraft} a week now, was ${weeklyNow}.`
+    lead = `This setup is recommended. The payment is about ${annual} more over a year — ${weeklyDraft} a week now, was ${weeklyNow}.`
   } else if (input.decision === 'unclear') {
-    lead = 'Not enough to judge yet. This setup does not match a VPP plan we hold, so there is no payment to compare.'
+    lead = "This setup isn't recommended. There is no matched plan, so there is no payment to compare."
   } else if (input.quiet) {
-    lead = `Stay as you are. The difference is ${weeklyDelta} a week, inside the margin of this estimate.`
+    lead = `This setup isn't recommended. The payment only moves ${weeklyDelta} a week, too small to switch for.`
   } else {
-    lead = `Stay as you are. This change is about ${annual} less over a year.`
+    lead = `This setup isn't recommended. The payment is about ${annual} less over a year — ${weeklyDraft} a week now, was ${weeklyNow}.`
   }
 
   const day =
     input.surplusDraft === 'none'
-      ? 'The day chart shows no spare solar for a VPP to take.'
-      : `Spare solar on the day chart runs ${input.surplusDraft}.`
-
-  const reserve =
-    input.reserveNow != null &&
-    input.reserveDraft != null &&
-    input.reserveNow !== input.reserveDraft
-      ? `Battery reserve was ${input.reserveNow}%, and it is ${input.reserveDraft}% now.`
-      : ''
+      ? 'There is no spare solar for a VPP to take.'
+      : `Spare solar runs ${input.surplusDraft}.`
 
   const control = input.lowControl ? 'This plan leaves the household less say over the battery.' : ''
   const stale = input.staleTerms ? 'Some of this plan’s terms have not been checked in over 90 days.' : ''
 
-  return [lead, day, reserve, control, stale, 'These figures are a model, not your bill.'].filter(Boolean).join(' ')
+  return [lead, day, control, stale, 'These figures are a model, not your bill.'].filter(Boolean).join(' ')
 }
 
 /**
@@ -220,6 +210,7 @@ export async function explainChange(input: ExplainInput, signal: AbortSignal): P
         surplusDraft: input.surplusDraft,
         lowControl: input.lowControl,
         staleTerms: input.staleTerms,
+        quiet: input.quiet,
         facts: input.facts,
       }),
       signal,
@@ -228,7 +219,10 @@ export async function explainChange(input: ExplainInput, signal: AbortSignal): P
     const body = (await response.json()) as { available?: boolean; text?: string }
     const text = body.text?.trim() ?? ''
     if (!body.available || !text) return { text: fallback, source: 'template' }
-    const checked = checkNumbers(text, input.facts)
+    const cited = input.facts.filter(
+      (fact) => !fact.id.startsWith('change.') && !fact.id.startsWith('reserve.'),
+    )
+    const checked = checkNumbers(text, cited)
     if (!checked.ok) return { text: fallback, source: 'template' }
     return { text: checked.text, source: 'model' }
   } catch {

@@ -35,6 +35,7 @@ class AdviceIn(BaseModel):
     surplusDraft: str = Field(max_length=40)
     lowControl: bool = False
     staleTerms: bool = False
+    quiet: bool = False
     facts: list[FactIn] = Field(max_length=24)
 
     def change_lines(self) -> list[str]:
