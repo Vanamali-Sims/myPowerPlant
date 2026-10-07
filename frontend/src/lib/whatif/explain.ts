@@ -119,21 +119,21 @@ export function buildExplainInput(
   else if (top) decision = 'change'
 
   const facts: ExplainFact[] = [
-    fact('save.now', 'Weekly VPP payment now', nowMoney.display, nowMoney.numeric),
-    fact('save.draft', 'Weekly VPP payment after', draftMoney.display, draftMoney.numeric),
+    fact('save.now', 'Weekly VPP payment before', nowMoney.display, nowMoney.numeric),
+    fact('save.draft', 'Weekly VPP payment now', draftMoney.display, draftMoney.numeric),
     fact('save.delta', 'Change in weekly VPP payment', deltaMoney.display, deltaMoney.numeric),
     fact('save.annual', 'Change over a year', `$${annualNumeric}`, annualNumeric),
-    fact('gen.now', 'Weekly solar now', formatKwh(reportNow.weekly.generationKwh), kwhFigure(reportNow.weekly.generationKwh)),
-    fact('gen.draft', 'Weekly solar after', formatKwh(reportDraft.weekly.generationKwh), kwhFigure(reportDraft.weekly.generationKwh)),
-    fact('use.now', 'Weekly use now', formatKwh(reportNow.weekly.consumptionKwh), kwhFigure(reportNow.weekly.consumptionKwh)),
-    fact('use.draft', 'Weekly use after', formatKwh(reportDraft.weekly.consumptionKwh), kwhFigure(reportDraft.weekly.consumptionKwh)),
+    fact('gen.now', 'Weekly solar before', formatKwh(reportNow.weekly.generationKwh), kwhFigure(reportNow.weekly.generationKwh)),
+    fact('gen.draft', 'Weekly solar now', formatKwh(reportDraft.weekly.generationKwh), kwhFigure(reportDraft.weekly.generationKwh)),
+    fact('use.now', 'Weekly use before', formatKwh(reportNow.weekly.consumptionKwh), kwhFigure(reportNow.weekly.consumptionKwh)),
+    fact('use.draft', 'Weekly use now', formatKwh(reportDraft.weekly.consumptionKwh), kwhFigure(reportDraft.weekly.consumptionKwh)),
   ]
 
   if (reserveNow != null) {
-    facts.push(fact('reserve.now', 'Battery reserve now', `${reserveNow}%`, reserveNow))
+    facts.push(fact('reserve.now', 'Battery reserve before', `${reserveNow}%`, reserveNow))
   }
   if (reserveDraft != null) {
-    facts.push(fact('reserve.draft', 'Battery reserve after', `${reserveDraft}%`, reserveDraft))
+    facts.push(fact('reserve.draft', 'Battery reserve now', `${reserveDraft}%`, reserveDraft))
   }
   if (top) {
     facts.push(fact('plan.name', 'Matched plan', `${top.plan.brand} ${top.plan.name}`, null))
@@ -172,7 +172,7 @@ export function templateExplain(input: ExplainInput): string {
 
   let lead: string
   if (input.decision === 'change') {
-    lead = `Worth changing. This is about ${annual} more over a year — ${weeklyDraft} a week, against ${weeklyNow} now.`
+    lead = `Worth changing. This is about ${annual} more over a year — ${weeklyDraft} a week now, was ${weeklyNow}.`
   } else if (input.decision === 'unclear') {
     lead = 'Not enough to judge yet. This setup does not match a VPP plan we hold, so there is no payment to compare.'
   } else if (input.quiet) {
@@ -190,7 +190,7 @@ export function templateExplain(input: ExplainInput): string {
     input.reserveNow != null &&
     input.reserveDraft != null &&
     input.reserveNow !== input.reserveDraft
-      ? `Battery reserve moves from ${input.reserveNow}% to ${input.reserveDraft}%, so more or less of the battery stays for the house.`
+      ? `Battery reserve was ${input.reserveNow}%, and it is ${input.reserveDraft}% now.`
       : ''
 
   const control = input.lowControl ? 'This plan leaves the household less say over the battery.' : ''

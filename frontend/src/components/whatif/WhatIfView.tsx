@@ -4,11 +4,11 @@
  * Every edit redraws the charts immediately. The written line waits until the
  * controls have been still. Nothing is saved until "Use this setup".
  */
-import { useMemo, useState, type Dispatch, type SetStateAction } from 'react'
+import { useEffect, useMemo, useRef, useState, type Dispatch, type SetStateAction } from 'react'
 import { batteryModels, solarDirections } from '../../data/profileOptions'
 import { FIELD_BOUNDS } from '../../constants/validation'
 import { applyProfilePatch } from '../../lib/chat/applyProfilePatch'
-import { buildWhatIfSuggestions } from '../../lib/chat/whatIfSuggestions'
+import { buildWhatIfSuggestions, type WhatIfSuggestion } from '../../lib/chat/whatIfSuggestions'
 import { buildKpiReport } from '../../lib/kpis'
 import { type MethodologyBundle } from '../../lib/methodologyApi'
 import { buildTypicalDay } from '../../lib/typicalDay'
@@ -19,10 +19,9 @@ import { Callout } from '../ui/Callout'
 import { BoltIcon, BulbIcon } from '../ui/icons'
 import { WhatIfDayChart } from './WhatIfDayChart'
 import { WhatIfExplain } from './WhatIfExplain'
+import { WhatIfFlow, type FlowFigures } from './WhatIfFlow'
 import { WhatIfHouseholdTab } from './WhatIfHouseholdTab'
 import { WhatIfSolarTab } from './WhatIfSolarTab'
-import { WhatIfStepperRow } from './WhatIfStepperRow'
-import { WhatIfYearBars } from './WhatIfYearBars'
 
 type Props = {
   profile: ProfileData
@@ -62,7 +61,44 @@ function directionLabel(value: string): string {
 }
 
 function annualPayment(weekly: number): number {
-  return Math.round(weekly * 52 * 100) / 100
+  return Math.round(weekly * 52)
+}
+
+function money(value: number): string {
+  const rounded = Math.round(value)
+  return `${rounded < 0 ? '-' : ''}$${Math.abs(rounded).toLocaleString('en-AU')}`
+}
+
+function moneyDelta(value: number): string {
+  return `${value > 0 ? '+' : '−'}${money(Math.abs(value))}`
+}
+
+function useAnimatedNumber(value: number): number {
+  const [shown, setShown] = useState(value)
+  const from = useRef(value)
+
+  useEffect(() => {
+    const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    const start = from.current
+    const began = performance.now()
+    let frame = 0
+    const step = (now: number) => {
+      const t = reduce ? 1 : Math.min(1, (now - began) / 520)
+      const eased = 1 - (1 - t) ** 3
+      const next = start + (value - start) * eased
+      from.current = next
+      setShown(next)
+      if (t < 1) frame = requestAnimationFrame(step)
+    }
+    frame = requestAnimationFrame(step)
+    return () => cancelAnimationFrame(frame)
+  }, [value])
+
+  return shown
+}
+
+function daily(weekly: number): number {
+  return weekly / 7
 }
 
 /**
@@ -167,9 +203,6 @@ export function WhatIfView({
   ])
 
   const hasChange = changes.length > 0
-  const summary = hasChange
-    ? changes.map((item) => `${item.label}: ${item.from} → ${item.to}`).join(' · ')
-    : 'Your saved setup. Adjust a setting to see it move.'
 
   function resetDraft() {
     setPeopleDraft(profile.people)
@@ -202,17 +235,25 @@ export function WhatIfView({
       reportNow,
       reportDraft,
       plansFor(draftProfile, bundle),
-      changes.map((item) => `${item.label}: ${item.from} → ${item.to}`),
+      changes.map((item) => {
+        const name =
+          item.label === 'People'
+            ? 'People in the home'
+            : item.label === 'Dishwasher'
+              ? 'Dishwasher cycles per week'
+              : item.label === 'Washing machine'
+                ? 'Washing cycles per week'
+                : item.label
+        return `${name}: was ${item.from}, now ${item.to}`
+      }),
       reserve.now,
       reserve.next,
     )
   }, [bundle, reportNow, reportDraft, profile.reservePercent, draftProfile, changes])
 
   const suggestions = bundle ? buildWhatIfSuggestions(draftProfile, bundle) : []
-  const suggestion = suggestions[0] ?? null
 
-  function applySuggestion() {
-    if (!suggestion) return
+  function applySuggestion(suggestion: WhatIfSuggestion) {
     const next = suggestion.apply
     if (next.people != null) setPeopleDraft(next.people)
     if (next.dishwasher != null) setDishwasherDraft(next.dishwasher)
@@ -223,6 +264,76 @@ export function WhatIfView({
     setStatus('')
   }
 
+  const annualNow = reportNow ? annualPayment(reportNow.weekly.savingsAud) : 0
+  const annualDraft = reportDraft ? annualPayment(reportDraft.weekly.savingsAud) : 0
+  const annualShown = useAnimatedNumber(annualDraft)
+  const yearDelta = annualDraft - annualNow
+
+  const deltas = useMemo(() => {
+    if (!bundle) return null
+    const savedAnnual = annualPayment(buildKpiReport(profile, bundle).weekly.savingsAud)
+    const lone = (patch: Partial<ProfileData>) => {
+      const result = applyProfilePatch(profile, patch)
+      if (!result.ok) return null
+      return annualPayment(buildKpiReport(result.profile, bundle).weekly.savingsAud) - savedAnnual
+    }
+    return {
+      people: changes.some((item) => item.label === 'People') ? lone({ people: draftProfile.people }) : null,
+      dishwasher: changes.some((item) => item.label === 'Dishwasher')
+        ? lone({ dishwasherCyclesPerWeek: draftProfile.dishwasherCyclesPerWeek })
+        : null,
+      washer: changes.some((item) => item.label === 'Washing machine')
+        ? lone({ washerCyclesPerWeek: draftProfile.washerCyclesPerWeek })
+        : null,
+      battery: changes.some((item) => item.label === 'Battery')
+        ? lone({ batteryModel: draftProfile.batteryModel })
+        : null,
+      reserve: changes.some((item) => item.label === 'Battery reserve')
+        ? lone({ reservePercent: draftProfile.reservePercent })
+        : null,
+      panels: changes.some((item) => item.label === 'Panels') ? lone({ panelCount: draftProfile.panelCount }) : null,
+      direction: changes.some((item) => item.label === 'Direction')
+        ? lone({ solarDirection: draftProfile.solarDirection })
+        : null,
+    }
+  }, [bundle, profile, draftProfile, changes])
+
+  const flow = useMemo<FlowFigures>(() => {
+    const weekly = reportDraft?.weekly
+    const reserve = Number(draftProfile.reservePercent)
+    const shifted = daily(weekly?.batteryShiftedKwh ?? 0)
+    const self = daily(weekly?.selfConsumedKwh ?? 0)
+    return {
+      solarKwh: daily(weekly?.generationKwh ?? 0),
+      homeKwh: daily(weekly?.consumptionKwh ?? 0),
+      toVppKwh: daily(weekly?.energyDistributedKwh ?? 0),
+      boughtKwh: daily(Math.max(0, (weekly?.consumptionKwh ?? 0) - (weekly?.selfConsumedKwh ?? 0))),
+      selfKwh: Math.max(0, self - shifted),
+      toBatteryKwh: shifted,
+      fromBatteryKwh: shifted,
+      reserve: Number.isFinite(reserve) ? reserve / 100 : 0,
+    }
+  }, [reportDraft, draftProfile.reservePercent])
+
+  const batteryChanged = (batteryDraft || profile.batteryModel) !== profile.batteryModel
+  const reserveChanged = resolvedValue(reserveDraft, profile.reservePercent) !== profile.reservePercent.trim()
+  const reserveShown = resolvedValue(reserveDraft, profile.reservePercent) || String(FIELD_BOUNDS.reservePercent.example)
+
+  const pillTone = !hasChange
+    ? 'is-idle'
+    : explainInput?.decision === 'unclear' || explainInput?.quiet
+      ? 'is-flat'
+      : yearDelta > 0
+        ? 'is-up'
+        : 'is-down'
+  const pillText = !hasChange
+    ? 'Your setup today'
+    : explainInput?.decision === 'unclear'
+      ? 'No payment to compare'
+      : explainInput?.quiet
+        ? 'Barely moves your payment'
+        : `${yearDelta >= 0 ? '▲ +' : '▼ −'}${money(Math.abs(yearDelta))} a year`
+
   const spareNow = surplusLabel(dayNow)
   const spareDraft = surplusLabel(dayDraft)
   const dayCaption = !hasChange
@@ -231,7 +342,7 @@ export function WhatIfView({
       : `Spare solar ${spareNow}.`
     : spareDraft === 'none'
       ? 'No spare solar with this change.'
-      : `Spare solar ${spareDraft}${spareNow === spareDraft ? '' : `, against ${spareNow} now`}.`
+      : `Spare solar ${spareDraft}${spareNow === spareDraft ? '' : `, was ${spareNow}`}.`
 
   return (
     <div className="whatif">
@@ -252,10 +363,6 @@ export function WhatIfView({
       <header className="whatif__intro">
         <p className="eyebrow">What if</p>
         <h1>Try a change before you save it</h1>
-        <p>
-          Move a setting and the day updates straight away. A short note follows once you pause.
-          Nothing is written until you choose <strong>Use this setup</strong>.
-        </p>
       </header>
 
       {!hasProfile ? (
@@ -286,114 +393,176 @@ export function WhatIfView({
 
       {ready ? (
         <div className="whatif__layout">
-          <section className="whatif-card whatif-card--controls" aria-label="Adjust a setting">
-            <div className="whatif-controls__group">
-              <h2 className="whatif-controls__title">Household</h2>
+          <aside className="whatif-card whatif-controls" aria-label="Adjust a setting">
+            <div className="whatif-group">
+              <h2>Solar</h2>
+              <WhatIfSolarTab
+                profile={profile}
+                panelCountDraft={panelCountDraft}
+                directionDraft={directionDraft}
+                panelDelta={deltas?.panels}
+                directionDelta={deltas?.direction}
+                onPanelCountDraft={setPanelCountDraft}
+                onDirectionDraft={setDirectionDraft}
+              />
+            </div>
+
+            <div className="whatif-group">
+              <h2>Battery</h2>
+              <div className={`whatif-row whatif-row--block${batteryChanged ? ' is-changed' : ''}`}>
+                <div className="whatif-lab">
+                  <span>Model</span>
+                  <small className="whatif-meta">
+                    {batteryChanged ? `was ${profile.batteryModel || '—'}` : ''}
+                    {batteryChanged && deltas?.battery != null && Math.abs(deltas.battery) >= 1 ? (
+                      <b
+                        className={`whatif-dchip ${deltas.battery > 0 ? 'is-up' : 'is-down'}`}
+                        title="This change on its own"
+                      >
+                        {moneyDelta(deltas.battery)}
+                      </b>
+                    ) : null}
+                  </small>
+                </div>
+                <select aria-label="Battery model" value={batteryDraft} onChange={(event) => setBatteryDraft(event.target.value)}>
+                  <option value="">Select battery</option>
+                  {batteryModels.map((model) => (
+                    <option key={model} value={model}>
+                      {model}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className={`whatif-row whatif-row--block${reserveChanged ? ' is-changed' : ''}`}>
+                <div className="whatif-lab">
+                  <span>
+                    Kept for the house · <b>{reserveShown}%</b>
+                  </span>
+                  <small className="whatif-meta">
+                    {reserveChanged ? `was ${profile.reservePercent || '—'}%` : ''}
+                    {reserveChanged && deltas?.reserve != null && Math.abs(deltas.reserve) >= 1 ? (
+                      <b
+                        className={`whatif-dchip ${deltas.reserve > 0 ? 'is-up' : 'is-down'}`}
+                        title="This change on its own"
+                      >
+                        {moneyDelta(deltas.reserve)}
+                      </b>
+                    ) : null}
+                  </small>
+                </div>
+                <input
+                  type="range"
+                  min={FIELD_BOUNDS.reservePercent.min}
+                  max={FIELD_BOUNDS.reservePercent.max}
+                  step={5}
+                  value={reserveShown}
+                  aria-label="Battery kept for the house"
+                  onChange={(event) => setReserveDraft(event.target.value)}
+                />
+              </div>
+            </div>
+
+            <div className="whatif-group">
+              <h2>Household</h2>
               <WhatIfHouseholdTab
                 profile={profile}
                 peopleDraft={peopleDraft}
                 dishwasherDraft={dishwasherDraft}
                 washerDraft={washerDraft}
+                peopleDelta={deltas?.people}
+                dishwasherDelta={deltas?.dishwasher}
+                washerDelta={deltas?.washer}
                 onPeopleDraft={setPeopleDraft}
                 onDishwasherDraft={setDishwasherDraft}
                 onWasherDraft={setWasherDraft}
               />
             </div>
 
-            <div className="whatif-controls__group">
-              <h2 className="whatif-controls__title">Battery</h2>
-              <div className="chat-actions__block">
-                <h3 className="chat-actions__label">Battery model</h3>
-                <p className="chat-panel__hint">Now: {profile.batteryModel || 'not set'}</p>
-                <div className="chat-actions__row">
-                  <select
-                    className="chat-whatif__select"
-                    value={batteryDraft}
-                    onChange={(event) => setBatteryDraft(event.target.value)}
-                  >
-                    <option value="">Select battery</option>
-                    {batteryModels.map((model) => (
-                      <option key={model} value={model}>
-                        {model}
-                      </option>
-                    ))}
-                  </select>
+            {suggestions.length ? (
+              <div className="whatif-group">
+                <h2>Quick tries</h2>
+                <div className="whatif-presets">
+                  {suggestions.map((item) => (
+                    <button key={item.id} type="button" className="whatif-chip" onClick={() => applySuggestion(item)}>
+                      {item.title}
+                    </button>
+                  ))}
                 </div>
               </div>
-              <WhatIfStepperRow
-                label="Battery kept for the house"
-                saved={profile.reservePercent}
-                draft={reserveDraft}
-                min={FIELD_BOUNDS.reservePercent.min}
-                max={FIELD_BOUNDS.reservePercent.max}
-                startAt={FIELD_BOUNDS.reservePercent.example}
-                step={5}
-                onDraft={setReserveDraft}
-              />
-              <p className="chat-panel__hint">Percent. Higher keeps more backup, and leaves less for a VPP.</p>
-            </div>
+            ) : null}
+          </aside>
 
-            <div className="whatif-controls__group">
-              <h2 className="whatif-controls__title">Solar</h2>
-              <WhatIfSolarTab
-                profile={profile}
-                panelCountDraft={panelCountDraft}
-                directionDraft={directionDraft}
-                onPanelCountDraft={setPanelCountDraft}
-                onDirectionDraft={setDirectionDraft}
-              />
-            </div>
-
-            {suggestion ? (
-              <div className="whatif-controls__suggest">
-                <p className="whatif-controls__suggest-title">{suggestion.title}</p>
-                <p className="chat-panel__hint">{suggestion.impact}</p>
-                <Button type="button" variant="outline-accent" onClick={applySuggestion}>
-                  Try this change
-                </Button>
+          <div className="whatif-main">
+            <section className="whatif-stage" aria-live="polite">
+              <div>
+                <p className="eyebrow">VPP payment · a year</p>
+                <div className="whatif-big">
+                  <span>{money(annualShown)}</span>
+                  <small>/yr</small>
+                </div>
+                <div className="whatif-delta">
+                  <span className={`whatif-pill ${pillTone}`}>{pillText}</span>
+                  {hasChange ? <span className="whatif-was">was {money(annualNow)}</span> : null}
+                </div>
+                <WhatIfExplain active={hasChange} input={explainInput} />
+                <div className="whatif-actions">
+                  <button type="button" className="whatif-btn whatif-btn--primary" disabled={!hasChange} onClick={applyWhatIf}>
+                    Use this setup
+                  </button>
+                  <button
+                    type="button"
+                    className="whatif-btn whatif-btn--ghost"
+                    hidden={!hasChange}
+                    onClick={resetDraft}
+                  >
+                    Reset
+                  </button>
+                </div>
+                {status ? (
+                  <p className="whatif-status" role="status">
+                    {status}
+                  </p>
+                ) : null}
               </div>
-            ) : null}
-          </section>
+              <WhatIfFlow figures={flow} />
+            </section>
 
-          <section className="whatif-card whatif-card--viz" aria-label="What this change does">
-            <header className="whatif-viz__head">
-              <h2 className="whatif-viz__title">A typical day</h2>
-              <p className="whatif-viz__summary">{summary}</p>
-            </header>
-
-            <WhatIfDayChart now={dayNow} draft={dayDraft} showPrevious={hasChange} />
-            <p className="whatif-caption">{dayCaption}</p>
-
-            <h2 className="whatif-viz__title whatif-viz__title--next">VPP payment this year</h2>
-            <WhatIfYearBars
-              nowAud={reportNow ? annualPayment(reportNow.weekly.savingsAud) : 0}
-              draftAud={reportDraft ? annualPayment(reportDraft.weekly.savingsAud) : 0}
-            />
-
-            <WhatIfExplain active={hasChange} input={explainInput} />
-
-            <p className="chat-panel__notice chat-compare__note whatif-result__note">
-              Modelled from your profile and published rates — not a live meter reading. VPP
-              dispatch timing and terms are set by the provider.
-            </p>
-
-            <div className="whatif-result__actions">
-              <Button type="button" variant="primary" disabled={!hasChange} onClick={applyWhatIf}>
-                Use this setup
-              </Button>
-              {hasChange ? (
-                <Button type="button" variant="outline-accent" onClick={resetDraft}>
-                  Reset
-                </Button>
-              ) : null}
-            </div>
-            {status ? (
-              <p className="whatif__status" role="status" aria-live="polite">
-                {status}
-              </p>
-            ) : null}
-          </section>
+            <section className="whatif-card whatif-day">
+              <div className="whatif-day__head">
+                <h2>
+                  A typical day <small>{dayCaption}</small>
+                </h2>
+                <div className="whatif-legend">
+                  <span>
+                    <i className="whatif-swatch whatif-swatch--solar" />
+                    Solar
+                  </span>
+                  <span>
+                    <i className="whatif-swatch whatif-swatch--load" />
+                    Home use
+                  </span>
+                  <span>
+                    <i className="whatif-swatch whatif-swatch--band" />
+                    Spare solar
+                  </span>
+                  {hasChange ? (
+                    <span>
+                      <i className="whatif-swatch whatif-swatch--ghost" />
+                      What changed
+                    </span>
+                  ) : null}
+                </div>
+              </div>
+              <WhatIfDayChart now={dayNow} draft={dayDraft} showPrevious={hasChange} />
+            </section>
+          </div>
         </div>
+      ) : null}
+      {ready ? (
+        <p className="whatif-foot">
+          Modelled from your profile and published rates, not a live meter reading. VPP terms are set by the
+          provider. Nothing is saved until you choose Use this setup.
+        </p>
       ) : null}
     </div>
   )

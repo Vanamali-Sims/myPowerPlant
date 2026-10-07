@@ -14,6 +14,8 @@ type Props = {
   profile: ProfileData
   panelCountDraft: string
   directionDraft: ProfileData['solarDirection']
+  panelDelta?: number | null
+  directionDelta?: number | null
   onPanelCountDraft: (value: string) => void
   onDirectionDraft: (value: ProfileData['solarDirection']) => void
 }
@@ -25,55 +27,58 @@ export function WhatIfSolarTab({
   profile,
   panelCountDraft,
   directionDraft,
+  panelDelta = null,
+  directionDelta = null,
   onPanelCountDraft,
   onDirectionDraft,
 }: Props) {
   if (profile.hasSolar !== 'yes') {
-    return (
-      <div className="chat-actions__block">
-        <h3 className="chat-actions__label">Solar panels &amp; direction</h3>
-        <p className="chat-panel__hint">
-          Turn on solar in your profile to preview panel or direction changes.
-        </p>
-      </div>
-    )
+    return <p className="whatif-note">Turn on solar in your profile to preview panel or direction changes.</p>
   }
 
+  const directionChanged = directionDraft !== profile.solarDirection
+  const directionChip =
+    directionChanged && directionDelta != null && Math.abs(directionDelta) >= 1 ? (
+      <b className={`whatif-dchip ${directionDelta > 0 ? 'is-up' : 'is-down'}`} title="This change on its own">
+        {directionDelta > 0 ? '+' : '−'}${Math.round(Math.abs(directionDelta)).toLocaleString('en-AU')}
+      </b>
+    ) : null
+
   return (
-    <div className="chat-whatif-household">
-      <div className="chat-whatif-household__body">
-        <WhatIfStepperRow
-          label="Solar panels"
-          saved={profile.panelCount}
-          draft={panelCountDraft}
-          min={FIELD_BOUNDS.panelCount.min}
-          max={FIELD_BOUNDS.panelCount.max}
-          startAt={FIELD_BOUNDS.panelCount.example}
-          onDraft={onPanelCountDraft}
-        />
-      </div>
-      <div className="chat-actions__block">
-        <h3 className="chat-actions__label">Panel direction</h3>
-        <p className="chat-panel__hint">
-          Now: {solarDirections.find((row) => row.value === profile.solarDirection)?.label ?? 'not set'}
-        </p>
-        <div className="chat-actions__row">
-          <select
-            className="chat-whatif__select"
-            value={directionDraft}
-            onChange={(event) =>
-              onDirectionDraft(event.target.value as ProfileData['solarDirection'])
-            }
-          >
-            <option value="">Direction</option>
-            {solarDirections.map((row) => (
-              <option key={row.value} value={row.value}>
-                {row.label}
-              </option>
-            ))}
-          </select>
+    <>
+      <WhatIfStepperRow
+        label="Panels"
+        saved={profile.panelCount}
+        draft={panelCountDraft}
+        min={FIELD_BOUNDS.panelCount.min}
+        max={FIELD_BOUNDS.panelCount.max}
+        startAt={FIELD_BOUNDS.panelCount.example}
+        deltaAud={panelDelta}
+        onDraft={onPanelCountDraft}
+      />
+      <div className={`whatif-row whatif-row--block${directionChanged ? ' is-changed' : ''}`}>
+        <div className="whatif-lab">
+          <span>Roof faces</span>
+          <small className="whatif-meta">
+            {directionChanged
+              ? `was ${solarDirections.find((row) => row.value === profile.solarDirection)?.label ?? '—'}`
+              : ''}
+            {directionChip}
+          </small>
+        </div>
+        <div className="whatif-seg" role="group" aria-label="Roof faces">
+          {solarDirections.map((row) => (
+            <button
+              key={row.value}
+              type="button"
+              aria-pressed={directionDraft === row.value}
+              onClick={() => onDirectionDraft(row.value)}
+            >
+              {row.label}
+            </button>
+          ))}
         </div>
       </div>
-    </div>
+    </>
   )
 }

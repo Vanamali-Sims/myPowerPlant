@@ -13,6 +13,9 @@ type Props = {
   peopleDraft: string
   dishwasherDraft: string
   washerDraft: string
+  peopleDelta?: number | null
+  dishwasherDelta?: number | null
+  washerDelta?: number | null
   onPeopleDraft: (value: string) => void
   onDishwasherDraft: (value: string) => void
   onWasherDraft: (value: string) => void
@@ -26,41 +29,45 @@ export function WhatIfHouseholdTab({
   peopleDraft,
   dishwasherDraft,
   washerDraft,
+  peopleDelta = null,
+  dishwasherDelta = null,
+  washerDelta = null,
   onPeopleDraft,
   onDishwasherDraft,
   onWasherDraft,
 }: Props) {
   return (
-    <div className="chat-whatif-household">
-      <div className="chat-whatif-household__body">
-        <WhatIfStepperRow
-          label="People in the home"
-          saved={profile.people}
-          draft={peopleDraft}
-          min={FIELD_BOUNDS.people.min}
-          max={FIELD_BOUNDS.people.max}
-          startAt={FIELD_BOUNDS.people.example}
-          onDraft={onPeopleDraft}
-        />
-        <WhatIfStepperRow
-          label="Dishwasher cycles per week"
-          saved={profile.dishwasherCyclesPerWeek}
-          draft={dishwasherDraft}
-          min={FIELD_BOUNDS.dishwasherCyclesPerWeek.min}
-          max={FIELD_BOUNDS.dishwasherCyclesPerWeek.max}
-          startAt={2}
-          onDraft={onDishwasherDraft}
-        />
-        <WhatIfStepperRow
-          label="Washing machine cycles per week"
-          saved={profile.washerCyclesPerWeek}
-          draft={washerDraft}
-          min={FIELD_BOUNDS.washerCyclesPerWeek.min}
-          max={FIELD_BOUNDS.washerCyclesPerWeek.max}
-          startAt={2}
-          onDraft={onWasherDraft}
-        />
-      </div>
-    </div>
+    <>
+      <WhatIfStepperRow
+        label="People"
+        saved={profile.people}
+        draft={peopleDraft}
+        min={FIELD_BOUNDS.people.min}
+        max={FIELD_BOUNDS.people.max}
+        startAt={FIELD_BOUNDS.people.example}
+        deltaAud={peopleDelta}
+        onDraft={onPeopleDraft}
+      />
+      <WhatIfStepperRow
+        label="Dishwasher cycles"
+        saved={profile.dishwasherCyclesPerWeek}
+        draft={dishwasherDraft}
+        min={FIELD_BOUNDS.dishwasherCyclesPerWeek.min}
+        max={FIELD_BOUNDS.dishwasherCyclesPerWeek.max}
+        startAt={2}
+        deltaAud={dishwasherDelta}
+        onDraft={onDishwasherDraft}
+      />
+      <WhatIfStepperRow
+        label="Washing cycles"
+        saved={profile.washerCyclesPerWeek}
+        draft={washerDraft}
+        min={FIELD_BOUNDS.washerCyclesPerWeek.min}
+        max={FIELD_BOUNDS.washerCyclesPerWeek.max}
+        startAt={2}
+        deltaAud={washerDelta}
+        onDraft={onWasherDraft}
+      />
+    </>
   )
 }

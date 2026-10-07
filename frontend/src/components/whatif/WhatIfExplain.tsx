@@ -1,7 +1,7 @@
 /**
- * The sentence under the charts. Charts update immediately; this waits until
+ * The sentence on the dark stage. Charts update immediately; this waits until
  * the controls have been still, then asks for a phrasing of figures already
- * calculated.
+ * calculated. The first sentence stays visible. The rest sits behind Why.
  */
 import { useEffect, useState } from 'react'
 import { explainChange, type ExplainInput } from '../../lib/whatif/explain'
@@ -11,6 +11,12 @@ const PAUSE_MS = 1600
 type Props = {
   active: boolean
   input: ExplainInput | null
+}
+
+function splitSentences(text: string): { lead: string; rest: string } {
+  const parts = text.match(/[^.!?]+[.!?]+(?:\s|$)/g)
+  if (!parts?.length) return { lead: text, rest: '' }
+  return { lead: parts[0].trim(), rest: parts.slice(1).join(' ').trim() }
 }
 
 /**
@@ -52,20 +58,27 @@ export function WhatIfExplain({ active, input }: Props) {
     }
   }, [active, input, signature])
 
-  if (!active) {
-    return <p className="whatif-explain__idle">Move a setting. The charts follow straight away.</p>
-  }
+  const split = text ? splitSentences(text) : null
+  const verdict = !active
+    ? 'This is your saved setup. Change something on the left.'
+    : split?.lead || (reading ? 'Reading this change…' : '')
+  const writing = active && reading && !text
 
   return (
-    <div className="whatif-explain" aria-live="polite">
-      {reading && !text ? <p className="whatif-explain__idle">Reading this change…</p> : null}
-      {text ? <p className="whatif-explain__text">{text}</p> : null}
-      {source ? (
-        <p className="whatif-explain__source">
-          {source === 'model'
-            ? 'Written from these figures.'
-            : 'Written from these figures. The model was not used.'}
-        </p>
+    <div>
+      <p className={`whatif-verdict${writing ? ' is-writing' : ''}`}>{verdict}</p>
+      {active && split ? (
+        <details className="whatif-why">
+          <summary>Why?</summary>
+          {split.rest ? <p>{split.rest}</p> : null}
+          {source ? (
+            <span className="whatif-why__ai">
+              {source === 'model'
+                ? 'Written from these figures'
+                : 'Written from these figures. The model was not used.'}
+            </span>
+          ) : null}
+        </details>
       ) : null}
     </div>
   )

@@ -16,6 +16,8 @@ export type WhatIfStepperRowProps = {
   startAt: number
   /** Amount added or removed by each button. Defaults to 1. */
   step?: number
+  /** Yearly payment change from this control alone, when it differs from saved. */
+  deltaAud?: number | null
   onDraft: (value: string) => void
 }
 
@@ -25,9 +27,14 @@ function stepperDisplay(draft: string, saved: string, min: number, max: number):
   return null
 }
 
-function nowLine(saved: string, startAt: number): string {
-  if (saved.trim()) return `Now: ${saved.trim()}`
-  return `Now: not set · start at ${startAt}`
+function savedNumber(saved: string, min: number, max: number): number | null {
+  if (!saved.trim()) return null
+  return clampNumber(parseCount(saved), min, max)
+}
+
+function moneyDelta(value: number): string {
+  const rounded = Math.round(Math.abs(value))
+  return `${value > 0 ? '+' : '−'}$${rounded.toLocaleString('en-AU')}`
 }
 
 /**
@@ -41,9 +48,12 @@ export function WhatIfStepperRow({
   max,
   startAt,
   step = 1,
+  deltaAud = null,
   onDraft,
 }: WhatIfStepperRowProps) {
   const shown = stepperDisplay(draft, saved, min, max)
+  const savedShown = savedNumber(saved, min, max)
+  const changed = shown !== null && shown !== savedShown
   const decreaseDisabled = shown === null || shown <= min
 
   function decrease() {
@@ -64,28 +74,29 @@ export function WhatIfStepperRow({
     onDraft(String(Math.min(max, shown + step)))
   }
 
+  const chip =
+    changed && deltaAud != null && Math.abs(deltaAud) >= 1 ? (
+      <b className={`whatif-dchip ${deltaAud > 0 ? 'is-up' : 'is-down'}`} title="This change on its own">
+        {moneyDelta(deltaAud)}
+      </b>
+    ) : null
+
   return (
-    <div className="chat-whatif-household__row">
-      <div className="chat-whatif-household__label-block">
-        <p className="chat-whatif-household__label">{label}</p>
-        <p className="chat-whatif-household__current">{nowLine(saved, startAt)}</p>
+    <div className={`whatif-row${changed ? ' is-changed' : ''}`}>
+      <div className="whatif-lab">
+        <span>{label}</span>
+        <small className="whatif-meta">
+          {changed ? `was ${saved.trim() || startAt}` : ''}
+          {chip}
+        </small>
       </div>
-      <div className="ui-stepper chat-whatif-household__stepper">
-        <button
-          type="button"
-          className="ui-stepper__btn"
-          aria-label={`Decrease ${label}`}
-          disabled={decreaseDisabled}
-          onClick={decrease}
-        >
+      <div className="whatif-stepper">
+        <button type="button" aria-label={`Decrease ${label}`} disabled={decreaseDisabled} onClick={decrease}>
           −
         </button>
-        <span className="ui-stepper__value" aria-live="polite">
-          {shown === null ? '–' : shown}
-        </span>
+        <output>{shown === null ? '–' : shown}</output>
         <button
           type="button"
-          className="ui-stepper__btn"
           aria-label={`Increase ${label}`}
           disabled={shown !== null && shown >= max}
           onClick={increase}
