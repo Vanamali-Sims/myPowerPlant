@@ -98,7 +98,9 @@ export function UploadArea({ locked, canGoToSetup, onGoToSetup, limits, onContin
 
   return (
     <section className="dashboard-card goals-upload" aria-labelledby="goals-upload-title">
-      <h2 id="goals-upload-title">Upload your battery file</h2>
+      <h2 id="goals-upload-title" tabIndex={-1}>
+        Upload your battery file
+      </h2>
       <p className="goals-upload__privacy">
         <LockIcon width={16} height={16} />
         <span>{PRIVACY_NOTE}</span>

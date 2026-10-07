@@ -477,9 +477,136 @@
   margin-top: 0.8rem;
 }
 
+.goals__upload-status {
+  margin: 0;
+  font-size: 0.88rem;
+  color: var(--ink-secondary);
+}
+
+.goals__upload-status:empty {
+  display: none;
+}
+
+.goals-preview__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem 1rem;
+}
+
+.goals-preview__head h2 {
+  margin: 0;
+}
+
+.goals-preview__unsaved {
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--terra-900);
+  background: var(--terra-50);
+  border: 1px solid var(--terra-200);
+  border-radius: var(--radius-pill);
+  padding: 0.15rem 0.6rem;
+}
+
+.goals-preview .dashboard-card__lede {
+  margin-top: 0.4rem;
+}
+
+.goals-preview__figures,
+.goals-preview__progress {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1rem;
+}
+
+.goals-preview__figure {
+  padding: 0.9rem 1rem;
+  border-radius: var(--radius-card);
+  background: var(--surface-sunken);
+}
+
+.goals-preview__figure .eyebrow {
+  margin: 0;
+}
+
+.goals-preview__value {
+  margin: 0.2rem 0 0.2rem;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.45rem;
+  font-family: var(--font-display);
+  font-size: 1.8rem;
+  font-weight: 500;
+  line-height: 1.15;
+  color: var(--ink);
+}
+
+.goals-preview__note {
+  margin: 0.4rem 0 0;
+  font-size: 0.85rem;
+  color: var(--ink-secondary);
+}
+
+.goals-preview__subtitle {
+  margin: 1.3rem 0 0.6rem;
+  font-size: 1.05rem;
+}
+
+.goals-preview__breakdown {
+  margin: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr));
+  gap: 0.6rem 1rem;
+}
+
+.goals-preview__breakdown dt {
+  font-size: 0.78rem;
+  color: var(--ink-secondary);
+}
+
+.goals-preview__breakdown dd {
+  margin: 0.1rem 0 0;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.goals-preview__missing {
+  margin: 0.7rem 0 0;
+  padding: 0.6rem 0.8rem;
+  border-radius: var(--radius-input);
+  background: var(--terra-50);
+  font-size: 0.88rem;
+  color: var(--ink);
+}
+
+.goals-preview .goals-examples {
+  margin-top: 1rem;
+}
+
+.goals-preview__progress .eyebrow {
+  margin: 0 0 0.3rem;
+}
+
+.goals-preview__actions {
+  margin-top: 0.8rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+}
+
+.goals-preview__actions .ui-btn {
+  width: auto;
+}
+
 @media (min-width: 720px) {
   .goals-overview__grid,
-  .goals-form__fields {
+  .goals-form__fields,
+  .goals-preview__figures,
+  .goals-preview__progress {
     grid-template-columns: 1fr 1fr;
   }
 }

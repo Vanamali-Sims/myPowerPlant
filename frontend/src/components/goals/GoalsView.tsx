@@ -6,6 +6,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { GOALS_DEVICE_NOTE } from '../../constants/goals'
 import { REASON_MESSAGES } from '../../constants/goalMessages'
 import { maxIntervalKwh } from '../../lib/goals/batteryLimits'
+import { buildCalculationContext, calculateDay, summariseDays } from '../../lib/goals/calculate'
 import { getGoalsReadiness, monthlyProfileEstimate, suggestGoals } from '../../lib/goals/goalSetup'
 import { loadGoals, saveGoals } from '../../lib/goals/goalsStorage'
 import { deriveTotals } from '../../lib/goals/goalTotals'
@@ -18,6 +19,7 @@ import { GoalOverview } from './GoalOverview'
 import { GoalSetupForm } from './GoalSetupForm'
 import { ProfileIncomplete } from './ProfileIncomplete'
 import { UploadArea, type ReadDays } from './UploadArea'
+import { UploadPreview } from './UploadPreview'
 
 type Props = {
   profile: ProfileData
@@ -56,6 +58,7 @@ export function GoalsView({
   const [notice, setNotice] = useState('')
   const [saveError, setSaveError] = useState('')
   const [pendingRead, setPendingRead] = useState<ReadDays | null>(null)
+  const [uploadStatus, setUploadStatus] = useState('')
   const overviewHeading = useRef<HTMLHeadingElement>(null)
   const setupHeading = useRef<HTMLHeadingElement>(null)
   const focusOverviewNext = useRef(false)
@@ -75,8 +78,20 @@ export function GoalsView({
     [bundle, profile, readiness.ready],
   )
 
+  const context = useMemo(
+    () => (readiness.ready && bundle ? buildCalculationContext(profile, bundle) : null),
+    [bundle, profile, readiness.ready],
+  )
+
   const goals = bothGoals(store)
   const totals = useMemo(() => deriveTotals(store.months), [store.months])
+  const preview = useMemo(
+    () =>
+      pendingRead && context
+        ? summariseDays(pendingRead.days.map((day) => calculateDay(day, context)))
+        : null,
+    [context, pendingRead],
+  )
 
   // After a save or cancel, move focus to the goals heading once it renders.
   useEffect(() => {
@@ -104,6 +119,12 @@ export function GoalsView({
     setNotice(goals ? 'Your goals are updated.' : 'Your goals are saved on this device.')
     setEditing(false)
     focusOverviewNext.current = true
+  }
+
+  function closePreview(message: string) {
+    setPendingRead(null)
+    setUploadStatus(message)
+    document.getElementById('goals-upload-title')?.focus()
   }
 
   function startEdit() {
@@ -221,17 +242,34 @@ export function GoalsView({
         canGoToSetup={Boolean(showForm)}
         onGoToSetup={() => setupHeading.current?.focus()}
         limits={limits}
-        onContinue={setPendingRead}
+        onContinue={(read) => {
+          setUploadStatus('')
+          setPendingRead(read)
+        }}
       />
 
-      {pendingRead ? (
-        <section className="dashboard-card goals-handoff" aria-labelledby="goals-handoff-title">
-          <h2 id="goals-handoff-title">Estimate preview</h2>
-          <p className="dashboard-card__lede">
-            {pendingRead.days.length} complete days are ready. The estimate preview appears here
-            next. Nothing has been saved.
-          </p>
-        </section>
+      <p className="goals__upload-status" role="status">
+        {uploadStatus}
+      </p>
+
+      {pendingRead && goals && !preview ? (
+        <p className="goals-upload__locked" role="alert">
+          <AlertIcon width={16} height={16} />
+          <span>{REASON_MESSAGES.estimates_unavailable} Your file was not added.</span>
+        </p>
+      ) : null}
+
+      {preview && context && goals ? (
+        <UploadPreview
+          preview={preview}
+          context={context}
+          goals={goals}
+          savedTotals={totals}
+          onConfirm={() =>
+            closePreview('Saving confirmed figures is not switched on yet. Nothing was saved.')
+          }
+          onCancel={() => closePreview('Nothing was saved.')}
+        />
       ) : null}
     </div>
   )
