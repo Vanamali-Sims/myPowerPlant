@@ -67,7 +67,7 @@ function generationLift(now: number, next: number): string | null {
   return `${arrow} ${formatKwh(Math.abs(diff))} weekly solar`
 }
 
-function useDrop(now: number, next: number): string | null {
+function consumptionDrop(now: number, next: number): string | null {
   const diff = now - next
   if (diff < 0.05) return null
   return `▼ ${formatKwh(diff)} weekly use`
@@ -159,7 +159,7 @@ export function buildWhatIfSuggestions(
         title: `One fewer dishwasher cycle`,
         reason: `This setup is on ${dishwasher} dishwasher cycles a week. Dropping one cycle is a small modelled change you can try without saving.`,
         impact:
-          useDrop(reportNow.weekly.consumptionKwh, report.weekly.consumptionKwh) ??
+          consumptionDrop(reportNow.weekly.consumptionKwh, report.weekly.consumptionKwh) ??
           savingsLift(reportNow.weekly.savingsAud, report.weekly.savingsAud) ??
           'Slightly lower modelled use.',
         apply: { dishwasher: String(nextCount) },
@@ -179,7 +179,7 @@ export function buildWhatIfSuggestions(
         title: `One fewer wash cycle`,
         reason: `This setup is on ${washer} washing machine cycles a week. Try one fewer to see the modelled household card move.`,
         impact:
-          useDrop(reportNow.weekly.consumptionKwh, report.weekly.consumptionKwh) ??
+          consumptionDrop(reportNow.weekly.consumptionKwh, report.weekly.consumptionKwh) ??
           savingsLift(reportNow.weekly.savingsAud, report.weekly.savingsAud) ??
           'Slightly lower modelled use.',
         apply: { washer: String(nextCount) },
