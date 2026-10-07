@@ -103,12 +103,6 @@
   font-size: 1.45rem;
 }
 
-.goals-overview__grid {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 1rem;
-}
-
 .goals-card__target {
   margin: 0.15rem 0 0.7rem;
   font-family: var(--font-display);
@@ -713,8 +707,123 @@
   gap: 0.6rem;
 }
 
+.goals-overview__layout {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1rem;
+}
+
+.goal-tree {
+  margin: 0;
+  padding: 1rem;
+  border-radius: var(--radius-card);
+  border: 1px solid var(--border);
+  background: var(--surface);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.goal-tree__art {
+  width: min(100%, 17rem);
+}
+
+.goal-tree__art svg {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.goal-tree__ground {
+  fill: var(--euc-100);
+}
+
+.goal-tree__seed {
+  fill: var(--terra-800);
+}
+
+.goal-tree__trunk {
+  fill: var(--terra-900);
+}
+
+.goal-tree__branch {
+  stroke: var(--terra-900);
+  stroke-linecap: round;
+}
+
+.goal-tree__sprout {
+  fill: var(--euc-400);
+}
+
+.goal-tree__leaves--a {
+  fill: var(--euc-400);
+}
+
+.goal-tree__leaves--b {
+  fill: var(--euc-600);
+}
+
+.goal-tree__leaves--c {
+  fill: var(--euc-200);
+}
+
+.goal-tree__art.is-full .goal-tree__leaves--c {
+  fill: var(--euc-400);
+}
+
+.goal-tree__fruit {
+  fill: var(--accent);
+  stroke: var(--terra-800);
+  stroke-width: 1;
+}
+
+.goal-tree__caption {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  text-align: center;
+  font-size: 0.82rem;
+  color: var(--ink-secondary);
+}
+
+.goal-tree__stage {
+  font-weight: 700;
+  font-size: 0.95rem;
+  color: var(--ink);
+  text-transform: capitalize;
+}
+
+.goals-card__insights {
+  margin: 0.8rem 0 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  font-size: 0.85rem;
+  color: var(--ink-secondary);
+}
+
+.goals-card__insights li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.goals-overview__cards {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1rem;
+}
+
 @media (min-width: 720px) {
-  .goals-overview__grid,
+  .goals-overview__layout {
+    grid-template-columns: minmax(15rem, 1fr) 1.4fr;
+    align-items: start;
+  }
+
   .goals-form__fields,
   .goals-preview__figures,
   .goals-preview__progress {

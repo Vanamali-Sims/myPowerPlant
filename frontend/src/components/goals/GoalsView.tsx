@@ -266,6 +266,7 @@ export function GoalsView({
           headingRef={overviewHeading}
           goals={goals}
           totals={totals}
+          months={store.months}
           canEdit={Boolean(readiness.ready && estimate)}
           onEdit={startEdit}
         />

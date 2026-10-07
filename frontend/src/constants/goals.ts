@@ -51,6 +51,37 @@ export const TYPICAL_RATE_SOURCE = {
   lastVerified: 'to be confirmed',
 } as const
 
+/** The tree grows one step for every this many percent of the carbon goal. */
+export const TREE_GROWTH_STEP_PERCENT = 5
+
+/** Steps from seed (0) to full canopy (100 percent and above). */
+export const TREE_MAX_STEP = 100 / TREE_GROWTH_STEP_PERCENT
+
+/**
+ * Stage names for the text and aria-label, by tree step (inclusive).
+ * To be confirmed by the team.
+ */
+export const TREE_STAGE_LABELS = [
+  { from: 0, to: 1, label: 'seed' },
+  { from: 2, to: 5, label: 'sprout' },
+  { from: 6, to: 10, label: 'sapling' },
+  { from: 11, to: 19, label: 'tree' },
+  { from: 20, to: 20, label: 'full canopy' },
+] as const
+
+/** One fruit appears for every this many percent of the savings goal. */
+export const SAVINGS_FRUIT_STEP_PERCENT = 5
+
+/** A month within this share of the month before counts as "similar". To be confirmed by the team. */
+export const SIMILAR_MONTH_BAND = 0.05
+
+/** Finish estimate rules. To be confirmed by the team. */
+export const FINISH_ESTIMATE = {
+  lookbackMonths: 3,
+  minCompleteMonths: 2,
+  maxYears: 5,
+} as const
+
 /** Round battery figures used in the worked carbon examples. */
 export const CARBON_EXAMPLE_KWH = [10, 100] as const
 
