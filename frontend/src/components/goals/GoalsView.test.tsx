@@ -10,6 +10,7 @@ import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { EMISSIONS_FACTOR_SOURCE, GOALS_STORAGE_KEY } from '../../constants/goals'
+import { REASON_MESSAGES } from '../../constants/goalMessages'
 import { BASELINE_PROFILE } from '../../data/baselines'
 import { suggestGoals } from '../../lib/goals/goalSetup'
 import { seedMethodologyBundle } from '../../lib/methodologyFixture'
@@ -175,7 +176,7 @@ describe('saving, remembering, and editing goals (AC5)', () => {
   it('saves both goals, confirms, shows zero progress, and unlocks upload', async () => {
     const { user } = renderView()
     await user.click(screen.getByRole('button', { name: 'Save goals' }))
-    expect(screen.getByRole('status').textContent).toContain('Your goals are saved on this device.')
+    expect(screen.getByText('Your goals are saved on this device.').closest('[role="status"]')).not.toBeNull()
     expect(document.activeElement).toBe(screen.getByRole('heading', { name: 'Your goals' }))
     const bars = screen.getAllByRole('progressbar')
     expect(bars).toHaveLength(2)
@@ -183,6 +184,7 @@ describe('saving, remembering, and editing goals (AC5)', () => {
     expect(bars[0].getAttribute('aria-valuetext')).toMatch(/^\$0 of \$[\d,]+, 0 percent$/)
     const upload = screen.getByRole('region', { name: 'Upload your battery file' })
     expect(within(upload).queryByText('Upload unlocks after both goals are saved.')).toBeNull()
+    expect(within(upload).getByRole('radiogroup', { name: 'VPP provider' })).toBeTruthy()
     const stored = storedGoals()
     expect(stored.version).toBe(1)
     expect(stored.goals.savings.target).toBe(suggestions.savings?.suggested)
@@ -231,7 +233,7 @@ describe('saving, remembering, and editing goals (AC5)', () => {
     await user.clear(savingsInput())
     await user.type(savingsInput(), String(newTarget))
     await user.click(screen.getByRole('button', { name: 'Save goals' }))
-    expect(screen.getByRole('status').textContent).toContain('Your goals are updated.')
+    expect(screen.getByText('Your goals are updated.').closest('[role="status"]')).not.toBeNull()
     const [savingsBar] = screen.getAllByRole('progressbar')
     expect(savingsBar.getAttribute('aria-valuenow')).toBe(String(Math.round((60 / newTarget) * 100)))
     const stored = storedGoals()
@@ -259,7 +261,7 @@ describe('saving, remembering, and editing goals (AC5)', () => {
     })
     await user.click(screen.getByRole('button', { name: 'Save goals' }))
     spy.mockRestore()
-    expect(screen.getByRole('alert').textContent).toContain('We could not save your goals')
+    expect(screen.getByRole('alert').textContent).toBe(REASON_MESSAGES.write_failed)
     expect(screen.getByRole('heading', { name: 'Set your goals' })).toBeTruthy()
   })
 })

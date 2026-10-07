@@ -4,6 +4,8 @@
  */
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { GOALS_DEVICE_NOTE } from '../../constants/goals'
+import { REASON_MESSAGES } from '../../constants/goalMessages'
+import { maxIntervalKwh } from '../../lib/goals/batteryLimits'
 import { getGoalsReadiness, monthlyProfileEstimate, suggestGoals } from '../../lib/goals/goalSetup'
 import { loadGoals, saveGoals } from '../../lib/goals/goalsStorage'
 import { deriveTotals } from '../../lib/goals/goalTotals'
@@ -15,7 +17,7 @@ import { AlertIcon, BoltIcon, CheckIcon, LockIcon } from '../ui/icons'
 import { GoalOverview } from './GoalOverview'
 import { GoalSetupForm } from './GoalSetupForm'
 import { ProfileIncomplete } from './ProfileIncomplete'
-import { UploadArea } from './UploadArea'
+import { UploadArea, type ReadDays } from './UploadArea'
 
 type Props = {
   profile: ProfileData
@@ -25,11 +27,6 @@ type Props = {
   onStartSetup: () => void
   onLogoClick: () => void
 }
-
-const SAVE_FAILED =
-  'We could not save your goals on this device. Check that this site is allowed to store data, then try again.'
-const STORAGE_FULL =
-  'There is no room left to save goals on this device. Nothing was changed.'
 
 function bothGoals(store: GoalsStore): Record<GoalKind, GoalEntry> | null {
   const { savings, carbon } = store.goals
@@ -58,7 +55,9 @@ export function GoalsView({
   const [editing, setEditing] = useState(false)
   const [notice, setNotice] = useState('')
   const [saveError, setSaveError] = useState('')
+  const [pendingRead, setPendingRead] = useState<ReadDays | null>(null)
   const overviewHeading = useRef<HTMLHeadingElement>(null)
+  const setupHeading = useRef<HTMLHeadingElement>(null)
   const focusOverviewNext = useRef(false)
 
   const readiness = useMemo(() => getGoalsReadiness(profile), [profile])
@@ -70,6 +69,11 @@ export function GoalsView({
       factor: bundle.methodology.vicGridKgCo2PerKwh,
     }
   }, [bundle, profile, readiness.ready])
+
+  const limits = useMemo(
+    () => (readiness.ready && bundle ? { maxIntervalKwh: maxIntervalKwh(profile, bundle) } : null),
+    [bundle, profile, readiness.ready],
+  )
 
   const goals = bothGoals(store)
   const totals = useMemo(() => deriveTotals(store.months), [store.months])
@@ -92,7 +96,7 @@ export function GoalsView({
     }
     const result = saveGoals(next)
     if (!result.ok) {
-      setSaveError(result.reason === 'storage_full' ? STORAGE_FULL : SAVE_FAILED)
+      setSaveError(REASON_MESSAGES[result.reason])
       return
     }
     setStore(result.store)
@@ -190,7 +194,9 @@ export function GoalsView({
 
       {showForm ? (
         <section className="dashboard-card goals-setup" aria-labelledby="goals-setup-title">
-          <h2 id="goals-setup-title">{goals ? 'Edit your goals' : 'Set your goals'}</h2>
+          <h2 id="goals-setup-title" ref={setupHeading} tabIndex={-1}>
+            {goals ? 'Edit your goals' : 'Set your goals'}
+          </h2>
           <p className="dashboard-card__lede">
             Choose a goal for money saved and a goal for carbon avoided. You can change them later.
           </p>
@@ -210,7 +216,23 @@ export function GoalsView({
         </section>
       ) : null}
 
-      <UploadArea locked={!goals} />
+      <UploadArea
+        locked={!goals}
+        canGoToSetup={Boolean(showForm)}
+        onGoToSetup={() => setupHeading.current?.focus()}
+        limits={limits}
+        onContinue={setPendingRead}
+      />
+
+      {pendingRead ? (
+        <section className="dashboard-card goals-handoff" aria-labelledby="goals-handoff-title">
+          <h2 id="goals-handoff-title">Estimate preview</h2>
+          <p className="dashboard-card__lede">
+            {pendingRead.days.length} complete days are ready. The estimate preview appears here
+            next. Nothing has been saved.
+          </p>
+        </section>
+      ) : null}
     </div>
   )
 }

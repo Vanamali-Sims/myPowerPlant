@@ -67,3 +67,31 @@ export function progressText(kind: GoalKind, total: number, target: number): str
     progressPercent(total, target),
   )}`
 }
+
+const DAY_LABEL = new Intl.DateTimeFormat('en-AU', {
+  day: 'numeric',
+  month: 'long',
+  year: 'numeric',
+  timeZone: 'UTC',
+})
+
+/**
+ * formatDayLabel
+ * @param date - YYYY-MM-DD calendar date
+ * @returns "1 September 2026", or the text unchanged when it is not a date
+ */
+export function formatDayLabel(date: string): string {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return date
+  return DAY_LABEL.format(new Date(`${date}T00:00:00Z`))
+}
+
+/**
+ * formatFileSize
+ * @param bytes - File size
+ * @returns "820 bytes", "12.4 KB", or "1.2 MB"
+ */
+export function formatFileSize(bytes: number): string {
+  if (bytes < 1024) return `${bytes} bytes`
+  if (bytes < 1024 * 1024) return `${ONE_DECIMAL.format(bytes / 1024)} KB`
+  return `${ONE_DECIMAL.format(bytes / (1024 * 1024))} MB`
+}

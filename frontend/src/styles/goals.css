@@ -268,6 +268,215 @@
   margin-top: 0.15rem;
 }
 
+.goals-upload__setup.ui-btn,
+.goals-source .ui-btn,
+.goals-file .ui-btn,
+.goals-read-error .ui-btn,
+.goals-summary .ui-btn {
+  width: auto;
+}
+
+.goals-upload__setup.ui-btn {
+  margin-top: 0.8rem;
+}
+
+.goals-upload__privacy {
+  margin: 0 0 1.1rem;
+  display: flex;
+  align-items: flex-start;
+  gap: 0.45rem;
+  font-size: 0.88rem;
+  color: var(--euc-800);
+  background: var(--euc-50);
+  border-radius: var(--radius-input);
+  padding: 0.65rem 0.8rem;
+}
+
+.goals-upload__privacy svg {
+  flex-shrink: 0;
+  margin-top: 0.15rem;
+}
+
+.goals-source h3,
+.goals-summary h3 {
+  margin: 0 0 0.6rem;
+  font-size: 1.1rem;
+}
+
+.goals-examples__panel .goals-source__subtitle {
+  margin-top: 0.8rem;
+}
+
+.goals-source__columns code {
+  font-size: 0.85rem;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.goals-source .goals-examples {
+  margin-top: 0.9rem;
+}
+
+.goals-source__link {
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  font-weight: 600;
+  color: var(--accent-deep);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  cursor: pointer;
+}
+
+.goals-source__link:hover {
+  color: var(--terra-900);
+}
+
+.goals-upload__hint {
+  margin: 1rem 0 0;
+  font-size: 0.9rem;
+  color: var(--ink-secondary);
+}
+
+.goals-file {
+  margin-top: 1.2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
+}
+
+.goals-file__drop {
+  width: 100%;
+  min-height: 10rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.8rem;
+  padding: 2rem 1.25rem;
+  border: 1.5px dashed var(--border-strong);
+  border-radius: var(--radius-card);
+  background: var(--surface-sunken);
+  text-align: center;
+  transition: border-color var(--motion-fast) var(--ease-out),
+    background-color var(--motion-fast) var(--ease-out);
+}
+
+.goals-file__drop.is-dragging {
+  border-color: var(--euc-600);
+  background: var(--euc-50);
+}
+
+.goals-file__drop-text {
+  margin: 0;
+  font-size: 0.9rem;
+  color: var(--ink-secondary);
+}
+
+.goals-file__chosen {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.goals-file__name {
+  margin: 0;
+  font-size: 0.92rem;
+  color: var(--ink);
+  overflow-wrap: anywhere;
+}
+
+.goals-file__label {
+  font-weight: 700;
+}
+
+.goals-file__size {
+  color: var(--ink-secondary);
+}
+
+.goals-file__actions,
+.goals-summary__actions,
+.goals-read-error__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+}
+
+.goals-upload__status {
+  margin: 0.8rem 0 0;
+  font-size: 0.88rem;
+  color: var(--ink-secondary);
+}
+
+.goals-upload__status:empty {
+  margin: 0;
+}
+
+.goals-read-error {
+  margin-top: 0.8rem;
+  display: flex;
+  align-items: flex-start;
+  gap: 0.65rem;
+  padding: 0.85rem 1rem;
+  border-radius: var(--radius-card);
+  border: 1px solid var(--terra-200);
+  background: var(--terra-50);
+  color: var(--ink);
+  font-size: 0.9rem;
+}
+
+.goals-read-error > svg {
+  flex-shrink: 0;
+  margin-top: 0.1rem;
+  color: var(--terra-800);
+}
+
+.goals-read-error p {
+  margin: 0 0 0.6rem;
+}
+
+.goals-read-error__title {
+  font-weight: 700;
+}
+
+.goals-summary {
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--border);
+}
+
+.goals-summary__facts {
+  margin: 0 0 0.8rem;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(9.5rem, 1fr));
+  gap: 0.6rem 1rem;
+}
+
+.goals-summary__facts dt {
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--ink-secondary);
+}
+
+.goals-summary__facts dd {
+  margin: 0.1rem 0 0;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.goals-summary__note {
+  margin: 0 0 0.5rem;
+  font-size: 0.88rem;
+  color: var(--ink-secondary);
+}
+
+.goals-summary__actions {
+  margin-top: 0.8rem;
+}
+
 @media (min-width: 720px) {
   .goals-overview__grid,
   .goals-form__fields {
@@ -282,7 +491,8 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .goal-progress__fill {
+  .goal-progress__fill,
+  .goals-file__drop {
     transition: none;
   }
 }
