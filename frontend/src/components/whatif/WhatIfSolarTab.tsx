@@ -54,7 +54,9 @@ export function WhatIfSolarTab({
       </div>
       <div className="chat-actions__block">
         <h3 className="chat-actions__label">Panel direction</h3>
-        <p className="chat-panel__hint">Now: {profile.solarDirection || 'not set'}</p>
+        <p className="chat-panel__hint">
+          Now: {solarDirections.find((row) => row.value === profile.solarDirection)?.label ?? 'not set'}
+        </p>
         <div className="chat-actions__row">
           <select
             className="chat-whatif__select"

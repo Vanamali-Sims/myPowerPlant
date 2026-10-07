@@ -14,6 +14,8 @@ export type WhatIfStepperRowProps = {
   min: number
   max: number
   startAt: number
+  /** Amount added or removed by each button. Defaults to 1. */
+  step?: number
   onDraft: (value: string) => void
 }
 
@@ -38,6 +40,7 @@ export function WhatIfStepperRow({
   min,
   max,
   startAt,
+  step = 1,
   onDraft,
 }: WhatIfStepperRowProps) {
   const shown = stepperDisplay(draft, saved, min, max)
@@ -49,9 +52,8 @@ export function WhatIfStepperRow({
       onDraft('')
       return
     }
-    const next = shown - 1
-    if (next < min) return
-    onDraft(String(next))
+    const next = shown - step
+    onDraft(String(next < min ? min : next))
   }
 
   function increase() {
@@ -59,7 +61,7 @@ export function WhatIfStepperRow({
       onDraft(String(startAt))
       return
     }
-    onDraft(String(Math.min(max, shown + 1)))
+    onDraft(String(Math.min(max, shown + step)))
   }
 
   return (
