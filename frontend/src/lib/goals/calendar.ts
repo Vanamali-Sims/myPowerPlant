@@ -60,3 +60,13 @@ export function daysBetweenInclusive(start: string, end: string): number {
 export function countRangeDays(ranges: DateRange[]): number {
   return ranges.reduce((sum, [start, end]) => sum + daysBetweenInclusive(start, end), 0)
 }
+
+/**
+ * addDays
+ * @param date - YYYY-MM-DD
+ * @param days - Whole days to move, may be negative
+ * @returns The calendar date that many days away
+ */
+export function addDays(date: string, days: number): string {
+  return new Date(toUtcMs(date) + days * MS_PER_DAY).toISOString().slice(0, 10)
+}
