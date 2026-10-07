@@ -602,6 +602,117 @@
   width: auto;
 }
 
+.goals-history h2 {
+  margin: 0 0 0.35rem;
+}
+
+.goals-history__empty {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.6rem;
+}
+
+.goals-history__empty p {
+  margin: 0;
+  color: var(--ink-secondary);
+}
+
+.goals-history__empty .ui-btn,
+.goals-danger .ui-btn,
+.goals-clear-dialog__footer .ui-btn {
+  width: auto;
+}
+
+.goals-history__scroll {
+  overflow-x: auto;
+}
+
+.goals-history__table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+
+.goals-history__table caption {
+  text-align: left;
+  font-weight: 600;
+  color: var(--ink);
+  padding-bottom: 0.6rem;
+}
+
+.goals-history__table th,
+.goals-history__table td {
+  text-align: left;
+  padding: 0.6rem 0.75rem 0.6rem 0;
+  border-bottom: 1px solid var(--border);
+  vertical-align: top;
+}
+
+.goals-history__table thead th {
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--ink-secondary);
+}
+
+.goals-history__table tbody th {
+  font-weight: 600;
+  color: var(--ink);
+  white-space: nowrap;
+}
+
+.goals-history__partial {
+  font-weight: 600;
+  color: var(--terra-900);
+}
+
+.goals-history__note {
+  margin: 0.6rem 0 0;
+  font-size: 0.82rem;
+  color: var(--ink-secondary);
+}
+
+.goals-danger {
+  margin-top: 1rem;
+  padding-top: 1.2rem;
+  border-top: 1px solid var(--border-strong);
+}
+
+.goals-danger h2 {
+  margin: 0 0 0.35rem;
+  font-size: 1.15rem;
+}
+
+.goals-danger p {
+  margin: 0 0 0.8rem;
+  font-size: 0.9rem;
+  color: var(--ink-secondary);
+  max-width: 38rem;
+}
+
+.goals-clear-dialog__body {
+  margin: 0;
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  color: var(--ink);
+}
+
+.goals-clear-dialog__body svg {
+  flex-shrink: 0;
+  margin-top: 0.2rem;
+  color: var(--danger);
+}
+
+.goals-clear-dialog__footer {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 0.6rem;
+}
+
 @media (min-width: 720px) {
   .goals-overview__grid,
   .goals-form__fields,

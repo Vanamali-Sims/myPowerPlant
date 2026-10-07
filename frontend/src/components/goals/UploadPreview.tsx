@@ -21,6 +21,10 @@ type Props = {
   goals: Record<GoalKind, GoalEntry>
   /** Running totals already saved, before this file. */
   savedTotals: Record<GoalKind, number>
+  /** Days in the file that were already counted and are left as they were. */
+  skippedCount: number
+  /** Shown when the device refused the save; the preview stays open. */
+  saveError: string
   onConfirm: () => void
   onCancel: () => void
 }
@@ -49,7 +53,16 @@ function dayWord(count: number): string {
  *
  * Nothing here is saved. Focus moves to the heading when the preview opens.
  */
-export function UploadPreview({ preview, context, goals, savedTotals, onConfirm, onCancel }: Props) {
+export function UploadPreview({
+  preview,
+  context,
+  goals,
+  savedTotals,
+  skippedCount,
+  saveError,
+  onConfirm,
+  onCancel,
+}: Props) {
   const headingRef = useRef<HTMLHeadingElement>(null)
   const panelId = useId()
   const [open, setOpen] = useState(false)
@@ -69,8 +82,14 @@ export function UploadPreview({ preview, context, goals, savedTotals, onConfirm,
       </div>
       <p className="dashboard-card__lede">
         {formatDayLabel(preview.firstDate)} to {formatDayLabel(preview.lastDate)},{' '}
-        {dayWord(preview.dayCount)}.
+        {dayWord(preview.dayCount)} not counted before.
       </p>
+      {skippedCount ? (
+        <p className="goals-preview__note">
+          {dayWord(skippedCount)} in this file {skippedCount === 1 ? 'was' : 'were'} already
+          counted and skipped.
+        </p>
+      ) : null}
 
       <div className="goals-preview__figures">
         <div className="goals-preview__figure">
@@ -175,6 +194,11 @@ export function UploadPreview({ preview, context, goals, savedTotals, onConfirm,
       </div>
 
       <p className="goals-preview__note">Not saved yet. Nothing is added until you confirm.</p>
+      {saveError ? (
+        <p className="goals-form__save-error" role="alert">
+          {saveError}
+        </p>
+      ) : null}
       <div className="goals-preview__actions">
         <Button variant="primary" onClick={onConfirm}>
           Confirm and save

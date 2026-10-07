@@ -8,14 +8,19 @@ import { REASON_MESSAGES } from '../../constants/goalMessages'
 import { maxIntervalKwh } from '../../lib/goals/batteryLimits'
 import { buildCalculationContext, calculateDay, summariseDays } from '../../lib/goals/calculate'
 import { getGoalsReadiness, monthlyProfileEstimate, suggestGoals } from '../../lib/goals/goalSetup'
-import { loadGoals, saveGoals } from '../../lib/goals/goalsStorage'
+import { clearGoals, loadGoals, saveGoals } from '../../lib/goals/goalsStorage'
+import { formatDayLabel } from '../../lib/goals/goalFormat'
+import { applyDays, planMerge } from '../../lib/goals/history'
 import { deriveTotals } from '../../lib/goals/goalTotals'
 import type { MethodologyBundle } from '../../lib/methodologyApi'
-import type { GoalEntry, GoalKind, GoalsStore } from '../../types/goals'
+import { emptyGoalsStore, type GoalEntry, type GoalKind, type GoalsStore } from '../../types/goals'
 import type { ProfileData } from '../../types/profile'
+import { Button } from '../ui/Button'
 import { Callout } from '../ui/Callout'
 import { AlertIcon, BoltIcon, CheckIcon, LockIcon } from '../ui/icons'
+import { ClearGoalsDialog } from './ClearGoalsDialog'
 import { GoalOverview } from './GoalOverview'
+import { HistoryTable } from './HistoryTable'
 import { GoalSetupForm } from './GoalSetupForm'
 import { ProfileIncomplete } from './ProfileIncomplete'
 import { UploadArea, type ReadDays } from './UploadArea'
@@ -59,9 +64,12 @@ export function GoalsView({
   const [saveError, setSaveError] = useState('')
   const [pendingRead, setPendingRead] = useState<ReadDays | null>(null)
   const [uploadStatus, setUploadStatus] = useState('')
+  const [previewError, setPreviewError] = useState('')
+  const [clearOpen, setClearOpen] = useState(false)
   const overviewHeading = useRef<HTMLHeadingElement>(null)
   const setupHeading = useRef<HTMLHeadingElement>(null)
   const focusOverviewNext = useRef(false)
+  const focusSetupNext = useRef(false)
 
   const readiness = useMemo(() => getGoalsReadiness(profile), [profile])
   const estimate = useMemo(() => {
@@ -85,19 +93,31 @@ export function GoalsView({
 
   const goals = bothGoals(store)
   const totals = useMemo(() => deriveTotals(store.months), [store.months])
-  const preview = useMemo(
+  const plan = useMemo(
     () =>
       pendingRead && context
-        ? summariseDays(pendingRead.days.map((day) => calculateDay(day, context)))
+        ? planMerge(
+            store.months,
+            pendingRead.days.map((day) => calculateDay(day, context)),
+          )
         : null,
-    [context, pendingRead],
+    [context, pendingRead, store.months],
+  )
+  const preview = useMemo(
+    () => (plan && plan.newDays.length ? summariseDays(plan.newDays) : null),
+    [plan],
   )
 
-  // After a save or cancel, move focus to the goals heading once it renders.
+  // After a save, cancel, or clear, move focus to the right heading once it renders.
   useEffect(() => {
-    if (!focusOverviewNext.current) return
-    focusOverviewNext.current = false
-    overviewHeading.current?.focus()
+    if (focusOverviewNext.current) {
+      focusOverviewNext.current = false
+      overviewHeading.current?.focus()
+    }
+    if (focusSetupNext.current) {
+      focusSetupNext.current = false
+      setupHeading.current?.focus()
+    }
   })
 
   function save(targets: Record<GoalKind, number>) {
@@ -123,8 +143,46 @@ export function GoalsView({
 
   function closePreview(message: string) {
     setPendingRead(null)
+    setPreviewError('')
     setUploadStatus(message)
     document.getElementById('goals-upload-title')?.focus()
+  }
+
+  function confirmUpload() {
+    if (!pendingRead || !plan || !plan.newDays.length) return
+    const next: GoalsStore = {
+      ...store,
+      months: applyDays(store.months, plan.newDays, pendingRead.sourceId, new Date().toISOString()),
+    }
+    const result = saveGoals(next)
+    if (!result.ok) {
+      setPreviewError(REASON_MESSAGES[result.reason])
+      return
+    }
+    const added = plan.newDays.length
+    setStore(result.store)
+    setPendingRead(null)
+    setPreviewError('')
+    setUploadStatus('')
+    setNotice(
+      `Saved. ${added === 1 ? '1 day was' : `${added} days were`} added to your history.`,
+    )
+    focusOverviewNext.current = true
+  }
+
+  function confirmClear() {
+    setClearOpen(false)
+    if (!clearGoals()) {
+      setNotice('')
+      setUploadStatus(REASON_MESSAGES.write_failed)
+      return
+    }
+    setStore(emptyGoalsStore())
+    setPendingRead(null)
+    setEditing(false)
+    setUploadStatus('')
+    setNotice('Your goals and history were cleared from this device.')
+    focusSetupNext.current = true
   }
 
   function startEdit() {
@@ -259,18 +317,64 @@ export function GoalsView({
         </p>
       ) : null}
 
-      {preview && context && goals ? (
+      {plan && !preview && pendingRead && goals ? (
+        <section
+          className="dashboard-card goals-preview"
+          aria-labelledby="goals-counted-title"
+          role="status"
+        >
+          <h2 id="goals-counted-title">This file is already counted</h2>
+          <p className="dashboard-card__lede">
+            Every day from {formatDayLabel(pendingRead.days[0].date)} to{' '}
+            {formatDayLabel(pendingRead.days[pendingRead.days.length - 1].date)} is already in
+            your history, so there is nothing new to add.
+          </p>
+          <div className="goals-preview__actions">
+            <Button variant="secondary" onClick={() => closePreview('Nothing was saved.')}>
+              Close
+            </Button>
+          </div>
+        </section>
+      ) : null}
+
+      {preview && plan && context && goals ? (
         <UploadPreview
           preview={preview}
           context={context}
           goals={goals}
           savedTotals={totals}
-          onConfirm={() =>
-            closePreview('Saving confirmed figures is not switched on yet. Nothing was saved.')
-          }
+          skippedCount={plan.skippedDays.length}
+          saveError={previewError}
+          onConfirm={confirmUpload}
           onCancel={() => closePreview('Nothing was saved.')}
         />
       ) : null}
+
+      {goals ? (
+        <HistoryTable
+          months={store.months}
+          onGoToUpload={() => document.getElementById('goals-upload-title')?.focus()}
+        />
+      ) : null}
+
+      {goals || store.months.length || store.completedGoals.length ? (
+        <section className="goals-danger" aria-labelledby="goals-danger-title">
+          <h2 id="goals-danger-title">Start over</h2>
+          <p>
+            Remove your goals and history from this device and go back to setting new goals. Your
+            profile stays as it is.
+          </p>
+          <Button variant="danger" onClick={() => setClearOpen(true)}>
+            Clear my goals and history
+          </Button>
+        </section>
+      ) : null}
+
+      <ClearGoalsDialog
+        open={clearOpen}
+        onConfirm={confirmClear}
+        onCancel={() => setClearOpen(false)}
+      />
     </div>
   )
 }

@@ -90,7 +90,7 @@ describe('estimated savings and carbon after reading (AC1)', () => {
     expect(document.activeElement).toBe(within(section).getByRole('heading', { level: 2 }))
     const context = buildCalculationContext(savedProfile(), bundle)
     const text = section.textContent ?? ''
-    expect(text).toContain('1 September 2026 to 30 September 2026, 30 days.')
+    expect(text).toContain('1 September 2026 to 30 September 2026, 30 days not counted before.')
     expect(text).toContain(`Estimated savings${formatGoalAud(ENERGY_KWH * context.rate)}Estimate`)
     expect(text).toContain(`Estimated carbon avoided${Math.round(ENERGY_KWH * context.factor)} kg CO2eEstimate`)
     expect(within(section).getAllByText('Not a bill or metered result.')).toHaveLength(2)
