@@ -70,3 +70,30 @@ export function countRangeDays(ranges: DateRange[]): number {
 export function addDays(date: string, days: number): string {
   return new Date(toUtcMs(date) + days * MS_PER_DAY).toISOString().slice(0, 10)
 }
+
+/** True when the date falls inside any of the ranges. */
+export function isDateCovered(ranges: DateRange[], date: string): boolean {
+  return ranges.some(([start, end]) => date >= start && date <= end)
+}
+
+/**
+ * mergeRanges
+ * @param ranges - Existing ranges
+ * @param dates - Single days to add
+ * @returns Sorted ranges where overlapping or touching days are joined
+ */
+export function mergeRanges(ranges: DateRange[], dates: string[]): DateRange[] {
+  const all: DateRange[] = [...ranges, ...dates.map((date): DateRange => [date, date])].sort(
+    ([a], [b]) => a.localeCompare(b),
+  )
+  const merged: DateRange[] = []
+  for (const [start, end] of all) {
+    const last = merged[merged.length - 1]
+    if (last && start <= addDays(last[1], 1)) {
+      if (end > last[1]) last[1] = end
+    } else {
+      merged.push([start, end])
+    }
+  }
+  return merged
+}

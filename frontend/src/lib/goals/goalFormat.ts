@@ -121,3 +121,18 @@ export function formatEnergy(value: number): string {
 export function formatRate(value: number): string {
   return `$${TWO_DECIMALS.format(value)} per kWh`
 }
+
+const MONTH_LABEL = new Intl.DateTimeFormat('en-AU', {
+  month: 'long',
+  year: 'numeric',
+  timeZone: 'UTC',
+})
+
+/**
+ * formatMonthLabel
+ * @param month - YYYY-MM
+ * @returns "September 2026"
+ */
+export function formatMonthLabel(month: string): string {
+  return MONTH_LABEL.format(new Date(`${month}-01T00:00:00Z`))
+}

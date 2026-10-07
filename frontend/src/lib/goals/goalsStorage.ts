@@ -206,3 +206,18 @@ export function saveGoals(store: GoalsStore): SaveGoalsResult {
     return { ok: false, reason: 'write_failed' }
   }
 }
+
+/**
+ * clearGoals
+ * @returns true when the goals key is gone
+ *
+ * Removes only the goals key. The profile and every other key are untouched.
+ */
+export function clearGoals(): boolean {
+  try {
+    localStorage.removeItem(GOALS_STORAGE_KEY)
+    return true
+  } catch {
+    return false
+  }
+}
