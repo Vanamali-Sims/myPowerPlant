@@ -307,3 +307,13 @@ export function BellIcon(props: IconProps) {
     </svg>
   )
 }
+
+export function TargetIcon(props: IconProps) {
+  return (
+    <svg {...icon(props)}>
+      <circle cx="12" cy="12" r="8.5" />
+      <circle cx="12" cy="12" r="4.5" />
+      <circle cx="12" cy="12" r="0.9" fill="currentColor" />
+    </svg>
+  )
+}

@@ -11,6 +11,7 @@ const VIEW_LABEL: Record<AppNavId | 'setup', string> = {
   profile: 'Profile',
   dashboard: 'Dashboard',
   reminders: 'Reminders',
+  goals: 'Goals',
 }
 
 const TIMEFRAME_LABEL: Record<Timeframe, string> = {
