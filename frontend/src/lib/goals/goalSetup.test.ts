@@ -164,6 +164,8 @@ describe('goal formatting', () => {
     expect(formatGoalKg(1800)).toBe('1,800 kg CO2e')
     expect(formatGoalKg(7.7)).toBe('7.7 kg CO2e')
     expect(progressText('savings', 120, 300)).toBe('$120 of $300, 40 percent')
+    expect(progressText('carbon', 127, 288)).toBe('127 kg of 288 kg CO2e, 44 percent')
+    expect(progressText('carbon', 7.5, 288)).toBe('7.5 kg of 288 kg CO2e, 2 percent')
   })
 
   it('keeps the real percentage above 100', () => {

@@ -41,6 +41,16 @@ export const EMISSIONS_FACTOR_SOURCE = {
   lastVerified: 'to be confirmed',
 } as const
 
+/**
+ * Where the typical Victorian retail rate comes from. The value itself is read
+ * from the methodology data, the same rate buildKpiReport falls back to.
+ * To be confirmed by the team before this ships to production.
+ */
+export const TYPICAL_RATE_SOURCE = {
+  label: 'Source to be confirmed',
+  lastVerified: 'to be confirmed',
+} as const
+
 /** Round battery figures used in the worked carbon examples. */
 export const CARBON_EXAMPLE_KWH = [10, 100] as const
 

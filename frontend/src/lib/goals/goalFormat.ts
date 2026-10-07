@@ -23,13 +23,22 @@ export function formatGoalAud(value: number): string {
 }
 
 /**
+ * formatGoalKgAmount
+ * @param value - Kilograms of CO2e
+ * @returns "1,200 kg", keeping one decimal for small figures
+ */
+export function formatGoalKgAmount(value: number): string {
+  const text = value >= 100 ? WHOLE.format(value) : ONE_DECIMAL.format(value)
+  return `${text} kg`
+}
+
+/**
  * formatGoalKg
  * @param value - Kilograms of CO2e
- * @returns "1,200 kg CO2e", keeping one decimal for small figures
+ * @returns "1,200 kg CO2e"
  */
 export function formatGoalKg(value: number): string {
-  const text = value >= 100 ? WHOLE.format(value) : ONE_DECIMAL.format(value)
-  return `${text} kg CO2e`
+  return `${formatGoalKgAmount(value)} CO2e`
 }
 
 /** Savings in dollars, carbon in kilograms. */
@@ -60,10 +69,13 @@ export function formatPercent(value: number): string {
 
 /**
  * progressText
- * @returns Plain sentence such as "$120 of $300, 40 percent"
+ * @returns "$120 of $300, 40 percent" or "127 kg of 288 kg CO2e, 44 percent"
+ *
+ * The CO2e unit is said once, after the goal, so the sentence does not repeat it.
  */
 export function progressText(kind: GoalKind, total: number, target: number): string {
-  return `${formatGoalValue(kind, total)} of ${formatGoalValue(kind, target)}, ${formatPercent(
+  const counted = kind === 'savings' ? formatGoalAud(total) : formatGoalKgAmount(total)
+  return `${counted} of ${formatGoalValue(kind, target)}, ${formatPercent(
     progressPercent(total, target),
   )}`
 }
@@ -94,4 +106,18 @@ export function formatFileSize(bytes: number): string {
   if (bytes < 1024) return `${bytes} bytes`
   if (bytes < 1024 * 1024) return `${ONE_DECIMAL.format(bytes / 1024)} KB`
   return `${ONE_DECIMAL.format(bytes / (1024 * 1024))} MB`
+}
+
+/**
+ * formatEnergy
+ * @param value - Kilowatt-hours
+ * @returns "1,234.5 kWh" with one decimal place
+ */
+export function formatEnergy(value: number): string {
+  return `${ONE_DECIMAL.format(value)} kWh`
+}
+
+/** A rate such as "$0.32 per kWh". */
+export function formatRate(value: number): string {
+  return `$${TWO_DECIMALS.format(value)} per kWh`
 }
