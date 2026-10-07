@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { checkNumbers, type ExplainFact } from './guard'
-import { surplusLabel } from './explain'
+import { changeFigures, surplusLabel } from './explain'
 import type { HourPoint } from '../typicalDay'
 
 const facts: ExplainFact[] = [
@@ -38,5 +38,12 @@ describe('surplusLabel', () => {
 
   it('says none when the house uses everything', () => {
     expect(surplusLabel([{ hour: 12, loadKwh: 2, solarKwh: 1 }])).toBe('none')
+  })
+})
+
+describe('changeFigures', () => {
+  it('keeps panel counts the model is allowed to repeat', () => {
+    const figures = changeFigures(['Panels: 26 → 25'])
+    expect(figures.map((figure) => figure.numeric)).toEqual([26, 25])
   })
 })

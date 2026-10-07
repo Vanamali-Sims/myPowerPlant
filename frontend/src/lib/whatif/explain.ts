@@ -55,6 +55,17 @@ function kwhFigure(value: number): number {
   return Math.round(abs * 100) / 100
 }
 
+/** Numbers the user already changed, such as a panel count. The model may repeat them. */
+export function changeFigures(changes: string[]): ExplainFact[] {
+  const figures: ExplainFact[] = []
+  changes.forEach((line, index) => {
+    for (const match of line.matchAll(/\d+(?:\.\d+)?/g)) {
+      figures.push(fact(`change.${index}.${match[0]}`, 'Figure in this change', match[0], Number(match[0])))
+    }
+  })
+  return figures
+}
+
 function fact(id: string, label: string, display: string, numeric: number | null): ExplainFact {
   return { id, label, display, numeric }
 }
@@ -126,6 +137,9 @@ export function buildExplainInput(
   }
   if (top) {
     facts.push(fact('plan.name', 'Matched plan', `${top.plan.brand} ${top.plan.name}`, null))
+  }
+  for (const figure of changeFigures(changes)) {
+    facts.push(figure)
   }
 
   const lowControl = top != null && householdControlScore(top.plan) < LOW_CONTROL

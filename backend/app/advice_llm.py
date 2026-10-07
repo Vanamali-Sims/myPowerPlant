@@ -9,17 +9,18 @@ come back as "not available" and the page uses its fixed line.
 
 import json
 import os
+import re
 from typing import Any
 
 import httpx
 
 from app.advice_guard import numbers_are_known
 
-_TIMEOUT = 8.0
+_TIMEOUT = 12.0
 _cached_key: str | None = None
 
 _DEFAULT_MODELS = {
-    "groq": "llama-3.3-70b-versatile",
+    "groq": "openai/gpt-oss-20b",
     "gemini": "gemini-2.5-flash",
 }
 
@@ -113,19 +114,22 @@ async def _complete(prompt: str) -> str:
             parts = response.json()["candidates"][0]["content"]["parts"]
             return _parse_text(parts[0].get("text", ""))
 
+        payload: dict = {
+            "model": model,
+            "temperature": 0.2,
+            "max_tokens": 700,
+            "response_format": {"type": "json_object"},
+            "messages": [
+                {"role": "system", "content": 'Reply as JSON: {"text": "..."}'},
+                {"role": "user", "content": prompt},
+            ],
+        }
+        if "gpt-oss" in model:
+            payload["reasoning_effort"] = "low"
         response = await client.post(
             "https://api.groq.com/openai/v1/chat/completions",
             headers={"Authorization": f"Bearer {key}", "Content-Type": "application/json"},
-            json={
-                "model": model,
-                "temperature": 0.2,
-                "max_tokens": 180,
-                "response_format": {"type": "json_object"},
-                "messages": [
-                    {"role": "system", "content": 'Reply as JSON: {"text": "..."}'},
-                    {"role": "user", "content": prompt},
-                ],
-            },
+            json=payload,
         )
         response.raise_for_status()
         return _parse_text(response.json()["choices"][0]["message"]["content"])
@@ -153,6 +157,9 @@ async def write_advice(body: dict[str, Any]) -> str | None:
     if not text:
         return None
     allowed = [fact["numeric"] for fact in body["facts"] if isinstance(fact.get("numeric"), (int, float))]
+    for line in body.get("changes") or []:
+        for raw in re.findall(r"\d+(?:\.\d+)?", str(line)):
+            allowed.append(float(raw))
     if not numbers_are_known(text, allowed):
         return None
     return text
