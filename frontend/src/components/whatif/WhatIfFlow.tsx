@@ -1,7 +1,8 @@
 /**
- * Energy paths on the dark stage. Widths and labels come from the KPI week
- * divided by seven. The battery ring is the reserve the user set, not a
- * simulated charge. Dots are drawn by React so a parent redraw cannot wipe them.
+ * Energy paths on the dark stage. Four curved arms meet in the middle, the
+ * same star as the reference. Widths and labels come from the KPI week divided
+ * by seven. The battery ring is the reserve the user set, not a simulated charge.
+ * Dots are drawn by React so a parent redraw cannot wipe them.
  */
 import { useEffect, useId, useLayoutEffect, useRef } from 'react'
 import { formatKwh } from '../../lib/kpis'
@@ -24,11 +25,14 @@ type Props = {
 
 type LaneKey = 'sh' | 'sb' | 'bh' | 'sg' | 'gh'
 
+/** Pixels per second. Same speed on every path, looping without a fade. */
+const TRAVEL_PX_PER_SEC = 78
+
 const LANES: Array<{ key: LaneKey; field: keyof FlowFigures; color: string; d: string }> = [
   { key: 'sh', field: 'selfKwh', color: '#f0a36b', d: 'M210,80 C210,150 280,176 326,176' },
+  { key: 'sg', field: 'toVppKwh', color: '#f0a36b', d: 'M210,80 C210,150 140,176 94,176' },
   { key: 'sb', field: 'toBatteryKwh', color: '#7fd1a8', d: 'M210,80 L210,268' },
   { key: 'bh', field: 'fromBatteryKwh', color: '#7fd1a8', d: 'M210,268 C210,202 280,176 326,176' },
-  { key: 'sg', field: 'toVppKwh', color: '#f0a36b', d: 'M210,80 C210,150 140,176 94,176' },
   { key: 'gh', field: 'boughtKwh', color: '#a9bbb2', d: 'M94,176 L326,176' },
 ]
 
@@ -68,11 +72,11 @@ export function WhatIfFlow({ figures }: Props) {
       if (!node || !path) continue
       const length = path.getTotalLength()
       if (length <= 0) continue
-      const t = (time / 2600 + dot.offset) % 1
+      const t = ((time / 1000) * TRAVEL_PX_PER_SEC / length + dot.offset) % 1
       const point = path.getPointAtLength(length * t)
-      node.setAttribute('cx', String(point.x))
-      node.setAttribute('cy', String(point.y))
-      node.setAttribute('opacity', String(Math.min(1, Math.sin(t * Math.PI) * 1.6)))
+      node.setAttribute('cx', point.x.toFixed(2))
+      node.setAttribute('cy', point.y.toFixed(2))
+      node.setAttribute('opacity', '1')
     }
   }
   const placeRef = useRef<(time: number) => void>(() => {})

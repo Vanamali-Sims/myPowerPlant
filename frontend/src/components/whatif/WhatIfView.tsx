@@ -301,13 +301,15 @@ export function WhatIfView({
   const flow = useMemo<FlowFigures>(() => {
     const weekly = reportDraft?.weekly
     const reserve = Number(draftProfile.reservePercent)
+    const generated = daily(weekly?.generationKwh ?? 0)
     const shifted = daily(weekly?.batteryShiftedKwh ?? 0)
     const self = daily(weekly?.selfConsumedKwh ?? 0)
+    const consumed = daily(weekly?.consumptionKwh ?? 0)
     return {
-      solarKwh: daily(weekly?.generationKwh ?? 0),
-      homeKwh: daily(weekly?.consumptionKwh ?? 0),
+      solarKwh: generated,
+      homeKwh: consumed,
       toVppKwh: daily(weekly?.energyDistributedKwh ?? 0),
-      boughtKwh: daily(Math.max(0, (weekly?.consumptionKwh ?? 0) - (weekly?.selfConsumedKwh ?? 0))),
+      boughtKwh: Math.max(0, consumed - self),
       selfKwh: Math.max(0, self - shifted),
       toBatteryKwh: shifted,
       fromBatteryKwh: shifted,
