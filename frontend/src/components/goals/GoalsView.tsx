@@ -9,8 +9,8 @@ import { maxIntervalKwh } from '../../lib/goals/batteryLimits'
 import { buildCalculationContext, calculateDay, summariseDays } from '../../lib/goals/calculate'
 import { getGoalsReadiness, monthlyProfileEstimate, suggestGoals } from '../../lib/goals/goalSetup'
 import { clearGoals, loadGoals, saveGoals } from '../../lib/goals/goalsStorage'
-import { formatDayLabel } from '../../lib/goals/goalFormat'
 import { applyDays, planMerge } from '../../lib/goals/history'
+import { applyReplacement, checkRevisions, missingDays } from '../../lib/goals/revisions'
 import {
   level,
   newlyReached,
@@ -19,7 +19,12 @@ import {
   recordReached,
 } from '../../lib/goals/achievements'
 import { melbourneDate } from '../../lib/goals/melbourneTime'
-import { formatGoalValue, progressPercent } from '../../lib/goals/goalFormat'
+import {
+  formatGoalValue,
+  formatMonthLabel,
+  formatRangeLabel,
+  progressPercent,
+} from '../../lib/goals/goalFormat'
 import { stageForStep, treeStep } from '../../lib/goals/progress'
 import type { GoalSuggestions } from '../../lib/goals/goalSetup'
 import { deriveTotals } from '../../lib/goals/goalTotals'
@@ -42,6 +47,7 @@ import { HistoryTable } from './HistoryTable'
 import { LevelUpDialog, type Achievement } from './LevelUpDialog'
 import { GoalSetupForm } from './GoalSetupForm'
 import { ProfileIncomplete } from './ProfileIncomplete'
+import { RevisionPanel } from './RevisionPanel'
 import { UploadArea, type ReadDays } from './UploadArea'
 import { UploadPreview } from './UploadPreview'
 
@@ -125,15 +131,21 @@ export function GoalsView({
     savings: reachedEntry(store, 'savings'),
     carbon: reachedEntry(store, 'carbon'),
   }
+  const fileDays = useMemo(
+    () => (pendingRead && context ? pendingRead.days.map((day) => calculateDay(day, context)) : null),
+    [context, pendingRead],
+  )
   const plan = useMemo(
-    () =>
-      pendingRead && context
-        ? planMerge(
-            store.months,
-            pendingRead.days.map((day) => calculateDay(day, context)),
-          )
-        : null,
-    [context, pendingRead, store.months],
+    () => (fileDays ? planMerge(store.months, fileDays) : null),
+    [fileDays, store.months],
+  )
+  const revisionCheck = useMemo(
+    () => (fileDays ? checkRevisions(store.months, fileDays) : null),
+    [fileDays, store.months],
+  )
+  const gaps = useMemo(
+    () => (fileDays ? missingDays(store.months, fileDays) : []),
+    [fileDays, store.months],
   )
   const preview = useMemo(
     () => (plan && plan.newDays.length ? summariseDays(plan.newDays) : null),
@@ -229,12 +241,13 @@ export function GoalsView({
     document.getElementById('goals-upload-title')?.focus()
   }
 
-  function confirmUpload() {
-    if (!pendingRead || !plan || !plan.newDays.length) return
-    let next: GoalsStore = {
-      ...store,
-      months: applyDays(store.months, plan.newDays, pendingRead.sourceId, new Date().toISOString()),
-    }
+  /**
+   * saveUpload
+   * Writes new monthly records and any newly reached goals in one save. If
+   * the write fails the preview stays open and nothing changes.
+   */
+  function saveUpload(months: GoalsStore['months'], message: string) {
+    let next: GoalsStore = { ...store, months }
     const totalsAfter = deriveTotals(next.months)
     const justReached = newlyReached(next, totalsAfter)
     if (justReached.length) next = recordReached(next, justReached, totalsAfter, today())
@@ -243,14 +256,11 @@ export function GoalsView({
       setPreviewError(result.reason)
       return
     }
-    const added = plan.newDays.length
     setStore(result.store)
     setPendingRead(null)
     setPreviewError(null)
     setUploadStatus('')
-    setNotice(
-      `Saved. ${added === 1 ? '1 day was' : `${added} days were`} added to your history.`,
-    )
+    setNotice(message)
     if (justReached.length) {
       setAchievement({
         kinds: justReached,
@@ -261,6 +271,31 @@ export function GoalsView({
     } else {
       focusOverviewNext.current = true
     }
+  }
+
+  function confirmUpload() {
+    if (!pendingRead || !plan || !plan.newDays.length) return
+    const added = plan.newDays.length
+    saveUpload(
+      applyDays(store.months, plan.newDays, pendingRead.sourceId, new Date().toISOString()),
+      `Saved. ${added === 1 ? '1 day was' : `${added} days were`} added to your history.`,
+    )
+  }
+
+  function replaceUpload() {
+    if (!pendingRead || !plan || !revisionCheck?.revised.length) return
+    const months = revisionCheck.revised.map((revision) => formatMonthLabel(revision.month))
+    saveUpload(
+      applyReplacement(
+        store.months,
+        revisionCheck.revised,
+        plan.newDays,
+        pendingRead.sourceId,
+        new Date().toISOString(),
+        today(),
+      ),
+      `Saved. The figures for ${months.join(', ')} were replaced with the new figures.`,
+    )
   }
 
   function confirmClear() {
@@ -444,18 +479,55 @@ export function GoalsView({
         <GoalMessage code="estimates_unavailable" details={<p>Your file was not added.</p>} />
       ) : null}
 
+      {plan && pendingRead && goals && gaps.length ? (
+        <GoalMessage
+          code="missing_days"
+          details={
+            <ul>
+              {gaps.map((range) => (
+                <li key={range[0]}>{formatRangeLabel(range)}</li>
+              ))}
+            </ul>
+          }
+        />
+      ) : null}
+
+      {plan && pendingRead && goals && revisionCheck?.unchecked.length ? (
+        <GoalMessage
+          code="revision_unchecked"
+          details={<p>{revisionCheck.unchecked.map(formatMonthLabel).join(', ')}.</p>}
+        />
+      ) : null}
+
+      {plan && pendingRead && goals && revisionCheck?.revised.length ? (
+        <RevisionPanel revisions={revisionCheck.revised} onReplace={replaceUpload} />
+      ) : null}
+
       {plan && !preview && pendingRead && goals ? (
-        <section
-          className="dashboard-card goals-preview"
-          aria-labelledby="goals-counted-title"
-          role="status"
-        >
-          <h2 id="goals-counted-title">This file is already counted</h2>
-          <p className="dashboard-card__lede">
-            Every day from {formatDayLabel(pendingRead.days[0].date)} to{' '}
-            {formatDayLabel(pendingRead.days[pendingRead.days.length - 1].date)} is already in
-            your history, so there is nothing new to add.
-          </p>
+        <section className="dashboard-card goals-preview" aria-labelledby="goals-counted-title">
+          <h2 id="goals-counted-title">
+            {revisionCheck?.revised.length ? 'No new days in this file' : 'This file is already counted'}
+          </h2>
+          {revisionCheck?.revised.length ? (
+            <p className="dashboard-card__lede">
+              Every day in this file is already counted. You can keep your saved figures or
+              replace them above.
+            </p>
+          ) : (
+            <GoalMessage
+              code="already_counted"
+              details={
+                <p>
+                  {formatRangeLabel([
+                    pendingRead.days[0].date,
+                    pendingRead.days[pendingRead.days.length - 1].date,
+                  ])}{' '}
+                  is already in your history.
+                </p>
+              }
+            />
+          )}
+          {previewError ? <GoalMessage code={previewError} /> : null}
           <div className="goals-preview__actions">
             <Button variant="secondary" onClick={() => closePreview('Nothing was saved.')}>
               Close

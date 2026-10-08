@@ -6,6 +6,8 @@ import { BATTERY_SOURCES } from '../../constants/batterySources'
 import type { ReadResult } from '../../lib/goals/adapters/types'
 import { formatDayLabel } from '../../lib/goals/goalFormat'
 import { Button } from '../ui/Button'
+import { GoalMessage } from './GoalMessage'
+import { ProblemList } from './ProblemList'
 
 type Props = {
   result: Extract<ReadResult, { ok: true }>
@@ -64,15 +66,26 @@ export function ReadSummary({ result, onContinue, onCancel }: Props) {
           They can be counted when a later file has the rest.
         </p>
       ) : null}
-      {result.problemDays.length ? (
-        <p className="goals-summary__note">
-          {dayCount(result.problemDays.length)} left out because some rows could not be used.
-        </p>
+      {result.rowProblemCount ? (
+        <GoalMessage
+          code="invalid_rows"
+          details={
+            <>
+              <ProblemList problems={result.rowProblems} total={result.rowProblemCount} />
+              {result.problemDays.length ? (
+                <p>
+                  Days left out ({result.problemDays.length}):{' '}
+                  {result.problemDays.map(formatDayLabel).join(', ')}.
+                </p>
+              ) : null}
+            </>
+          }
+        />
       ) : null}
       <p className="goals-summary__note">Nothing has been added to your totals yet.</p>
       <div className="goals-summary__actions">
         <Button variant="primary" onClick={onContinue}>
-          Continue
+          {result.rowProblemCount ? 'Continue with valid days' : 'Continue'}
         </Button>
         <Button variant="secondary" onClick={onCancel}>
           Cancel

@@ -12,6 +12,7 @@ import { Button } from '../ui/Button'
 import { LockIcon } from '../ui/icons'
 import { FileChooser } from './FileChooser'
 import { GoalMessage } from './GoalMessage'
+import { ProblemList } from './ProblemList'
 import { ReadSummary } from './ReadSummary'
 import { SourceGuide } from './SourceGuide'
 
@@ -160,6 +161,8 @@ export function UploadArea({ locked, canGoToSetup, onGoToSetup, limits, onContin
               details={
                 result.missingColumns?.length ? (
                   <p>Missing: {result.missingColumns.join(', ')}.</p>
+                ) : result.rowProblemCount ? (
+                  <ProblemList problems={result.rowProblems ?? []} total={result.rowProblemCount} />
                 ) : null
               }
               actions={

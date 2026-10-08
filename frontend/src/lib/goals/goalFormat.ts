@@ -143,3 +143,12 @@ const MONTH_LABEL = new Intl.DateTimeFormat('en-AU', {
 export function formatMonthLabel(month: string): string {
   return MONTH_LABEL.format(new Date(`${month}-01T00:00:00Z`))
 }
+
+/**
+ * formatRangeLabel
+ * @param range - Inclusive start and end dates
+ * @returns "21 September 2026" for one day, or "21 September 2026 to 24 September 2026"
+ */
+export function formatRangeLabel([start, end]: readonly [string, string]): string {
+  return start === end ? formatDayLabel(start) : `${formatDayLabel(start)} to ${formatDayLabel(end)}`
+}

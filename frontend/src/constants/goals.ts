@@ -93,6 +93,12 @@ export const TREE_FIGURE_SOURCE = 'Tree figure: about 268 kg of CO2 per tree. So
 /** How long the confetti runs, in milliseconds. */
 export const CONFETTI_DURATION_MS = 3000
 
+/**
+ * How far a month's discharge or intake kWh may differ from what was saved
+ * before the month is treated as possibly revised. To be confirmed by the team.
+ */
+export const REVISION_TOLERANCE_KWH = 0.05
+
 /** Round battery figures used in the worked carbon examples. */
 export const CARBON_EXAMPLE_KWH = [10, 100] as const
 

@@ -1131,6 +1131,78 @@
   margin-top: 0.2rem;
 }
 
+.goals-history__revised {
+  display: block;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--ink-secondary);
+}
+
+.goals-problems {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.35rem;
+}
+
+.goals-problems ul {
+  margin: 0;
+  padding-left: 1.2rem;
+  font-size: 0.85rem;
+  overflow-wrap: anywhere;
+}
+
+.goals-problems .ui-btn,
+.goals-revisions__confirm .ui-btn {
+  width: auto;
+}
+
+.goals-revisions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.goals-revisions__table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+  background: var(--surface);
+  border-radius: var(--radius-input);
+}
+
+.goals-revisions__table caption {
+  text-align: left;
+  font-weight: 600;
+  padding-bottom: 0.3rem;
+}
+
+.goals-revisions__table th,
+.goals-revisions__table td {
+  text-align: left;
+  padding: 0.4rem 0.6rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.goals-revisions__table thead th {
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--ink-secondary);
+}
+
+.goals-revisions__confirm {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.goals-revisions__confirm p {
+  margin: 0;
+  font-weight: 600;
+}
+
 @media (min-width: 720px) {
   .goals-overview__layout {
     grid-template-columns: minmax(15rem, 1fr) 1.4fr;

@@ -55,7 +55,14 @@ export function HistoryTable({ months, onGoToUpload }: Props) {
               <tbody>
                 {rows.map((row) => (
                   <tr key={row.month}>
-                    <th scope="row">{formatMonthLabel(row.month)}</th>
+                    <th scope="row">
+                      {formatMonthLabel(row.month)}
+                      {row.revisedOn ? (
+                        <span className="goals-history__revised">
+                          Revised {formatDayLabel(row.revisedOn)}
+                        </span>
+                      ) : null}
+                    </th>
                     <td>
                       {row.partial ? (
                         <span className="goals-history__partial">
