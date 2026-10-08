@@ -3,7 +3,7 @@
  * battery files read on this device.
  */
 import { Suspense, lazy, useEffect, useMemo, useRef, useState } from 'react'
-import { GOALS_DEVICE_NOTE } from '../../constants/goals'
+import { GOALS_DEVICE_NOTE, GOAL_SUGGESTION_MONTHS } from '../../constants/goals'
 import { REASON_MESSAGES } from '../../constants/goalMessages'
 import { maxIntervalKwh } from '../../lib/goals/batteryLimits'
 import { buildCalculationContext, calculateDay, summariseDays } from '../../lib/goals/calculate'
@@ -11,9 +11,26 @@ import { getGoalsReadiness, monthlyProfileEstimate, suggestGoals } from '../../l
 import { clearGoals, loadGoals, saveGoals } from '../../lib/goals/goalsStorage'
 import { formatDayLabel } from '../../lib/goals/goalFormat'
 import { applyDays, planMerge } from '../../lib/goals/history'
+import {
+  level,
+  newlyReached,
+  nextGoalRange,
+  reachedEntry,
+  recordReached,
+} from '../../lib/goals/achievements'
+import { melbourneDate } from '../../lib/goals/melbourneTime'
+import { formatGoalValue, progressPercent } from '../../lib/goals/goalFormat'
+import { stageForStep, treeStep } from '../../lib/goals/progress'
+import type { GoalSuggestions } from '../../lib/goals/goalSetup'
 import { deriveTotals } from '../../lib/goals/goalTotals'
 import type { MethodologyBundle } from '../../lib/methodologyApi'
-import { emptyGoalsStore, type GoalEntry, type GoalKind, type GoalsStore } from '../../types/goals'
+import {
+  GOAL_KINDS,
+  emptyGoalsStore,
+  type GoalEntry,
+  type GoalKind,
+  type GoalsStore,
+} from '../../types/goals'
 import type { ProfileData } from '../../types/profile'
 import { Button } from '../ui/Button'
 import { Callout } from '../ui/Callout'
@@ -21,6 +38,7 @@ import { AlertIcon, BoltIcon, CheckIcon, LockIcon } from '../ui/icons'
 import { ClearGoalsDialog } from './ClearGoalsDialog'
 import { GoalOverview } from './GoalOverview'
 import { HistoryTable } from './HistoryTable'
+import { LevelUpDialog, type Achievement } from './LevelUpDialog'
 import { GoalSetupForm } from './GoalSetupForm'
 import { ProfileIncomplete } from './ProfileIncomplete'
 import { UploadArea, type ReadDays } from './UploadArea'
@@ -71,6 +89,9 @@ export function GoalsView({
   const [uploadStatus, setUploadStatus] = useState('')
   const [previewError, setPreviewError] = useState('')
   const [clearOpen, setClearOpen] = useState(false)
+  const [achievement, setAchievement] = useState<Achievement | null>(null)
+  /** Goals being replaced after they were reached; null when not doing that. */
+  const [nextKinds, setNextKinds] = useState<GoalKind[] | null>(null)
   const overviewHeading = useRef<HTMLHeadingElement>(null)
   const setupHeading = useRef<HTMLHeadingElement>(null)
   const focusOverviewNext = useRef(false)
@@ -98,6 +119,10 @@ export function GoalsView({
 
   const goals = bothGoals(store)
   const totals = useMemo(() => deriveTotals(store.months), [store.months])
+  const reached = {
+    savings: reachedEntry(store, 'savings'),
+    carbon: reachedEntry(store, 'carbon'),
+  }
   const plan = useMemo(
     () =>
       pendingRead && context
@@ -125,24 +150,73 @@ export function GoalsView({
     }
   })
 
-  function save(targets: Record<GoalKind, number>) {
+  function today(): string {
+    return melbourneDate(Date.now())
+  }
+
+  /**
+   * save
+   * Saves new or edited goals, or the next goal after one was reached.
+   * A reached goal that changes becomes a new goal (new setOn); its completed
+   * entry stays. Lowering a goal to or below the total records it as reached
+   * by edit, with no celebration.
+   */
+  function save(targets: Partial<Record<GoalKind, number>>) {
     const setOn = new Date().toISOString()
-    const next: GoalsStore = {
-      ...store,
-      goals: {
-        savings: { target: targets.savings, setOn: store.goals.savings?.setOn ?? setOn },
-        carbon: { target: targets.carbon, setOn: store.goals.carbon?.setOn ?? setOn },
-      },
+    const replacing = nextKinds ?? []
+    const nextGoals = { ...store.goals }
+    for (const kind of GOAL_KINDS) {
+      const target = targets[kind]
+      if (target === undefined) continue
+      const existing = store.goals[kind]
+      const isNew =
+        !existing || replacing.includes(kind) || (reachedEntry(store, kind) && existing.target !== target)
+      nextGoals[kind] = { target, setOn: isNew || !existing ? setOn : existing.setOn }
     }
+    let next: GoalsStore = { ...store, goals: nextGoals }
+    const byEdit = newlyReached(next, totals)
+    if (byEdit.length) next = recordReached(next, byEdit, totals, today(), true)
     const result = saveGoals(next)
     if (!result.ok) {
       setSaveError(REASON_MESSAGES[result.reason])
       return
     }
+    let message = goals ? 'Your goals are updated.' : 'Your goals are saved on this device.'
+    if (replacing.length) {
+      message = 'Your next goal is saved. Progress continues from your total so far.'
+      const oldGoal = store.goals.carbon
+      const newGoal = nextGoals.carbon
+      if (replacing.includes('carbon') && oldGoal && newGoal) {
+        const before = treeStep(progressPercent(totals.carbon, oldGoal.target))
+        const after = treeStep(progressPercent(totals.carbon, newGoal.target))
+        if (after < before) {
+          message += ` Your tree is now at the ${stageForStep(after)} stage, because your new carbon goal is bigger. It grows again as you count more.`
+        }
+      }
+    }
     setStore(result.store)
     setSaveError('')
-    setNotice(goals ? 'Your goals are updated.' : 'Your goals are saved on this device.')
+    setNotice(message)
     setEditing(false)
+    setNextKinds(null)
+    focusOverviewNext.current = true
+  }
+
+  function startNextGoal(kinds: GoalKind[]) {
+    setAchievement(null)
+    setNotice('')
+    setSaveError('')
+    setEditing(false)
+    setNextKinds(kinds)
+    focusSetupNext.current = true
+  }
+
+  function viewAchievement(kind: GoalKind) {
+    setAchievement({ kinds: [kind], level: level(store), totals, celebrate: false })
+  }
+
+  function closeAchievement() {
+    setAchievement(null)
     focusOverviewNext.current = true
   }
 
@@ -155,10 +229,13 @@ export function GoalsView({
 
   function confirmUpload() {
     if (!pendingRead || !plan || !plan.newDays.length) return
-    const next: GoalsStore = {
+    let next: GoalsStore = {
       ...store,
       months: applyDays(store.months, plan.newDays, pendingRead.sourceId, new Date().toISOString()),
     }
+    const totalsAfter = deriveTotals(next.months)
+    const justReached = newlyReached(next, totalsAfter)
+    if (justReached.length) next = recordReached(next, justReached, totalsAfter, today())
     const result = saveGoals(next)
     if (!result.ok) {
       setPreviewError(REASON_MESSAGES[result.reason])
@@ -172,7 +249,16 @@ export function GoalsView({
     setNotice(
       `Saved. ${added === 1 ? '1 day was' : `${added} days were`} added to your history.`,
     )
-    focusOverviewNext.current = true
+    if (justReached.length) {
+      setAchievement({
+        kinds: justReached,
+        level: level(result.store),
+        totals: totalsAfter,
+        celebrate: true,
+      })
+    } else {
+      focusOverviewNext.current = true
+    }
   }
 
   function confirmClear() {
@@ -185,6 +271,7 @@ export function GoalsView({
     setStore(emptyGoalsStore())
     setPendingRead(null)
     setEditing(false)
+    setNextKinds(null)
     setUploadStatus('')
     setNotice('Your goals and history were cleared from this device.')
     focusSetupNext.current = true
@@ -199,6 +286,7 @@ export function GoalsView({
   function cancelEdit() {
     setSaveError('')
     setEditing(false)
+    setNextKinds(null)
     focusOverviewNext.current = true
   }
 
@@ -217,7 +305,19 @@ export function GoalsView({
     )
   ) : null
 
-  const showForm = readiness.ready && estimate && (!goals || editing)
+  const showForm = readiness.ready && estimate && (!goals || editing || nextKinds)
+
+  const nextSuggestions: GoalSuggestions | null =
+    estimate && nextKinds
+      ? {
+          savings: estimate.suggestions.savings
+            ? nextGoalRange(totals.savings, estimate.suggestions.savings)
+            : null,
+          carbon: estimate.suggestions.carbon
+            ? nextGoalRange(totals.carbon, estimate.suggestions.carbon)
+            : null,
+        }
+      : null
 
   return (
     <div className="goals">
@@ -266,34 +366,52 @@ export function GoalsView({
         estimatesMessage
       )}
 
-      {goals && !editing ? (
+      {goals && !editing && !nextKinds ? (
         <GoalOverview
           headingRef={overviewHeading}
           goals={goals}
           totals={totals}
           months={store.months}
+          reached={reached}
           canEdit={Boolean(readiness.ready && estimate)}
           onEdit={startEdit}
+          onSetNewGoal={(kind) => startNextGoal([kind])}
+          onViewAchievement={viewAchievement}
         />
       ) : null}
 
       {showForm ? (
         <section className="dashboard-card goals-setup" aria-labelledby="goals-setup-title">
           <h2 id="goals-setup-title" ref={setupHeading} tabIndex={-1}>
-            {goals ? 'Edit your goals' : 'Set your goals'}
+            {nextKinds ? 'Set your next goal' : goals ? 'Edit your goals' : 'Set your goals'}
           </h2>
           <p className="dashboard-card__lede">
-            Choose a goal for money saved and a goal for carbon avoided. You can change them later.
+            {nextKinds
+              ? 'Your reached goal stays on record. Your next goal counts on from your total so far, so it needs to be higher than that total.'
+              : 'Choose a goal for money saved and a goal for carbon avoided. You can change them later.'}
           </p>
           <GoalSetupForm
-            mode={goals ? 'edit' : 'create'}
-            suggestions={estimate.suggestions}
+            key={nextKinds ? `next-${nextKinds.join('-')}` : 'goals'}
+            mode={nextKinds ? 'next' : goals ? 'edit' : 'create'}
+            kinds={nextKinds ?? undefined}
+            note={
+              nextKinds
+                ? `So far: ${nextKinds
+                    .map((kind) => formatGoalValue(kind, totals[kind]))
+                    .join(' and ')}. The suggested next goal adds about ${GOAL_SUGGESTION_MONTHS.suggested} more months of your profile estimate.`
+                : undefined
+            }
+            suggestions={nextSuggestions ?? estimate.suggestions}
             monthly={estimate.monthly}
             factor={estimate.factor}
-            current={{
-              savings: store.goals.savings?.target ?? null,
-              carbon: store.goals.carbon?.target ?? null,
-            }}
+            current={
+              nextKinds
+                ? { savings: null, carbon: null }
+                : {
+                    savings: store.goals.savings?.target ?? null,
+                    carbon: store.goals.carbon?.target ?? null,
+                  }
+            }
             saveError={saveError}
             onSave={save}
             onCancel={goals ? cancelEdit : undefined}
@@ -382,15 +500,18 @@ export function GoalsView({
       {goals || store.months.length || store.completedGoals.length ? (
         <section className="goals-danger" aria-labelledby="goals-danger-title">
           <h2 id="goals-danger-title">Start over</h2>
-          <p>
-            Remove your goals and history from this device and go back to setting new goals. Your
-            profile stays as it is.
-          </p>
+          <p>Remove your goals and history from this device and go back to setting new goals.</p>
           <Button variant="danger" onClick={() => setClearOpen(true)}>
             Clear my goals and history
           </Button>
         </section>
       ) : null}
+
+      <LevelUpDialog
+        achievement={achievement}
+        onNextStep={startNextGoal}
+        onClose={closeAchievement}
+      />
 
       <ClearGoalsDialog
         open={clearOpen}

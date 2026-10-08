@@ -21,7 +21,12 @@ import { RangeExplainer } from './RangeExplainer'
 type Values = Record<GoalKind, string>
 
 type Props = {
-  mode: 'create' | 'edit'
+  /** next: a new goal after reaching one, which must be above the total so far. */
+  mode: 'create' | 'edit' | 'next'
+  /** Which goals to show; both unless a single reached goal is being replaced. */
+  kinds?: readonly GoalKind[]
+  /** Shown above the fields, for example how the next goal is worked out. */
+  note?: string
   suggestions: GoalSuggestions
   /** Monthly profile estimate per goal, explained in the allowed-range disclosure. */
   monthly: Record<GoalKind, number>
@@ -29,7 +34,7 @@ type Props = {
   /** Saved goals when editing; suggestions are used when creating. */
   current: Record<GoalKind, number | null>
   saveError: string
-  onSave: (targets: Record<GoalKind, number>) => void
+  onSave: (targets: Partial<Record<GoalKind, number>>) => void
   onCancel?: () => void
 }
 
@@ -54,7 +59,8 @@ function initialValues(props: Props): Values {
  * as they were.
  */
 export function GoalSetupForm(props: Props) {
-  const { mode, suggestions, monthly, factor, current, saveError, onSave, onCancel } = props
+  const { mode, suggestions, monthly, factor, current, saveError, onSave, onCancel, note } = props
+  const kinds = props.kinds ?? GOAL_KINDS
   const idBase = useId()
   const [values, setValues] = useState<Values>(() => initialValues(props))
   const [shown, setShown] = useState<Record<GoalKind, boolean>>({ savings: false, carbon: false })
@@ -76,13 +82,13 @@ export function GoalSetupForm(props: Props) {
   function submit(event: FormEvent) {
     event.preventDefault()
     setShown({ savings: true, carbon: true })
-    const invalid = GOAL_KINDS.find((kind) => errorFor(kind, values[kind]))
+    const invalid = kinds.find((kind) => errorFor(kind, values[kind]))
     if (invalid) {
       focusInput(invalid)
       return
     }
-    const targets = {} as Record<GoalKind, number>
-    for (const kind of GOAL_KINDS) {
+    const targets: Partial<Record<GoalKind, number>> = {}
+    for (const kind of kinds) {
       targets[kind] = normaliseGoal(kind, parseGoalInput(values[kind]) ?? 0)
     }
     onSave(targets)
@@ -90,8 +96,9 @@ export function GoalSetupForm(props: Props) {
 
   return (
     <form className="goals-form" onSubmit={submit} noValidate>
+      {note ? <p className="goals-form__note">{note}</p> : null}
       <div className="goals-form__fields">
-        {GOAL_KINDS.map((kind) => {
+        {kinds.map((kind) => {
           const range: GoalRange | null = suggestions[kind]
           const inputId = `${idBase}-${kind}`
           const rangeId = `${inputId}-range`
@@ -130,7 +137,7 @@ export function GoalSetupForm(props: Props) {
       </div>
 
       <div className="goals-form__explainers">
-        <RangeExplainer suggestions={suggestions} monthly={monthly} />
+        {mode === 'next' ? null : <RangeExplainer suggestions={suggestions} monthly={monthly} />}
         <CarbonExamples factor={factor} suggestedKg={suggestions.carbon?.suggested ?? null} />
       </div>
 

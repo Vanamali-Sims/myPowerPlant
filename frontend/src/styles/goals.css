@@ -1020,10 +1020,107 @@
   color: var(--ink);
 }
 
+.goals-form__note {
+  margin: 0;
+  padding: 0.6rem 0.8rem;
+  border-radius: var(--radius-input);
+  background: var(--euc-50);
+  color: var(--euc-800);
+  font-size: 0.88rem;
+}
+
+.goals-card__reached {
+  margin-top: 0.8rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.goals-card__reached-label {
+  margin: 0;
+  align-self: flex-start;
+  padding: 0.2rem 0.65rem;
+  border-radius: var(--radius-pill);
+  background: var(--euc-50);
+  color: var(--euc-800);
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+.goals-card__reached-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.goals-card__reached-actions .ui-btn {
+  width: auto;
+}
+
+.goals-levelup {
+  overflow: hidden;
+}
+
+.goals-confetti {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.goals-levelup__panel {
+  position: relative;
+  z-index: 1;
+}
+
+.goals-levelup__facts {
+  margin: 0.8rem 0 0.6rem;
+  display: grid;
+  gap: 0.6rem;
+}
+
+.goals-levelup__facts dt {
+  font-size: 0.8rem;
+  color: var(--ink-secondary);
+}
+
+.goals-levelup__facts dd {
+  margin: 0.1rem 0 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem;
+  font-family: var(--font-display);
+  font-size: 1.35rem;
+  font-weight: 500;
+  color: var(--ink);
+}
+
 @media (min-width: 720px) {
   .goals-overview__layout {
     grid-template-columns: minmax(15rem, 1fr) 1.4fr;
-    align-items: start;
+    align-items: stretch;
+  }
+
+  /* The tree panel stretches to the height of both goal cards together. */
+  .goals-overview__layout .goal-tree {
+    justify-content: center;
+  }
+
+  /* The drawing takes no height of its own, so the cards set the row height
+     and the tree scales to fill what is left. */
+  .goals-overview__layout .goal-tree__art {
+    flex: 1 1 0;
+    width: 100%;
+    min-height: 14rem;
+    contain: size;
+  }
+
+  .goals-overview__layout .goal-tree__art svg {
+    width: 100%;
+    height: 100%;
   }
 
   .goals-form__fields,

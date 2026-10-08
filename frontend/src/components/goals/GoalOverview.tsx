@@ -3,14 +3,21 @@
  */
 import type { Ref } from 'react'
 import { GOAL_LABELS } from '../../constants/goals'
-import { formatGoalValue, formatMonthLabel, formatPercent, progressPercent } from '../../lib/goals/goalFormat'
 import {
-  compareWithPreviousMonth,
-  estimateFinish,
-  progressRate,
-  type MonthComparison,
-} from '../../lib/goals/progress'
-import { GOAL_KINDS, type GoalEntry, type GoalKind, type MonthRecord } from '../../types/goals'
+  formatDayLabel,
+  formatGoalValue,
+  formatMonthLabel,
+  formatPercent,
+  progressPercent,
+} from '../../lib/goals/goalFormat'
+import { estimateFinish, progressRate } from '../../lib/goals/progress'
+import {
+  GOAL_KINDS,
+  type CompletedGoal,
+  type GoalEntry,
+  type GoalKind,
+  type MonthRecord,
+} from '../../types/goals'
 import { Button } from '../ui/Button'
 import { PencilIcon } from '../ui/icons'
 import { GoalProgress } from './GoalProgress'
@@ -20,22 +27,13 @@ type Props = {
   goals: Record<GoalKind, GoalEntry>
   totals: Record<GoalKind, number>
   months: MonthRecord[]
+  /** Completed entry for each goal as it is now set, or null when not reached. */
+  reached: Record<GoalKind, CompletedGoal | null>
   canEdit: boolean
   onEdit: () => void
+  onSetNewGoal: (kind: GoalKind) => void
+  onViewAchievement: (kind: GoalKind) => void
   headingRef?: Ref<HTMLHeadingElement>
-}
-
-function comparisonText(comparison: MonthComparison): string {
-  if (comparison.kind === 'not_enough') {
-    return 'A comparison with last month appears once you have two months of history.'
-  }
-  const month = formatMonthLabel(comparison.month)
-  const previous = formatMonthLabel(comparison.previousMonth)
-  const amount = formatPercent(Math.abs(comparison.change) * 100)
-  if (comparison.direction === 'similar') {
-    return `${month} was similar to ${previous}, per day (${amount} difference).`
-  }
-  return `${month} was ${amount} ${comparison.direction} than ${previous}, per day.`
 }
 
 function Insights({ kind, target, months }: { kind: GoalKind; target: number; months: MonthRecord[] }) {
@@ -48,7 +46,6 @@ function Insights({ kind, target, months }: { kind: GoalKind; target: number; mo
           ? 'Your rate appears after your first complete month.'
           : `On average you gain ${formatPercent(rate)} of this goal per complete month.`}
       </li>
-      <li>{comparisonText(compareWithPreviousMonth(months, kind))}</li>
       {finish.kind === 'estimate' ? (
         <li>
           <span>
@@ -72,7 +69,17 @@ function Insights({ kind, target, months }: { kind: GoalKind; target: number; mo
  * The heading takes focus after a save so the confirmation and new state are
  * read out together.
  */
-export function GoalOverview({ goals, totals, months, canEdit, onEdit, headingRef }: Props) {
+export function GoalOverview({
+  goals,
+  totals,
+  months,
+  reached,
+  canEdit,
+  onEdit,
+  onSetNewGoal,
+  onViewAchievement,
+  headingRef,
+}: Props) {
   return (
     <section className="goals-overview" aria-labelledby="goals-overview-title">
       <div className="goals-overview__head">
@@ -97,7 +104,23 @@ export function GoalOverview({ goals, totals, months, canEdit, onEdit, headingRe
               <p className="eyebrow">{GOAL_LABELS[kind].title}</p>
               <p className="goals-card__target">{formatGoalValue(kind, goals[kind].target)}</p>
               <GoalProgress kind={kind} total={totals[kind]} target={goals[kind].target} />
-              <Insights kind={kind} target={goals[kind].target} months={months} />
+              {reached[kind] ? (
+                <div className="goals-card__reached">
+                  <p className="goals-card__reached-label">
+                    Reached on {formatDayLabel(reached[kind]?.reachedOn ?? '')}
+                  </p>
+                  <div className="goals-card__reached-actions">
+                    <Button variant="primary" onClick={() => onSetNewGoal(kind)}>
+                      Set a new goal
+                    </Button>
+                    <Button variant="edit" onClick={() => onViewAchievement(kind)}>
+                      View my achievement
+                    </Button>
+                  </div>
+                </div>
+              ) : (
+                <Insights kind={kind} target={goals[kind].target} months={months} />
+              )}
             </article>
           ))}
         </div>
