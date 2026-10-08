@@ -82,6 +82,17 @@ export const FINISH_ESTIMATE = {
   maxYears: 5,
 } as const
 
+/**
+ * Carbon one tree absorbs, for the "tree equivalent" comparison. Taken from a
+ * secondary source only. Source to be confirmed by the team.
+ */
+export const KG_CO2_PER_TREE = 268
+
+export const TREE_FIGURE_SOURCE = 'Tree figure: about 268 kg of CO2 per tree. Source to be confirmed.'
+
+/** How long the confetti runs, in milliseconds. */
+export const CONFETTI_DURATION_MS = 3000
+
 /** Round battery figures used in the worked carbon examples. */
 export const CARBON_EXAMPLE_KWH = [10, 100] as const
 
