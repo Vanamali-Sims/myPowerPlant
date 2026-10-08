@@ -62,9 +62,16 @@ export function progressPercent(total: number, target: number): number {
   return (total / target) * 100
 }
 
-/** Whole percent for display; the real figure can exceed 100. */
+/**
+ * formatPercent
+ * @param value - A percentage, which can exceed 100
+ * @returns Whole percent, rounded down, such as "57 percent"
+ *
+ * The small epsilon stops floating-point maths (290 / 500 × 100 is
+ * 57.99999…) from showing one percent less than the real figure.
+ */
 export function formatPercent(value: number): string {
-  return `${WHOLE.format(Math.floor(value))} percent`
+  return `${WHOLE.format(Math.floor(value + 1e-9))} percent`
 }
 
 /**

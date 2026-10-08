@@ -2,7 +2,7 @@
  * Goals tab: set a savings and a carbon goal, then track progress from
  * battery files read on this device.
  */
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { Suspense, lazy, useEffect, useMemo, useRef, useState } from 'react'
 import { GOALS_DEVICE_NOTE } from '../../constants/goals'
 import { REASON_MESSAGES } from '../../constants/goalMessages'
 import { maxIntervalKwh } from '../../lib/goals/batteryLimits'
@@ -25,6 +25,11 @@ import { GoalSetupForm } from './GoalSetupForm'
 import { ProfileIncomplete } from './ProfileIncomplete'
 import { UploadArea, type ReadDays } from './UploadArea'
 import { UploadPreview } from './UploadPreview'
+
+// The chart library is large, so the graph loads on its own after the page.
+const MonthlyChart = lazy(() =>
+  import('./MonthlyChart').then((module) => ({ default: module.MonthlyChart })),
+)
 
 type Props = {
   profile: ProfileData
@@ -349,6 +354,22 @@ export function GoalsView({
           onConfirm={confirmUpload}
           onCancel={() => closePreview('Nothing was saved.')}
         />
+      ) : null}
+
+      {goals ? (
+        <Suspense
+          fallback={
+            <p className="goals__loading" role="status">
+              Loading your monthly graph…
+            </p>
+          }
+        >
+          <MonthlyChart
+            months={store.months}
+            goals={goals}
+            onGoToUpload={() => document.getElementById('goals-upload-title')?.focus()}
+          />
+        </Suspense>
       ) : null}
 
       {goals ? (

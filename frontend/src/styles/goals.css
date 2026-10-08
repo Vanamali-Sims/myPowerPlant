@@ -818,6 +818,208 @@
   gap: 1rem;
 }
 
+.goals-chart__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6rem 1rem;
+}
+
+.goals-chart__head h2 {
+  margin: 0;
+}
+
+.goals-chart .dashboard-card__lede {
+  margin-top: 0.5rem;
+}
+
+.goals-chart__toggle {
+  display: inline-flex;
+  padding: 0.2rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-pill);
+  background: var(--surface-sunken);
+}
+
+.goals-chart__toggle-option,
+.goals-chart__month {
+  min-height: 2.25rem;
+  padding: 0.35rem 0.9rem;
+  border: 1px solid transparent;
+  border-radius: var(--radius-pill);
+  background: transparent;
+  font: inherit;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--ink-secondary);
+  cursor: pointer;
+  transition: background-color var(--motion-fast) var(--ease-out),
+    color var(--motion-fast) var(--ease-out);
+}
+
+.goals-chart__toggle-option.is-selected,
+.goals-chart__month.is-selected {
+  background: var(--green-deep);
+  color: var(--on-deep);
+}
+
+.goals-chart__defs {
+  position: absolute;
+  width: 0;
+  height: 0;
+}
+
+.goals-chart__plot {
+  width: 100%;
+  margin-top: 0.5rem;
+}
+
+.goals-chart__plot:focus-within {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 4px;
+  border-radius: var(--radius-input);
+}
+
+.goals-chart__plot .recharts-wrapper:focus,
+.goals-chart__plot .recharts-surface:focus {
+  outline: none;
+}
+
+.goals-chart__grid line {
+  stroke: var(--border);
+}
+
+.goals-chart__axis text {
+  fill: var(--ink-secondary);
+  font-size: 0.75rem;
+}
+
+.goals-chart__axis line,
+.goals-chart__axis path {
+  stroke: var(--border-strong);
+}
+
+.goals-chart__plot--savings .goals-chart__bar path,
+.goals-chart__plot--savings .goals-chart__bar {
+  fill: var(--accent-deep);
+}
+
+.goals-chart__plot--carbon .goals-chart__bar path,
+.goals-chart__plot--carbon .goals-chart__bar {
+  fill: var(--euc-400);
+}
+
+.goals-chart__plot .goals-chart__bar.is-partial,
+.goals-chart__plot .goals-chart__bar.is-partial path {
+  fill: url(#goals-hatch);
+}
+
+.goals-chart__plot--savings .goals-chart__bar.is-partial,
+.goals-chart__plot--savings .goals-chart__bar.is-partial path,
+.goals-chart__plot--carbon .goals-chart__bar.is-partial,
+.goals-chart__plot--carbon .goals-chart__bar.is-partial path {
+  fill: url(#goals-hatch);
+  stroke: var(--ink-secondary);
+  stroke-width: 1;
+}
+
+.goals-chart__hatch-bg {
+  fill: var(--surface-sunken);
+}
+
+.goals-chart__hatch-line {
+  stroke: var(--ink-secondary);
+  stroke-width: 2;
+}
+
+.goals-chart__partial-label {
+  fill: var(--ink);
+  font-size: 0.7rem;
+  font-weight: 700;
+}
+
+.goals-chart__line .recharts-line-curve,
+.goals-chart__line path {
+  stroke: var(--green-deep);
+  stroke-width: 2.5;
+  fill: none;
+}
+
+.goals-chart__dot {
+  fill: var(--surface);
+  stroke: var(--green-deep);
+  stroke-width: 2;
+}
+
+.goals-chart__goal line {
+  stroke: var(--ink);
+  stroke-dasharray: 6 4;
+}
+
+.goals-chart__goal-label {
+  fill: var(--ink);
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.goals-chart__cursor {
+  fill: var(--euc-50);
+}
+
+.goals-chart__tooltip {
+  display: inline-block;
+  padding: 0.2rem 0.5rem;
+  border-radius: var(--radius-input);
+  background: var(--green-deep);
+  color: var(--on-deep);
+  font-size: 0.78rem;
+  font-weight: 600;
+}
+
+.goals-chart__months {
+  margin-top: 0.8rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.goals-chart__month {
+  border-color: var(--border);
+  background: var(--surface);
+}
+
+.goals-chart__panel {
+  margin-top: 0.8rem;
+  padding: 0.8rem 1rem;
+  border-radius: var(--radius-card);
+  background: var(--surface-sunken);
+}
+
+.goals-chart__panel-title {
+  margin: 0 0 0.4rem;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.goals-chart__panel dl {
+  margin: 0 0 0.5rem;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr));
+  gap: 0.5rem 1rem;
+}
+
+.goals-chart__panel dt {
+  font-size: 0.78rem;
+  color: var(--ink-secondary);
+}
+
+.goals-chart__panel dd {
+  margin: 0.1rem 0 0;
+  font-weight: 600;
+  color: var(--ink);
+}
+
 @media (min-width: 720px) {
   .goals-overview__layout {
     grid-template-columns: minmax(15rem, 1fr) 1.4fr;
@@ -839,7 +1041,9 @@
 
 @media (prefers-reduced-motion: reduce) {
   .goal-progress__fill,
-  .goals-file__drop {
+  .goals-file__drop,
+  .goals-chart__toggle-option,
+  .goals-chart__month {
     transition: none;
   }
 }

@@ -171,6 +171,8 @@ describe('goal formatting', () => {
   it('keeps the real percentage above 100', () => {
     expect(progressPercent(390, 300)).toBeCloseTo(130, 10)
     expect(formatPercent(130)).toBe('130 percent')
+    expect(formatPercent((290 / 500) * 100)).toBe('58 percent')
+    expect(formatPercent(57.6)).toBe('57 percent')
     expect(progressPercent(10, 0)).toBe(0)
   })
 })
