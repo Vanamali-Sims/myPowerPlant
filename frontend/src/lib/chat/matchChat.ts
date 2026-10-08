@@ -107,6 +107,9 @@ export function parseNavigateTarget(text: string): ChatNavigateTarget | null {
   if (/\b(open|go to|show|switch to|take me to)\s+(the )?profile\b/.test(text)) {
     return 'profile'
   }
+  if (/\b(open|go to|show|switch to|take me to)\s+(the )?what ?if\b/.test(text)) {
+    return 'whatif'
+  }
   if (/\b(open|go to|show|switch to|take me to)\s+(the )?reminders\b/.test(text)) {
     return 'reminders'
   }

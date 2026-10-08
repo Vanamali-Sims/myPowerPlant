@@ -10,6 +10,7 @@ const VIEW_LABEL: Record<AppNavId | 'setup', string> = {
   setup: 'Setup',
   profile: 'Profile',
   dashboard: 'Dashboard',
+  whatif: 'What if',
   reminders: 'Reminders',
   goals: 'Goals',
 }

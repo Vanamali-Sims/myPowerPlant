@@ -104,6 +104,12 @@ variable "api_throttling_burst_limit" {
   default     = 40
 }
 
+variable "llm_provider" {
+  description = "What if phrasing provider: groq or gemini. An unset SSM key keeps the fixed sentence."
+  type        = string
+  default     = "groq"
+}
+
 variable "github_org" {
   description = "GitHub organization or user that owns the repository. Used to scope the OIDC trust policy so only this repository can assume the CI role."
   type        = string

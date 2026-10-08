@@ -11,6 +11,7 @@ import { RemindersView } from './components/reminders/RemindersView'
 import { SetupForm } from './components/setup/SetupForm'
 import { CustomCursor } from './components/ui/CustomCursor'
 import { StickyHover } from './components/ui/StickyHover'
+import { WhatIfView } from './components/whatif/WhatIfView'
 import { fetchMethodology, type MethodologyBundle } from './lib/methodologyApi'
 import type { Timeframe } from './lib/kpis'
 import { DEFAULT_EVENT_TYPE, DEFAULT_REMINDER_PERIOD_DAYS } from './constants'
@@ -18,7 +19,7 @@ import { clearStoredProfile, loadProfile, saveProfile } from './lib/profileStora
 import { emptyProfile, type ProfileData, type SetupStepId } from './types/profile'
 import type { EventType } from './types/reminders'
 
-type View = 'welcome' | 'setup' | 'profile' | 'dashboard' | 'reminders' | 'goals'
+type View = 'welcome' | 'setup' | 'profile' | 'dashboard' | 'whatif' | 'reminders' | 'goals'
 
 // Loaded only when the Goals tab opens, so other screens do not carry its code.
 const GoalsView = lazy(() =>
@@ -107,6 +108,11 @@ function App() {
       setNotice('')
       return
     }
+    if (id === 'whatif') {
+      setView('whatif')
+      setNotice('')
+      return
+    }
     if (id === 'reminders') {
       setView('reminders')
       setNotice('')
@@ -128,13 +134,15 @@ function App() {
             ? 'dashboard'
             : view === 'profile'
               ? 'profile'
-              : view === 'reminders'
-                ? 'reminders'
-                : view === 'goals'
-                  ? 'goals'
-                  : view === 'welcome'
-                    ? 'home'
-                    : null
+              : view === 'whatif'
+                ? 'whatif'
+                : view === 'reminders'
+                  ? 'reminders'
+                  : view === 'goals'
+                    ? 'goals'
+                    : view === 'welcome'
+                      ? 'home'
+                      : null
         }
         postcode={profile.postcode}
         hasProfile={Boolean(profile.lastUpdated)}
@@ -204,6 +212,17 @@ function App() {
                 setView('profile')
                 setNotice('')
               }}
+              onStartSetup={startSetup}
+              onLogoClick={goHome}
+            />
+          ) : null}
+          {view === 'whatif' ? (
+            <WhatIfView
+              profile={profile}
+              hasProfile={Boolean(profile.lastUpdated)}
+              bundle={bundle}
+              methodologyError={methodologyError}
+              onSaveProfile={saveEdits}
               onStartSetup={startSetup}
               onLogoClick={goHome}
             />

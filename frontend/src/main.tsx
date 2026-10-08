@@ -15,6 +15,7 @@ import './styles/dashboard.css'
 import './styles/reminders.css'
 import './styles/goals.css'
 import './styles/chat.css'
+import './styles/whatif.css'
 import './styles/motion.css'
 import App from './App.tsx'
 
