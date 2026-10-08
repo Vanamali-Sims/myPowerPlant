@@ -1,5 +1,5 @@
 /**
- * Shared chrome for Actions and What if dock panels (header, subtitle, tabs, body).
+ * Shared chrome for the Actions dock panel (header, subtitle, tabs, body).
  */
 import type { ReactNode } from 'react'
 

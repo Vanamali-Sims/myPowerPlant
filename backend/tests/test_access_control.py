@@ -41,4 +41,7 @@ class TestReadOnlyApiSurface:
         assert r.status_code == 200
         for path, operations in r.json()["paths"].items():
             allowed = {m.upper() for m in operations}
+            if path == "/api/advice":
+                assert allowed == {"POST"}, f"{path} exposes {allowed}"
+                continue
             assert allowed <= {"GET", "HEAD", "OPTIONS"}, f"{path} exposes {allowed}"

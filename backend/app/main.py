@@ -17,7 +17,7 @@ from mangum import Mangum
 
 from app.db import engine
 from app.rate_limit import RateLimitMiddleware
-from app.routes import health, methodology
+from app.routes import advice, health, methodology
 from app.security_headers import SecurityHeadersMiddleware
 
 load_dotenv()
@@ -76,13 +76,14 @@ app.add_middleware(
     allow_origin_regex=CORS_ORIGIN_REGEX,
     # No cookies, sessions, or Authorization header — do not advertise credentials.
     allow_credentials=False,
-    allow_methods=["GET", "HEAD", "OPTIONS"],
+    allow_methods=["GET", "HEAD", "POST", "OPTIONS"],
     allow_headers=["Accept", "Content-Type"],
 )
 app.add_middleware(SecurityHeadersMiddleware)
 
 app.include_router(health.router, prefix="/api")
 app.include_router(methodology.router, prefix="/api")
+app.include_router(advice.router, prefix="/api")
 
 # Lambda entrypoint (API Gateway). Locally unused — run with:
 #   uvicorn app.main:app --reload

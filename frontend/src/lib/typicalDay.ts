@@ -24,6 +24,18 @@ const PERIOD_HOURS: Record<PeakPeriod, number[]> = {
   night: [22, 23, 0, 1, 2, 3, 4, 5],
 }
 
+/**
+ * Shape inside a day-part. The weights are normalised, so the period total
+ * stays the modelled figure. The line then rises in the morning and evening
+ * instead of sitting flat.
+ */
+const PERIOD_SHAPE: Record<PeakPeriod, number[]> = {
+  morning: [0.7, 1.1, 1.3, 1.1, 0.9, 0.7],
+  afternoon: [0.8, 0.7, 0.65, 0.7, 0.9, 1.15],
+  evening: [1.35, 1.5, 1.15, 0.75],
+  night: [0.9, 0.55, 0.35, 0.3, 0.3, 0.35, 0.55, 0.85],
+}
+
 /** Daylight window and peak used to shape solar within the day. */
 const SUNRISE = 6
 const SUNSET = 20
@@ -56,10 +68,9 @@ function solarWeights(): number[] {
  * @param periods - Weekly consumption and generation for each day-part
  * @returns 24 points of load and solar in kWh for one typical day
  *
- * Each day-part's energy is spread evenly across its hours, so the hourly
- * totals still add back to the modelled week divided by seven. Solar is
- * reshaped onto a daylight curve because an even spread would put generation
- * in the middle of the night.
+ * Each day-part keeps its modelled total. Inside the part, use rises toward
+ * breakfast and the evening, which is when a home actually draws power.
+ * Solar is reshaped onto a daylight curve so it does not appear at night.
  */
 export function buildTypicalDay(periods: BalancePeriod[]): HourPoint[] {
   const load = new Array<number>(HOURS_IN_DAY).fill(0)
@@ -69,9 +80,11 @@ export function buildTypicalDay(periods: BalancePeriod[]): HourPoint[] {
     const hours = PERIOD_HOURS[period.id]
     if (!hours?.length) continue
     const dailyLoad = period.consumptionKwh / DAYS_PER_WEEK
-    for (const hour of hours) {
-      load[hour] += dailyLoad / hours.length
-    }
+    const shape = PERIOD_SHAPE[period.id]
+    const weight = shape.reduce((sum, value) => sum + value, 0) || 1
+    hours.forEach((hour, index) => {
+      load[hour] += dailyLoad * ((shape[index] ?? 1) / weight)
+    })
     dailySolar += period.generationKwh / DAYS_PER_WEEK
   }
 

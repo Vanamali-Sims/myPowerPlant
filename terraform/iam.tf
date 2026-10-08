@@ -15,8 +15,8 @@ resource "aws_iam_role" "lambda_exec" {
   assume_role_policy = data.aws_iam_policy_document.lambda_assume_role.json
 }
 
-# Least privilege: only this function's own log group, and only the one SSM
-# parameter it needs. No RDS/Aurora/VPC permissions, since the database is
+# Least privilege: this function's own log group, the database URL, and the
+# What if model key. No RDS/Aurora/VPC permissions, since the database is
 # external (Neon), reached over the public internet, so this Lambda is never
 # placed in a VPC and needs none of that surface.
 data "aws_iam_policy_document" "lambda_exec" {
@@ -31,10 +31,13 @@ data "aws_iam_policy_document" "lambda_exec" {
   }
 
   statement {
-    sid       = "ReadDatabaseUrlParameter"
+    sid       = "ReadConfigParameters"
     effect    = "Allow"
     actions   = ["ssm:GetParameter"]
-    resources = [aws_ssm_parameter.database_url.arn]
+    resources = [
+      aws_ssm_parameter.database_url.arn,
+      aws_ssm_parameter.llm_api_key.arn,
+    ]
   }
 }
 

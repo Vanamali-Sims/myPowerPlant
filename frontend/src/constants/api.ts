@@ -10,6 +10,7 @@ export const API_BASE_URL = import.meta.env?.VITE_API_BASE_URL as string | undef
 
 export const API_PATHS = {
   methodology: '/api/methodology',
+  advice: '/api/advice',
 } as const
 
 export const GEO_TIMEOUT_MS = 12000

@@ -69,6 +69,8 @@ export type KpiReport = {
     selfConsumedKwh: number
     surplusKwh: number
     energyDistributedKwh: number
+    /** Leftover solar the battery moves into the evening, already inside self-consumed. */
+    batteryShiftedKwh: number
     savingsAud: number
     /** (generation − consumption) × retail rate. */
     netEnergyValueAud: number
@@ -540,6 +542,7 @@ export function buildKpiReport(
       selfConsumedKwh: selfConsumed,
       surplusKwh: surplus,
       energyDistributedKwh: energyDistributed,
+      batteryShiftedKwh: shifted,
       savingsAud: headline.weeklySavings,
       netEnergyValueAud,
       carbonAvoidedKg,
