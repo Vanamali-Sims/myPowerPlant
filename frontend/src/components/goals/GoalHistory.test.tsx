@@ -11,7 +11,7 @@ import userEvent from '@testing-library/user-event'
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { GOALS_STORAGE_KEY } from '../../constants/goals'
-import { REASON_MESSAGES } from '../../constants/goalMessages'
+import { GOAL_MESSAGES } from '../../constants/goalMessages'
 import { PROFILE_STORAGE_KEY } from '../../constants/storage'
 import { BASELINE_PROFILE } from '../../data/baselines'
 import { addDays } from '../../lib/goals/calendar'
@@ -123,7 +123,9 @@ describe('confirm before anything is saved (AC1)', () => {
     })
     await user.click(screen.getByRole('button', { name: 'Confirm and save' }))
     const preview = screen.getByRole('region', { name: 'Estimated savings and carbon' })
-    expect(within(preview).getByRole('alert').textContent).toBe(REASON_MESSAGES.write_failed)
+    const alert = within(preview).getByRole('alert')
+    expect(alert.textContent).toContain(GOAL_MESSAGES.write_failed.title)
+    expect(alert.textContent).toContain(GOAL_MESSAGES.write_failed.nextStep)
     vi.restoreAllMocks()
     expect(localStorage.getItem(GOALS_STORAGE_KEY)).toBe(before)
   })
@@ -166,6 +168,7 @@ describe('each upload adds only new days (AC3)', () => {
     await upload(user, '2026-09-01', '2026-09-30')
     expect(screen.getByRole('heading', { name: 'This file is already counted' })).toBeTruthy()
     expect(screen.queryByRole('button', { name: 'Confirm and save' })).toBeNull()
+    expect(screen.queryByText(GOAL_MESSAGES.estimates_unavailable.title)).toBeNull()
   })
 })
 

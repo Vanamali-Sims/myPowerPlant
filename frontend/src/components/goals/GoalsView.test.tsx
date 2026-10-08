@@ -10,7 +10,7 @@ import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { EMISSIONS_FACTOR_SOURCE, GOALS_STORAGE_KEY } from '../../constants/goals'
-import { REASON_MESSAGES } from '../../constants/goalMessages'
+import { GOAL_MESSAGES } from '../../constants/goalMessages'
 import { BASELINE_PROFILE } from '../../data/baselines'
 import { suggestGoals } from '../../lib/goals/goalSetup'
 import { seedMethodologyBundle } from '../../lib/methodologyFixture'
@@ -261,7 +261,9 @@ describe('saving, remembering, and editing goals (AC5)', () => {
     })
     await user.click(screen.getByRole('button', { name: 'Save goals' }))
     spy.mockRestore()
-    expect(screen.getByRole('alert').textContent).toBe(REASON_MESSAGES.write_failed)
+    const alert = screen.getByRole('alert')
+    expect(alert.textContent).toContain(`Error: ${GOAL_MESSAGES.write_failed.title}`)
+    expect(alert.textContent).toContain(`What to do next: ${GOAL_MESSAGES.write_failed.nextStep}`)
     expect(screen.getByRole('heading', { name: 'Set your goals' })).toBeTruthy()
   })
 })

@@ -4,7 +4,7 @@
  */
 import { Suspense, lazy, useEffect, useMemo, useRef, useState } from 'react'
 import { GOALS_DEVICE_NOTE, GOAL_SUGGESTION_MONTHS } from '../../constants/goals'
-import { REASON_MESSAGES } from '../../constants/goalMessages'
+import type { MessageCode } from '../../constants/goalMessages'
 import { maxIntervalKwh } from '../../lib/goals/batteryLimits'
 import { buildCalculationContext, calculateDay, summariseDays } from '../../lib/goals/calculate'
 import { getGoalsReadiness, monthlyProfileEstimate, suggestGoals } from '../../lib/goals/goalSetup'
@@ -34,8 +34,9 @@ import {
 import type { ProfileData } from '../../types/profile'
 import { Button } from '../ui/Button'
 import { Callout } from '../ui/Callout'
-import { AlertIcon, BoltIcon, CheckIcon, LockIcon } from '../ui/icons'
+import { BoltIcon, CheckIcon, LockIcon } from '../ui/icons'
 import { ClearGoalsDialog } from './ClearGoalsDialog'
+import { GoalMessage } from './GoalMessage'
 import { GoalOverview } from './GoalOverview'
 import { HistoryTable } from './HistoryTable'
 import { LevelUpDialog, type Achievement } from './LevelUpDialog'
@@ -84,10 +85,11 @@ export function GoalsView({
   const [store, setStore] = useState<GoalsStore>(loadGoals)
   const [editing, setEditing] = useState(false)
   const [notice, setNotice] = useState('')
-  const [saveError, setSaveError] = useState('')
+  const [saveError, setSaveError] = useState<MessageCode | null>(null)
   const [pendingRead, setPendingRead] = useState<ReadDays | null>(null)
   const [uploadStatus, setUploadStatus] = useState('')
-  const [previewError, setPreviewError] = useState('')
+  const [previewError, setPreviewError] = useState<MessageCode | null>(null)
+  const [clearError, setClearError] = useState(false)
   const [clearOpen, setClearOpen] = useState(false)
   const [achievement, setAchievement] = useState<Achievement | null>(null)
   /** Goals being replaced after they were reached; null when not doing that. */
@@ -178,7 +180,7 @@ export function GoalsView({
     if (byEdit.length) next = recordReached(next, byEdit, totals, today(), true)
     const result = saveGoals(next)
     if (!result.ok) {
-      setSaveError(REASON_MESSAGES[result.reason])
+      setSaveError(result.reason)
       return
     }
     let message = goals ? 'Your goals are updated.' : 'Your goals are saved on this device.'
@@ -195,7 +197,7 @@ export function GoalsView({
       }
     }
     setStore(result.store)
-    setSaveError('')
+    setSaveError(null)
     setNotice(message)
     setEditing(false)
     setNextKinds(null)
@@ -205,7 +207,7 @@ export function GoalsView({
   function startNextGoal(kinds: GoalKind[]) {
     setAchievement(null)
     setNotice('')
-    setSaveError('')
+    setSaveError(null)
     setEditing(false)
     setNextKinds(kinds)
     focusSetupNext.current = true
@@ -222,7 +224,7 @@ export function GoalsView({
 
   function closePreview(message: string) {
     setPendingRead(null)
-    setPreviewError('')
+    setPreviewError(null)
     setUploadStatus(message)
     document.getElementById('goals-upload-title')?.focus()
   }
@@ -238,13 +240,13 @@ export function GoalsView({
     if (justReached.length) next = recordReached(next, justReached, totalsAfter, today())
     const result = saveGoals(next)
     if (!result.ok) {
-      setPreviewError(REASON_MESSAGES[result.reason])
+      setPreviewError(result.reason)
       return
     }
     const added = plan.newDays.length
     setStore(result.store)
     setPendingRead(null)
-    setPreviewError('')
+    setPreviewError(null)
     setUploadStatus('')
     setNotice(
       `Saved. ${added === 1 ? '1 day was' : `${added} days were`} added to your history.`,
@@ -265,9 +267,10 @@ export function GoalsView({
     setClearOpen(false)
     if (!clearGoals()) {
       setNotice('')
-      setUploadStatus(REASON_MESSAGES.write_failed)
+      setClearError(true)
       return
     }
+    setClearError(false)
     setStore(emptyGoalsStore())
     setPendingRead(null)
     setEditing(false)
@@ -279,12 +282,12 @@ export function GoalsView({
 
   function startEdit() {
     setNotice('')
-    setSaveError('')
+    setSaveError(null)
     setEditing(true)
   }
 
   function cancelEdit() {
-    setSaveError('')
+    setSaveError(null)
     setEditing(false)
     setNextKinds(null)
     focusOverviewNext.current = true
@@ -292,12 +295,15 @@ export function GoalsView({
 
   const estimatesMessage = !bundle ? (
     methodologyError ? (
-      <div role="alert">
-        <Callout tone="accent" icon={<AlertIcon />} title="Estimates are unavailable right now">
-          Goal suggestions need the same estimate data as the dashboard, and it could not be
-          loaded. Your saved goals are not affected. Try again later.
-        </Callout>
-      </div>
+      <GoalMessage
+        code="estimates_unavailable"
+        details={
+          <p>
+            Goal suggestions and upload estimates need the same estimate data as the dashboard,
+            and it could not be loaded.
+          </p>
+        }
+      />
     ) : (
       <p className="goals__loading" role="status">
         Loading estimates…
@@ -434,11 +440,8 @@ export function GoalsView({
         {uploadStatus}
       </p>
 
-      {pendingRead && goals && !preview ? (
-        <p className="goals-upload__locked" role="alert">
-          <AlertIcon width={16} height={16} />
-          <span>{REASON_MESSAGES.estimates_unavailable} Your file was not added.</span>
-        </p>
+      {pendingRead && goals && !context ? (
+        <GoalMessage code="estimates_unavailable" details={<p>Your file was not added.</p>} />
       ) : null}
 
       {plan && !preview && pendingRead && goals ? (
@@ -504,6 +507,7 @@ export function GoalsView({
           <Button variant="danger" onClick={() => setClearOpen(true)}>
             Clear my goals and history
           </Button>
+          {clearError ? <GoalMessage code="write_failed" /> : null}
         </section>
       ) : null}
 

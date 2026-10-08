@@ -144,7 +144,10 @@ describe('all battery activity counts (AC3)', () => {
     const text = section.querySelector('.goals-preview__breakdown')?.textContent ?? ''
     expect(text).toContain('Intake (energy taken in)Not in your file')
     expect(text).toContain('Total battery energy288 kWh')
-    expect(section.textContent).toContain('intake is missing and only discharge is counted')
+    const message = section.querySelector('[data-code="intake_missing"]')
+    expect(message?.getAttribute('role')).toBe('status')
+    expect(message?.textContent).toContain('Information: Your file has no battery_charge_kwh column, so intake is missing.')
+    expect(message?.textContent).toContain('Only discharge is counted.')
   })
 })
 

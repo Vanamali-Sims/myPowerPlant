@@ -1,7 +1,7 @@
 /**
  * Provider picker plus a "How to get your file" disclosure.
  */
-import { useId, useState, type Ref } from 'react'
+import { useId, type Ref } from 'react'
 import {
   BATTERY_SOURCES,
   TEMPLATE_COLUMNS,
@@ -14,6 +14,11 @@ import { RadioList } from '../ui/RadioList'
 type Props = {
   value: BatterySourceId | ''
   onChange: (next: BatterySourceId) => void
+  /** Whether "How to get your file" is open; held by the parent so a message can open it. */
+  guideOpen: boolean
+  onGuideOpenChange: (open: boolean) => void
+  /** Id for the "How to get your file" button, so focus can be sent to it. */
+  guideToggleId: string
   headingRef?: Ref<HTMLHeadingElement>
 }
 
@@ -24,9 +29,15 @@ type Props = {
  *
  * The disclosure uses the same button and panel as "How is carbon calculated?".
  */
-export function SourceGuide({ value, onChange, headingRef }: Props) {
+export function SourceGuide({
+  value,
+  onChange,
+  guideOpen: open,
+  onGuideOpenChange,
+  guideToggleId,
+  headingRef,
+}: Props) {
   const panelId = useId()
-  const [open, setOpen] = useState(false)
 
   return (
     <div className="goals-source">
@@ -42,10 +53,11 @@ export function SourceGuide({ value, onChange, headingRef }: Props) {
 
       <div className="vpp-example goals-examples">
         <Button
+          id={guideToggleId}
           variant="outline-accent"
           aria-expanded={open}
           aria-controls={panelId}
-          onClick={() => setOpen((state) => !state)}
+          onClick={() => onGuideOpenChange(!open)}
         >
           How to get your file
         </Button>

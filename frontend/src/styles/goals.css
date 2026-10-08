@@ -183,15 +183,6 @@
   color: var(--ink);
 }
 
-.goals-form__save-error {
-  margin: 0;
-  padding: 0.65rem 0.8rem;
-  border-radius: var(--radius-input);
-  background: var(--terra-50);
-  color: var(--ink);
-  font-size: 0.88rem;
-}
-
 .goals-form__actions {
   display: flex;
   flex-wrap: wrap;
@@ -265,8 +256,8 @@
 .goals-upload__setup.ui-btn,
 .goals-source .ui-btn,
 .goals-file .ui-btn,
-.goals-read-error .ui-btn,
-.goals-summary .ui-btn {
+.goals-summary .ui-btn,
+.goal-message .ui-btn {
   width: auto;
 }
 
@@ -391,7 +382,7 @@
 
 .goals-file__actions,
 .goals-summary__actions,
-.goals-read-error__actions {
+.goal-message__actions {
   display: flex;
   flex-wrap: wrap;
   gap: 0.6rem;
@@ -405,33 +396,6 @@
 
 .goals-upload__status:empty {
   margin: 0;
-}
-
-.goals-read-error {
-  margin-top: 0.8rem;
-  display: flex;
-  align-items: flex-start;
-  gap: 0.65rem;
-  padding: 0.85rem 1rem;
-  border-radius: var(--radius-card);
-  border: 1px solid var(--terra-200);
-  background: var(--terra-50);
-  color: var(--ink);
-  font-size: 0.9rem;
-}
-
-.goals-read-error > svg {
-  flex-shrink: 0;
-  margin-top: 0.1rem;
-  color: var(--terra-800);
-}
-
-.goals-read-error p {
-  margin: 0 0 0.6rem;
-}
-
-.goals-read-error__title {
-  font-weight: 700;
 }
 
 .goals-summary {
@@ -565,15 +529,6 @@
 .goals-preview__breakdown dd {
   margin: 0.1rem 0 0;
   font-weight: 600;
-  color: var(--ink);
-}
-
-.goals-preview__missing {
-  margin: 0.7rem 0 0;
-  padding: 0.6rem 0.8rem;
-  border-radius: var(--radius-input);
-  background: var(--terra-50);
-  font-size: 0.88rem;
   color: var(--ink);
 }
 
@@ -1096,6 +1051,84 @@
   font-size: 1.35rem;
   font-weight: 500;
   color: var(--ink);
+}
+
+.goal-message {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.65rem;
+  padding: 0.85rem 1rem;
+  border-radius: var(--radius-card);
+  border: 1px solid var(--border);
+  background: var(--surface-sunken);
+  color: var(--ink);
+  font-size: 0.9rem;
+}
+
+.goal-message > svg {
+  flex-shrink: 0;
+  margin-top: 0.1rem;
+}
+
+.goal-message--error {
+  border-color: var(--terra-200);
+  background: var(--terra-50);
+}
+
+.goal-message--error > svg {
+  color: var(--danger);
+}
+
+.goal-message--warning > svg {
+  color: var(--warning);
+}
+
+.goal-message--info {
+  border-color: transparent;
+  background: var(--euc-50);
+}
+
+.goal-message--info > svg {
+  color: var(--euc-600);
+}
+
+.goal-message__content {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.goal-message__content p {
+  margin: 0;
+}
+
+.goal-message__title {
+  font-weight: 700;
+}
+
+.goal-message__severity {
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  font-size: 0.75rem;
+}
+
+.goal-message__details ul {
+  margin: 0;
+  padding-left: 1.2rem;
+}
+
+.goal-message__next {
+  color: var(--ink-secondary);
+}
+
+.goal-message__next-label {
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.goal-message__actions {
+  margin-top: 0.2rem;
 }
 
 @media (min-width: 720px) {

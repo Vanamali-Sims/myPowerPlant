@@ -233,6 +233,11 @@ describe('reading in the browser and the summary (AC4, AC6)', () => {
     if (reason === 'missing_columns') {
       expect(alert.textContent).toContain('Missing: interval_minutes, battery_discharge_kwh.')
     }
+    expect(alert.textContent).toContain('What to do next:')
+    await user.click(within(alert).getByRole('button', { name: 'See how to get your file' }))
+    const guide = screen.getByRole('button', { name: 'How to get your file' })
+    expect(guide.getAttribute('aria-expanded')).toBe('true')
+    expect(document.activeElement).toBe(guide)
     await user.click(within(alert).getByRole('button', { name: 'Choose another file' }))
     expect(document.activeElement).toBe(screen.getByRole('button', { name: 'Choose file' }))
   })

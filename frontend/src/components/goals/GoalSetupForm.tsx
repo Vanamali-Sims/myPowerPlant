@@ -13,9 +13,11 @@ import {
   type GoalSuggestions,
 } from '../../lib/goals/goalSetup'
 import { GOAL_KINDS, type GoalKind } from '../../types/goals'
+import type { MessageCode } from '../../constants/goalMessages'
 import { Button } from '../ui/Button'
 import { TextField } from '../ui/TextField'
 import { CarbonExamples } from './CarbonExamples'
+import { GoalMessage } from './GoalMessage'
 import { RangeExplainer } from './RangeExplainer'
 
 type Values = Record<GoalKind, string>
@@ -33,7 +35,8 @@ type Props = {
   factor: number
   /** Saved goals when editing; suggestions are used when creating. */
   current: Record<GoalKind, number | null>
-  saveError: string
+  /** Why the last save failed, or null. */
+  saveError: MessageCode | null
   onSave: (targets: Partial<Record<GoalKind, number>>) => void
   onCancel?: () => void
 }
@@ -141,11 +144,7 @@ export function GoalSetupForm(props: Props) {
         <CarbonExamples factor={factor} suggestedKg={suggestions.carbon?.suggested ?? null} />
       </div>
 
-      {saveError ? (
-        <p className="goals-form__save-error" role="alert">
-          {saveError}
-        </p>
-      ) : null}
+      {saveError ? <GoalMessage code={saveError} /> : null}
 
       <div className="goals-form__actions">
         <Button type="submit" variant="primary">

@@ -6,12 +6,12 @@
  */
 import { useId, useRef, useState } from 'react'
 import type { BatterySourceId } from '../../constants/batterySources'
-import { REASON_MESSAGES } from '../../constants/goalMessages'
 import type { ReadLimits, ReadResult } from '../../lib/goals/adapters/types'
 import { readBatteryFile } from '../../lib/goals/readBatteryFile'
 import { Button } from '../ui/Button'
-import { AlertIcon, LockIcon } from '../ui/icons'
+import { LockIcon } from '../ui/icons'
 import { FileChooser } from './FileChooser'
+import { GoalMessage } from './GoalMessage'
 import { ReadSummary } from './ReadSummary'
 import { SourceGuide } from './SourceGuide'
 
@@ -38,16 +38,22 @@ const PRIVACY_NOTE =
  */
 export function UploadArea({ locked, canGoToSetup, onGoToSetup, limits, onContinue }: Props) {
   const chooseId = useId()
+  const guideToggleId = useId()
+  const [guideOpen, setGuideOpen] = useState(false)
   const [sourceId, setSourceId] = useState<BatterySourceId | ''>('')
   const [file, setFile] = useState<File | null>(null)
   const [reading, setReading] = useState(false)
   const [result, setResult] = useState<ReadResult | null>(null)
   const [status, setStatus] = useState('')
   const readToken = useRef(0)
-  const sourceHeading = useRef<HTMLHeadingElement>(null)
 
   function focusChoose() {
     document.getElementById(chooseId)?.focus()
+  }
+
+  function showGuide() {
+    setGuideOpen(true)
+    document.getElementById(guideToggleId)?.focus()
   }
 
   function reset(message = '') {
@@ -107,12 +113,10 @@ export function UploadArea({ locked, canGoToSetup, onGoToSetup, limits, onContin
       </p>
 
       {!limits ? (
-        <p className="goals-upload__locked">
-          <AlertIcon width={16} height={16} />
-          <span>
-            {REASON_MESSAGES.estimates_unavailable} Files can be read once the estimate data loads.
-          </span>
-        </p>
+        <GoalMessage
+          code="estimates_unavailable"
+          details={<p>Files can be read once the estimate data loads.</p>}
+        />
       ) : (
         <>
           <SourceGuide
@@ -123,7 +127,9 @@ export function UploadArea({ locked, canGoToSetup, onGoToSetup, limits, onContin
               setResult(null)
               setReading(false)
             }}
-            headingRef={sourceHeading}
+            guideOpen={guideOpen}
+            onGuideOpenChange={setGuideOpen}
+            guideToggleId={guideToggleId}
           />
 
           {!sourceId ? (
@@ -149,14 +155,15 @@ export function UploadArea({ locked, canGoToSetup, onGoToSetup, limits, onContin
           </p>
 
           {result && !result.ok ? (
-            <div className="goals-read-error" role="alert">
-              <AlertIcon width={18} height={18} />
-              <div>
-                <p className="goals-read-error__title">{REASON_MESSAGES[result.reason]}</p>
-                {result.missingColumns?.length ? (
+            <GoalMessage
+              code={result.reason}
+              details={
+                result.missingColumns?.length ? (
                   <p>Missing: {result.missingColumns.join(', ')}.</p>
-                ) : null}
-                <div className="goals-read-error__actions">
+                ) : null
+              }
+              actions={
+                <>
                   <Button
                     variant="secondary"
                     onClick={() => {
@@ -166,12 +173,12 @@ export function UploadArea({ locked, canGoToSetup, onGoToSetup, limits, onContin
                   >
                     Choose another file
                   </Button>
-                  <Button variant="edit" onClick={() => sourceHeading.current?.focus()}>
+                  <Button variant="edit" onClick={showGuide}>
                     See how to get your file
                   </Button>
-                </div>
-              </div>
-            </div>
+                </>
+              }
+            />
           ) : null}
 
           {result?.ok ? (

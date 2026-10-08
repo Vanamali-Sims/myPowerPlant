@@ -12,7 +12,9 @@ import {
   formatRate,
 } from '../../lib/goals/goalFormat'
 import { GOAL_KINDS, type GoalEntry, type GoalKind } from '../../types/goals'
+import type { MessageCode } from '../../constants/goalMessages'
 import { Button } from '../ui/Button'
+import { GoalMessage } from './GoalMessage'
 import { GoalProgress } from './GoalProgress'
 
 type Props = {
@@ -23,8 +25,8 @@ type Props = {
   savedTotals: Record<GoalKind, number>
   /** Days in the file that were already counted and are left as they were. */
   skippedCount: number
-  /** Shown when the device refused the save; the preview stays open. */
-  saveError: string
+  /** Why the device refused the save, or null; the preview stays open. */
+  saveError: MessageCode | null
   onConfirm: () => void
   onCancel: () => void
 }
@@ -125,12 +127,7 @@ export function UploadPreview({
           <dd>{formatEnergy(preview.energyKwh)}</dd>
         </div>
       </dl>
-      {preview.intakeKwh === null ? (
-        <p className="goals-preview__missing" role="status">
-          Your file has no battery_charge_kwh column, so intake is missing and only discharge is
-          counted. Nothing has been filled in for it.
-        </p>
-      ) : null}
+      {preview.intakeKwh === null ? <GoalMessage code="intake_missing" /> : null}
       <p className="goals-preview__note">Savings use {rateLabel(context)}.</p>
 
       <div className="vpp-example goals-examples">
@@ -194,11 +191,7 @@ export function UploadPreview({
       </div>
 
       <p className="goals-preview__note">Not saved yet. Nothing is added until you confirm.</p>
-      {saveError ? (
-        <p className="goals-form__save-error" role="alert">
-          {saveError}
-        </p>
-      ) : null}
+      {saveError ? <GoalMessage code={saveError} /> : null}
       <div className="goals-preview__actions">
         <Button variant="primary" onClick={onConfirm}>
           Confirm and save
