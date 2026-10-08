@@ -2,6 +2,7 @@
  * Labelled text input with optional prefix, suffix, and trailing icon.
  */
 import type { ChangeEvent, InputHTMLAttributes, ReactNode } from 'react'
+import { fieldMessageIds } from '../../lib/fieldIds'
 import { Field } from './Field'
 
 type NumericMode = 'integer' | 'decimal'
@@ -39,6 +40,7 @@ function filterNumeric(value: string, mode: NumericMode): string {
  *
  * Prefix/suffix sit inside the input so units like $ or % stay attached.
  * Spreads remaining input attributes through to the native control.
+ * Passing an id links the visible label, hint, and error to the input.
  */
 export function TextField({
   label,
@@ -53,6 +55,11 @@ export function TextField({
   onChange,
   ...props
 }: Props) {
+  const ids = props.id ? fieldMessageIds(props.id) : null
+  const describedBy = ids
+    ? [error ? ids.error : '', hint ? ids.hint : ''].filter(Boolean).join(' ') || undefined
+    : undefined
+
   function handleChange(event: ChangeEvent<HTMLInputElement>) {
     if (numeric) {
       event.target.value = filterNumeric(event.target.value, numeric)
@@ -61,7 +68,7 @@ export function TextField({
   }
 
   return (
-    <Field label={label} hint={hint} error={error} info={info}>
+    <Field label={label} hint={hint} error={error} info={info} inputId={props.id}>
       <div
         className={`ui-input-wrap${prefix ? ' ui-input-wrap--prefix' : ''}`}
       >
@@ -69,6 +76,7 @@ export function TextField({
         <input
           className={`ui-input${error ? ' ui-input--error' : ''} ${className}`}
           aria-invalid={Boolean(error)}
+          aria-describedby={describedBy}
           {...props}
           onChange={handleChange}
         />

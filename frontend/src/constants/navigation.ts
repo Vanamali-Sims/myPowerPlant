@@ -2,12 +2,19 @@
  * Logged-in app-rail navigation.
  *
  * Profile stays locked until a profile is saved; Home, Dashboard, What if,
- * and Reminders are always available. Unavailable copy lives here so
+ * Reminders, and Goals are always available. Unavailable copy lives here so
  * AppShell stays presentational.
  */
-import { BellIcon, BulbIcon, DashboardIcon, HomeIcon, ProfileIcon } from '../components/ui/icons'
+import {
+  BellIcon,
+  BulbIcon,
+  DashboardIcon,
+  HomeIcon,
+  ProfileIcon,
+  TargetIcon,
+} from '../components/ui/icons'
 
-export type AppNavId = 'profile' | 'home' | 'dashboard' | 'whatif' | 'reminders'
+export type AppNavId = 'profile' | 'home' | 'dashboard' | 'whatif' | 'reminders' | 'goals'
 
 export type NavItem = {
   id: AppNavId
@@ -46,5 +53,11 @@ export const NAV: NavItem[] = [
     label: 'Reminders',
     icon: BellIcon,
     unavailableMessage: 'Reminders are available. Complete setup for personalised days.',
+  },
+  {
+    id: 'goals',
+    label: 'Goals',
+    icon: TargetIcon,
+    unavailableMessage: 'Goals are available. Complete setup to set your own goals.',
   },
 ]

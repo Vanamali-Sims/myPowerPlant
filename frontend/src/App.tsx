@@ -1,7 +1,7 @@
 /**
- * Client-side view router: welcome, setup, profile, and dashboard.
+ * Client-side view router: welcome, setup, profile, dashboard, reminders, and goals.
  */
-import { useEffect, useState } from 'react'
+import { Suspense, lazy, useEffect, useState } from 'react'
 import { AppShell, type AppNavId } from './components/layout/AppShell'
 import { ChatDock } from './components/chat/ChatDock'
 import { DashboardView } from './components/dashboard/DashboardView'
@@ -19,7 +19,12 @@ import { clearStoredProfile, loadProfile, saveProfile } from './lib/profileStora
 import { emptyProfile, type ProfileData, type SetupStepId } from './types/profile'
 import type { EventType } from './types/reminders'
 
-type View = 'welcome' | 'setup' | 'profile' | 'dashboard' | 'whatif' | 'reminders'
+type View = 'welcome' | 'setup' | 'profile' | 'dashboard' | 'whatif' | 'reminders' | 'goals'
+
+// Loaded only when the Goals tab opens, so other screens do not carry its code.
+const GoalsView = lazy(() =>
+  import('./components/goals/GoalsView').then((module) => ({ default: module.GoalsView })),
+)
 
 /**
  * App
@@ -111,6 +116,11 @@ function App() {
     if (id === 'reminders') {
       setView('reminders')
       setNotice('')
+      return
+    }
+    if (id === 'goals') {
+      setView('goals')
+      setNotice('')
     }
   }
 
@@ -128,9 +138,11 @@ function App() {
                 ? 'whatif'
                 : view === 'reminders'
                   ? 'reminders'
-                  : view === 'welcome'
-                    ? 'home'
-                    : null
+                  : view === 'goals'
+                    ? 'goals'
+                    : view === 'welcome'
+                      ? 'home'
+                      : null
         }
         postcode={profile.postcode}
         hasProfile={Boolean(profile.lastUpdated)}
@@ -224,6 +236,27 @@ function App() {
               reminderPeriodDays={reminderPeriodDays}
               onReminderPeriodDays={setReminderPeriodDays}
             />
+          ) : null}
+          {view === 'goals' ? (
+            <Suspense
+              fallback={
+                <p className="goals__loading" role="status">
+                  Loading goals…
+                </p>
+              }
+            >
+              <GoalsView
+                profile={profile}
+                bundle={bundle}
+                methodologyError={methodologyError}
+                onOpenProfile={() => {
+                  setView('profile')
+                  setNotice('')
+                }}
+                onStartSetup={startSetup}
+                onLogoClick={goHome}
+              />
+            </Suspense>
           ) : null}
         </div>
       </AppShell>
