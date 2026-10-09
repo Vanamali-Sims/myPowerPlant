@@ -1,11 +1,9 @@
 import { useMemo, useState } from 'react'
 import { RECOMMENDATIONS_PAGE } from '../../constants/onboarding'
-import { energyProviders } from '../../data/profileOptions'
-import { buildEnergyRiver } from '../../lib/energyRiver'
-import { buildKpiReport } from '../../lib/kpis'
+import { energyProviders, locationFromPostcode } from '../../data/profileOptions'
 import type { MethodologyBundle } from '../../lib/methodologyApi'
 import type { ProfileData } from '../../types/profile'
-import { VppSuggestions } from '../dashboard/VppSuggestions'
+import { PlansMasterDetail } from './PlansMasterDetail'
 import { Button } from '../ui/Button'
 import { Callout } from '../ui/Callout'
 import { SelectField } from '../ui/SelectField'
@@ -35,16 +33,7 @@ export function RecommendationsView({
 }: Props) {
   const [selectedProvider, setSelectedProvider] = useState(profile.provider || '')
 
-  const fork = useMemo(() => {
-    if (!hasProfile || !bundle) return null
-    const report = buildKpiReport(profile, bundle)
-    const river = buildEnergyRiver({
-      report,
-      timeframe: 'weekly',
-      feedInRate: bundle.methodology.defaultFeedInRate,
-    })
-    return river.fork
-  }, [bundle, hasProfile, profile])
+  const place = locationFromPostcode(profile.postcode)
 
   const providerOptions = useMemo(
     () => energyProviders.map((label) => ({ value: label, label })),
@@ -79,7 +68,10 @@ export function RecommendationsView({
       ) : null}
 
       <header className="recommendations__intro">
-        <p className="eyebrow">{RECOMMENDATIONS_PAGE.eyebrow}</p>
+        <p className="eyebrow">
+          {RECOMMENDATIONS_PAGE.eyebrow}
+          {hasProfile && place ? ` · ${place}` : ''}
+        </p>
         <h1>{RECOMMENDATIONS_PAGE.title}</h1>
         <p className="recommendations__lede">
           {hasProfile ? RECOMMENDATIONS_PAGE.lede : RECOMMENDATIONS_PAGE.ledeNoProfile}
@@ -102,16 +94,10 @@ export function RecommendationsView({
       ) : null}
 
       {hasProfile && bundle ? (
-        <VppSuggestions
-          hasProfile
+        <PlansMasterDetail
           profile={profile}
           plans={bundle.vppSuggestionPlans}
           batteryModels={bundle.batteryModels}
-          fork={fork}
-          onStartSetup={onStartSetup}
-          showSetupAction={true}
-          hideSectionHeading
-          enrollMode
           onEnrollProvider={onEnrollProvider}
         />
       ) : null}
@@ -121,7 +107,12 @@ export function RecommendationsView({
       ) : null}
 
       {hasProfile ? (
-        <section className="recommendations__enroll" aria-labelledby="recommendations-enroll-title">
+        <section
+          id={RECOMMENDATIONS_PAGE.enrollSectionId}
+          className="recommendations__enroll"
+          aria-labelledby="recommendations-enroll-title"
+          tabIndex={-1}
+        >
           <p className="eyebrow">{RECOMMENDATIONS_PAGE.enrollEyebrow}</p>
           <h2 id="recommendations-enroll-title">{RECOMMENDATIONS_PAGE.enrollTitle}</h2>
           <p className="recommendations__enroll-lede">{RECOMMENDATIONS_PAGE.enrollBody}</p>

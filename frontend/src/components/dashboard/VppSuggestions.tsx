@@ -384,7 +384,7 @@ type TermsDialogProps = {
   onClose: () => void
 }
 
-function TermsDialog({ open, match, onClose }: TermsDialogProps) {
+export function TermsDialog({ open, match, onClose }: TermsDialogProps) {
   const titleId = useId()
   const plan = match?.plan ?? null
   const headroom = match?.reserveHeadroomKwh ?? null

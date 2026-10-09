@@ -355,7 +355,7 @@ export function planFitCopy(profile: ProfileData, match: SuggestionMatch): PlanF
   return { why, tradeoffs }
 }
 
-function compactOptOut(term: VppSuggestionTerm | null): string {
+export function compactOptOut(term: VppSuggestionTerm | null): string {
   if (!term?.valueText) return 'Not listed'
   const text = term.valueText.toLowerCase()
   if (/any time|anytime|opt in and out/.test(text)) return 'Anytime'
@@ -365,14 +365,14 @@ function compactOptOut(term: VppSuggestionTerm | null): string {
   return 'See terms'
 }
 
-function compactEvent(term: VppSuggestionTerm | null): string {
+export function compactEvent(term: VppSuggestionTerm | null): string {
   if (!term?.valueText) return 'Not listed'
   const cap = term.valueText.match(/(\d+)\s*kwh/i)
   if (cap) return `${cap[1]} kWh/yr`
   return 'Provider dispatches'
 }
 
-function compactReserve(term: VppSuggestionTerm | null): string {
+export function compactReserve(term: VppSuggestionTerm | null): string {
   if (term?.numericValue != null) return `${Math.round(term.numericValue * 100)}% kept`
   if (term?.valueText) return 'See terms'
   return 'Not listed'
@@ -384,6 +384,17 @@ function compactReserve(term: VppSuggestionTerm | null): string {
  * @param headroomKwh - Reserve headroom for this household, if known
  * @returns Short labels for the summary card — not the full terms
  */
+/**
+ * One-line hint for plan list rows (opt-out • discharge cap).
+ */
+export function planListSummary(plan: VppSuggestionPlan): string {
+  const opt = compactOptOut(termByKey(plan, 'opt_out'))
+  const discharge = compactEvent(termByKey(plan, 'event_cap'))
+  const dischargeLabel =
+    discharge === 'Not listed' ? 'limit not listed' : discharge.replace(/\/yr$/i, '/yr')
+  return `${opt} • ${dischargeLabel}`
+}
+
 export function compactCardFacts(
   plan: VppSuggestionPlan,
   headroomKwh: number | null,

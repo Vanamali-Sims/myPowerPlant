@@ -60,7 +60,11 @@ export const RECOMMENDATIONS_PAGE = {
   eyebrow: 'VPP plans',
   title: 'VPP plans that can help you achieve this saving',
   lede:
-    'These Victorian plans fit this battery. They are how leftover power can go out through a VPP instead of a standard feed-in.',
+    'These Victorian plans fit this battery. Pick one on the left to see the detail, or stay on your top match.',
+  listHeading: (count: number) =>
+    `${count} plan${count === 1 ? '' : 's'} fit this battery`,
+  notListedFootnote:
+    "'Not listed' means the plan's published details don't state it. Check the provider's terms before you switch.",
   ledeNoProfile:
     'Tell us about your home, solar, and battery first — then we can rank plans that fit you.',
   emptyTitle: 'Set up your household profile',
@@ -73,4 +77,6 @@ export const RECOMMENDATIONS_PAGE = {
     'Tell us which retailer runs your VPP so we can switch you to tools for improving your setup.',
   enrollAction: 'Continue as a VPP participant',
   planEnrollAction: 'I’m on this plan',
+  planDifferentAction: 'I’ve chosen a different plan',
+  enrollSectionId: 'recommendations-vpp-enroll',
 }
