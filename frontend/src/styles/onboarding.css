@@ -280,14 +280,6 @@
   color: var(--ink);
 }
 
-.flow-controls--rain .flow-controls__lede {
-  color: var(--on-deep-muted);
-}
-
-.flow-controls--rain .flow-controls__title {
-  color: var(--on-deep);
-}
-
 .flow-controls__title {
   font-family: var(--font-display);
   font-size: 1.1rem;
