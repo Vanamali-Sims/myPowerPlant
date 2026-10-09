@@ -102,7 +102,6 @@ export function DashboardView({
         <div className="dashboard__story">
           {river ? (
             <EnergyRiver
-              key={timeframe}
               model={river}
               place={place}
               timeframe={timeframe}
