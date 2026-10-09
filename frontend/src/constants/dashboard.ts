@@ -49,3 +49,10 @@ export const VPP_DEFAULT_HEADING = {
 
 export const RIVER_DISCLAIMER =
   'These figures are modelled estimates, not a meter reading or a guaranteed payment.'
+
+export const DASHBOARD_PLANS_CTA = 'Save me money'
+
+export const DASHBOARD_PLANS_CAPTION =
+  'VPP plans that help you achieve these savings'
+
+export const DASHBOARD_POTENTIAL_SAVINGS_LABEL = 'Potential money saved'

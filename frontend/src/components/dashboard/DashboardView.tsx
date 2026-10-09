@@ -2,7 +2,6 @@
  * Household energy dashboard: balance card, cost compare, and VPP plans.
  */
 import { useMemo } from 'react'
-import { VPP_HOW_IT_HELPS } from '../../constants'
 import { locationFromPostcode } from '../../data/profileOptions'
 import { formatUpdatedAt } from '../../lib/formatProfile'
 import { type MethodologyBundle } from '../../lib/methodologyApi'
@@ -11,7 +10,6 @@ import { buildKpiReport, type Timeframe } from '../../lib/kpis'
 import type { ProfileData } from '../../types/profile'
 import { Button } from '../ui/Button'
 import { Callout } from '../ui/Callout'
-import { VppHelpsQuotes } from '../home/VppHelpsQuotes'
 import { EnergyRiver } from './EnergyRiver'
 import { BoltIcon } from '../ui/icons'
 
@@ -69,16 +67,6 @@ export function DashboardView({
     [bundle, report, timeframe],
   )
 
-  const compareWeeks = useMemo(() => {
-    if (!report) return null
-    const gapKwh = Math.abs(report.weekly.generationKwh - report.weekly.consumptionKwh)
-    const vppRate = Math.min(report.recommended.plan.exportRate, report.retailRate)
-    return {
-      withoutWeek: gapKwh * report.retailRate,
-      withWeek: gapKwh * vppRate,
-    }
-  }, [report])
-
   return (
     <div className="dashboard">
       <header className="dashboard__top">
@@ -107,9 +95,6 @@ export function DashboardView({
       ) : null}
 
       <header className="dashboard__intro">
-        <p className="eyebrow">
-          Dashboard{place ? ` · ${place}` : ''}
-        </p>
         <h1>Your Numbers and VPP Estimation</h1>
       </header>
 
@@ -124,21 +109,6 @@ export function DashboardView({
               onTimeframe={onTimeframe}
               onSeePlans={onSeeRecommendations}
             />
-          ) : null}
-
-          {compareWeeks ? (
-            <section
-              className="vpp-explainer__card vpp-helps__card dashboard-vpp-compare"
-              aria-labelledby="dashboard-vpp-compare-heading"
-            >
-              <h2 id="dashboard-vpp-compare-heading" className="vpp-helps__title">
-                {VPP_HOW_IT_HELPS.heading}
-              </h2>
-              <VppHelpsQuotes
-                withoutWeek={compareWeeks.withoutWeek}
-                withWeek={compareWeeks.withWeek}
-              />
-            </section>
           ) : null}
 
         </div>

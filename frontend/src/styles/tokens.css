@@ -42,6 +42,8 @@
   --surface: #ffffff;
   --surface-sunken: var(--cream-card);
   --surface-deep: var(--green-deep);
+  /* Lighter than the dark green card, so a panel on it reads as raised. */
+  --surface-raised-on-dark: #214438;
   --border: #e4ded2;
   --border-strong: #d2c9b8;
 

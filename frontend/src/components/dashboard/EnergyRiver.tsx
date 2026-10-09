@@ -1,5 +1,10 @@
 import { useId, useState, type ReactNode } from 'react'
-import { TIMEFRAMES } from '../../constants/dashboard'
+import {
+  DASHBOARD_PLANS_CAPTION,
+  DASHBOARD_PLANS_CTA,
+  DASHBOARD_POTENTIAL_SAVINGS_LABEL,
+  TIMEFRAMES,
+} from '../../constants/dashboard'
 import { formatAud, formatKwh, type Timeframe } from '../../lib/kpis'
 import {
   formatShare,
@@ -111,12 +116,17 @@ export function EnergyRiver({
           </div>
         </header>
 
-        <h1 className="energy-balance__hero">
-          <span className="energy-balance__lede">{headline}</span>
-          <span className="energy-balance__share">{shareLabel}</span>
-        </h1>
+        <div className="energy-balance__hero">
+          <p className="energy-balance__lede">{headline}</p>
+          <p className="energy-balance__share" aria-label={`${shareLabel} share`}>{shareLabel}</p>
+        </div>
 
-        <div className="energy-bar" role="img" aria-label={barLabel} aria-describedby={liveId}>
+        <div
+          className="energy-bar"
+          role="img"
+          aria-label={barLabel}
+          {...(detail ? { 'aria-describedby': liveId } : {})}
+        >
           <div className="energy-bar__track">
             {slices.map((slice) => (
               <span
@@ -131,9 +141,9 @@ export function EnergyRiver({
           </div>
         </div>
 
-        <p id={liveId} className="energy-balance__live" aria-live="polite">
-          {detail ?? '\u00a0'}
-        </p>
+        {detail ? (
+          <p id={liveId} className="energy-balance__live" aria-live="polite">{detail}</p>
+        ) : null}
 
         <ul className="energy-legend">
           <LegendItem
@@ -169,49 +179,48 @@ export function EnergyRiver({
             onHover={setHover}
             onPin={setPinned}
           />
-          <li className="energy-legend__savings">
-            <div className={`energy-savings-wrap${tipOpen ? ' is-open' : ''}`}>
-              {tipOpen ? (
-                <p id={tipId} className="energy-savings-tip" role="tooltip">
-                  {tip}
-                </p>
-              ) : null}
-              <button
-                type="button"
-                className="energy-station energy-legend__item energy-legend__item--savings"
-                aria-describedby={tipOpen ? tipId : undefined}
-                onMouseEnter={() => setTipOpen(true)}
-                onMouseLeave={() => setTipOpen(false)}
-                onFocus={() => setTipOpen(true)}
-                onBlur={() => setTipOpen(false)}
-              >
-                <span className="energy-legend__copy">
-                  <span className="energy-legend__label-row">
-                    <span className="energy-legend__swatch" aria-hidden="true" />
-                    <span className="energy-legend__label">Money saved · annual</span>
-                    <span className="energy-savings__info" aria-hidden="true">
-                      <InfoIcon width={14} height={14} />
-                    </span>
-                  </span>
-                  <span className="energy-legend__value energy-legend__value--accent">
-                    {formatAud(model.annualValueAud)}
-                  </span>
-                  <span className="energy-legend__hint">
-                    per year
-                    <span className="kpi-badge kpi-badge--estimate kpi-badge--on-deep">
-                      Estimate
-                    </span>
-                  </span>
-                </span>
-              </button>
-            </div>
-          </li>
         </ul>
 
         <div className="energy-balance__foot">
-          <button type="button" className="energy-plans-cta" onClick={onSeePlans}>
-            See the plans
-          </button>
+          <div className={`energy-savings-wrap energy-savings-wrap--foot${tipOpen ? ' is-open' : ''}`}>
+            {tipOpen ? (
+              <p id={tipId} className="energy-savings-tip" role="tooltip">
+                {tip}
+              </p>
+            ) : null}
+            <button
+              type="button"
+              className="energy-savings-foot"
+              aria-describedby={tipOpen ? tipId : undefined}
+              onMouseEnter={() => setTipOpen(true)}
+              onMouseLeave={() => setTipOpen(false)}
+              onFocus={() => setTipOpen(true)}
+              onBlur={() => setTipOpen(false)}
+            >
+              <span className="energy-legend__copy">
+                <span className="energy-legend__label-row">
+                  <span className="energy-legend__swatch energy-legend__swatch--savings" aria-hidden="true" />
+                  <span className="energy-legend__label">{DASHBOARD_POTENTIAL_SAVINGS_LABEL}</span>
+                  <span className="energy-savings__info" aria-hidden="true">
+                    <InfoIcon width={14} height={14} />
+                  </span>
+                </span>
+                <span className="energy-legend__value energy-legend__value--accent">
+                  {formatAud(model.annualValueAud)}
+                </span>
+                <span className="energy-legend__hint">
+                  per year
+                  <span className="kpi-badge kpi-badge--estimate kpi-badge--on-deep">Estimate</span>
+                </span>
+              </span>
+            </button>
+          </div>
+          <div className="energy-plans-row">
+            <button type="button" className="energy-plans-cta" onClick={onSeePlans}>
+              {DASHBOARD_PLANS_CTA}
+            </button>
+            <p className="energy-plans-caption">{DASHBOARD_PLANS_CAPTION}</p>
+          </div>
         </div>
       </article>
     </section>
