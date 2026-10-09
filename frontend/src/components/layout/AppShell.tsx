@@ -119,7 +119,7 @@ export function AppShell({
               )
             })}
           </nav>
-          {journey === 'rain' && onOpenPathControls ? (
+          {onOpenPathControls ? (
             <button
               type="button"
               className="app-rail__item app-rail__item--path"

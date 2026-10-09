@@ -196,8 +196,6 @@ function App() {
     },
   }
 
-  const showMattFlowControls = journey === 'matt' && view === 'profile'
-
   function goTo(id: AppNavId) {
     if (rainJourney) {
       if (id === 'whatif') setView('whatif')
@@ -229,8 +227,16 @@ function App() {
   const showRail =
     showShell && (rainJourney ? view !== 'rainHub' : true) && (journey === 'matt' || journey === 'rain')
   const showChat = showShell && !rainJourney && journey === 'matt'
-  const showRainPathRail =
-    journey === 'rain' && showRail && (view === 'whatif' || view === 'goals' || view === 'reminders')
+  const showPathRail =
+    showRail &&
+    ((journey === 'matt' &&
+      (view === 'welcome' ||
+        view === 'setup' ||
+        view === 'dashboard' ||
+        view === 'recommendations' ||
+        view === 'profile')) ||
+      (journey === 'rain' &&
+        (view === 'whatif' || view === 'goals' || view === 'reminders')))
 
   if (view === 'intro') {
     return (
@@ -274,7 +280,7 @@ function App() {
         hasProfile={hasProfile}
         onNavigate={goTo}
         onLogoClick={goHome}
-        onOpenPathControls={showRainPathRail ? () => setFlowControlsOpen(true) : undefined}
+        onOpenPathControls={showPathRail ? () => setFlowControlsOpen(true) : undefined}
         chat={
           showChat ? (
             <ChatDock
@@ -316,23 +322,18 @@ function App() {
             />
           ) : null}
           {!rainJourney && view === 'profile' ? (
-            <>
-              <ProfileView
-                key={profile.lastUpdated ?? 'profile'}
-                profile={profile}
-                onSave={saveEdits}
-                onReset={resetProfile}
-                onLiveChange={setProfile}
-                onLogoClick={goHome}
-                onViewDashboard={() => {
-                  setView('dashboard')
-                  setNotice('')
-                }}
-              />
-              {showMattFlowControls ? (
-                <FlowControls variant="explore" embedded {...flowControlHandlers} />
-              ) : null}
-            </>
+            <ProfileView
+              key={profile.lastUpdated ?? 'profile'}
+              profile={profile}
+              onSave={saveEdits}
+              onReset={resetProfile}
+              onLiveChange={setProfile}
+              onLogoClick={goHome}
+              onViewDashboard={() => {
+                setView('dashboard')
+                setNotice('')
+              }}
+            />
           ) : null}
           {!rainJourney && view === 'dashboard' ? (
             <DashboardView
@@ -422,7 +423,12 @@ function App() {
         </div>
       </AppShell>
       <FlowControlsDialog open={flowControlsOpen} onClose={closeFlowControls}>
-        <FlowControls variant="improve" improvePlacement="dialog" embedded {...flowControlHandlers} />
+        <FlowControls
+          variant={journey === 'rain' ? 'improve' : 'explore'}
+          improvePlacement="dialog"
+          embedded
+          {...flowControlHandlers}
+        />
       </FlowControlsDialog>
     </>
   )
