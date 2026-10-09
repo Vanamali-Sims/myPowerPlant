@@ -31,6 +31,7 @@ type Props = {
   onSaveProfile: (profile: ProfileData) => void
   onStartSetup: () => void
   onLogoClick: () => void
+  hideSetupNavigation?: boolean
 }
 
 type ChangeItem = { label: string; from: string; to: string }
@@ -115,6 +116,7 @@ export function WhatIfView({
   onSaveProfile,
   onStartSetup,
   onLogoClick,
+  hideSetupNavigation = false,
 }: Props) {
   const [status, setStatus] = useState('')
   const [peopleDraft, setPeopleDraft] = useSyncedDraft(profile.people)
@@ -373,9 +375,11 @@ export function WhatIfView({
           icon={<BulbIcon />}
           title="Finish your profile to run comparisons"
           action={
-            <Button variant="primary" onClick={onStartSetup}>
-              Start setup
-            </Button>
+            hideSetupNavigation ? undefined : (
+              <Button variant="primary" onClick={onStartSetup}>
+                Start setup
+              </Button>
+            )
           }
         >
           What if needs your saved household answers as the starting point for a scenario.

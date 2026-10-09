@@ -1,9 +1,8 @@
 /**
- * Logged-in app-rail navigation.
+ * Persona-specific app-rail navigation.
  *
- * Profile stays locked until a profile is saved; Home, Dashboard, What if,
- * Reminders, and Goals are always available. Unavailable copy lives here so
- * AppShell stays presentational.
+ * Matt: home, dashboard, recommendations, profile.
+ * Rain: what if, goals, reminders (shown on tool pages, not on the hub).
  */
 import {
   BellIcon,
@@ -11,10 +10,13 @@ import {
   DashboardIcon,
   HomeIcon,
   ProfileIcon,
+  ShieldIcon,
   TargetIcon,
 } from '../components/ui/icons'
 
-export type AppNavId = 'profile' | 'home' | 'dashboard' | 'whatif' | 'reminders' | 'goals'
+export type MattNavId = 'home' | 'dashboard' | 'recommendations' | 'profile'
+export type RainNavId = 'whatif' | 'goals' | 'reminders'
+export type AppNavId = MattNavId | RainNavId
 
 export type NavItem = {
   id: AppNavId
@@ -23,13 +25,7 @@ export type NavItem = {
   unavailableMessage: string
 }
 
-export const NAV: NavItem[] = [
-  {
-    id: 'profile',
-    label: 'Profile',
-    icon: ProfileIcon,
-    unavailableMessage: 'Complete setup to view your profile.',
-  },
+export const MATT_NAV: NavItem[] = [
   {
     id: 'home',
     label: 'Home',
@@ -40,24 +36,42 @@ export const NAV: NavItem[] = [
     id: 'dashboard',
     label: 'Dashboard',
     icon: DashboardIcon,
-    unavailableMessage: 'Dashboard is available. Complete setup for a personalised report.',
+    unavailableMessage: 'Complete setup for a personalised dashboard.',
   },
+  {
+    id: 'recommendations',
+    label: 'Plans',
+    icon: ShieldIcon,
+    unavailableMessage: 'Complete setup for personalised plan matches.',
+  },
+  {
+    id: 'profile',
+    label: 'Profile',
+    icon: ProfileIcon,
+    unavailableMessage: 'Complete setup to view your profile.',
+  },
+]
+
+export const RAIN_NAV: NavItem[] = [
   {
     id: 'whatif',
     label: 'What if',
     icon: BulbIcon,
-    unavailableMessage: 'What if is available. Complete setup to compare changes.',
-  },
-  {
-    id: 'reminders',
-    label: 'Reminders',
-    icon: BellIcon,
-    unavailableMessage: 'Reminders are available. Complete setup for personalised days.',
+    unavailableMessage: 'What if needs your household answers on this device.',
   },
   {
     id: 'goals',
     label: 'Goals',
     icon: TargetIcon,
-    unavailableMessage: 'Goals are available. Complete setup to set your own goals.',
+    unavailableMessage: 'Goals need your household answers on this device.',
+  },
+  {
+    id: 'reminders',
+    label: 'Reminders',
+    icon: BellIcon,
+    unavailableMessage: 'Reminders need your household answers on this device.',
   },
 ]
+
+/** @deprecated Use MATT_NAV or RAIN_NAV — kept for any legacy imports */
+export const NAV = MATT_NAV

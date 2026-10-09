@@ -9,6 +9,8 @@ type Props = {
   missing: string[]
   onOpenProfile: () => void
   onStartSetup: () => void
+  /** Rain journey: show missing fields but no link to setup/profile. */
+  hideNavigation?: boolean
 }
 
 /**
@@ -19,7 +21,13 @@ type Props = {
  * No suggestion or default goal is shown here: goals are only suggested from
  * a complete profile.
  */
-export function ProfileIncomplete({ hasSavedProfile, missing, onOpenProfile, onStartSetup }: Props) {
+export function ProfileIncomplete({
+  hasSavedProfile,
+  missing,
+  onOpenProfile,
+  onStartSetup,
+  hideNavigation = false,
+}: Props) {
   return (
     <section className="goals-incomplete" role="alert" aria-labelledby="goals-incomplete-title">
       <AlertIcon width={20} height={20} />
@@ -36,7 +44,7 @@ export function ProfileIncomplete({ hasSavedProfile, missing, onOpenProfile, onS
             <li key={item}>{item}</li>
           ))}
         </ul>
-        {hasSavedProfile ? (
+        {hideNavigation ? null : hasSavedProfile ? (
           <Button variant="primary" onClick={onOpenProfile}>
             Go to Profile
           </Button>

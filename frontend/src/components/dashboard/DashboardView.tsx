@@ -13,7 +13,6 @@ import { Button } from '../ui/Button'
 import { Callout } from '../ui/Callout'
 import { VppHelpsQuotes } from '../home/VppHelpsQuotes'
 import { EnergyRiver } from './EnergyRiver'
-import { VppSuggestions } from './VppSuggestions'
 import { BoltIcon } from '../ui/icons'
 
 type Props = {
@@ -25,6 +24,7 @@ type Props = {
   onTimeframe: (next: Timeframe) => void
   onEditProfile: () => void
   onStartSetup: () => void
+  onSeeRecommendations: () => void
   onLogoClick: () => void
 }
 
@@ -47,6 +47,7 @@ export function DashboardView({
   onTimeframe,
   onEditProfile,
   onStartSetup,
+  onSeeRecommendations,
   onLogoClick,
 }: Props) {
   const report = useMemo(
@@ -121,12 +122,7 @@ export function DashboardView({
               place={place}
               timeframe={timeframe}
               onTimeframe={onTimeframe}
-              onSeePlans={() => {
-                document.getElementById('vpp-suggestions')?.scrollIntoView({
-                  behavior: 'smooth',
-                  block: 'start',
-                })
-              }}
+              onSeePlans={onSeeRecommendations}
             />
           ) : null}
 
@@ -145,29 +141,21 @@ export function DashboardView({
             </section>
           ) : null}
 
-          {bundle ? (
-            <VppSuggestions
-              hasProfile
-              profile={profile}
-              plans={bundle.vppSuggestionPlans}
-              batteryModels={bundle.batteryModels}
-              fork={river?.fork ?? null}
-              onStartSetup={onStartSetup}
-              fromSavings
-            />
-          ) : null}
         </div>
       ) : null}
 
       {!hasProfile && bundle ? (
-        <VppSuggestions
-          hasProfile={false}
-          profile={profile}
-          plans={bundle.vppSuggestionPlans}
-          batteryModels={bundle.batteryModels}
-          fork={null}
-          onStartSetup={onStartSetup}
-        />
+        <Callout
+          tone="action"
+          title="Complete onboarding for personalised numbers"
+          action={
+            <Button variant="outline-accent" onClick={onStartSetup}>
+              Fill the onboarding form
+            </Button>
+          }
+        >
+          Finish the questionnaire to unlock your dashboard and VPP plan matches.
+        </Callout>
       ) : null}
 
       {hasProfile ? (

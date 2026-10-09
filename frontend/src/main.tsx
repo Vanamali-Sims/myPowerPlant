@@ -17,6 +17,9 @@ import './styles/goals.css'
 import './styles/chat.css'
 import './styles/whatif.css'
 import './styles/motion.css'
+import './styles/onboarding.css'
+import './styles/rain-hub.css'
+import './styles/recommendations.css'
 import App from './App.tsx'
 
 createRoot(document.getElementById('root')!).render(

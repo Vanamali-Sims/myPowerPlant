@@ -1,0 +1,327 @@
+.onboarding {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem 1.25rem 3rem;
+  background: linear-gradient(165deg, var(--green-deep) 0%, var(--green-deeper) 55%, #0a1a15 100%);
+  color: var(--on-deep);
+}
+
+.onboarding--path {
+  background: var(--canvas);
+  color: var(--ink);
+}
+
+.onboarding__inner {
+  width: min(42rem, 100%);
+  text-align: center;
+}
+
+.onboarding__inner--wide {
+  width: min(52rem, 100%);
+}
+
+.onboarding__eyebrow {
+  color: var(--on-deep-muted);
+}
+
+.onboarding--path .onboarding__eyebrow,
+.onboarding--path .onboarding__lede {
+  color: var(--ink-muted);
+}
+
+.onboarding__title {
+  font-family: var(--font-display);
+  font-size: clamp(1.75rem, 4vw, 2.35rem);
+  font-weight: 500;
+  margin: 0.5rem 0 0.75rem;
+  color: inherit;
+}
+
+.onboarding__lede {
+  margin: 0 auto 1.5rem;
+  max-width: 36rem;
+  color: var(--on-deep-muted);
+  line-height: 1.55;
+}
+
+.onboarding__art {
+  margin: 0 auto 1.75rem;
+  max-width: 32rem;
+}
+
+.onboarding__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  justify-content: center;
+}
+
+.onboarding__mark {
+  display: inline-flex;
+  margin-bottom: 1rem;
+}
+
+.path-choice__grid {
+  display: grid;
+  gap: 1rem;
+  margin-top: 2rem;
+  text-align: left;
+}
+
+@media (min-width: 720px) {
+  .path-choice__grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.path-choice__card {
+  appearance: none;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-card);
+  background: var(--surface);
+  padding: 1.5rem 1.35rem;
+  cursor: pointer;
+  text-align: left;
+  box-shadow: 0 8px 28px rgba(30, 36, 32, 0.06);
+  transition: border-color 0.2s ease, transform 0.2s ease;
+}
+
+.path-choice__card:hover {
+  border-color: var(--terra-400);
+  transform: translateY(-2px);
+}
+
+.path-choice__card--improve {
+  background: var(--surface-deep);
+  border-color: rgba(163, 188, 169, 0.25);
+  color: var(--on-deep);
+}
+
+.path-choice__card h2 {
+  font-family: var(--font-display);
+  font-size: 1.35rem;
+  margin: 0 0 0.5rem;
+  color: inherit;
+}
+
+.path-choice__card p {
+  margin: 0 0 1rem;
+  color: var(--ink-secondary);
+  line-height: 1.5;
+}
+
+.path-choice__card--improve p {
+  color: var(--on-deep-muted);
+}
+
+.path-choice__cta {
+  font-weight: 600;
+  color: var(--primary);
+}
+
+.path-choice__card--improve .path-choice__cta {
+  color: var(--terra-200);
+}
+
+/* SVG intro animation */
+.vpp-intro-anim {
+  width: 100%;
+  height: auto;
+  display: block;
+  border-radius: 1rem;
+  overflow: hidden;
+}
+
+.vpp-intro-anim__sun {
+  animation: vpp-intro-sun-pulse 4s ease-in-out infinite;
+  transform-origin: 88px 72px;
+}
+
+.vpp-intro-anim__beam--a {
+  animation: vpp-intro-beam 3.2s ease-in-out infinite;
+}
+
+.vpp-intro-anim__beam--b {
+  animation: vpp-intro-beam 3.2s ease-in-out 0.4s infinite;
+}
+
+.vpp-intro-anim__charge {
+  animation: vpp-intro-charge 2.8s ease-in-out infinite;
+}
+
+.vpp-intro-anim__network {
+  animation: vpp-intro-network 3.6s ease-in-out infinite;
+}
+
+.vpp-intro-anim__pulse {
+  animation: vpp-intro-ring 3.6s ease-out infinite;
+  transform-origin: 392px 148px;
+}
+
+.vpp-intro-anim--static .vpp-intro-anim__sun,
+.vpp-intro-anim--static .vpp-intro-anim__beam--a,
+.vpp-intro-anim--static .vpp-intro-anim__beam--b,
+.vpp-intro-anim--static .vpp-intro-anim__charge,
+.vpp-intro-anim--static .vpp-intro-anim__network,
+.vpp-intro-anim--static .vpp-intro-anim__pulse {
+  animation: none;
+}
+
+@keyframes vpp-intro-sun-pulse {
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.92;
+    transform: scale(1.04);
+  }
+}
+
+@keyframes vpp-intro-beam {
+  0%,
+  100% {
+    opacity: 0.25;
+  }
+  50% {
+    opacity: 0.85;
+  }
+}
+
+@keyframes vpp-intro-charge {
+  0%,
+  100% {
+    opacity: 0.55;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+@keyframes vpp-intro-network {
+  0%,
+  100% {
+    opacity: 0.75;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+.flow-controls {
+  margin: 2.5rem 1.25rem 2rem;
+  padding: 1.25rem 1.15rem;
+  border-radius: var(--radius-card);
+  border: 1px solid var(--border);
+  background: var(--surface-sunken);
+  max-width: 40rem;
+}
+
+.flow-controls--embedded {
+  margin-top: 0;
+}
+
+.flow-controls--dialog {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  max-width: none;
+}
+
+.flow-controls-dialog {
+  width: min(24rem, calc(100vw - 1.5rem));
+}
+
+.flow-controls-dialog__body .flow-controls__lede {
+  margin: 0 0 1.1rem;
+  color: var(--ink-secondary);
+  font-size: 0.92rem;
+  line-height: 1.5;
+}
+
+.flow-controls__actions--dialog {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0.55rem;
+}
+
+.flow-controls__actions--dialog .ui-btn {
+  width: 100%;
+}
+
+.flow-controls__actions--dialog .ui-btn--ghost {
+  width: 100%;
+  text-decoration: none;
+  padding: 0.85rem 1.25rem;
+}
+
+.flow-controls--improve-hub,
+.rain-hub-page .flow-controls--improve-hub {
+  background: rgba(13, 33, 26, 0.75);
+  border-color: rgba(163, 188, 169, 0.22);
+  color: var(--on-deep);
+}
+
+.flow-controls--improve-hub .flow-controls__lede {
+  color: var(--on-deep-muted);
+}
+
+.flow-controls--improve-hub .flow-controls__title {
+  color: var(--on-deep);
+}
+
+.flow-controls--improve-hub .ui-btn--secondary {
+  background: var(--paper);
+  color: var(--ink);
+}
+
+.flow-controls--rain .flow-controls__lede {
+  color: var(--on-deep-muted);
+}
+
+.flow-controls--rain .flow-controls__title {
+  color: var(--on-deep);
+}
+
+.flow-controls__title {
+  font-family: var(--font-display);
+  font-size: 1.1rem;
+  margin: 0 0 0.35rem;
+}
+
+.flow-controls__lede {
+  margin: 0 0 1rem;
+  font-size: 0.9rem;
+  color: var(--ink-secondary);
+  line-height: 1.5;
+}
+
+.flow-controls__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.flow-controls .callout {
+  margin-top: 1rem;
+}
+
+@keyframes vpp-intro-ring {
+  0% {
+    opacity: 0.35;
+    transform: scale(0.92);
+  }
+  70% {
+    opacity: 0;
+    transform: scale(1.15);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1.15);
+  }
+}

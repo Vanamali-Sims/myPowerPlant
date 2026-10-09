@@ -11,7 +11,8 @@ import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import App from '../../App'
-import { NAV } from '../../constants/navigation'
+import { RAIN_NAV } from '../../constants/navigation'
+import { saveJourney } from '../../lib/journeyStorage'
 
 beforeEach(() => {
   localStorage.clear()
@@ -42,23 +43,24 @@ afterEach(() => {
 })
 
 describe('Goals tab', () => {
-  it('sits directly after Reminders in the navigation', () => {
-    const ids = NAV.map((item) => item.id)
-    expect(ids.indexOf('goals')).toBe(ids.indexOf('reminders') + 1)
+  it('lists Goals between What if and Reminders in the Rain rail', () => {
+    const ids = RAIN_NAV.map((item) => item.id)
+    expect(ids).toEqual(['whatif', 'goals', 'reminders'])
   })
 
   it('has a text label and opens the Goals page as the current page', async () => {
     const user = userEvent.setup()
+    saveJourney('rain')
     render(<App />)
     const rail = screen.getByRole('complementary', { name: 'App' })
     const buttons = Array.from(rail.querySelectorAll('nav button')).map((node) => node.textContent)
-    expect(buttons.indexOf('Goals')).toBe(buttons.indexOf('Reminders') + 1)
+    expect(buttons).toEqual(['What if', 'Goals', 'Reminders'])
 
     const goals = screen.getByRole('button', { name: 'Goals' })
-    expect(goals.getAttribute('aria-current')).toBeNull()
-    await user.click(goals)
+    expect(goals.getAttribute('aria-current')).toBe('page')
     expect(await screen.findByRole('heading', { level: 1, name: 'Goals' })).toBeTruthy()
-    expect(screen.getByRole('button', { name: 'Goals' }).getAttribute('aria-current')).toBe('page')
-    expect(screen.getByRole('button', { name: 'Reminders' }).getAttribute('aria-current')).toBeNull()
+    await user.click(screen.getByRole('button', { name: 'Reminders' }))
+    expect(screen.getByRole('button', { name: 'Reminders' }).getAttribute('aria-current')).toBe('page')
+    expect(screen.getByRole('button', { name: 'Goals' }).getAttribute('aria-current')).toBeNull()
   })
 })

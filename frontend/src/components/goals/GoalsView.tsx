@@ -63,6 +63,7 @@ type Props = {
   onOpenProfile: () => void
   onStartSetup: () => void
   onLogoClick: () => void
+  hideProfileNavigation?: boolean
 }
 
 function bothGoals(store: GoalsStore): Record<GoalKind, GoalEntry> | null {
@@ -87,6 +88,7 @@ export function GoalsView({
   onOpenProfile,
   onStartSetup,
   onLogoClick,
+  hideProfileNavigation = false,
 }: Props) {
   const [store, setStore] = useState<GoalsStore>(loadGoals)
   const [editing, setEditing] = useState(false)
@@ -402,6 +404,7 @@ export function GoalsView({
           missing={readiness.missing}
           onOpenProfile={onOpenProfile}
           onStartSetup={onStartSetup}
+          hideNavigation={hideProfileNavigation}
         />
       ) : (
         estimatesMessage

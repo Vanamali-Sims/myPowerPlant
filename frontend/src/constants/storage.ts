@@ -6,6 +6,9 @@
 
 export const PROFILE_STORAGE_KEY = 'mypowerplant.profile'
 
+/** Matt vs Rain path — separate from the household profile blob. */
+export const JOURNEY_STORAGE_KEY = 'mypowerplant.journey'
+
 /** Reject a stored blob larger than this so a tampered key cannot fill the origin quota. */
 export const PROFILE_MAX_JSON_BYTES = 8192
 

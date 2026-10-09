@@ -1,0 +1,54 @@
+.recommendations {
+  padding: 0 0 3rem;
+}
+
+.recommendations__intro {
+  margin-bottom: 1.5rem;
+}
+
+.recommendations__intro h1 {
+  max-width: 28rem;
+}
+
+.recommendations__lede {
+  max-width: 40rem;
+  color: var(--ink-secondary);
+  line-height: 1.55;
+}
+
+.recommendations__enroll {
+  margin-top: 2.5rem;
+  padding: 1.5rem 1.25rem;
+  border-radius: var(--radius-card);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  box-shadow: 0 6px 24px rgba(30, 36, 32, 0.05);
+}
+
+.recommendations__enroll h2 {
+  font-size: 1.25rem;
+  margin: 0.35rem 0 0.5rem;
+}
+
+.recommendations__enroll-lede {
+  color: var(--ink-secondary);
+  margin: 0 0 1.25rem;
+  max-width: 36rem;
+}
+
+.recommendations__enroll-row {
+  display: grid;
+  gap: 1rem;
+  align-items: end;
+}
+
+@media (min-width: 640px) {
+  .recommendations__enroll-row {
+    grid-template-columns: 1fr auto;
+  }
+}
+
+.vpp-plan-card__cta--enroll {
+  grid-column: 1 / -1;
+  margin-top: 0.25rem;
+}
