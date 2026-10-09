@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import { RECOMMENDATIONS_PAGE } from '../../constants/onboarding'
-import { energyProviders, locationFromPostcode } from '../../data/profileOptions'
+import { energyProviders } from '../../data/profileOptions'
 import type { MethodologyBundle } from '../../lib/methodologyApi'
 import type { ProfileData } from '../../types/profile'
 import { PlansMasterDetail } from './PlansMasterDetail'
@@ -32,8 +32,6 @@ export function RecommendationsView({
   onLogoClick,
 }: Props) {
   const [selectedProvider, setSelectedProvider] = useState(profile.provider || '')
-
-  const place = locationFromPostcode(profile.postcode)
 
   const providerOptions = useMemo(
     () => energyProviders.map((label) => ({ value: label, label })),
@@ -68,14 +66,11 @@ export function RecommendationsView({
       ) : null}
 
       <header className="recommendations__intro">
-        <p className="eyebrow">
-          {RECOMMENDATIONS_PAGE.eyebrow}
-          {hasProfile && place ? ` · ${place}` : ''}
-        </p>
+        {!hasProfile ? <p className="eyebrow">{RECOMMENDATIONS_PAGE.eyebrow}</p> : null}
         <h1>{RECOMMENDATIONS_PAGE.title}</h1>
-        <p className="recommendations__lede">
-          {hasProfile ? RECOMMENDATIONS_PAGE.lede : RECOMMENDATIONS_PAGE.ledeNoProfile}
-        </p>
+        {!hasProfile ? (
+          <p className="recommendations__lede">{RECOMMENDATIONS_PAGE.ledeNoProfile}</p>
+        ) : null}
       </header>
 
       {!hasProfile ? (
