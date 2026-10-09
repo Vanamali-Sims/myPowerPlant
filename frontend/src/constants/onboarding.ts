@@ -61,6 +61,12 @@ export const RECOMMENDATIONS_PAGE = {
   title: 'VPP plans that can help you achieve this saving',
   lede:
     'These Victorian plans fit this battery. They are how leftover power can go out through a VPP instead of a standard feed-in.',
+  ledeNoProfile:
+    'Tell us about your home, solar, and battery first — then we can rank plans that fit you.',
+  emptyTitle: 'Set up your household profile',
+  emptyBody:
+    'Plan cards and matches use your saved answers on this device. Complete the questionnaire to see which VPP offers suit your home.',
+  emptyAction: 'Start questionnaire',
   enrollEyebrow: 'Already joined?',
   enrollTitle: 'I started participating in a VPP',
   enrollBody:

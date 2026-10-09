@@ -7,8 +7,9 @@ import type { MethodologyBundle } from '../../lib/methodologyApi'
 import type { ProfileData } from '../../types/profile'
 import { VppSuggestions } from '../dashboard/VppSuggestions'
 import { Button } from '../ui/Button'
+import { Callout } from '../ui/Callout'
 import { SelectField } from '../ui/SelectField'
-import { BoltIcon } from '../ui/icons'
+import { AlertIcon, BoltIcon } from '../ui/icons'
 
 type Props = {
   profile: ProfileData
@@ -21,7 +22,7 @@ type Props = {
 }
 
 /**
- * Screen 2.4 — VPP plan recommendations and enrollment into the Rain path.
+ * Screen 2.4 — VPP plan recommendations and enrollment into the improve journey.
  */
 export function RecommendationsView({
   profile,
@@ -80,12 +81,29 @@ export function RecommendationsView({
       <header className="recommendations__intro">
         <p className="eyebrow">{RECOMMENDATIONS_PAGE.eyebrow}</p>
         <h1>{RECOMMENDATIONS_PAGE.title}</h1>
-        <p className="recommendations__lede">{RECOMMENDATIONS_PAGE.lede}</p>
+        <p className="recommendations__lede">
+          {hasProfile ? RECOMMENDATIONS_PAGE.lede : RECOMMENDATIONS_PAGE.ledeNoProfile}
+        </p>
       </header>
 
-      {bundle ? (
+      {!hasProfile ? (
+        <Callout
+          tone="action"
+          icon={<AlertIcon />}
+          title={RECOMMENDATIONS_PAGE.emptyTitle}
+          action={
+            <Button variant="primary" onClick={onStartSetup}>
+              {RECOMMENDATIONS_PAGE.emptyAction}
+            </Button>
+          }
+        >
+          {RECOMMENDATIONS_PAGE.emptyBody}
+        </Callout>
+      ) : null}
+
+      {hasProfile && bundle ? (
         <VppSuggestions
-          hasProfile={hasProfile}
+          hasProfile
           profile={profile}
           plans={bundle.vppSuggestionPlans}
           batteryModels={bundle.batteryModels}
@@ -96,27 +114,31 @@ export function RecommendationsView({
           enrollMode
           onEnrollProvider={onEnrollProvider}
         />
-      ) : (
-        <p className="app-notice" role="status">Loading VPP plans…</p>
-      )}
+      ) : null}
 
-      <section className="recommendations__enroll" aria-labelledby="recommendations-enroll-title">
-        <p className="eyebrow">{RECOMMENDATIONS_PAGE.enrollEyebrow}</p>
-        <h2 id="recommendations-enroll-title">{RECOMMENDATIONS_PAGE.enrollTitle}</h2>
-        <p className="recommendations__enroll-lede">{RECOMMENDATIONS_PAGE.enrollBody}</p>
-        <div className="recommendations__enroll-row">
-          <SelectField
-            label="Your VPP retailer"
-            value={selectedProvider}
-            onChange={setSelectedProvider}
-            options={providerOptions}
-            placeholder="Choose a provider"
-          />
-          <Button variant="primary" type="button" onClick={enrollFromSelect} disabled={!selectedProvider}>
-            {RECOMMENDATIONS_PAGE.enrollAction}
-          </Button>
-        </div>
-      </section>
+      {hasProfile && !bundle && !loadError ? (
+        <p className="app-notice" role="status">Loading VPP plans…</p>
+      ) : null}
+
+      {hasProfile ? (
+        <section className="recommendations__enroll" aria-labelledby="recommendations-enroll-title">
+          <p className="eyebrow">{RECOMMENDATIONS_PAGE.enrollEyebrow}</p>
+          <h2 id="recommendations-enroll-title">{RECOMMENDATIONS_PAGE.enrollTitle}</h2>
+          <p className="recommendations__enroll-lede">{RECOMMENDATIONS_PAGE.enrollBody}</p>
+          <div className="recommendations__enroll-row">
+            <SelectField
+              label="Your VPP retailer"
+              value={selectedProvider}
+              onChange={setSelectedProvider}
+              options={providerOptions}
+              placeholder="Choose a provider"
+            />
+            <Button variant="primary" type="button" onClick={enrollFromSelect} disabled={!selectedProvider}>
+              {RECOMMENDATIONS_PAGE.enrollAction}
+            </Button>
+          </div>
+        </section>
+      ) : null}
     </div>
   )
 }
