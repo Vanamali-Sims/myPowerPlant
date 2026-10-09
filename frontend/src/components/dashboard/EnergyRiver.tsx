@@ -10,6 +10,7 @@ import {
   formatShare,
   riverBarSlices,
   riverForkStage,
+  riverHeadlineShare,
   riverPeriod,
   type EnergyRiverModel,
 } from '../../lib/energyRiver'
@@ -37,7 +38,7 @@ type EnergyRiverProps = {
  * @returns One dark balance card: split bar, four stats, CTA
  *
  * Savings explanation sits in a hover/focus tooltip so the default view stays
- * numbers-first. The bar splits generated, used, and leftover or gap.
+ * numbers-first. The bar is generation, split into use and potential discharge.
  */
 export function EnergyRiver({
   model,
@@ -57,9 +58,9 @@ export function EnergyRiver({
   const isSurplus = model.fork === 'surplus'
   const isDeficit = model.fork === 'deficit'
   const vppTone = isSurplus ? 'discharge' : isDeficit ? 'borrow' : 'standby'
-  const shareFraction = model.fork === 'balanced' ? 1 : model.share
-  const shareLabel = formatShare(shareFraction)
   const slices = riverBarSlices(model)
+  const shareFraction = riverHeadlineShare(model)
+  const shareLabel = formatShare(shareFraction)
   const headline = isSurplus
     ? 'of what this home generated could go to a VPP'
     : isDeficit
@@ -131,7 +132,7 @@ export function EnergyRiver({
             {slices.map((slice) => (
               <span
                 key={slice.id}
-                className={`energy-bar__slice energy-bar__slice--${slice.tone}${toneClass(slice.id, active)}`}
+                className={`energy-bar__slice energy-bar__slice--${slice.tone}${toneClass(slice.id, active === 'generated' ? null : active)}`}
                 style={{ flexGrow: slice.pct }}
                 onMouseEnter={() => setHover(slice.id)}
                 onMouseLeave={() => setHover(null)}
