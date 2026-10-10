@@ -6,6 +6,7 @@
  * GoalMessage component can show any of them the same way. No message blames
  * the person or guesses at a fix.
  */
+import { BASELINE_RULES } from './goals'
 
 /** Reasons a file cannot be read or a save cannot happen. */
 export type ReasonCode =
@@ -22,6 +23,8 @@ export type ReasonCode =
   | 'estimates_unavailable'
   | 'storage_full'
   | 'write_failed'
+  | 'baseline_not_recent'
+  | 'baseline_too_few_days'
 
 /** Things worth knowing about a file that could be read. */
 export type NoticeCode =
@@ -30,7 +33,6 @@ export type NoticeCode =
   | 'already_counted'
   | 'possibly_revised'
   | 'revision_unchecked'
-  | 'intake_missing'
 
 export type MessageCode = ReasonCode | NoticeCode
 
@@ -122,6 +124,16 @@ export const GOAL_MESSAGES: Record<MessageCode, GoalMessageSpec> = {
     title: 'We could not save on this device. Nothing was changed.',
     nextStep: 'Check that this site is allowed to store data in your browser, then try again.',
   },
+  baseline_not_recent: {
+    severity: 'error',
+    title: 'This file has no complete days from the last few months.',
+    nextStep: `Choose a file from this month or the ${BASELINE_RULES.recentMonths} months before it, so your goals start from how your battery works now.`,
+  },
+  baseline_too_few_days: {
+    severity: 'error',
+    title: `No recent month in this file has at least ${BASELINE_RULES.minCompleteDays} complete days.`,
+    nextStep: `Choose a file that covers at least ${BASELINE_RULES.minCompleteDays} whole days of one recent month.`,
+  },
   invalid_rows: {
     severity: 'warning',
     title: 'Some rows could not be used, so their days are left out.',
@@ -150,11 +162,6 @@ export const GOAL_MESSAGES: Record<MessageCode, GoalMessageSpec> = {
     title: 'We could not check whether earlier days in some months were revised.',
     nextStep:
       'This file only covers part of what was counted for those months, so those days are kept as they were.',
-  },
-  intake_missing: {
-    severity: 'info',
-    title: 'Your file has no battery_charge_kwh column, so intake is missing.',
-    nextStep: 'Only discharge is counted. Nothing has been filled in for intake.',
   },
 }
 

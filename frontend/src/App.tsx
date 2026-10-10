@@ -413,10 +413,7 @@ function App() {
                 profile={profile}
                 bundle={bundle}
                 methodologyError={methodologyError}
-                onOpenProfile={() => undefined}
-                onStartSetup={startSetup}
                 onLogoClick={goHome}
-                hideProfileNavigation
               />
             </Suspense>
           ) : null}

@@ -13,7 +13,8 @@
  */
 export const GOALS_STORAGE_KEY = 'mypowerplant.goals'
 
-export const GOALS_STORE_VERSION = 1
+/** v2 added the battery-file baseline. v1 stores are read and moved up with no baseline. */
+export const GOALS_STORE_VERSION = 2
 
 /** Reject a stored blob larger than this so a tampered key cannot fill the origin quota. */
 export const GOALS_MAX_JSON_BYTES = 65536
@@ -22,13 +23,29 @@ export const GOALS_MAX_JSON_BYTES = 65536
 export const MAX_STORED_MONTHS = 120
 
 /**
- * Goal suggestion rule: months of the profile's estimated savings and carbon.
+ * Goal suggestion rule: months of the baseline month's savings and carbon.
+ * The baseline month is added to progress when goals are saved, so the lowest
+ * goal is two months to leave at least one month still to go.
  * To be confirmed by the team.
  */
 export const GOAL_SUGGESTION_MONTHS = {
-  min: 1,
+  min: 2,
   suggested: 3,
-  max: 12,
+  max: 13,
+} as const
+
+/**
+ * Baseline rules for the battery file read before goals are set.
+ * The current month counts as recent too, alongside the full months before it.
+ * To be confirmed by the team.
+ */
+export const BASELINE_RULES = {
+  /** Fewest complete days a month needs before it can be the baseline. */
+  minCompleteDays: 14,
+  /** Average month length used to scale a part-month to a full month. */
+  daysPerMonth: 30.4,
+  /** How many full months before the current one still count as recent. */
+  recentMonths: 3,
 } as const
 
 /**
@@ -49,6 +66,16 @@ export const EMISSIONS_FACTOR_SOURCE = {
 export const TYPICAL_RATE_SOURCE = {
   label: 'Source to be confirmed',
   lastVerified: 'to be confirmed',
+} as const
+
+/**
+ * Accepted usage rate, in cents per kWh, when the person types theirs from a
+ * bill or contract. Wide enough for any Victorian plan. To be confirmed by the team.
+ */
+export const GOAL_RATE_CENTS = {
+  min: 5,
+  max: 100,
+  example: 32,
 } as const
 
 /** The tree grows one step for every this many percent of the carbon goal. */
@@ -101,12 +128,6 @@ export const REVISION_TOLERANCE_KWH = 0.05
 
 /** Round battery figures used in the worked carbon examples. */
 export const CARBON_EXAMPLE_KWH = [10, 100] as const
-
-/**
- * If the profile is incomplete, goals cannot be typed in by hand.
- * To be confirmed by the team.
- */
-export const ALLOW_MANUAL_GOALS_WITHOUT_PROFILE = false
 
 export const GOAL_LABELS = {
   savings: {

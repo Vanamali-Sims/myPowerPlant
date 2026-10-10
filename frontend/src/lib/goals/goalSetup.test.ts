@@ -1,93 +1,90 @@
 /**
- * Unit tests for goal setup rules (US8.1 AC2, AC3, AC4, AC6).
+ * Unit tests for goal setup rules: the battery-file baseline, ranges, and checks.
  *
- * Suggestions must come from the dashboard's own estimate, and the carbon
- * examples must use the same emissions factor field buildKpiReport reads.
+ * The carbon examples must use the same emissions factor field buildKpiReport reads.
  */
 import { describe, expect, it } from 'vitest'
 
-import { GOAL_SUGGESTION_MONTHS } from '../../constants/goals'
-import { WEEKS_PER_MONTH } from '../../constants/kpiMethodology'
-import { BASELINE_PROFILE } from '../../data/baselines'
-import { emptyProfile, type ProfileData } from '../../types/profile'
-import { buildKpiReport } from '../kpis'
-import { seedMethodologyBundle } from '../methodologyFixture'
+import { BASELINE_RULES, GOAL_SUGGESTION_MONTHS } from '../../constants/goals'
+import type { DayFigures } from './calculate'
+import { addDays } from './calendar'
 import { formatGoalAud, formatGoalKg, formatPercent, progressPercent, progressText } from './goalFormat'
 import {
   buildCarbonExamples,
-  getGoalsReadiness,
-  monthlyProfileEstimate,
   normaliseGoal,
   parseGoalInput,
+  pickBaseline,
   suggestGoals,
   validateGoal,
 } from './goalSetup'
+import { seedMethodologyBundle } from '../methodologyFixture'
 
 const bundle = seedMethodologyBundle()
+const TODAY = '2026-10-10'
 
-function savedProfile(overrides: Partial<ProfileData> = {}): ProfileData {
-  return {
-    ...emptyProfile(),
-    ...BASELINE_PROFILE,
-    lastUpdated: '2026-10-01T00:00:00.000Z',
-    ...overrides,
-  }
+/** Complete days from `from`, each worth $2 and 1.5 kg. */
+function days(from: string, count: number): DayFigures[] {
+  return Array.from({ length: count }, (_, index) => ({
+    date: addDays(from, index),
+    intervals: 96,
+    dischargeKwh: 3,
+    intakeKwh: 1,
+    energyKwh: 4,
+    savingsAud: 2,
+    carbonKg: 1.5,
+  }))
 }
 
-describe('getGoalsReadiness', () => {
-  it('is ready for a saved profile the wizard would accept', () => {
-    expect(getGoalsReadiness(savedProfile())).toEqual({ ready: true })
+describe('pickBaseline', () => {
+  it('scales a part-month to an average month: total ÷ days × 30.4', () => {
+    const result = pickBaseline(days('2026-09-01', 20), TODAY)
+    expect(result.ok).toBe(true)
+    if (!result.ok) return
+    expect(result.month).toBe('2026-09')
+    expect(result.days).toHaveLength(20)
+    expect(result.monthly.savings).toBeCloseTo((40 / 20) * BASELINE_RULES.daysPerMonth, 10)
+    expect(result.monthly.carbon).toBeCloseTo((30 / 20) * BASELINE_RULES.daysPerMonth, 10)
   })
 
-  it('lists every setup section when no profile is saved', () => {
-    const result = getGoalsReadiness(emptyProfile())
-    expect(result.ready).toBe(false)
-    if (result.ready) return
-    expect(result.hasSavedProfile).toBe(false)
-    expect(result.missing).toEqual([
-      'Household Profile',
-      'Household Usage',
-      'Solar Details',
-      'Battery Profile',
-      'Energy Provider',
-    ])
+  it('uses the latest recent month with enough days, and only its days', () => {
+    const result = pickBaseline([...days('2026-08-01', 31), ...days('2026-09-01', 30), ...days('2026-10-01', 5)], TODAY)
+    expect(result.ok).toBe(true)
+    if (!result.ok) return
+    expect(result.month).toBe('2026-09')
+    expect(result.days.every((day) => day.date.startsWith('2026-09'))).toBe(true)
   })
 
-  it('names the missing answers on a saved but incomplete profile', () => {
-    const result = getGoalsReadiness(savedProfile({ monthlyBill: '', postcode: '' }))
-    expect(result.ready).toBe(false)
-    if (result.ready) return
-    expect(result.hasSavedProfile).toBe(true)
-    expect(result.missing).toContain('Postcode')
-    expect(result.missing).toContain('Average monthly electricity bill')
+  it('accepts the current month once it has enough complete days', () => {
+    const result = pickBaseline(days('2026-10-01', BASELINE_RULES.minCompleteDays), '2026-10-20')
+    expect(result.ok && result.month).toBe('2026-10')
   })
 
-  it('does not require monthly kWh, which no screen collects', () => {
-    expect(getGoalsReadiness(savedProfile({ monthlyKwh: '' }))).toEqual({ ready: true })
+  it(`needs at least ${BASELINE_RULES.minCompleteDays} complete days in one month`, () => {
+    expect(pickBaseline(days('2026-09-01', BASELINE_RULES.minCompleteDays - 1), TODAY)).toEqual({
+      ok: false,
+      reason: 'baseline_too_few_days',
+    })
+    // Spread over two months, neither has enough on its own.
+    expect(pickBaseline(days('2026-08-20', 20), TODAY)).toEqual({ ok: false, reason: 'baseline_too_few_days' })
+  })
+
+  it(`only counts this month and the ${BASELINE_RULES.recentMonths} months before it`, () => {
+    expect(pickBaseline(days('2026-07-01', 31), TODAY).ok).toBe(true)
+    expect(pickBaseline(days('2026-06-01', 30), TODAY)).toEqual({ ok: false, reason: 'baseline_not_recent' })
+    expect(pickBaseline(days('2026-11-01', 30), TODAY)).toEqual({ ok: false, reason: 'baseline_not_recent' })
   })
 })
 
 describe('suggestGoals', () => {
-  it('uses the dashboard estimate × WEEKS_PER_MONTH as the monthly basis', () => {
-    const profile = savedProfile()
-    const report = buildKpiReport(profile, bundle)
-    const monthly = monthlyProfileEstimate(profile, bundle)
-    expect(monthly.savings).toBeCloseTo(report.weekly.savingsAud * WEEKS_PER_MONTH, 10)
-    expect(monthly.carbon).toBeCloseTo(report.weekly.carbonAvoidedKg * WEEKS_PER_MONTH, 10)
+  it('runs from 2 to 13 months of the baseline, suggesting 3, rounded up', () => {
+    expect(GOAL_SUGGESTION_MONTHS).toEqual({ min: 2, suggested: 3, max: 13 })
+    const { savings, carbon } = suggestGoals({ savings: 30.2, carbon: 20 })
+    expect(savings).toEqual({ min: 61, suggested: 91, max: 393 })
+    expect(carbon).toEqual({ min: 40, suggested: 60, max: 260 })
   })
 
-  it('suggests the agreed number of months, with the range from min to max months', () => {
-    const profile = savedProfile()
-    const monthly = monthlyProfileEstimate(profile, bundle)
-    const { savings, carbon } = suggestGoals(profile, bundle)
-    expect(savings).not.toBeNull()
-    expect(carbon).not.toBeNull()
-    if (!savings || !carbon) return
-    expect(savings.min).toBe(Math.ceil(monthly.savings * GOAL_SUGGESTION_MONTHS.min))
-    expect(savings.max).toBe(Math.ceil(monthly.savings * GOAL_SUGGESTION_MONTHS.max))
-    expect(savings.suggested).toBe(Math.ceil(monthly.savings * GOAL_SUGGESTION_MONTHS.suggested))
-    expect(carbon.min).toBeLessThanOrEqual(carbon.suggested)
-    expect(carbon.suggested).toBeLessThanOrEqual(carbon.max)
+  it('gives no range for a goal with nothing counted', () => {
+    expect(suggestGoals({ savings: 0, carbon: 5 }).savings).toBeNull()
   })
 })
 

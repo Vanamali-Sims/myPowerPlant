@@ -55,8 +55,6 @@ function renderView() {
       profile={profile}
       bundle={bundle}
       methodologyError=""
-      onOpenProfile={vi.fn()}
-      onStartSetup={vi.fn()}
       onLogoClick={vi.fn()}
     />,
   )
@@ -186,7 +184,7 @@ describe('month-by-month history (AC4)', () => {
     await user.click(screen.getByRole('button', { name: 'Confirm and save' }))
     const table = historyTable()
     const headers = within(table).getAllByRole('columnheader').map((cell) => cell.textContent)
-    expect(headers).toEqual(['Month', 'Days counted', 'Estimated savings', 'Estimated carbon avoided'])
+    expect(headers).toEqual(['Month', 'Days counted', 'Estimated savings', 'Estimated carbon avoided', 'Actions'])
     expect(within(table).getByText('Partial, 12 of 30 days')).toBeTruthy()
     expect(screen.getByText('Counted up to 12 September 2026.')).toBeTruthy()
 

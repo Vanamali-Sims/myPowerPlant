@@ -1,15 +1,15 @@
 /**
- * Goals tab: set a savings and a carbon goal, then track progress from
- * battery files read on this device.
+ * Goals tab: read one recent month of a battery file, set a savings and a
+ * carbon goal from it, then track progress from battery files read on this device.
  */
 import { Suspense, lazy, useEffect, useMemo, useRef, useState } from 'react'
 import { GOALS_DEVICE_NOTE, GOAL_SUGGESTION_MONTHS } from '../../constants/goals'
 import type { MessageCode } from '../../constants/goalMessages'
-import { maxIntervalKwh } from '../../lib/goals/batteryLimits'
+import { batteryFromProfile, maxIntervalKwh } from '../../lib/goals/batteryLimits'
 import { buildCalculationContext, calculateDay, summariseDays } from '../../lib/goals/calculate'
-import { getGoalsReadiness, monthlyProfileEstimate, suggestGoals } from '../../lib/goals/goalSetup'
+import { suggestGoals } from '../../lib/goals/goalSetup'
 import { clearGoals, loadGoals, saveGoals } from '../../lib/goals/goalsStorage'
-import { applyDays, planMerge } from '../../lib/goals/history'
+import { applyDays, planMerge, removeMonth } from '../../lib/goals/history'
 import { applyReplacement, checkRevisions, missingDays } from '../../lib/goals/revisions'
 import {
   level,
@@ -40,13 +40,14 @@ import type { ProfileData } from '../../types/profile'
 import { Button } from '../ui/Button'
 import { Callout } from '../ui/Callout'
 import { BoltIcon, CheckIcon, LockIcon } from '../ui/icons'
+import { BaselineStep, type BaselineDraft } from './BaselineStep'
 import { ClearGoalsDialog } from './ClearGoalsDialog'
 import { GoalMessage } from './GoalMessage'
 import { GoalOverview } from './GoalOverview'
 import { HistoryTable } from './HistoryTable'
 import { LevelUpDialog, type Achievement } from './LevelUpDialog'
 import { GoalSetupForm } from './GoalSetupForm'
-import { ProfileIncomplete } from './ProfileIncomplete'
+import { RemoveMonthDialog } from './RemoveMonthDialog'
 import { RevisionPanel } from './RevisionPanel'
 import { UploadArea, type ReadDays } from './UploadArea'
 import { UploadPreview } from './UploadPreview'
@@ -60,10 +61,25 @@ type Props = {
   profile: ProfileData
   bundle: MethodologyBundle | null
   methodologyError: string
-  onOpenProfile: () => void
-  onStartSetup: () => void
   onLogoClick: () => void
-  hideProfileNavigation?: boolean
+}
+
+/** Which part of goal setup is on screen, or null when setup is closed. */
+type SetupStage = 'choice' | 'upload' | 'form' | null
+
+/**
+ * baselineDaysSentence
+ * @param draft - Baseline read during setup
+ * @param newDays - How many of its days are not counted yet
+ * @param verb - 'will be' before saving, 'were' after
+ * @returns One sentence saying what the baseline adds to progress
+ */
+function baselineDaysSentence(draft: BaselineDraft, newDays: number, verb: 'will be' | 'were'): string {
+  const month = formatMonthLabel(draft.baseline.month)
+  if (!newDays) return `${month} is already in your history, so nothing new is added.`
+  const days = newDays === 1 ? '1 day' : `${newDays} days`
+  const when = verb === 'will be' ? ' when you save your goals' : ''
+  return `${days} from ${month} ${verb} added to your goal progress${when}.`
 }
 
 function bothGoals(store: GoalsStore): Record<GoalKind, GoalEntry> | null {
@@ -73,23 +89,15 @@ function bothGoals(store: GoalsStore): Record<GoalKind, GoalEntry> | null {
 
 /**
  * GoalsView
- * @param props.profile - Household answers held by App
+ * @param props.profile - Household answers held by App; may be empty
  * @param props.bundle - Methodology data App already loaded; Goals makes no request of its own
  * @returns JSX.Element
  *
  * Goals and history are read from and written to this device only. Suggested
- * goals come from the profile estimate, and nothing is suggested until the
- * profile is complete.
+ * goals come from one recent month of the household's battery file, so no
+ * profile is needed. The profile only pre-fills the battery questions.
  */
-export function GoalsView({
-  profile,
-  bundle,
-  methodologyError,
-  onOpenProfile,
-  onStartSetup,
-  onLogoClick,
-  hideProfileNavigation = false,
-}: Props) {
+export function GoalsView({ profile, bundle, methodologyError, onLogoClick }: Props) {
   const [store, setStore] = useState<GoalsStore>(loadGoals)
   const [editing, setEditing] = useState(false)
   const [notice, setNotice] = useState('')
@@ -102,29 +110,29 @@ export function GoalsView({
   const [achievement, setAchievement] = useState<Achievement | null>(null)
   /** Goals being replaced after they were reached; null when not doing that. */
   const [nextKinds, setNextKinds] = useState<GoalKind[] | null>(null)
+  /** Baseline read from a file during setup, saved only with the goals. */
+  const [draft, setDraft] = useState<BaselineDraft | null>(null)
+  /** For a next goal: keep the saved baseline or read a newer file. */
+  const [baselineChoice, setBaselineChoice] = useState<'current' | 'upload' | null>(null)
+  const [removeTarget, setRemoveTarget] = useState<string | null>(null)
+  const [removeError, setRemoveError] = useState<MessageCode | null>(null)
   const overviewHeading = useRef<HTMLHeadingElement>(null)
   const setupHeading = useRef<HTMLHeadingElement>(null)
   const focusOverviewNext = useRef(false)
   const focusSetupNext = useRef(false)
 
-  const readiness = useMemo(() => getGoalsReadiness(profile), [profile])
-  const estimate = useMemo(() => {
-    if (!readiness.ready || !bundle) return null
-    return {
-      suggestions: suggestGoals(profile, bundle),
-      monthly: monthlyProfileEstimate(profile, bundle),
-      factor: bundle.methodology.vicGridKgCo2PerKwh,
-    }
-  }, [bundle, profile, readiness.ready])
+  const battery = store.baseline?.battery ?? batteryFromProfile(profile)
 
   const limits = useMemo(
-    () => (readiness.ready && bundle ? { maxIntervalKwh: maxIntervalKwh(profile, bundle) } : null),
-    [bundle, profile, readiness.ready],
+    () => (bundle ? { maxIntervalKwh: maxIntervalKwh(battery, bundle) } : null),
+    [battery, bundle],
   )
 
+  // Uploads use the rate saved with the baseline, or the typical Victorian rate.
+  const savedRate = store.baseline?.ratePerKwh ?? null
   const context = useMemo(
-    () => (readiness.ready && bundle ? buildCalculationContext(profile, bundle) : null),
-    [bundle, profile, readiness.ready],
+    () => (bundle ? buildCalculationContext(savedRate, bundle) : null),
+    [bundle, savedRate],
   )
 
   const goals = bothGoals(store)
@@ -152,6 +160,11 @@ export function GoalsView({
   const preview = useMemo(
     () => (plan && plan.newDays.length ? summariseDays(plan.newDays) : null),
     [plan],
+  )
+  /** Baseline days not counted yet; these are added when the goals are saved. */
+  const draftNewDays = useMemo(
+    () => (draft ? planMerge(store.months, draft.days).newDays : []),
+    [draft, store.months],
   )
 
   // After a save, cancel, or clear, move focus to the right heading once it renders.
@@ -189,9 +202,20 @@ export function GoalsView({
         !existing || replacing.includes(kind) || (reachedEntry(store, kind) && existing.target !== target)
       nextGoals[kind] = { target, setOn: isNew || !existing ? setOn : existing.setOn }
     }
-    let next: GoalsStore = { ...store, goals: nextGoals }
-    const byEdit = newlyReached(next, totals)
-    if (byEdit.length) next = recordReached(next, byEdit, totals, today(), true)
+    // The baseline month counts towards progress, so its new days go in with the goals.
+    const months = draft ? applyDays(store.months, draftNewDays, draft.sourceId, setOn) : store.months
+    const totalsAfter = deriveTotals(months)
+    let next: GoalsStore = {
+      ...store,
+      months,
+      baseline: draft ? { ...draft.baseline, setOn } : store.baseline,
+    }
+    // Goals the baseline days reach before any goal changes are celebrated like an upload.
+    const byUpload = newlyReached(next, totalsAfter)
+    if (byUpload.length) next = recordReached(next, byUpload, totalsAfter, today())
+    next = { ...next, goals: nextGoals }
+    const byEdit = newlyReached(next, totalsAfter)
+    if (byEdit.length) next = recordReached(next, byEdit, totalsAfter, today(), true)
     const result = saveGoals(next)
     if (!result.ok) {
       setSaveError(result.reason)
@@ -204,25 +228,57 @@ export function GoalsView({
       const newGoal = nextGoals.carbon
       if (replacing.includes('carbon') && oldGoal && newGoal) {
         const before = treeStep(progressPercent(totals.carbon, oldGoal.target))
-        const after = treeStep(progressPercent(totals.carbon, newGoal.target))
+        const after = treeStep(progressPercent(totalsAfter.carbon, newGoal.target))
         if (after < before) {
           message += ` Your tree is now at the ${stageForStep(after)} stage, because your new carbon goal is bigger. It grows again as you count more.`
         }
       }
     }
+    if (draft) message += ` ${baselineDaysSentence(draft, draftNewDays.length, 'were')}`
     setStore(result.store)
     setSaveError(null)
     setNotice(message)
+    closeSetup()
+    if (byUpload.length) {
+      setAchievement({
+        kinds: byUpload,
+        level: level(result.store),
+        totals: totalsAfter,
+        celebrate: true,
+      })
+    } else {
+      focusOverviewNext.current = true
+    }
+  }
+
+  function closeSetup() {
     setEditing(false)
     setNextKinds(null)
-    focusOverviewNext.current = true
+    setDraft(null)
+    setBaselineChoice(null)
+  }
+
+  function acceptBaselineDraft(next: BaselineDraft) {
+    setDraft(next)
+    focusSetupNext.current = true
+  }
+
+  function chooseBaseline(choice: 'current' | 'upload') {
+    setBaselineChoice(choice)
+    focusSetupNext.current = true
+  }
+
+  function chooseAnotherFile() {
+    setDraft(null)
+    setSaveError(null)
+    focusSetupNext.current = true
   }
 
   function startNextGoal(kinds: GoalKind[]) {
     setAchievement(null)
     setNotice('')
     setSaveError(null)
-    setEditing(false)
+    closeSetup()
     setNextKinds(kinds)
     focusSetupNext.current = true
   }
@@ -310,23 +366,40 @@ export function GoalsView({
     setClearError(false)
     setStore(emptyGoalsStore())
     setPendingRead(null)
-    setEditing(false)
-    setNextKinds(null)
+    closeSetup()
     setUploadStatus('')
     setNotice('Your goals and history were cleared from this device.')
     focusSetupNext.current = true
   }
 
+  function confirmRemove() {
+    const month = removeTarget
+    setRemoveTarget(null)
+    if (!month) return
+    const result = saveGoals({ ...store, months: removeMonth(store.months, month) })
+    if (!result.ok) {
+      setNotice('')
+      setRemoveError(result.reason)
+      return
+    }
+    setStore(result.store)
+    setRemoveError(null)
+    setNotice(
+      `${formatMonthLabel(month)} was removed from your history. Goals you already reached stay on record.`,
+    )
+    focusOverviewNext.current = true
+  }
+
   function startEdit() {
     setNotice('')
     setSaveError(null)
+    closeSetup()
     setEditing(true)
   }
 
   function cancelEdit() {
     setSaveError(null)
-    setEditing(false)
-    setNextKinds(null)
+    closeSetup()
     focusOverviewNext.current = true
   }
 
@@ -336,8 +409,8 @@ export function GoalsView({
         code="estimates_unavailable"
         details={
           <p>
-            Goal suggestions and upload estimates need the same estimate data as the dashboard,
-            and it could not be loaded.
+            Goal ranges and upload estimates need the same estimate data as the dashboard, and it
+            could not be loaded.
           </p>
         }
       />
@@ -348,19 +421,35 @@ export function GoalsView({
     )
   ) : null
 
-  const showForm = readiness.ready && estimate && (!goals || editing || nextKinds)
+  const settingUp = Boolean(bundle && context) && (!goals || editing || Boolean(nextKinds))
+  let stage: SetupStage = null
+  if (settingUp) {
+    if (draft) stage = 'form'
+    else if (!goals || !store.baseline) stage = 'upload'
+    else if (!nextKinds) stage = 'form'
+    else if (baselineChoice === 'current') stage = 'form'
+    else stage = baselineChoice === 'upload' ? 'upload' : 'choice'
+  }
 
-  const nextSuggestions: GoalSuggestions | null =
-    estimate && nextKinds
+  const activeBaseline = draft?.baseline ?? store.baseline
+  // Totals as they will be once the baseline days are saved, so a next goal starts above them.
+  const formTotals = {
+    savings: totals.savings + draftNewDays.reduce((sum, day) => sum + day.savingsAud, 0),
+    carbon: totals.carbon + draftNewDays.reduce((sum, day) => sum + day.carbonKg, 0),
+  }
+  const baseSuggestions = activeBaseline ? suggestGoals(activeBaseline.monthly) : null
+  const formSuggestions: GoalSuggestions | null =
+    baseSuggestions && nextKinds
       ? {
-          savings: estimate.suggestions.savings
-            ? nextGoalRange(totals.savings, estimate.suggestions.savings)
+          savings: baseSuggestions.savings
+            ? nextGoalRange(formTotals.savings, baseSuggestions.savings)
             : null,
-          carbon: estimate.suggestions.carbon
-            ? nextGoalRange(totals.carbon, estimate.suggestions.carbon)
+          carbon: baseSuggestions.carbon
+            ? nextGoalRange(formTotals.carbon, baseSuggestions.carbon)
             : null,
         }
-      : null
+      : baseSuggestions
+  const setupTitle = nextKinds ? 'Set your next goal' : goals ? 'Edit your goals' : 'Set your goals'
 
   return (
     <div className="goals">
@@ -398,17 +487,7 @@ export function GoalsView({
         </div>
       ) : null}
 
-      {!readiness.ready ? (
-        <ProfileIncomplete
-          hasSavedProfile={readiness.hasSavedProfile}
-          missing={readiness.missing}
-          onOpenProfile={onOpenProfile}
-          onStartSetup={onStartSetup}
-          hideNavigation={hideProfileNavigation}
-        />
-      ) : (
-        estimatesMessage
-      )}
+      {estimatesMessage}
 
       {goals && !editing && !nextKinds ? (
         <GoalOverview
@@ -417,23 +496,70 @@ export function GoalsView({
           totals={totals}
           months={store.months}
           reached={reached}
-          canEdit={Boolean(readiness.ready && estimate)}
+          canEdit={Boolean(bundle && context)}
           onEdit={startEdit}
           onSetNewGoal={(kind) => startNextGoal([kind])}
           onViewAchievement={viewAchievement}
         />
       ) : null}
 
-      {showForm ? (
+      {stage === 'choice' && store.baseline ? (
         <section className="dashboard-card goals-setup" aria-labelledby="goals-setup-title">
           <h2 id="goals-setup-title" ref={setupHeading} tabIndex={-1}>
-            {nextKinds ? 'Set your next goal' : goals ? 'Edit your goals' : 'Set your goals'}
+            {setupTitle}
           </h2>
+          <p className="dashboard-card__lede">
+            Your last goal range came from your battery file for{' '}
+            {formatMonthLabel(store.baseline.month)}. Has anything changed since then, such as more
+            solar panels or a new battery? A more recent file gives a more realistic range.
+          </p>
+          <div className="goals-form__actions">
+            <Button variant="primary" onClick={() => chooseBaseline('current')}>
+              Keep using {formatMonthLabel(store.baseline.month)}
+            </Button>
+            <Button variant="secondary" onClick={() => chooseBaseline('upload')}>
+              Upload a more recent file
+            </Button>
+            <Button variant="edit" onClick={cancelEdit}>
+              Cancel
+            </Button>
+          </div>
+        </section>
+      ) : null}
+
+      {stage === 'upload' && bundle ? (
+        <BaselineStep
+          title={setupTitle}
+          headingRef={setupHeading}
+          initialBattery={battery}
+          initialRatePerKwh={savedRate}
+          bundle={bundle}
+          onReady={acceptBaselineDraft}
+          onCancel={goals ? cancelEdit : undefined}
+        />
+      ) : null}
+
+      {stage === 'form' && activeBaseline && formSuggestions && bundle ? (
+        <section className="dashboard-card goals-setup" aria-labelledby="goals-setup-title">
+          <h2 id="goals-setup-title" ref={setupHeading} tabIndex={-1}>
+            {setupTitle}
+          </h2>
+          {draft ? <p className="goals-setup__step">Step 2 of 2: choose your goals</p> : null}
           <p className="dashboard-card__lede">
             {nextKinds
               ? 'Your reached goal stays on record. Your next goal counts on from your total so far, so it needs to be higher than that total.'
               : 'Choose a goal for money saved and a goal for carbon avoided. You can change them later.'}
           </p>
+          <p className="goals-form__note goals-setup__baseline">
+            Based on {formatMonthLabel(activeBaseline.month)}; your range may shift with the
+            seasons.
+            {draft ? ` ${baselineDaysSentence(draft, draftNewDays.length, 'will be')}` : ''}
+          </p>
+          {draft ? (
+            <Button variant="edit" className="goals-setup__change" onClick={chooseAnotherFile}>
+              Use a different file
+            </Button>
+          ) : null}
           <GoalSetupForm
             key={nextKinds ? `next-${nextKinds.join('-')}` : 'goals'}
             mode={nextKinds ? 'next' : goals ? 'edit' : 'create'}
@@ -441,13 +567,13 @@ export function GoalsView({
             note={
               nextKinds
                 ? `So far: ${nextKinds
-                    .map((kind) => formatGoalValue(kind, totals[kind]))
-                    .join(' and ')}. The suggested next goal adds about ${GOAL_SUGGESTION_MONTHS.suggested} more months of your profile estimate.`
+                    .map((kind) => formatGoalValue(kind, formTotals[kind]))
+                    .join(' and ')}. The suggested next goal adds about ${GOAL_SUGGESTION_MONTHS.suggested} more months of your ${formatMonthLabel(activeBaseline.month)} figures.`
                 : undefined
             }
-            suggestions={nextSuggestions ?? estimate.suggestions}
-            monthly={estimate.monthly}
-            factor={estimate.factor}
+            suggestions={formSuggestions}
+            baseline={activeBaseline}
+            context={buildCalculationContext(activeBaseline.ratePerKwh, bundle)}
             current={
               nextKinds
                 ? { savings: null, carbon: null }
@@ -463,16 +589,18 @@ export function GoalsView({
         </section>
       ) : null}
 
-      <UploadArea
-        locked={!goals}
-        canGoToSetup={Boolean(showForm)}
-        onGoToSetup={() => setupHeading.current?.focus()}
-        limits={limits}
-        onContinue={(read) => {
-          setUploadStatus('')
-          setPendingRead(read)
-        }}
-      />
+      {goals && stage !== 'upload' ? (
+        <UploadArea
+          locked={false}
+          canGoToSetup={false}
+          onGoToSetup={() => setupHeading.current?.focus()}
+          limits={limits}
+          onContinue={(read) => {
+            setUploadStatus('')
+            setPendingRead(read)
+          }}
+        />
+      ) : null}
 
       <p className="goals__upload-status" role="status">
         {uploadStatus}
@@ -572,8 +700,14 @@ export function GoalsView({
         <HistoryTable
           months={store.months}
           onGoToUpload={() => document.getElementById('goals-upload-title')?.focus()}
+          onRemove={(month) => {
+            setRemoveError(null)
+            setRemoveTarget(month)
+          }}
         />
       ) : null}
+
+      {removeError ? <GoalMessage code={removeError} /> : null}
 
       {goals || store.months.length || store.completedGoals.length ? (
         <section className="goals-danger" aria-labelledby="goals-danger-title">
@@ -596,6 +730,12 @@ export function GoalsView({
         open={clearOpen}
         onConfirm={confirmClear}
         onCancel={() => setClearOpen(false)}
+      />
+
+      <RemoveMonthDialog
+        month={removeTarget}
+        onConfirm={confirmRemove}
+        onCancel={() => setRemoveTarget(null)}
       />
     </div>
   )

@@ -87,27 +87,21 @@ afterEach(() => {
   expect(network.xhrOpen).not.toHaveBeenCalled()
 })
 
-describe('upload unlocks after goals are saved (AC1)', () => {
-  it('stays locked with an explanation and a way back to goal setup', async () => {
-    const user = userEvent.setup()
+describe('upload before goals are saved (AC1)', () => {
+  it('shows only the baseline upload for a recent file, not the progress upload', () => {
     render(
       <GoalsView
         profile={{ ...emptyProfile(), ...BASELINE_PROFILE, lastUpdated: '2026-10-01T00:00:00.000Z' }}
         bundle={seedMethodologyBundle()}
         methodologyError=""
-        onOpenProfile={vi.fn()}
-        onStartSetup={vi.fn()}
         onLogoClick={vi.fn()}
       />,
     )
-    const upload = screen.getByRole('region', { name: 'Upload your battery file' })
-    expect(within(upload).getByText('Upload unlocks after both goals are saved.')).toBeTruthy()
-    expect(within(upload).queryByRole('button', { name: 'Choose file' })).toBeNull()
-    await user.click(within(upload).getByRole('button', { name: 'Go to goal setup' }))
-    expect(document.activeElement).toBe(screen.getByRole('heading', { name: 'Set your goals' }))
-
-    await user.click(screen.getByRole('button', { name: 'Save goals' }))
+    expect(screen.getByRole('heading', { name: 'Set your goals' })).toBeTruthy()
+    const upload = screen.getByRole('region', { name: 'Upload a recent battery file' })
     expect(within(upload).getByRole('radiogroup', { name: 'VPP provider' })).toBeTruthy()
+    expect(screen.queryByRole('region', { name: 'Upload your battery file' })).toBeNull()
+    expect(screen.queryByText('Upload unlocks after both goals are saved.')).toBeNull()
   })
 })
 

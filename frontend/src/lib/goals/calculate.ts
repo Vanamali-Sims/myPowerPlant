@@ -1,21 +1,19 @@
 /**
  * Estimated savings and carbon avoided from battery activity.
  *
- * Every kWh the battery gave out and every kWh it took in counts as battery
- * energy. Savings = battery energy × rate. Carbon = battery energy × the
- * Victorian grid emissions factor. The rate and factor are the same values the
- * dashboard uses; neither number is typed in here.
+ * Only energy the battery gave out (discharge) counts; energy it took in is
+ * read but not counted. Savings = discharge × rate. Carbon = discharge × the
+ * Victorian grid emissions factor. The rate is the person's own usage rate
+ * when they gave one, else the typical Victorian rate from the methodology data.
  */
 import type { ValueKind } from '../kpis'
-import { buildKpiReport } from '../kpis'
 import type { MethodologyBundle } from '../methodologyApi'
-import type { ProfileData } from '../../types/profile'
 import type { DayReading } from './adapters/types'
 
 export type CalculationContext = {
-  /** AUD per kWh, from buildKpiReport. */
+  /** AUD per kWh: the person's own rate, or the typical Victorian rate. */
   rate: number
-  /** 'from_you' means the household's own bill and usage; anything else is an estimate. */
+  /** 'from_you' means the rate the person entered; anything else is an estimate. */
   rateKind: ValueKind
   /** kg CO2e per kWh, the methodology field buildKpiReport reads. */
   factor: number
@@ -41,18 +39,20 @@ export type PreviewTotals = {
 
 /**
  * buildCalculationContext
- * @param profile - Saved household answers
+ * @param ratePerKwh - Usage rate (AUD per kWh) from the person's bill or contract, or null
  * @param bundle - Methodology data App already loaded
- * @returns The rate and emissions factor the dashboard would use for this household
+ * @returns The rate and emissions factor used to value battery discharge
+ *
+ * With no rate given, the typical Victorian rate is used and marked as an estimate.
  */
 export function buildCalculationContext(
-  profile: ProfileData,
+  ratePerKwh: number | null,
   bundle: MethodologyBundle,
 ): CalculationContext {
-  const report = buildKpiReport(profile, bundle)
+  const own = ratePerKwh !== null && Number.isFinite(ratePerKwh) && ratePerKwh > 0
   return {
-    rate: report.retailRate,
-    rateKind: report.retailRateKind,
+    rate: own ? ratePerKwh : bundle.methodology.defaultRetailRate,
+    rateKind: own ? 'from_you' : 'estimate',
     factor: getEmissionsFactor(bundle),
   }
 }
@@ -80,10 +80,10 @@ export function getRateForInterval(context: CalculationContext, _date: string): 
  * calculateDay
  * @param day - One complete day read from the file
  * @param context - Rate and factor for this household
- * @returns The day with battery energy, estimated savings, and estimated carbon
+ * @returns The day with counted energy (discharge only), estimated savings, and estimated carbon
  */
 export function calculateDay(day: DayReading, context: CalculationContext): DayFigures {
-  const energyKwh = day.dischargeKwh + (day.intakeKwh ?? 0)
+  const energyKwh = day.dischargeKwh
   return {
     ...day,
     energyKwh,

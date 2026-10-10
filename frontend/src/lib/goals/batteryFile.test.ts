@@ -13,7 +13,7 @@ import { emptyProfile } from '../../types/profile'
 import { seedMethodologyBundle } from '../methodologyFixture'
 import { BATTERY_ADAPTERS, getAdapter } from './adapters'
 import { readGenericCsv } from './adapters/generic'
-import { maxIntervalKwh } from './batteryLimits'
+import { batteryFromProfile, maxIntervalKwh } from './batteryLimits'
 import { addDays } from './calendar'
 import { parseCsv } from './csv'
 import {
@@ -276,8 +276,9 @@ describe('sources, limits, and messages', () => {
   it('caps one interval at the usable capacity of the household battery', () => {
     const bundle = seedMethodologyBundle()
     const profile = { ...emptyProfile(), ...BASELINE_PROFILE, batteryUnits: 2 }
-    expect(maxIntervalKwh(profile, bundle)).toBeCloseTo(27, 10)
-    expect(maxIntervalKwh({ ...profile, batteryModel: 'Unknown', batteryUnits: 1 }, bundle)).toBe(10)
+    expect(maxIntervalKwh(batteryFromProfile(profile), bundle)).toBeCloseTo(27, 10)
+    expect(maxIntervalKwh({ model: 'Unknown', units: 1 }, bundle)).toBe(10)
+    expect(maxIntervalKwh({ model: 'Not sure', units: 1 }, bundle)).toBe(10)
   })
 
   it('has a plain message for every reason and row problem', () => {

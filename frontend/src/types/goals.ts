@@ -46,6 +46,33 @@ export type CompletedGoal = {
   reachedByEdit?: true
 }
 
+/** Battery the goal figures are checked against, asked the same way as the profile. */
+export type GoalBattery = {
+  model: string
+  units: number
+}
+
+/**
+ * The battery-file month the goal ranges are worked out from. Only the
+ * scaled monthly figures are kept, never the file or its daily rows.
+ */
+export type GoalBaseline = {
+  /** YYYY-MM in Melbourne time. */
+  month: string
+  /** Complete days in that month the figures came from. */
+  days: number
+  /** Savings (AUD) and carbon (kg) scaled to an average-length month. */
+  monthly: Record<GoalKind, number>
+  battery: GoalBattery
+  /**
+   * Usage rate (AUD per kWh) the person entered from their bill or contract.
+   * null means none was given, so the typical Victorian rate is used.
+   */
+  ratePerKwh: number | null
+  /** ISO timestamp of when this baseline was saved. */
+  setOn: string
+}
+
 export type GoalsStoreV1 = {
   version: 1
   goals: Record<GoalKind, GoalEntry | null>
@@ -53,15 +80,22 @@ export type GoalsStoreV1 = {
   months: MonthRecord[]
 }
 
-export type GoalsStore = GoalsStoreV1
+export type GoalsStoreV2 = Omit<GoalsStoreV1, 'version'> & {
+  version: 2
+  /** null for stores moved up from v1, until a battery file is read for goals. */
+  baseline: GoalBaseline | null
+}
+
+export type GoalsStore = GoalsStoreV2
 
 /**
  * emptyGoalsStore
- * @returns A store with no goals, no history, and no completed goals
+ * @returns A store with no goals, no history, no completed goals, and no baseline
  */
 export const emptyGoalsStore = (): GoalsStore => ({
-  version: 1,
+  version: 2,
   goals: { savings: null, carbon: null },
   completedGoals: [],
   months: [],
+  baseline: null,
 })

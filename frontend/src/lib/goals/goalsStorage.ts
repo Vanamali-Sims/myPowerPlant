@@ -5,16 +5,20 @@
  * and the profile key is never read or written here.
  */
 import {
+  GOAL_RATE_CENTS,
   GOALS_MAX_JSON_BYTES,
   GOALS_STORAGE_KEY,
   GOALS_STORE_VERSION,
   MAX_STORED_MONTHS,
 } from '../../constants/goals'
+import { FIELD_BOUNDS } from '../../constants/validation'
+import { isAllowedBatteryModel } from '../../data/profileOptions'
 import {
   GOAL_KINDS,
   emptyGoalsStore,
   type CompletedGoal,
   type DateRange,
+  type GoalBaseline,
   type GoalEntry,
   type GoalKind,
   type GoalsStore,
@@ -131,6 +135,42 @@ function readMonth(raw: unknown): MonthRecord {
   return record
 }
 
+/** A typed usage rate in AUD per kWh, inside the accepted range, or null for none. */
+function readRate(raw: unknown): number | null {
+  if (raw === null || raw === undefined) return null
+  const rate = readAmount(raw)
+  if (rate < GOAL_RATE_CENTS.min / 100 || rate > GOAL_RATE_CENTS.max / 100) fail()
+  return rate
+}
+
+function readBaseline(raw: unknown): GoalBaseline | null {
+  if (raw === null || raw === undefined) return null
+  if (!isRecord(raw) || !isRecord(raw.monthly) || !isRecord(raw.battery)) fail()
+  const month = typeof raw.month === 'string' ? raw.month : ''
+  const calendarDays = daysInMonth(month)
+  if (!calendarDays) fail()
+  const days = raw.days
+  if (typeof days !== 'number' || !Number.isInteger(days) || days < 1 || days > calendarDays) fail()
+  const { model, units } = raw.battery
+  if (typeof model !== 'string' || !isAllowedBatteryModel(model)) fail()
+  if (
+    typeof units !== 'number' ||
+    !Number.isInteger(units) ||
+    units < FIELD_BOUNDS.batteryUnits.min ||
+    units > FIELD_BOUNDS.batteryUnits.max
+  ) {
+    fail()
+  }
+  return {
+    month,
+    days,
+    monthly: { savings: readAmount(raw.monthly.savings), carbon: readAmount(raw.monthly.carbon) },
+    battery: { model, units },
+    ratePerKwh: readRate(raw.ratePerKwh),
+    setOn: readTimestamp(raw.setOn),
+  }
+}
+
 function readMonths(raw: unknown): MonthRecord[] {
   if (!Array.isArray(raw) || raw.length > MAX_STORED_MONTHS) fail()
   const months = raw.map(readMonth)
@@ -146,11 +186,13 @@ function readMonths(raw: unknown): MonthRecord[] {
  * @returns A clean store, or null when any part fails its check
  *
  * One bad month would make every total wrong, so a store that fails any check
- * is treated as empty rather than partly kept.
+ * is treated as empty rather than partly kept. A v1 store is moved up to the
+ * current version with no baseline; everything else in it is kept.
  */
 export function parseGoalsStore(parsed: unknown): GoalsStore | null {
   try {
-    if (!isRecord(parsed) || parsed.version !== GOALS_STORE_VERSION) fail()
+    if (!isRecord(parsed)) fail()
+    if (parsed.version !== 1 && parsed.version !== GOALS_STORE_VERSION) fail()
     if (!isRecord(parsed.goals)) fail()
     if (!Array.isArray(parsed.completedGoals)) fail()
     if (parsed.completedGoals.length > MAX_COMPLETED_GOALS) fail()
@@ -162,6 +204,7 @@ export function parseGoalsStore(parsed: unknown): GoalsStore | null {
       },
       completedGoals: parsed.completedGoals.map(readCompleted),
       months: readMonths(parsed.months),
+      baseline: parsed.version === 1 ? null : readBaseline(parsed.baseline),
     }
   } catch {
     return null

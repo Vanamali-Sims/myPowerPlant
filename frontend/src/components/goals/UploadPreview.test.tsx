@@ -39,27 +39,33 @@ function septemberCsv(withIntake = true): string {
   return rows.join('\n')
 }
 
-function seedGoals(savings: number, carbon: number) {
+function seedGoals(savings: number, carbon: number, ratePerKwh: number | null = null) {
   localStorage.setItem(
     GOALS_STORAGE_KEY,
     JSON.stringify({
-      version: 1,
+      version: 2,
       goals: { savings: { target: savings, setOn: SET_ON }, carbon: { target: carbon, setOn: SET_ON } },
       completedGoals: [],
       months: [],
+      baseline: {
+        month: '2026-08',
+        days: 31,
+        monthly: { savings: 30, carbon: 20 },
+        battery: { model: 'Tesla Powerwall 2', units: 1 },
+        ratePerKwh,
+        setOn: SET_ON,
+      },
     }),
   )
 }
 
-async function openPreview(options: { profile?: ProfileData; withIntake?: boolean } = {}) {
+async function openPreview(options: { withIntake?: boolean } = {}) {
   const user = userEvent.setup({ applyAccept: false })
   render(
     <GoalsView
-      profile={options.profile ?? savedProfile()}
+      profile={savedProfile()}
       bundle={bundle}
       methodologyError=""
-      onOpenProfile={vi.fn()}
-      onStartSetup={vi.fn()}
       onLogoClick={vi.fn()}
     />,
   )
@@ -72,8 +78,9 @@ async function openPreview(options: { profile?: ProfileData; withIntake?: boolea
   return { user, section }
 }
 
-// 30 days × 96 × (0.1 + 0.05) = 432 kWh of battery energy.
-const ENERGY_KWH = 432
+// Only discharge counts: 30 days × 96 × 0.1 = 288 kWh.
+const ENERGY_KWH = 288
+const typical = buildCalculationContext(null, bundle)
 
 beforeEach(() => {
   localStorage.clear()
@@ -88,11 +95,10 @@ describe('estimated savings and carbon after reading (AC1)', () => {
   it('shows both estimates, labelled, with the date range and day count, and takes focus', async () => {
     const { section } = await openPreview()
     expect(document.activeElement).toBe(within(section).getByRole('heading', { level: 2 }))
-    const context = buildCalculationContext(savedProfile(), bundle)
     const text = section.textContent ?? ''
     expect(text).toContain('1 September 2026 to 30 September 2026, 30 days not counted before.')
-    expect(text).toContain(`Estimated savings${formatGoalAud(ENERGY_KWH * context.rate)}Estimate`)
-    expect(text).toContain(`Estimated carbon avoided${Math.round(ENERGY_KWH * context.factor)} kg CO2eEstimate`)
+    expect(text).toContain(`Estimated savings${formatGoalAud(ENERGY_KWH * typical.rate)}Estimate`)
+    expect(text).toContain(`Estimated carbon avoided${Math.round(ENERGY_KWH * typical.factor)} kg CO2eEstimate`)
     expect(within(section).getAllByText('Not a bill or metered result.')).toHaveLength(2)
   })
 })
@@ -104,58 +110,47 @@ describe('same calculation rules, explained (AC2)', () => {
     await user.click(toggle)
     const panel = document.getElementById(toggle.getAttribute('aria-controls') ?? '')
     const text = panel?.textContent ?? ''
-    expect(text).toContain('Battery energy = discharge + intake.')
+    expect(text).toContain('Battery energy counted = discharge only.')
     expect(text).toContain(`× ${bundle.methodology.vicGridKgCo2PerKwh} =`)
     expect(text).toContain(`Emissions factor: ${EMISSIONS_FACTOR_SOURCE.label}`)
     expect(text).toContain(`Typical rate: ${TYPICAL_RATE_SOURCE.label}`)
     expect(text).toContain(`Last verified: ${TYPICAL_RATE_SOURCE.lastVerified}`)
   })
 
-  it('labels the typical rate with the number from the methodology data', async () => {
+  it('says the typical Victorian rate is used when no rate was entered', async () => {
     const { section } = await openPreview()
     const rate = bundle.methodology.defaultRetailRate.toFixed(2)
     expect(section.textContent).toContain(
-      `Savings use an estimated rate (about $${rate} per kWh, typical for Victoria).`,
+      `Savings use the typical Victorian rate (about $${rate} per kWh), because no rate was entered.`,
     )
   })
 
-  it("labels the household's own rate when the report marks it from_you", async () => {
-    const own = savedProfile({
-      monthlyBill: '200',
-      monthlyKwh: '500',
-      fieldSources: { monthlyBill: 'user', monthlyKwh: 'user' },
-    })
-    const { section } = await openPreview({ profile: own })
-    expect(section.textContent).toContain("Savings use your household's rate ($0.40 per kWh).")
+  it('uses and labels the rate the person entered', async () => {
+    seedGoals(300, 500, 0.4)
+    const { section } = await openPreview()
+    expect(section.textContent).toContain('Savings use your usage rate ($0.40 per kWh).')
+    expect(section.textContent).toContain(`Estimated savings${formatGoalAud(ENERGY_KWH * 0.4)}Estimate`)
   })
 })
 
-describe('all battery activity counts (AC3)', () => {
-  it('breaks battery energy into discharge, intake, and total', async () => {
+describe('only discharge counts (AC3)', () => {
+  it('shows discharge as the energy counted and says intake is not counted', async () => {
     const { section } = await openPreview()
     const text = section.querySelector('.goals-preview__breakdown')?.textContent ?? ''
-    expect(text).toContain('Discharge (energy given out)288 kWh')
-    expect(text).toContain('Intake (energy taken in)144 kWh')
-    expect(text).toContain('Total battery energy432 kWh')
+    expect(text).toBe('Discharge (energy given out)288 kWh')
+    expect(section.textContent).toContain('Only energy your battery gave out is counted. Energy it took in is not.')
   })
 
-  it('says intake is missing when the file has no intake column, without filling it', async () => {
+  it('gives the same figures whether or not the file has an intake column', async () => {
     const { section } = await openPreview({ withIntake: false })
-    const text = section.querySelector('.goals-preview__breakdown')?.textContent ?? ''
-    expect(text).toContain('Intake (energy taken in)Not in your file')
-    expect(text).toContain('Total battery energy288 kWh')
-    const message = section.querySelector('[data-code="intake_missing"]')
-    expect(message?.getAttribute('role')).toBe('status')
-    expect(message?.textContent).toContain('Information: Your file has no battery_charge_kwh column, so intake is missing.')
-    expect(message?.textContent).toContain('Only discharge is counted.')
+    expect(section.textContent).toContain(`Estimated savings${formatGoalAud(ENERGY_KWH * typical.rate)}Estimate`)
   })
 })
 
 describe('progress against goals if confirmed (AC4)', () => {
   it('shows figure and percentage per goal, not saved yet, with Confirm and Cancel', async () => {
     const { section } = await openPreview()
-    const context = buildCalculationContext(savedProfile(), bundle)
-    const savings = ENERGY_KWH * context.rate
+    const savings = ENERGY_KWH * typical.rate
     const bars = within(section).getAllByRole('progressbar')
     expect(bars).toHaveLength(2)
     expect(bars[0].getAttribute('aria-valuetext')).toBe(

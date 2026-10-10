@@ -62,8 +62,6 @@ function renderView() {
       profile={profile}
       bundle={bundle}
       methodologyError=""
-      onOpenProfile={vi.fn()}
-      onStartSetup={vi.fn()}
       onLogoClick={vi.fn()}
     />,
   )

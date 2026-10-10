@@ -137,8 +137,6 @@ describe('before there is enough data (AC5)', () => {
         profile={{ ...emptyProfile(), ...BASELINE_PROFILE, lastUpdated: '2026-10-01T00:00:00.000Z' }}
         bundle={seedMethodologyBundle()}
         methodologyError=""
-        onOpenProfile={vi.fn()}
-        onStartSetup={vi.fn()}
         onLogoClick={vi.fn()}
       />,
     )

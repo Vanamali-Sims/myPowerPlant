@@ -35,12 +35,12 @@ type Props = {
  * rateLabel
  * @returns Plain words for the rate behind the savings figure
  *
- * Uses the report's own rate kind: 'from_you' is the household's rate, and
- * anything else is an estimate. The number is the rate actually used.
+ * 'from_you' is the usage rate the person entered; anything else is the typical
+ * Victorian rate. The number is the rate actually used.
  */
 function rateLabel(context: CalculationContext): string {
-  if (context.rateKind === 'from_you') return `your household's rate (${formatRate(context.rate)})`
-  return `an estimated rate (about ${formatRate(context.rate)}, typical for Victoria)`
+  if (context.rateKind === 'from_you') return `your usage rate (${formatRate(context.rate)})`
+  return `the typical Victorian rate (about ${formatRate(context.rate)}), because no rate was entered`
 }
 
 function dayWord(count: number): string {
@@ -118,16 +118,10 @@ export function UploadPreview({
           <dt>Discharge (energy given out)</dt>
           <dd>{formatEnergy(preview.dischargeKwh)}</dd>
         </div>
-        <div>
-          <dt>Intake (energy taken in)</dt>
-          <dd>{preview.intakeKwh === null ? 'Not in your file' : formatEnergy(preview.intakeKwh)}</dd>
-        </div>
-        <div>
-          <dt>Total battery energy</dt>
-          <dd>{formatEnergy(preview.energyKwh)}</dd>
-        </div>
       </dl>
-      {preview.intakeKwh === null ? <GoalMessage code="intake_missing" /> : null}
+      <p className="goals-preview__note">
+        Only energy your battery gave out is counted. Energy it took in is not.
+      </p>
       <p className="goals-preview__note">Savings use {rateLabel(context)}.</p>
 
       <div className="vpp-example goals-examples">
@@ -144,16 +138,16 @@ export function UploadPreview({
             <p className="vpp-example__label">The same rules as the rest of MyPowerPlant</p>
             <ol className="goals-examples__list">
               <li>
-                Battery energy = discharge + intake. Both count: energy the battery takes in and
-                later gives out is counted each time.
+                Battery energy counted = discharge only. Energy the battery takes in is not
+                counted.
               </li>
               <li>
-                Estimated savings = battery energy × {rateLabel(context)}. Here:{' '}
+                Estimated savings = discharge × {rateLabel(context)}. Here:{' '}
                 {formatEnergy(preview.energyKwh)} × {formatRate(context.rate)} ={' '}
                 {formatGoalAud(preview.savingsAud)}.
               </li>
               <li>
-                Estimated carbon avoided = battery energy × the Victorian grid emissions factor (
+                Estimated carbon avoided = discharge × the Victorian grid emissions factor (
                 {context.factor} kg CO2e per kWh). Here: {formatEnergy(preview.energyKwh)} ×{' '}
                 {context.factor} = {formatGoalKg(preview.carbonKg)}.
               </li>
@@ -164,7 +158,7 @@ export function UploadPreview({
             </p>
             {context.rateKind === 'from_you' ? (
               <p className="vpp-term__meta">
-                <span>Rate: your monthly bill ÷ your monthly usage, from your profile</span>
+                <span>Rate: the usage rate you entered from your bill or contract</span>
               </p>
             ) : (
               <p className="vpp-term__meta">

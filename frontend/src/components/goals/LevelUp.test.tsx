@@ -13,8 +13,8 @@ import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vite
 
 import { GOALS_STORAGE_KEY, TREE_FIGURE_SOURCE } from '../../constants/goals'
 import { BASELINE_PROFILE } from '../../data/baselines'
-import { addDays } from '../../lib/goals/calendar'
-import { formatDayLabel } from '../../lib/goals/goalFormat'
+import { addDays, addMonths, daysInMonth, monthOf } from '../../lib/goals/calendar'
+import { formatDayLabel, formatMonthLabel } from '../../lib/goals/goalFormat'
 import { melbourneDate, melbourneDayStart, melbourneWallTime } from '../../lib/goals/melbourneTime'
 import { seedMethodologyBundle } from '../../lib/methodologyFixture'
 import { emptyProfile } from '../../types/profile'
@@ -47,14 +47,24 @@ function csvFor(from: string, to: string): string {
   return rows.join('\n')
 }
 
+const BASELINE = {
+  month: '2026-09',
+  days: 30,
+  monthly: { savings: 30, carbon: 20 },
+  battery: { model: 'Tesla Powerwall 2', units: 1 },
+  ratePerKwh: null,
+  setOn: SET_ON,
+}
+
 function seedGoals(savings: number, carbon: number, months: unknown[] = []) {
   localStorage.setItem(
     GOALS_STORAGE_KEY,
     JSON.stringify({
-      version: 1,
+      version: 2,
       goals: { savings: { target: savings, setOn: SET_ON }, carbon: { target: carbon, setOn: SET_ON } },
       completedGoals: [],
       months,
+      baseline: BASELINE,
     }),
   )
 }
@@ -69,8 +79,6 @@ function renderView() {
       profile={profile}
       bundle={bundle}
       methodologyError=""
-      onOpenProfile={vi.fn()}
-      onStartSetup={vi.fn()}
       onLogoClick={vi.fn()}
     />,
   )
@@ -230,6 +238,9 @@ describe('taking the next step (AC3)', () => {
     await user.click(screen.getByRole('button', { name: "Let's take the next step" }))
     expect(levelDialog()).toBeNull()
     expect(document.activeElement).toBe(screen.getByRole('heading', { name: 'Set your next goal' }))
+    expect(screen.getByText(/Has anything changed since then, such as more solar panels/)).toBeTruthy()
+    await user.click(screen.getByRole('button', { name: 'Keep using September 2026' }))
+    expect(document.activeElement).toBe(screen.getByRole('heading', { name: 'Set your next goal' }))
     expect(screen.queryByLabelText('Carbon goal (kg CO2e)')).toBeNull()
     const savings = screen.getByLabelText('Savings goal (AUD)') as HTMLInputElement
     const total = stored().completedGoals[0].totalAtReach as number
@@ -256,8 +267,36 @@ describe('taking the next step (AC3)', () => {
     const { user } = renderView()
     await confirmSeptember(user)
     await user.click(screen.getByRole('button', { name: "Let's take the next step" }))
+    await user.click(screen.getByRole('button', { name: 'Keep using September 2026' }))
     await user.click(screen.getByRole('button', { name: 'Save goals' }))
     expect(screen.getByText(/Your tree is now at the .* stage, because your new carbon goal is bigger./)).toBeTruthy()
+  })
+
+  it('can read a more recent file for the next goal, which becomes the new baseline', async () => {
+    const recent = addMonths(monthOf(melbourneDate(Date.now())), -1)
+    const last = `${recent}-${String(daysInMonth(recent)).padStart(2, '0')}`
+    seedGoals(10, 100000)
+    const { user } = renderView()
+    await confirmSeptember(user)
+    await user.click(screen.getByRole('button', { name: "Let's take the next step" }))
+    await user.click(screen.getByRole('button', { name: 'Upload a more recent file' }))
+    expect(document.activeElement).toBe(screen.getByRole('heading', { name: 'Set your next goal' }))
+    expect(screen.getByText('Step 1 of 2: your battery and a recent file')).toBeTruthy()
+
+    await user.click(screen.getByRole('radio', { name: 'Tesla' }))
+    const input = document.querySelector('input[type="file"]') as HTMLInputElement
+    await user.upload(input, new File([csvFor(`${recent}-01`, last)], 'recent.csv'))
+    await user.click(screen.getByRole('button', { name: 'Read file' }))
+    await user.click(await screen.findByRole('button', { name: 'Continue' }))
+    expect(screen.getByText(new RegExp(`^Based on ${formatMonthLabel(recent)}; your range may shift`))).toBeTruthy()
+
+    const savings = screen.getByLabelText('Savings goal (AUD)') as HTMLInputElement
+    const total = stored().completedGoals[0].totalAtReach as number
+    expect(Number(savings.value)).toBeGreaterThan(total)
+    await user.click(screen.getByRole('button', { name: 'Save goals' }))
+    expect(screen.getByText(/Your next goal is saved./)).toBeTruthy()
+    expect(stored().baseline.month).toBe(recent)
+    expect(stored().months.some((record: { month: string }) => record.month === recent)).toBe(true)
   })
 })
 

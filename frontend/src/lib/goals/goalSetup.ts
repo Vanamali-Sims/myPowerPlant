@@ -1,21 +1,14 @@
 /**
- * Goal setup rules: profile readiness, suggestions, allowed ranges, and checks.
+ * Goal setup rules: the battery-file baseline, suggestions, allowed ranges, and checks.
  *
- * Suggestions come from the same buildKpiReport estimate the dashboard shows,
- * so they are a profile estimate, not a forecast of what uploads will show.
+ * Suggestions come from one recent month of the household's own battery file,
+ * scaled to an average-length month. They are still estimates, because the
+ * rate and emissions factor are the same estimated values the dashboard uses.
  */
-import { CARBON_EXAMPLE_KWH, GOAL_SUGGESTION_MONTHS } from '../../constants/goals'
-import { WEEKS_PER_MONTH } from '../../constants/kpiMethodology'
-import { PROFILE_SECTIONS, SETUP_STEPS } from '../../constants/setup'
+import { BASELINE_RULES, CARBON_EXAMPLE_KWH, GOAL_SUGGESTION_MONTHS } from '../../constants/goals'
 import type { GoalKind } from '../../types/goals'
-import type { ProfileData } from '../../types/profile'
-import { buildKpiReport } from '../kpis'
-import type { MethodologyBundle } from '../methodologyApi'
-import { validateStep } from '../validateProfile'
-
-export type GoalsReadiness =
-  | { ready: true }
-  | { ready: false; hasSavedProfile: boolean; missing: string[] }
+import type { DayFigures } from './calculate'
+import { addMonths, monthOf } from './calendar'
 
 export type GoalRange = { suggested: number; min: number; max: number }
 
@@ -23,37 +16,15 @@ export type GoalSuggestions = Record<GoalKind, GoalRange | null>
 
 export type CarbonExample = { kwh: number; kg: number; nearSuggestion: boolean }
 
-const FIELD_LABELS = new Map<keyof ProfileData, string>(
-  PROFILE_SECTIONS.flatMap((section) =>
-    section.fields.map((item) => [item.field, item.label] as const),
-  ),
-)
-
-/**
- * getGoalsReadiness
- * @param profile - Household answers held by App
- * @returns ready, or the labels of everything still missing
- *
- * Uses the setup wizard's own step checks, so a profile that the wizard
- * would accept is enough. Nothing is filled in on the user's behalf.
- */
-export function getGoalsReadiness(profile: ProfileData): GoalsReadiness {
-  if (!profile.lastUpdated) {
-    return {
-      ready: false,
-      hasSavedProfile: false,
-      missing: SETUP_STEPS.map((step) => step.title),
+export type BaselinePick =
+  | {
+      ok: true
+      month: string
+      /** The complete days of that month, which are added to progress on save. */
+      days: DayFigures[]
+      monthly: Record<GoalKind, number>
     }
-  }
-  const missing: string[] = []
-  for (const step of SETUP_STEPS) {
-    const errors = validateStep(step.id, profile)
-    for (const field of Object.keys(errors) as (keyof ProfileData)[]) {
-      missing.push(FIELD_LABELS.get(field) ?? step.title)
-    }
-  }
-  return missing.length ? { ready: false, hasSavedProfile: true, missing } : { ready: true }
-}
+  | { ok: false; reason: 'baseline_not_recent' | 'baseline_too_few_days' }
 
 function roundUpTo(value: number, step: number): number {
   return Math.ceil(value / step) * step
@@ -71,36 +42,52 @@ function rangeFromMonthly(monthly: number, step: number): GoalRange | null {
 }
 
 /**
- * monthlyProfileEstimate
- * @param profile - Saved household answers
- * @param bundle - Methodology data App already loaded
- * @returns Estimated monthly savings (AUD) and carbon avoided (kg) from the profile
+ * pickBaseline
+ * @param days - Calculated complete days from the file, in date order
+ * @param today - Melbourne date, YYYY-MM-DD
+ * @returns The latest recent month with enough complete days, scaled to a month
  *
- * Monthly = the dashboard's modelled week × WEEKS_PER_MONTH, the same rule the
- * methodology uses everywhere else.
+ * Recent means the current month or one of the BASELINE_RULES.recentMonths
+ * full months before it. Monthly = the month's total ÷ its complete days ×
+ * BASELINE_RULES.daysPerMonth, so a part-month still gives a full-month figure.
  */
-export function monthlyProfileEstimate(
-  profile: ProfileData,
-  bundle: MethodologyBundle,
-): Record<GoalKind, number> {
-  const report = buildKpiReport(profile, bundle)
+export function pickBaseline(days: DayFigures[], today: string): BaselinePick {
+  const current = monthOf(today)
+  const earliest = addMonths(current, -BASELINE_RULES.recentMonths)
+  const byMonth = new Map<string, DayFigures[]>()
+  for (const day of days) {
+    const month = monthOf(day.date)
+    if (month < earliest || month > current) continue
+    byMonth.set(month, [...(byMonth.get(month) ?? []), day])
+  }
+  if (!byMonth.size) return { ok: false, reason: 'baseline_not_recent' }
+  const month = [...byMonth.keys()]
+    .sort()
+    .reverse()
+    .find((key) => (byMonth.get(key) ?? []).length >= BASELINE_RULES.minCompleteDays)
+  if (!month) return { ok: false, reason: 'baseline_too_few_days' }
+  const monthDays = byMonth.get(month) ?? []
+  const scale = BASELINE_RULES.daysPerMonth / monthDays.length
   return {
-    savings: report.weekly.savingsAud * WEEKS_PER_MONTH,
-    carbon: report.weekly.carbonAvoidedKg * WEEKS_PER_MONTH,
+    ok: true,
+    month,
+    days: monthDays,
+    monthly: {
+      savings: monthDays.reduce((sum, day) => sum + day.savingsAud, 0) * scale,
+      carbon: monthDays.reduce((sum, day) => sum + day.carbonKg, 0) * scale,
+    },
   }
 }
 
 /**
  * suggestGoals
- * @param profile - Saved household answers
- * @param bundle - Methodology data App already loaded
- * @returns Suggested value and allowed range per goal, or null when the estimate is zero
+ * @param monthly - Baseline savings (AUD) and carbon (kg) for one month
+ * @returns Suggested value and allowed range per goal, or null when the figure is zero
  *
  * The range runs from GOAL_SUGGESTION_MONTHS.min to .max months of the
- * profile estimate, rounded up to whole dollars and whole kilograms.
+ * baseline, rounded up to whole dollars and whole kilograms.
  */
-export function suggestGoals(profile: ProfileData, bundle: MethodologyBundle): GoalSuggestions {
-  const monthly = monthlyProfileEstimate(profile, bundle)
+export function suggestGoals(monthly: Record<GoalKind, number>): GoalSuggestions {
   return {
     savings: rangeFromMonthly(monthly.savings, 1),
     carbon: rangeFromMonthly(monthly.carbon, 1),
@@ -126,7 +113,7 @@ export function parseGoalInput(raw: string): number | null {
  * validateGoal
  * @param kind - Savings or carbon
  * @param raw - Text from the field
- * @param range - Allowed range from the profile
+ * @param range - Allowed range from the baseline
  * @returns An error that names the problem, or undefined
  *
  * The allowed range itself is shown under the field and linked to it, so the
@@ -152,7 +139,7 @@ export function normaliseGoal(kind: GoalKind, value: number): number {
 /**
  * buildCarbonExamples
  * @param factor - kg CO2e per kWh, read from the methodology data
- * @param suggestedKg - The carbon goal suggested from the profile, if any
+ * @param suggestedKg - The carbon goal suggested from the baseline, if any
  * @returns Round worked examples plus one near the suggested goal
  */
 export function buildCarbonExamples(factor: number, suggestedKg: number | null): CarbonExample[] {
