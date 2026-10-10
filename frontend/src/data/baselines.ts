@@ -65,6 +65,31 @@ export function applyBaseline(
 }
 
 /**
+ * fillAllWithBaseline
+ * @param profile - Current answers, which may already hold some from either flow
+ * @returns Every empty setup answer filled from BASELINE_PROFILE and marked as baseline
+ *
+ * Answers already given are kept. Solar details stay empty for a home that
+ * said it has no solar.
+ */
+export function fillAllWithBaseline(profile: ProfileData): ProfileData {
+  const next: ProfileData = { ...profile, fieldSources: { ...profile.fieldSources } }
+  const noSolar = profile.hasSolar === 'no'
+  for (const fields of Object.values(STEP_FIELDS)) {
+    for (const field of fields) {
+      if (field === 'fieldSources' || field === 'lastUpdated' || field === 'improveUpdated') continue
+      if (noSolar && (field === 'solarDirection' || field === 'panelCount' || field === 'panelWatts')) continue
+      const current = next[field]
+      if (typeof current !== 'string' || current.trim() !== '') continue
+      const value = BASELINE_PROFILE[field]
+      ;(next[field] as typeof value) = value
+      next.fieldSources[field] = 'baseline'
+    }
+  }
+  return next
+}
+
+/**
  * markUserFields
  * @param profile - Current answers
  * @param fields - Fields the user just confirmed on this step

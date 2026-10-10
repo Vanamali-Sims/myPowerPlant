@@ -3,7 +3,7 @@
  */
 import { useEffect, useState } from 'react'
 import { SETUP_STEPS, STEP_FIELDS } from '../../constants'
-import { applyBaseline, markUserFields } from '../../data/baselines'
+import { applyBaseline, fillAllWithBaseline, markUserFields } from '../../data/baselines'
 import { formProgress } from '../../lib/formProgress'
 import { hasErrors, validateStep, type FieldErrors } from '../../lib/validateProfile'
 import { useVoiceInput } from '../../lib/voice/useVoiceInput'
@@ -129,6 +129,12 @@ export function SetupForm({ profile, onChange, onComplete, onExit, onLogoClick, 
     setStepIndex((index) => index + 1)
   }
 
+  function skipAll() {
+    setIntroOpen(false)
+    setErrors({})
+    onComplete(fillAllWithBaseline(profile))
+  }
+
   function goBack() {
     setErrors({})
     if (stepIndex === 0) {
@@ -140,7 +146,7 @@ export function SetupForm({ profile, onChange, onComplete, onExit, onLogoClick, 
 
   return (
     <div className="setup">
-      <SetupIntroDialog open={introOpen} onContinue={() => setIntroOpen(false)} />
+      <SetupIntroDialog open={introOpen} onContinue={() => setIntroOpen(false)} onSkipAll={skipAll} />
       <FormHeader
         postcode={profile.postcode}
         onPostcodeChange={(postcode) => changeField('postcode', postcode)}
