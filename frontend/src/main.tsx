@@ -18,6 +18,7 @@ import './styles/chat.css'
 import './styles/whatif.css'
 import './styles/motion.css'
 import './styles/onboarding.css'
+import './styles/intro-choice.css'
 import './styles/recommendations.css'
 import App from './App.tsx'
 

@@ -11,8 +11,7 @@ import { ImproveProfileView } from './components/improve/ImproveProfileView'
 import { ImproveSetupForm } from './components/improve/ImproveSetupForm'
 import { FlowControls } from './components/onboarding/FlowControls'
 import { FlowControlsDialog } from './components/onboarding/FlowControlsDialog'
-import { PathChoiceScreen } from './components/onboarding/PathChoiceScreen'
-import { VppIntroScreen } from './components/onboarding/VppIntroScreen'
+import { IntroChoiceScreen } from './components/onboarding/IntroChoiceScreen'
 import { ProfileView } from './components/profile/ProfileView'
 import { RecommendationsView } from './components/recommendations/RecommendationsView'
 import { RemindersView } from './components/reminders/RemindersView'
@@ -297,32 +296,20 @@ function App() {
           view === 'goals' ||
           view === 'reminders')))
 
-  if (view === 'intro') {
+  // Screens 1 and 2 are one screen: the intro plays over the choice. The same
+  // element is returned for every case so the choice is not remounted when the
+  // intro hands over to it.
+  if (view === 'intro' || view === 'pathChoice' || !journey) {
     return (
       <>
         <CustomCursor />
         <StickyHover />
-        <VppIntroScreen onComplete={finishIntro} />
-      </>
-    )
-  }
-
-  if (view === 'pathChoice') {
-    return (
-      <>
-        <CustomCursor />
-        <StickyHover />
-        <PathChoiceScreen onExplore={beginExploreJourney} onImprove={beginImproveJourney} />
-      </>
-    )
-  }
-
-  if (!journey) {
-    return (
-      <>
-        <CustomCursor />
-        <StickyHover />
-        <PathChoiceScreen onExplore={beginExploreJourney} onImprove={beginImproveJourney} />
+        <IntroChoiceScreen
+          playIntro={view === 'intro'}
+          onIntroDone={finishIntro}
+          onExplore={beginExploreJourney}
+          onImprove={beginImproveJourney}
+        />
       </>
     )
   }
