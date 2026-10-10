@@ -1,5 +1,5 @@
 /**
- * Welcome-page marketing copy and learning links.
+ * Welcome-page marketing copy.
  *
  * Kept out of Welcome.tsx so a teammate can edit home-page content without
  * reading the layout component.
@@ -17,14 +17,6 @@ export type WelcomeFeature = {
   title: string
   description: string
   status: FeatureStatus
-}
-
-export type WelcomeArticle = {
-  tag: string
-  title: string
-  excerpt: string
-  source: string
-  href: string
 }
 
 /** Optional modelled week for the VPP explainer when a profile exists. */
@@ -88,33 +80,6 @@ export const WELCOME_FEATURES: WelcomeFeature[] = [
     description:
       'See whether joining a VPP makes sense for your home, and how — kept up to date as your setup changes.',
     status: 'available',
-  },
-]
-
-export const WELCOME_ARTICLES: WelcomeArticle[] = [
-  {
-    tag: 'Basics',
-    title: 'How does a virtual power plant work?',
-    excerpt:
-      'A plain-language explainer from Solar Victoria on what a VPP is and how home batteries take part.',
-    source: 'solar.vic.gov.au',
-    href: 'https://www.solar.vic.gov.au/how-does-virtual-power-plant-work',
-  },
-  {
-    tag: 'Solar & battery',
-    title: 'Is your battery virtual power plant ready?',
-    excerpt:
-      'Solar Victoria on what makes a home battery eligible to join a VPP, and what to check first.',
-    source: 'solar.vic.gov.au',
-    href: 'https://www.solar.vic.gov.au/virtual-power-plant-ready',
-  },
-  {
-    tag: 'Providers & schemes',
-    title: 'Virtual power plants explained',
-    excerpt:
-      'The Clean Energy Regulator on how VPPs fit into the small-scale renewable energy scheme.',
-    source: 'cer.gov.au',
-    href: 'https://cer.gov.au/schemes/renewable-energy-target/small-scale-renewable-energy-scheme/small-scale-renewable-energy-systems/solar-batteries/virtual-power-plants',
   },
 ]
 

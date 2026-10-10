@@ -1,10 +1,9 @@
 /**
- * Marketing home page: hero, VPP explainer carousel, and article links.
+ * Marketing home page: hero, VPP explainer carousel, and how-it-helps card.
  */
 import {
   VPP_EXPLAINER_EXAMPLE,
   VPP_HOW_IT_HELPS,
-  WELCOME_ARTICLES,
   type VppExplainerHousehold,
 } from '../../constants'
 import { Button } from '../ui/Button'
@@ -126,27 +125,6 @@ export function Welcome({
               </Button>
             </div>
           </section>
-        </div>
-      </section>
-
-      <section className="band">
-        <div className="band__inner">
-          <div className="card-grid">
-            {WELCOME_ARTICLES.map((article) => (
-              <a
-                key={article.title}
-                className="article-card"
-                href={article.href}
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                <span className="status-pill status-pill--soon">{article.tag}</span>
-                <h3>{article.title}</h3>
-                <p>{article.excerpt}</p>
-                <span className="article-card__source">{article.source} ↗</span>
-              </a>
-            ))}
-          </div>
         </div>
       </section>
     </div>
