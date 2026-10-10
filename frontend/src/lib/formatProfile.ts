@@ -95,6 +95,7 @@ export function displayValue(
       return value ? `${value} cycles / week` : 'Typical estimate used'
     case 'fieldSources':
     case 'lastUpdated':
+    case 'improveUpdated':
       return '—'
     default:
       return value === '' || value === null || value === undefined

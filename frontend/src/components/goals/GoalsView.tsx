@@ -5,10 +5,11 @@
 import { Suspense, lazy, useEffect, useMemo, useRef, useState } from 'react'
 import { GOALS_DEVICE_NOTE, GOAL_SUGGESTION_MONTHS } from '../../constants/goals'
 import type { MessageCode } from '../../constants/goalMessages'
-import { batteryFromProfile, maxIntervalKwh } from '../../lib/goals/batteryLimits'
-import { buildCalculationContext, calculateDay, summariseDays } from '../../lib/goals/calculate'
+import { batteryFromProfile, maxIntervalKwh, savedProfileBattery } from '../../lib/goals/batteryLimits'
+import { buildCalculationContext, calculateDay, profileRate, summariseDays } from '../../lib/goals/calculate'
 import { suggestGoals } from '../../lib/goals/goalSetup'
 import { clearGoals, loadGoals, saveGoals } from '../../lib/goals/goalsStorage'
+import { withGoalTargets } from '../../lib/goals/editGoals'
 import { applyDays, planMerge, removeMonth } from '../../lib/goals/history'
 import { applyReplacement, checkRevisions, missingDays } from '../../lib/goals/revisions'
 import {
@@ -30,7 +31,6 @@ import type { GoalSuggestions } from '../../lib/goals/goalSetup'
 import { deriveTotals } from '../../lib/goals/goalTotals'
 import type { MethodologyBundle } from '../../lib/methodologyApi'
 import {
-  GOAL_KINDS,
   emptyGoalsStore,
   type GoalEntry,
   type GoalKind,
@@ -95,7 +95,8 @@ function bothGoals(store: GoalsStore): Record<GoalKind, GoalEntry> | null {
  *
  * Goals and history are read from and written to this device only. Suggested
  * goals come from one recent month of the household's battery file, so no
- * profile is needed. The profile only pre-fills the battery questions.
+ * profile is needed. When the profile has the battery or bill and usage, those
+ * are used and not asked again.
  */
 export function GoalsView({ profile, bundle, methodologyError, onLogoClick }: Props) {
   const [store, setStore] = useState<GoalsStore>(loadGoals)
@@ -121,15 +122,18 @@ export function GoalsView({ profile, bundle, methodologyError, onLogoClick }: Pr
   const focusOverviewNext = useRef(false)
   const focusSetupNext = useRef(false)
 
-  const battery = store.baseline?.battery ?? batteryFromProfile(profile)
+  // The profile is the source of the battery and rate; goals only keep what it lacks.
+  const profileBattery = savedProfileBattery(profile)
+  const battery = profileBattery ?? store.baseline?.battery ?? batteryFromProfile(profile)
+  const rateFromProfile = profileRate(profile)
 
   const limits = useMemo(
     () => (bundle ? { maxIntervalKwh: maxIntervalKwh(battery, bundle) } : null),
     [battery, bundle],
   )
 
-  // Uploads use the rate saved with the baseline, or the typical Victorian rate.
-  const savedRate = store.baseline?.ratePerKwh ?? null
+  // Uploads use a rate typed in Goals, else bill ÷ usage from the profile, else the typical Victorian rate.
+  const savedRate = store.baseline?.ratePerKwh ?? rateFromProfile
   const context = useMemo(
     () => (bundle ? buildCalculationContext(savedRate, bundle) : null),
     [bundle, savedRate],
@@ -193,15 +197,7 @@ export function GoalsView({ profile, bundle, methodologyError, onLogoClick }: Pr
   function save(targets: Partial<Record<GoalKind, number>>) {
     const setOn = new Date().toISOString()
     const replacing = nextKinds ?? []
-    const nextGoals = { ...store.goals }
-    for (const kind of GOAL_KINDS) {
-      const target = targets[kind]
-      if (target === undefined) continue
-      const existing = store.goals[kind]
-      const isNew =
-        !existing || replacing.includes(kind) || (reachedEntry(store, kind) && existing.target !== target)
-      nextGoals[kind] = { target, setOn: isNew || !existing ? setOn : existing.setOn }
-    }
+    const nextGoals = withGoalTargets(store, targets, replacing, setOn)
     // The baseline month counts towards progress, so its new days go in with the goals.
     const months = draft ? applyDays(store.months, draftNewDays, draft.sourceId, setOn) : store.months
     const totalsAfter = deriveTotals(months)
@@ -532,7 +528,9 @@ export function GoalsView({ profile, bundle, methodologyError, onLogoClick }: Pr
           title={setupTitle}
           headingRef={setupHeading}
           initialBattery={battery}
-          initialRatePerKwh={savedRate}
+          profileBattery={profileBattery}
+          profileRatePerKwh={rateFromProfile}
+          initialRatePerKwh={store.baseline?.ratePerKwh ?? null}
           bundle={bundle}
           onReady={acceptBaselineDraft}
           onCancel={goals ? cancelEdit : undefined}
@@ -573,7 +571,7 @@ export function GoalsView({ profile, bundle, methodologyError, onLogoClick }: Pr
             }
             suggestions={formSuggestions}
             baseline={activeBaseline}
-            context={buildCalculationContext(activeBaseline.ratePerKwh, bundle)}
+            context={buildCalculationContext(activeBaseline.ratePerKwh ?? rateFromProfile, bundle)}
             current={
               nextKinds
                 ? { savings: null, carbon: null }

@@ -15,7 +15,7 @@ import { EMISSIONS_FACTOR_SOURCE, GOALS_STORAGE_KEY } from '../../constants/goal
 import { GOAL_MESSAGES } from '../../constants/goalMessages'
 import { BASELINE_PROFILE } from '../../data/baselines'
 import { maxIntervalKwh } from '../../lib/goals/batteryLimits'
-import { buildCalculationContext, calculateDay } from '../../lib/goals/calculate'
+import { buildCalculationContext, calculateDay, profileRate } from '../../lib/goals/calculate'
 import { addDays, addMonths, daysInMonth, monthOf } from '../../lib/goals/calendar'
 import { formatMonthLabel } from '../../lib/goals/goalFormat'
 import { pickBaseline, suggestGoals, type GoalSuggestions } from '../../lib/goals/goalSetup'
@@ -152,8 +152,9 @@ beforeAll(async () => {
     if (!picked.ok) throw new Error('fixture file has no baseline')
     return picked
   }
-  const typical = pick(null)
-  expected = { suggestions: suggestGoals(typical.monthly), days: typical.days.length }
+  // The test profile has a bill and monthly usage, so its own rate is used.
+  const fromProfile = pick(profileRate(profile))
+  expected = { suggestions: suggestGoals(fromProfile.monthly), days: fromProfile.days.length }
   expectedAt40c = suggestGoals(pick(0.4).monthly)
 })
 
@@ -179,7 +180,7 @@ describe('step 1: battery and a recent file', () => {
   it('works with no profile, asking for the battery before the file', async () => {
     const { user } = renderView({ profile: emptyProfile() })
     expect(screen.getByRole('heading', { name: 'Set your goals' })).toBeTruthy()
-    expect(screen.getByText('Step 1 of 2: your battery and a recent file')).toBeTruthy()
+    expect(screen.getByText(/^Step 1 of 2:/)).toBeTruthy()
     expect(screen.getByText('Choose your battery model to add your file.')).toBeTruthy()
     expect(screen.queryByRole('region', { name: /Upload/ })).toBeNull()
     expect(screen.queryByLabelText('Savings goal (AUD)')).toBeNull()
@@ -191,9 +192,16 @@ describe('step 1: battery and a recent file', () => {
     expect(screen.queryByRole('region', { name: 'Upload your battery file' })).toBeNull()
   })
 
-  it('pre-fills the battery from the profile', () => {
+  it('uses the battery and rate from the profile and goes straight to the upload', () => {
     renderView()
-    expect(screen.getByPlaceholderText('Search battery brand & model')).toHaveProperty('value', 'Tesla Powerwall 2')
+    expect(screen.getByText('Step 1 of 2: a recent battery file')).toBeTruthy()
+    expect(screen.queryByPlaceholderText('Search battery brand & model')).toBeNull()
+    expect(screen.queryByLabelText('Your electricity usage rate (optional)')).toBeNull()
+    expect(
+      screen.getByText(
+        'Using your battery from your profile: Tesla Powerwall 2. Savings use your bill ÷ usage from your profile, about 33.3 c/kWh.',
+      ),
+    ).toBeTruthy()
     expect(screen.getByRole('region', { name: 'Upload a recent battery file' })).toBeTruthy()
   })
 
@@ -219,8 +227,10 @@ describe('optional usage rate', () => {
     return screen.getByLabelText('Your electricity usage rate (optional)')
   }
 
+  const noBill = () => savedProfile({ monthlyBill: '' })
+
   it('says the typical Victorian rate is used while the rate is empty', () => {
-    renderView()
+    renderView({ profile: noBill() })
     expect(rateInput()).toHaveProperty('value', '')
     const cents = Math.round(bundle.methodology.defaultRetailRate * 1000) / 10
     expect(
@@ -231,7 +241,7 @@ describe('optional usage rate', () => {
   })
 
   it('hides the upload until a rate that cannot be right is fixed or cleared', async () => {
-    const { user } = renderView()
+    const { user } = renderView({ profile: noBill() })
     await user.type(rateInput(), '500')
     await user.tab()
     expect(screen.getByRole('alert').textContent).toContain('Enter your rate in cents per kWh, between 5 and 100')
@@ -242,7 +252,7 @@ describe('optional usage rate', () => {
   })
 
   it('values the file at the rate entered and saves it with the baseline', async () => {
-    const { user } = renderView()
+    const { user } = renderView({ profile: noBill() })
     await user.type(rateInput(), '40')
     expect(screen.queryByText(/If you leave this empty/)).toBeNull()
     await addFile(user)
@@ -289,7 +299,7 @@ describe('step 2: goals from the file', () => {
     const { user } = renderView()
     await addFile(user)
     await user.click(screen.getByRole('button', { name: 'Use a different file' }))
-    expect(screen.getByText('Step 1 of 2: your battery and a recent file')).toBeTruthy()
+    expect(screen.getByText(/^Step 1 of 2:/)).toBeTruthy()
     expect(screen.queryByLabelText('Savings goal (AUD)')).toBeNull()
   })
 
@@ -349,6 +359,7 @@ describe('saving goals with the baseline', () => {
     expect(stored.baseline.month).toBe(RECENT)
     expect(stored.baseline.days).toBe(expected.days)
     expect(stored.baseline.battery).toEqual({ model: 'Tesla Powerwall 2', units: 1 })
+    // A profile rate is read live from the profile, so it is not copied into goals.
     expect(stored.baseline.ratePerKwh).toBeNull()
     expect(stored.months.map((record: MonthRecord) => record.month)).toEqual([RECENT])
     expect(stored.completedGoals).toEqual([])
@@ -403,7 +414,7 @@ describe('editing goals', () => {
     const { user } = renderView()
     await user.click(screen.getByRole('button', { name: 'Edit goals' }))
     expect(screen.getByRole('heading', { name: 'Edit your goals' })).toBeTruthy()
-    expect(screen.getByText('Step 1 of 2: your battery and a recent file')).toBeTruthy()
+    expect(screen.getByText(/^Step 1 of 2:/)).toBeTruthy()
     expect(screen.queryByRole('region', { name: 'Upload your battery file' })).toBeNull()
     await user.click(screen.getByRole('button', { name: 'Cancel' }))
     expect(screen.getByRole('heading', { name: 'Your goals' })).toBeTruthy()

@@ -22,27 +22,6 @@ export const PATH_CHOICE = {
   },
 }
 
-export const RAIN_HUB = {
-  title: 'Great! What would you like to do?',
-  cards: {
-    whatif: {
-      title: 'What if',
-      body: 'Try different battery settings and see how your VPP earnings would change.',
-      action: 'Explore scenarios',
-    },
-    goals: {
-      title: 'Goal',
-      body: 'Set a savings target and track how close your VPP credits get you.',
-      action: 'Set a goal',
-    },
-    reminders: {
-      title: 'Reminder',
-      body: 'Get a nudge before peak events, bill dates, or a settings check-in.',
-      action: 'Add a reminder',
-    },
-  },
-}
-
 export const FLOW_CONTROLS = {
   railLabel: 'Path',
   title: 'Path & data on this device',

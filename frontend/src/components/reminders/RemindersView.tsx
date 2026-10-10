@@ -1,25 +1,19 @@
 /**
- * Get Reminded tab: choose a reminder period and see recommended days to
- * join a discharge event or opt out of one, based on the solar forecast.
+ * Get Reminded tab: the next best day and the solar forecast on the left, the
+ * recommended days to add to a calendar on the right.
+ *
+ * Everything it uses — location, panels, direction, battery reserve — comes
+ * from the saved profile.
  */
 import { useEffect, useMemo, useState } from 'react'
-import {
-  EVENT_TYPE_OPTIONS,
-  EVENT_TYPE_RESULTS_HEADING,
-  REMINDER_PERIOD_OPTIONS,
-  TIMEFRAMES,
-} from '../../constants'
+import { REMINDER_PERIOD_OPTIONS, TIMEFRAMES } from '../../constants'
 import { DEFAULT_RESERVE_PERCENT, FIELD_BOUNDS, clampNumber } from '../../constants/validation'
-import { buildIcsFile, downloadIcsFile } from '../../lib/calendarExport'
 import { coordsFromPostcode, locationFromPostcode } from '../../data/profileOptions'
-import { formatKwh, parseCount } from '../../lib/kpis'
+import { buildIcsFile, downloadIcsFile } from '../../lib/calendarExport'
+import { formatKwh, panelWattsOrTypical, parseCount } from '../../lib/kpis'
 import { fetchMethodology, type MethodologyBundle } from '../../lib/methodologyApi'
-import {
-  buildReminderRecommendations,
-  emptyStateMessage,
-  resultsCaption,
-  type ReminderRecommendation,
-} from '../../lib/reminderForecast'
+import { buildReminderRecommendations, emptyStateMessage, type ReminderRecommendation } from '../../lib/reminderForecast'
+import { addReminders, loadReminders, reminderKey, removeReminder, type SavedReminder } from '../../lib/reminderStorage'
 import {
   fetchSolarForecast,
   pointsForView,
@@ -29,15 +23,17 @@ import {
 } from '../../lib/solarForecast'
 import type { ProfileData } from '../../types/profile'
 import type { EventType } from '../../types/reminders'
-import { SolarForecastChart } from '../dashboard/SolarForecastChart'
 import { Button } from '../ui/Button'
-import { Callout } from '../ui/Callout'
-import { AlertIcon, BoltIcon, CheckIcon, ChevronIcon, DownloadIcon, LockIcon } from '../ui/icons'
-import { LocationControl } from '../ui/LocationControl'
-import { SegmentedToggle } from '../ui/SegmentedToggle'
+import { BoltIcon, CalendarIcon, DownloadIcon } from '../ui/icons'
+import { ReminderChart } from './ReminderChart'
 
-/** Shown alongside the forecast when no postcode is set, matching the solar forecast fallback. */
+/** Used for the forecast when no postcode is set, matching the solar forecast fallback. */
 const DEFAULT_LOCATION_PLACE = 'Melbourne, VIC'
+
+const EVENT_CHOICES: { value: EventType; label: string }[] = [
+  { value: 'discharge', label: 'Discharge' },
+  { value: 'opt_out', label: 'Opt-out' },
+]
 
 type Props = {
   profile: ProfileData
@@ -48,33 +44,79 @@ type Props = {
   onReminderPeriodDays: (next: string) => void
 }
 
+function keysOf(rows: SavedReminder[]): Set<string> {
+  return new Set(rows.map((row) => reminderKey(row.eventType, row.date)))
+}
+
+function percentFrom(value: number, base: number): number {
+  return base > 0 ? Math.round((Math.abs(value - base) / base) * 100) : 0
+}
+
 /**
  * nextDayDetail
- * @param entry - The soonest recommended day already on the results list
+ * @param entry - The soonest recommended day
  * @param eventType - Discharge (above typical) or opt-out (below typical)
- * @returns One-line copy for the next-up card, using figures the list already has
- *
- * Formats existing forecast/typical kWh for display. Does not decide whether
- * a day qualifies — that still comes from buildReminderRecommendations.
+ * @returns One line under the next best day, from figures the list already has
  */
 function nextDayDetail(entry: ReminderRecommendation, eventType: EventType): string {
   const kwh = formatKwh(entry.forecastKwh)
   if (entry.typicalKwh <= 0) return `${kwh} forecast`
-  const pct = Math.round((Math.abs(entry.forecastKwh - entry.typicalKwh) / entry.typicalKwh) * 100)
   const direction = eventType === 'discharge' ? 'above' : 'below'
-  return `${kwh} forecast — about ${pct}% ${direction} a typical day for this system`
+  return `${kwh} forecast · ${percentFrom(entry.forecastKwh, entry.typicalKwh)}% ${direction} a typical day`
+}
+
+function recommendedLede(count: number): string {
+  if (count === 0) return 'No recommended days in this period.'
+  if (count === 1) return 'Here is the 1 recommended day.'
+  return `Here are the ${count} recommended days.`
+}
+
+function dayBadge(date: string): { weekday: string; day: string } {
+  const value = new Date(`${date}T00:00:00`)
+  return {
+    weekday: value.toLocaleDateString('en-AU', { weekday: 'short' }).toUpperCase(),
+    day: String(value.getDate()),
+  }
+}
+
+type PillToggleProps<T extends string> = {
+  label: string
+  value: T
+  options: { value: T; label: string }[]
+  onChange: (value: T) => void
+  tone?: 'light' | 'dark'
+}
+
+/** Compact segmented control with no visible label; the label names the group for screen readers. */
+function PillToggle<T extends string>({ label, value, options, onChange, tone = 'light' }: PillToggleProps<T>) {
+  return (
+    <div className={`reminders-pill reminders-pill--${tone}`} role="radiogroup" aria-label={label}>
+      {options.map((option) => (
+        <button
+          key={option.value}
+          type="button"
+          role="radio"
+          aria-checked={value === option.value}
+          className={`reminders-pill__option${value === option.value ? ' is-selected' : ''}`}
+          onClick={() => onChange(option.value)}
+        >
+          {option.label}
+        </button>
+      ))}
+    </div>
+  )
 }
 
 /**
  * RemindersView
- * @param props.profile - Saved household profile, used to seed the starting location and system size
+ * @param props.profile - Saved household profile: postcode, panels, direction, and reserve
  * @param props.onLogoClick - Return to the home screen from the wordmark
  * @returns JSX.Element
  *
- * The reminder period and event type chosen here filter and switch between
- * the discharge and opt-out day lists. The postcode starts from the saved
- * profile but can be changed on this page alone, to preview a different
- * location's forecast without editing the profile.
+ * The reminder period and event type choose which days are recommended. A
+ * switch beside each day selects it; the download button (counting the
+ * selected days) or "Download all" saves them as one calendar file and
+ * remembers them on this device for the profile list.
  */
 export function RemindersView({
   profile,
@@ -84,10 +126,8 @@ export function RemindersView({
   reminderPeriodDays,
   onReminderPeriodDays,
 }: Props) {
-  const [postcode, setPostcode] = useState(profile.postcode)
-  const [openDate, setOpenDate] = useState<string | null>(null)
-  const [dismissedKeys, setDismissedKeys] = useState<Set<string>>(new Set())
-  const [remindedKeys, setRemindedKeys] = useState<Set<string>>(new Set())
+  const [selected, setSelected] = useState<Set<string>>(() => keysOf(loadReminders()))
+  const [status, setStatus] = useState('')
   const [forecastView, setForecastView] = useState<ForecastView>('weekly')
 
   const [bundle, setBundle] = useState<MethodologyBundle | null>(null)
@@ -95,6 +135,7 @@ export function RemindersView({
   const [forecast, setForecast] = useState<SolarForecast | null>(null)
   const [forecastError, setForecastError] = useState('')
 
+  const postcode = profile.postcode
   const usingDefaultLocation = postcode.trim() === ''
   const place = locationFromPostcode(postcode) || DEFAULT_LOCATION_PLACE
 
@@ -119,7 +160,7 @@ export function RemindersView({
   const solarInputs: SolarInputs | null = useMemo(() => {
     if (!bundle) return null
     const systemKw = hasOwnSolar
-      ? (parseCount(profile.panelCount) * parseCount(profile.panelWatts)) / 1000
+      ? (parseCount(profile.panelCount) * panelWattsOrTypical(profile)) / 1000
       : bundle.methodology.typicalPotentialKw
     const orientationFactor =
       bundle.orientationFactors[profile.solarDirection] ?? bundle.orientationFactors.not_sure ?? 1
@@ -131,7 +172,7 @@ export function RemindersView({
       orientationFactor,
       performanceRatio: bundle.methodology.solarPerformanceRatio,
     }
-  }, [bundle, hasOwnSolar, profile.panelCount, profile.panelWatts, profile.solarDirection, postcode])
+  }, [bundle, hasOwnSolar, profile, postcode])
 
   useEffect(() => {
     if (!solarInputs) return
@@ -179,93 +220,51 @@ export function RemindersView({
     [dailyPoints, typicalDailyKwh, eventType, reservePercent],
   )
 
-  // Keyed by event type so dismissing a day on one list never hides it on the other.
-  const visibleRecommendations = useMemo(
-    () => recommendations.filter((entry) => !dismissedKeys.has(`${eventType}:${entry.date}`)),
-    [recommendations, dismissedKeys, eventType],
-  )
-
+  // The same line buildReminderRecommendations uses: typical day ± the reserve margin.
+  const target =
+    typicalDailyKwh > 0
+      ? typicalDailyKwh * (eventType === 'discharge' ? 1 + reservePercent / 100 : 1 - reservePercent / 100)
+      : null
+  const chartPoints = forecast ? pointsForView(forecast, forecastView) : []
+  const recommendedDates = new Set(recommendations.map((entry) => entry.date))
   const loading = Boolean(solarInputs) && !bundleError && !forecastError && forecast === null
-  const resultsHeading = EVENT_TYPE_RESULTS_HEADING[eventType]
-  const caption = resultsCaption(eventType, reservePercent)
-  const emptyMessage = emptyStateMessage(eventType, reservePercent)
-  // Same list, soonest first — recommendations already follow forecast date order.
-  const nextEntry = visibleRecommendations[0] ?? null
-
-  function toggleRow(date: string) {
-    setOpenDate((current) => (current === date ? null : date))
-  }
+  const ready = !loading && !bundleError && !forecastError && Boolean(forecast)
+  const nextEntry = recommendations[0] ?? null
+  const chosen = recommendations.filter((entry) => selected.has(reminderKey(eventType, entry.date)))
 
   /**
-   * dismissEntry
-   * @param date - ISO date of the row to hide
-   *
-   * Only hides the row from the list currently on screen. Nothing is saved
-   * anywhere, so a page reload or switching back to this list later brings
-   * it back.
+   * toggleDay
+   * Selects or clears a day. Clearing a day that was downloaded before also
+   * takes it off the device list (the calendar file itself is untouched).
    */
-  function dismissEntry(date: string) {
-    setDismissedKeys((current) => {
-      const next = new Set(current)
-      next.add(`${eventType}:${date}`)
-      return next
-    })
-  }
-
-  /**
-   * downloadEntry
-   * @param entry - The single row to save as a calendar file
-   *
-   * Builds a one-event .ics file for just this day.
-   */
-  function downloadEntry(entry: ReminderRecommendation) {
-    const content = buildIcsFile([entry], eventType)
-    downloadIcsFile(`mypowerplant-${eventType.replace('_', '-')}-${entry.date}.ics`, content)
-  }
-
-  function isReminded(date: string) {
-    return remindedKeys.has(`${eventType}:${date}`)
-  }
-
-  /**
-   * toggleReminder
-   * @param entry - The day to add or clear as a local "reminder set" mark
-   *
-   * Setting a reminder still uses the existing .ics download. The checked
-   * state is only remembered in this page session, same as dismiss — there
-   * is no reminders API or saved store.
-   */
-  function toggleReminder(entry: ReminderRecommendation) {
-    const key = `${eventType}:${entry.date}`
-    if (remindedKeys.has(key)) {
-      setRemindedKeys((current) => {
+  function toggleDay(entry: ReminderRecommendation) {
+    const key = reminderKey(eventType, entry.date)
+    setStatus('')
+    if (selected.has(key)) {
+      const saved = removeReminder(eventType, entry.date)
+      setSelected((current) => {
         const next = new Set(current)
         next.delete(key)
+        for (const savedKey of keysOf(saved)) next.add(savedKey)
         return next
       })
       return
     }
-    downloadEntry(entry)
-    setRemindedKeys((current) => {
-      const next = new Set(current)
-      next.add(key)
-      return next
-    })
+    setSelected((current) => new Set(current).add(key))
   }
 
-  /**
-   * downloadAllEntries
-   *
-   * Bundles every row currently on screen (so anything already dismissed is
-   * left out) into a single .ics file.
-   */
-  function downloadAllEntries() {
-    const content = buildIcsFile(visibleRecommendations, eventType)
+  /** Saves these days as one calendar file and remembers them on this device. */
+  function download(entries: ReminderRecommendation[]) {
+    if (!entries.length) return
+    const content = buildIcsFile(entries, eventType)
     downloadIcsFile(`mypowerplant-${eventType.replace('_', '-')}-reminders.ics`, content)
+    const saved = addReminders(entries.map((entry) => ({ date: entry.date, eventType })))
+    setSelected((current) => new Set([...current, ...keysOf(saved)]))
+    setStatus(`${entries.length === 1 ? '1 day' : `${entries.length} days`} saved to your calendar file.`)
   }
 
   return (
-    <div className="reminders">
+    <div className="reminders reminders-page">
       <header className="reminders__top">
         <button
           type="button"
@@ -278,67 +277,27 @@ export function RemindersView({
           </span>
           MyPowerPlant
         </button>
-        <LocationControl postcode={postcode} onPostcodeChange={setPostcode} />
       </header>
 
-      <div className="reminders__intro">
-        <h1>Get Reminded</h1>
-        <p>
-          Pick how far ahead to look, then switch between discharge and opt-out events to see
-          the days that fit your solar forecast.
-        </p>
-      </div>
-
-      {usingDefaultLocation ? (
-        <Callout tone="neutral" icon={<AlertIcon />} title={`Using a default location: ${place}`}>
-          No postcode is set yet, so this forecast uses a default location. Enter a postcode
-          above to preview your own area, or set it in your profile to use it everywhere.
-        </Callout>
-      ) : null}
-
-      {!loading && !bundleError && !forecastError && nextEntry ? (
-        <article className="reminder-next">
-          <div className="reminder-next__copy">
-            <p className="eyebrow">Next recommended day</p>
-            <h2 className="reminder-next__date">{nextEntry.dayLabel}</h2>
-            <p className="reminder-next__detail">
-              {nextDayDetail(nextEntry, eventType)}
-              <span className="kpi-badge kpi-badge--estimate">Estimate</span>
-            </p>
-          </div>
-          <Button
-            variant="primary"
-            className="reminder-next__cta"
-            aria-pressed={isReminded(nextEntry.date)}
-            onClick={() => toggleReminder(nextEntry)}
-          >
-            {isReminded(nextEntry.date) ? (
-              <>
-                <CheckIcon width={14} height={14} />
-                Reminder set
-              </>
-            ) : (
-              'Remind me'
-            )}
-          </Button>
-        </article>
-      ) : null}
-
-      <div className="reminders__controls">
-        <div className="reminders__period">
-          <SegmentedToggle
-            label="Reminder period"
-            value={reminderPeriodDays}
-            options={REMINDER_PERIOD_OPTIONS}
-            onChange={onReminderPeriodDays}
-          />
+      <div className="reminders-page__head">
+        <div>
+          <h1 className="reminders-page__title">Get Reminded</h1>
+          <p className="reminders-page__lede">Know when to share or keep.</p>
         </div>
-        <SegmentedToggle
-          label="Alert type"
-          value={eventType}
-          options={EVENT_TYPE_OPTIONS}
-          onChange={onEventType}
-        />
+        <div className="reminders-page__toolbar">
+          <label className="reminders-period">
+            <CalendarIcon width={16} height={16} />
+            <span>Reminder period</span>
+            <select value={reminderPeriodDays} onChange={(event) => onReminderPeriodDays(event.target.value)}>
+              {REMINDER_PERIOD_OPTIONS.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+          </label>
+          <PillToggle label="Event type" value={eventType} options={EVENT_CHOICES} onChange={onEventType} tone="dark" />
+        </div>
       </div>
 
       {bundleError ? (
@@ -357,121 +316,126 @@ export function RemindersView({
         </p>
       ) : null}
 
-      {solarInputs ? (
-        <section className="dashboard-card reminders-forecast" aria-labelledby="reminders-forecast-heading">
-          <p className="eyebrow">
-            {hasOwnSolar ? 'Roof' : 'Roof potential'} · closer look
-          </p>
-          <h2 id="reminders-forecast-heading">Predicted solar generation</h2>
-          <SegmentedToggle
-            label="Forecast range"
-            value={forecastView}
-            options={TIMEFRAMES}
-            onChange={setForecastView}
-          />
-          <SolarForecastChart
-            inputs={solarInputs}
-            view={forecastView}
-            isPotential={!hasOwnSolar}
-            placeLabel={place}
-          />
-        </section>
-      ) : null}
+      {ready ? (
+        <section className="reminders-board" aria-label="Reminders">
+          <div className="reminders-board__forecast">
+            <p className="eyebrow reminders-board__eyebrow">Next best day</p>
+            <h2 className="reminders-board__day">{nextEntry ? nextEntry.dayLabel : 'No day in this period'}</h2>
+            <p className="reminders-board__detail">
+              {nextEntry ? nextDayDetail(nextEntry, eventType) : emptyStateMessage(eventType, reservePercent)}
+            </p>
 
-      {!loading && !bundleError && !forecastError ? (
-        <section className="reminder-results" aria-labelledby="reminder-results-heading">
-          <h2 id="reminder-results-heading">{resultsHeading}</h2>
-          <p className="reminder-results__caption">{caption}</p>
-          {visibleRecommendations.length === 0 ? (
-            <Callout tone="neutral" icon={<AlertIcon />} title="No days to show yet">
-              {emptyMessage}
-            </Callout>
-          ) : (
-            <ul className="reminder-list">
-              {visibleRecommendations.map((entry) => {
-                const isOpen = openDate === entry.date
-                const detailId = `reminder-detail-${entry.date}`
-                const set = isReminded(entry.date)
-                return (
-                  <li key={entry.date} className="reminder-row">
-                    <div className="reminder-row__bar">
-                      <div className="reminder-row__main">
-                        <span className="reminder-row__date">{entry.dayLabel}</span>
-                        <span className="reminder-row__estimate-inline">
-                          {formatKwh(entry.forecastKwh)}
-                          <span className="kpi-badge kpi-badge--estimate">Estimate</span>
+            <div className="reminders-board__chart-head">
+              <div className="reminders-board__chart-title">
+                <h3 className="eyebrow reminders-board__eyebrow">
+                  {hasOwnSolar ? 'Predicted solar generation' : 'Predicted solar potential'}
+                </h3>
+                {forecastView === 'daily' ? null : (
+                  <span className="reminders-board__legend">
+                    <span className="reminders-board__swatch" aria-hidden="true" />
+                    Recommended day
+                  </span>
+                )}
+              </div>
+              <PillToggle
+                label="Forecast range"
+                value={forecastView}
+                options={TIMEFRAMES}
+                onChange={setForecastView}
+                tone="dark"
+              />
+            </div>
+
+            <ReminderChart
+              points={chartPoints}
+              target={target}
+              recommended={recommendedDates}
+              hourly={forecastView === 'daily'}
+            />
+
+            <p className="reminders-board__note">
+              {forecastView === 'daily' ? 'kWh/hour, today' : 'kWh/day'} · Open-Meteo forecast for {place} — not a
+              meter reading.
+              {usingDefaultLocation ? ' Add your postcode to your profile to use your own area.' : ''}
+            </p>
+            {target !== null ? (
+              <p className="reminders-board__note">
+                Target = a typical day for this system ({formatKwh(typicalDailyKwh)})
+                {eventType === 'discharge' ? ' plus' : ' minus'} your {reservePercent}% battery reserve.
+              </p>
+            ) : null}
+          </div>
+
+          <div className="reminders-board__list">
+            <div className="reminders-board__list-inner">
+              <h2 className="reminders-board__list-title">Remind me</h2>
+              <p className="reminders-board__list-lede">{recommendedLede(recommendations.length)}</p>
+              {recommendations.length === 0 ? (
+                <p className="reminders-board__empty">{emptyStateMessage(eventType, reservePercent)}</p>
+              ) : (
+                <ul className="reminder-days">
+                  {recommendations.map((entry) => {
+                    const badge = dayBadge(entry.date)
+                    const on = selected.has(reminderKey(eventType, entry.date))
+                    const pct = target ? percentFrom(entry.forecastKwh, target) : 0
+                    const direction = eventType === 'discharge' ? 'above' : 'below'
+                    return (
+                      <li key={entry.date} className="reminder-day">
+                        <span className="reminder-day__badge" aria-hidden="true">
+                          <span>{badge.weekday}</span>
+                          <strong>{badge.day}</strong>
                         </span>
-                      </div>
-                      <div className="reminder-row__actions">
+                        <span className="reminder-day__copy">
+                          <span className="reminder-day__kwh">
+                            {entry.forecastKwh.toFixed(1)} <small>kWh</small>
+                          </span>
+                          <span className="reminder-day__meta">
+                            Forecast ·{' '}
+                            <b>
+                              {eventType === 'discharge' ? '+' : '−'}
+                              {pct}% {direction} target
+                            </b>
+                          </span>
+                        </span>
                         <button
                           type="button"
-                          className="reminder-row__details"
-                          aria-expanded={isOpen}
-                          aria-controls={detailId}
-                          onClick={() => toggleRow(entry.date)}
+                          role="switch"
+                          aria-checked={on}
+                          aria-label={`Remind me on ${entry.dayLabel}`}
+                          className={`reminder-switch${on ? ' is-on' : ''}`}
+                          onClick={() => toggleDay(entry)}
                         >
-                          Details
-                          <ChevronIcon
-                            className={`reminder-row__chevron${isOpen ? ' is-open' : ''}`}
-                            width={14}
-                            height={14}
-                          />
+                          <span className="reminder-switch__knob" />
                         </button>
-                        <button
-                          type="button"
-                          className="reminder-row__dismiss"
-                          aria-label={`Hide ${entry.dayLabel}`}
-                          onClick={() => dismissEntry(entry.date)}
-                        >
-                          Hide
-                        </button>
-                        <Button
-                          variant={set ? 'primary' : 'outline-accent'}
-                          className="reminder-row__remind"
-                          aria-pressed={set}
-                          onClick={() => toggleReminder(entry)}
-                        >
-                          {set ? (
-                            <>
-                              <CheckIcon width={14} height={14} />
-                              Reminder set
-                            </>
-                          ) : (
-                            'Remind me'
-                          )}
-                        </Button>
-                      </div>
-                    </div>
-                    {isOpen ? (
-                      <div id={detailId} className="reminder-row__detail">
-                        <p className="reminder-row__reason">{entry.reason}</p>
-                        <Button
-                          variant="edit"
-                          className="reminder-row__download"
-                          onClick={() => downloadEntry(entry)}
-                        >
-                          <DownloadIcon width={14} height={14} />
-                          Download
-                        </Button>
-                      </div>
-                    ) : null}
-                  </li>
-                )
-              })}
-            </ul>
-          )}
-          {visibleRecommendations.length > 0 ? (
-            <div className="reminder-results__actions">
-              <Button variant="primary" onClick={downloadAllEntries}>
-                Download all reminders
+                      </li>
+                    )
+                  })}
+                </ul>
+              )}
+              <Button
+                variant="primary"
+                className="reminders-board__download"
+                disabled={!chosen.length}
+                onClick={() => download(chosen)}
+              >
+                <DownloadIcon width={16} height={16} />
+                {chosen.length ? `Download selected - ${chosen.length}` : 'Download selected'}
               </Button>
-              <p className="setup-secure">
-                <LockIcon width={14} height={14} />
-                Downloaded reminders are calendar files (.ics). Open the file to add it to your
-                calendar app on this device — nothing is uploaded or saved anywhere else.
+              {recommendations.length ? (
+                <button
+                  type="button"
+                  className="reminders-board__download-all"
+                  onClick={() => download(recommendations)}
+                >
+                  Download all
+                </button>
+              ) : null}
+              <p className="reminders-board__privacy">Saved to your calendar only — nothing is uploaded.</p>
+              <p className="reminders-board__status" role="status">
+                {status}
               </p>
             </div>
-          ) : null}
+          </div>
         </section>
       ) : null}
     </div>

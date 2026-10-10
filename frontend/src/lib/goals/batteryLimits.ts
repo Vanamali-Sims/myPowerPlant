@@ -3,6 +3,7 @@
  */
 import { MAX_INTERVAL_KWH_FACTOR } from '../../constants/batterySources'
 import { FIELD_BOUNDS, clampNumber } from '../../constants/validation'
+import { isAllowedBatteryModel } from '../../data/profileOptions'
 import type { GoalBattery } from '../../types/goals'
 import type { ProfileData } from '../../types/profile'
 import type { MethodologyBundle } from '../methodologyApi'
@@ -32,4 +33,9 @@ export function maxIntervalKwh(battery: GoalBattery, bundle: MethodologyBundle):
 /** The profile's battery answers, used to pre-fill the goal battery question. */
 export function batteryFromProfile(profile: ProfileData): GoalBattery {
   return { model: profile.batteryModel, units: profile.batteryUnits || 1 }
+}
+
+/** The profile's battery when it names a listed model (or Not sure), else null. */
+export function savedProfileBattery(profile: ProfileData): GoalBattery | null {
+  return isAllowedBatteryModel(profile.batteryModel) ? batteryFromProfile(profile) : null
 }

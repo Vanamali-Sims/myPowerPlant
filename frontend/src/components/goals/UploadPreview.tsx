@@ -158,7 +158,7 @@ export function UploadPreview({
             </p>
             {context.rateKind === 'from_you' ? (
               <p className="vpp-term__meta">
-                <span>Rate: the usage rate you entered from your bill or contract</span>
+                <span>Rate: the usage rate you entered, or your bill ÷ usage from your profile</span>
               </p>
             ) : (
               <p className="vpp-term__meta">

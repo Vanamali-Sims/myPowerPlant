@@ -2,7 +2,7 @@
  * Persona-specific app-rail navigation.
  *
  * Matt: home, dashboard, recommendations, profile.
- * Rain: what if, goals, reminders (shown on tool pages, not on the hub).
+ * Rain: home, what if, goals, reminders, profile.
  */
 import {
   BellIcon,
@@ -15,7 +15,7 @@ import {
 } from '../components/ui/icons'
 
 export type MattNavId = 'home' | 'dashboard' | 'recommendations' | 'profile'
-export type RainNavId = 'whatif' | 'goals' | 'reminders'
+export type RainNavId = 'home' | 'whatif' | 'goals' | 'reminders' | 'profile'
 export type AppNavId = MattNavId | RainNavId
 
 export type NavItem = {
@@ -54,6 +54,12 @@ export const MATT_NAV: NavItem[] = [
 
 export const RAIN_NAV: NavItem[] = [
   {
+    id: 'home',
+    label: 'Home',
+    icon: HomeIcon,
+    unavailableMessage: 'Home isn’t set up yet.',
+  },
+  {
     id: 'whatif',
     label: 'What if',
     icon: BulbIcon,
@@ -70,6 +76,12 @@ export const RAIN_NAV: NavItem[] = [
     label: 'Reminders',
     icon: BellIcon,
     unavailableMessage: 'Reminders need your household answers on this device.',
+  },
+  {
+    id: 'profile',
+    label: 'Profile',
+    icon: ProfileIcon,
+    unavailableMessage: 'Your profile appears once you add your setup.',
   },
 ]
 

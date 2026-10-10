@@ -1,24 +1,27 @@
 /**
- * Household tab on the What if page: edit people and appliance cycles.
+ * Household tab on the What if page: people, and changes in appliance cycles.
  *
  * Pure editor — the page around it recomputes the live comparison on every
- * change, so this component only owns the stepper rows.
+ * change, so this component only owns the stepper rows. Appliance cycles are
+ * a change from today's use (which is already inside the monthly usage), so
+ * they start at 0 and can go below it.
  */
 import { FIELD_BOUNDS } from '../../constants/validation'
+import { CYCLE_CHANGE_LIMIT } from '../../lib/whatif/usageChange'
 import type { ProfileData } from '../../types/profile'
 import { WhatIfStepperRow } from './WhatIfStepperRow'
 
 type Props = {
   profile: ProfileData
   peopleDraft: string
-  dishwasherDraft: string
-  washerDraft: string
+  dishwasherChange: number
+  washerChange: number
   peopleDelta?: number | null
   dishwasherDelta?: number | null
   washerDelta?: number | null
   onPeopleDraft: (value: string) => void
-  onDishwasherDraft: (value: string) => void
-  onWasherDraft: (value: string) => void
+  onDishwasherChange: (value: number) => void
+  onWasherChange: (value: number) => void
 }
 
 /**
@@ -27,14 +30,14 @@ type Props = {
 export function WhatIfHouseholdTab({
   profile,
   peopleDraft,
-  dishwasherDraft,
-  washerDraft,
+  dishwasherChange,
+  washerChange,
   peopleDelta = null,
   dishwasherDelta = null,
   washerDelta = null,
   onPeopleDraft,
-  onDishwasherDraft,
-  onWasherDraft,
+  onDishwasherChange,
+  onWasherChange,
 }: Props) {
   return (
     <>
@@ -49,24 +52,24 @@ export function WhatIfHouseholdTab({
         onDraft={onPeopleDraft}
       />
       <WhatIfStepperRow
-        label="Dishwasher cycles"
-        saved={profile.dishwasherCyclesPerWeek}
-        draft={dishwasherDraft}
-        min={FIELD_BOUNDS.dishwasherCyclesPerWeek.min}
-        max={FIELD_BOUNDS.dishwasherCyclesPerWeek.max}
-        startAt={2}
+        label="Dishwasher cycles a week, more or fewer"
+        saved="0"
+        draft={String(dishwasherChange)}
+        min={-CYCLE_CHANGE_LIMIT}
+        max={CYCLE_CHANGE_LIMIT}
+        startAt={0}
         deltaAud={dishwasherDelta}
-        onDraft={onDishwasherDraft}
+        onDraft={(value) => onDishwasherChange(Number.parseInt(value, 10) || 0)}
       />
       <WhatIfStepperRow
-        label="Washing cycles"
-        saved={profile.washerCyclesPerWeek}
-        draft={washerDraft}
-        min={FIELD_BOUNDS.washerCyclesPerWeek.min}
-        max={FIELD_BOUNDS.washerCyclesPerWeek.max}
-        startAt={2}
+        label="Washing cycles a week, more or fewer"
+        saved="0"
+        draft={String(washerChange)}
+        min={-CYCLE_CHANGE_LIMIT}
+        max={CYCLE_CHANGE_LIMIT}
+        startAt={0}
         deltaAud={washerDelta}
-        onDraft={onWasherDraft}
+        onDraft={(value) => onWasherChange(Number.parseInt(value, 10) || 0)}
       />
     </>
   )

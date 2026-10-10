@@ -281,7 +281,7 @@ describe('taking the next step (AC3)', () => {
     await user.click(screen.getByRole('button', { name: "Let's take the next step" }))
     await user.click(screen.getByRole('button', { name: 'Upload a more recent file' }))
     expect(document.activeElement).toBe(screen.getByRole('heading', { name: 'Set your next goal' }))
-    expect(screen.getByText('Step 1 of 2: your battery and a recent file')).toBeTruthy()
+    expect(screen.getByText(/^Step 1 of 2:/)).toBeTruthy()
 
     await user.click(screen.getByRole('radio', { name: 'Tesla' }))
     const input = document.querySelector('input[type="file"]') as HTMLInputElement

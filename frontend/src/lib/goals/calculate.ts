@@ -6,6 +6,8 @@
  * Victorian grid emissions factor. The rate is the person's own usage rate
  * when they gave one, else the typical Victorian rate from the methodology data.
  */
+import { GOAL_RATE_CENTS } from '../../constants/goals'
+import type { ProfileData } from '../../types/profile'
 import type { ValueKind } from '../kpis'
 import type { MethodologyBundle } from '../methodologyApi'
 import type { DayReading } from './adapters/types'
@@ -55,6 +57,20 @@ export function buildCalculationContext(
     rateKind: own ? 'from_you' : 'estimate',
     factor: getEmissionsFactor(bundle),
   }
+}
+
+/**
+ * profileRate
+ * @param profile - Household answers
+ * @returns Monthly bill ÷ monthly kWh (AUD per kWh) when both are in the profile and
+ *   the result is a believable usage rate, else null
+ */
+export function profileRate(profile: ProfileData): number | null {
+  const bill = Number.parseFloat(profile.monthlyBill)
+  const kwh = Number.parseFloat(profile.monthlyKwh)
+  if (!(bill > 0) || !(kwh > 0)) return null
+  const rate = bill / kwh
+  return rate >= GOAL_RATE_CENTS.min / 100 && rate <= GOAL_RATE_CENTS.max / 100 ? rate : null
 }
 
 /** The shared Victorian grid emissions factor. Never a copied number. */

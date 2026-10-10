@@ -6,13 +6,15 @@ import { AppShell, type AppNavId } from './components/layout/AppShell'
 import { ChatDock } from './components/chat/ChatDock'
 import { DashboardView } from './components/dashboard/DashboardView'
 import { Welcome } from './components/home/Welcome'
+import { ImproveHome } from './components/improve/ImproveHome'
+import { ImproveProfileView } from './components/improve/ImproveProfileView'
+import { ImproveSetupForm } from './components/improve/ImproveSetupForm'
 import { FlowControls } from './components/onboarding/FlowControls'
 import { FlowControlsDialog } from './components/onboarding/FlowControlsDialog'
 import { PathChoiceScreen } from './components/onboarding/PathChoiceScreen'
 import { VppIntroScreen } from './components/onboarding/VppIntroScreen'
 import { ProfileView } from './components/profile/ProfileView'
 import { RecommendationsView } from './components/recommendations/RecommendationsView'
-import { RainHubView } from './components/rain/RainHubView'
 import { RemindersView } from './components/reminders/RemindersView'
 import { SetupForm } from './components/setup/SetupForm'
 import { CustomCursor } from './components/ui/CustomCursor'
@@ -20,11 +22,13 @@ import { StickyHover } from './components/ui/StickyHover'
 import { WhatIfView } from './components/whatif/WhatIfView'
 import { fetchMethodology, type MethodologyBundle } from './lib/methodologyApi'
 import type { Timeframe } from './lib/kpis'
-import { DEFAULT_EVENT_TYPE, DEFAULT_REMINDER_PERIOD_DAYS } from './constants'
+import { DEFAULT_EVENT_TYPE, DEFAULT_REMINDER_PERIOD_DAYS, type ImproveFeatureId } from './constants'
 import { clearAllDeviceData } from './lib/deviceReset'
 import { clearGoals } from './lib/goals/goalsStorage'
+import { isImproveReady, prefilledFromExplore, resetImproveAnswers } from './lib/improveProfile'
 import { loadJourney, saveJourney, type UserJourney } from './lib/journeyStorage'
-import { clearStoredProfile, loadProfile, saveProfile } from './lib/profileStorage'
+import { clearStoredProfile, loadProfile, saveProfile, storeProfile } from './lib/profileStorage'
+import { clearReminders } from './lib/reminderStorage'
 import { emptyProfile, type ProfileData, type SetupStepId } from './types/profile'
 import type { EventType } from './types/reminders'
 
@@ -37,6 +41,8 @@ type View =
   | 'dashboard'
   | 'recommendations'
   | 'rainHub'
+  | 'improveSetup'
+  | 'improveProfile'
   | 'whatif'
   | 'reminders'
   | 'goals'
@@ -49,7 +55,7 @@ function initialView(): View {
   if (import.meta.env.MODE === 'test') {
     const saved = loadJourney()
     if (saved === 'matt') return 'dashboard'
-    if (saved === 'rain') return 'goals'
+    if (saved === 'rain') return 'rainHub'
   }
   return 'intro'
 }
@@ -66,9 +72,14 @@ function App() {
   const [reminderPeriodDays, setReminderPeriodDays] = useState(DEFAULT_REMINDER_PERIOD_DAYS)
   const [, setSetupStepId] = useState<SetupStepId | null>(null)
   const [flowControlsOpen, setFlowControlsOpen] = useState(false)
+  /** Feature to open once the access-features form is saved. */
+  const [pendingFeature, setPendingFeature] = useState<ImproveFeatureId | null>(null)
+  /** Whether the access-features form opened with answers from the explore form. */
+  const [improvePrefilled, setImprovePrefilled] = useState(false)
 
   const hasProfile = Boolean(profile.lastUpdated)
   const rainJourney = journey === 'rain'
+  const improveReady = isImproveReady(profile)
 
   useEffect(() => {
     let cancelled = false
@@ -96,7 +107,7 @@ function App() {
       return
     }
     if (saved === 'rain') {
-      setView('goals')
+      setView('rainHub')
       setNotice('')
       return
     }
@@ -109,8 +120,9 @@ function App() {
     setProfile(emptyProfile())
   }
 
+  // Switching flows keeps the answers: both flows share one profile, and
+  // whichever changed it last is what the other sees. Reset device still wipes.
   function beginExploreJourney() {
-    wipeLocalAppState()
     saveJourney('matt')
     setJourney('matt')
     setView('welcome')
@@ -118,16 +130,15 @@ function App() {
   }
 
   function beginImproveJourney() {
-    wipeLocalAppState()
     saveJourney('rain')
     setJourney('rain')
     setView('rainHub')
     setNotice('')
   }
 
-  function enrollAsImprove(provider: string) {
+  function enrollAsImprove(vppProvider: string) {
     clearGoals()
-    const next = saveProfile({ ...profile, provider })
+    const next = saveProfile({ ...profile, vppProvider }, 'improve')
     setProfile(next)
     saveJourney('rain')
     setJourney('rain')
@@ -158,8 +169,49 @@ function App() {
   }
 
   function saveEdits(next: ProfileData) {
-    const saved = saveProfile(next)
+    const saved = saveProfile(next, rainJourney ? 'improve' : 'explore')
     setProfile(saved)
+  }
+
+  function startImproveSetup(feature: ImproveFeatureId | null = null) {
+    setImprovePrefilled(prefilledFromExplore(profile))
+    setPendingFeature(feature)
+    setView('improveSetup')
+    setNotice('')
+  }
+
+  /** Opens a feature, or the access-features form first when answers are missing. */
+  function openFeature(feature: ImproveFeatureId) {
+    if (!improveReady) {
+      startImproveSetup(feature)
+      return
+    }
+    setView(feature)
+    setNotice('')
+  }
+
+  function completeImproveSetup(next: ProfileData) {
+    const saved = saveProfile(next, 'improve')
+    setProfile(saved)
+    setView(pendingFeature ?? 'rainHub')
+    setPendingFeature(null)
+    setNotice('')
+  }
+
+  function resetImproveProfile() {
+    setProfile(storeProfile(resetImproveAnswers(profile)))
+    clearGoals()
+    clearReminders()
+    setView('rainHub')
+    setNotice('Your improve profile was reset.')
+  }
+
+  function exitImproveSetup() {
+    // Unsaved edits stay out of storage: reload what was last saved.
+    setProfile(loadProfile())
+    setPendingFeature(null)
+    setView('rainHub')
+    setNotice('')
   }
 
   function resetProfile() {
@@ -198,9 +250,12 @@ function App() {
 
   function goTo(id: AppNavId) {
     if (rainJourney) {
-      if (id === 'whatif') setView('whatif')
-      else if (id === 'goals') setView('goals')
-      else if (id === 'reminders') setView('reminders')
+      if (id === 'whatif' || id === 'goals' || id === 'reminders') {
+        openFeature(id)
+        return
+      }
+      if (id === 'home') setView('rainHub')
+      else if (id === 'profile') setView('improveProfile')
       setNotice('')
       return
     }
@@ -214,8 +269,8 @@ function App() {
 
   function shellActive(): AppNavId | null {
     if (view === 'dashboard') return 'dashboard'
-    if (view === 'profile') return 'profile'
-    if (view === 'welcome') return 'home'
+    if (view === 'profile' || view === 'improveProfile') return 'profile'
+    if (view === 'welcome' || view === 'rainHub') return 'home'
     if (view === 'recommendations') return 'recommendations'
     if (view === 'whatif') return 'whatif'
     if (view === 'reminders') return 'reminders'
@@ -224,8 +279,7 @@ function App() {
   }
 
   const showShell = view !== 'intro' && view !== 'pathChoice'
-  const showRail =
-    showShell && (rainJourney ? view !== 'rainHub' : true) && (journey === 'matt' || journey === 'rain')
+  const showRail = showShell && (journey === 'matt' || journey === 'rain')
   const showChat = showShell && !rainJourney && journey === 'matt'
   const showPathRail =
     showRail &&
@@ -236,7 +290,12 @@ function App() {
         view === 'recommendations' ||
         view === 'profile')) ||
       (journey === 'rain' &&
-        (view === 'whatif' || view === 'goals' || view === 'reminders')))
+        (view === 'rainHub' ||
+          view === 'improveSetup' ||
+          view === 'improveProfile' ||
+          view === 'whatif' ||
+          view === 'goals' ||
+          view === 'reminders')))
 
   if (view === 'intro') {
     return (
@@ -367,22 +426,38 @@ function App() {
             />
           ) : null}
           {rainJourney && view === 'rainHub' ? (
-            <div className="rain-hub-page">
-              <RainHubView
-                onNavigate={(target) => {
-                  setView(target)
-                  setNotice('')
-                }}
-              />
-              <div className="flow-controls-wrap">
-                <FlowControls variant="improve" improvePlacement="hub" embedded {...flowControlHandlers} />
-              </div>
-            </div>
+            <ImproveHome
+              profile={profile}
+              onOpenForm={() => startImproveSetup()}
+              onOpenFeature={openFeature}
+              onLogoClick={goHome}
+            />
+          ) : null}
+          {rainJourney && view === 'improveSetup' ? (
+            <ImproveSetupForm
+              profile={profile}
+              bundle={bundle}
+              prefilled={improvePrefilled}
+              onChange={setProfile}
+              onComplete={completeImproveSetup}
+              onExit={exitImproveSetup}
+              onLogoClick={goHome}
+            />
+          ) : null}
+          {rainJourney && view === 'improveProfile' ? (
+            <ImproveProfileView
+              key={profile.improveUpdated ?? 'improve-profile'}
+              profile={profile}
+              bundle={bundle}
+              onSave={saveEdits}
+              onReset={resetImproveProfile}
+              onLogoClick={goHome}
+            />
           ) : null}
           {rainJourney && view === 'whatif' ? (
             <WhatIfView
               profile={profile}
-              hasProfile={hasProfile}
+              hasProfile={improveReady}
               bundle={bundle}
               methodologyError={methodologyError}
               onSaveProfile={saveEdits}
