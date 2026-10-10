@@ -2,8 +2,8 @@
  * Goals tab: read one recent month of a battery file, set a savings and a
  * carbon goal from it, then track progress from battery files read on this device.
  */
-import { Suspense, lazy, useEffect, useMemo, useRef, useState } from 'react'
-import { GOALS_DEVICE_NOTE, GOAL_SUGGESTION_MONTHS } from '../../constants/goals'
+import { useEffect, useMemo, useRef, useState } from 'react'
+import { GOALS_PAGE, GOAL_SUGGESTION_MONTHS } from '../../constants/goals'
 import type { MessageCode } from '../../constants/goalMessages'
 import { batteryFromProfile, maxIntervalKwh, savedProfileBattery } from '../../lib/goals/batteryLimits'
 import { buildCalculationContext, calculateDay, profileRate, summariseDays } from '../../lib/goals/calculate'
@@ -39,23 +39,19 @@ import {
 import type { ProfileData } from '../../types/profile'
 import { Button } from '../ui/Button'
 import { Callout } from '../ui/Callout'
-import { BoltIcon, CheckIcon, LockIcon } from '../ui/icons'
+import { BoltIcon, CheckIcon } from '../ui/icons'
 import { BaselineStep, type BaselineDraft } from './BaselineStep'
 import { ClearGoalsDialog } from './ClearGoalsDialog'
 import { GoalMessage } from './GoalMessage'
-import { GoalOverview } from './GoalOverview'
-import { HistoryTable } from './HistoryTable'
+import { GoalGarden } from './GoalGarden'
 import { LevelUpDialog, type Achievement } from './LevelUpDialog'
 import { GoalSetupForm } from './GoalSetupForm'
 import { RemoveMonthDialog } from './RemoveMonthDialog'
+import { ProgressHistory } from './ProgressHistory'
 import { RevisionPanel } from './RevisionPanel'
-import { UploadArea, type ReadDays } from './UploadArea'
-import { UploadPreview } from './UploadPreview'
-
-// The chart library is large, so the graph loads on its own after the page.
-const MonthlyChart = lazy(() =>
-  import('./MonthlyChart').then((module) => ({ default: module.MonthlyChart })),
-)
+import type { ReadDays } from './UploadArea'
+import { UploadDialog } from './UploadDialog'
+import { UploadSummary } from './UploadSummary'
 
 type Props = {
   profile: ProfileData
@@ -117,6 +113,7 @@ export function GoalsView({ profile, bundle, methodologyError, onLogoClick }: Pr
   const [baselineChoice, setBaselineChoice] = useState<'current' | 'upload' | null>(null)
   const [removeTarget, setRemoveTarget] = useState<string | null>(null)
   const [removeError, setRemoveError] = useState<MessageCode | null>(null)
+  const [uploadOpen, setUploadOpen] = useState(false)
   const overviewHeading = useRef<HTMLHeadingElement>(null)
   const setupHeading = useRef<HTMLHeadingElement>(null)
   const focusOverviewNext = useRef(false)
@@ -164,6 +161,11 @@ export function GoalsView({ profile, bundle, methodologyError, onLogoClick }: Pr
   const preview = useMemo(
     () => (plan && plan.newDays.length ? summariseDays(plan.newDays) : null),
     [plan],
+  )
+  /** Months as they would be after this file, for the "will add" summary. */
+  const monthsAfter = useMemo(
+    () => (plan && pendingRead ? applyDays(store.months, plan.newDays, pendingRead.sourceId, 'preview') : store.months),
+    [plan, pendingRead, store.months],
   )
   /** Baseline days not counted yet; these are added when the goals are saved. */
   const draftNewDays = useMemo(
@@ -288,11 +290,19 @@ export function GoalsView({ profile, bundle, methodologyError, onLogoClick }: Pr
     focusOverviewNext.current = true
   }
 
+  function openUpload() {
+    setNotice('')
+    setUploadStatus('')
+    setPreviewError(null)
+    setUploadOpen(true)
+  }
+
   function closePreview(message: string) {
     setPendingRead(null)
     setPreviewError(null)
+    setUploadOpen(false)
     setUploadStatus(message)
-    document.getElementById('goals-upload-title')?.focus()
+    document.getElementById('goals-upload-button')?.focus()
   }
 
   /**
@@ -313,6 +323,7 @@ export function GoalsView({ profile, bundle, methodologyError, onLogoClick }: Pr
     setStore(result.store)
     setPendingRead(null)
     setPreviewError(null)
+    setUploadOpen(false)
     setUploadStatus('')
     setNotice(message)
     if (justReached.length) {
@@ -447,8 +458,10 @@ export function GoalsView({ profile, bundle, methodologyError, onLogoClick }: Pr
       : baseSuggestions
   const setupTitle = nextKinds ? 'Set your next goal' : goals ? 'Edit your goals' : 'Set your goals'
 
+  const showOverview = Boolean(goals) && !editing && !nextKinds
+
   return (
-    <div className="goals">
+    <div className={`goals${showOverview ? ' goals--overview' : ''}`}>
       <header className="goals__top">
         <button
           type="button"
@@ -463,16 +476,30 @@ export function GoalsView({ profile, bundle, methodologyError, onLogoClick }: Pr
         </button>
       </header>
 
-      <div className="goals__intro">
-        <h1>Goals</h1>
-        <p>
-          Set a savings goal and a carbon goal, then upload your battery activity file each month
-          to see how close you are.
-        </p>
-        <p className="goals__device-note">
-          <LockIcon width={14} height={14} />
-          <span>{GOALS_DEVICE_NOTE}</span>
-        </p>
+      <div className="goals-head">
+        <div className="goals-head__copy">
+          <p className="eyebrow goals-head__eyebrow">{GOALS_PAGE.eyebrow}</p>
+          <h1 className="goals-head__title">{GOALS_PAGE.title}</h1>
+          {showOverview ? (
+            <p className="goals-head__lede">
+              {store.months.length ? GOALS_PAGE.uploadPromptAgain : GOALS_PAGE.uploadPrompt}
+            </p>
+          ) : null}
+        </div>
+        {goals && !editing && !nextKinds ? (
+          <div className="goals-head__actions">
+            <Button
+              id="goals-upload-button"
+              variant="primary"
+              className="goals-head__upload"
+              disabled={!limits || !context}
+              onClick={openUpload}
+            >
+              <span aria-hidden="true">↑</span>
+              {GOALS_PAGE.upload}
+            </Button>
+          </div>
+        ) : null}
       </div>
 
       {notice ? (
@@ -486,16 +513,15 @@ export function GoalsView({ profile, bundle, methodologyError, onLogoClick }: Pr
       {estimatesMessage}
 
       {goals && !editing && !nextKinds ? (
-        <GoalOverview
+        <GoalGarden
           headingRef={overviewHeading}
           goals={goals}
           totals={totals}
           months={store.months}
           reached={reached}
-          canEdit={Boolean(bundle && context)}
-          onEdit={startEdit}
           onSetNewGoal={(kind) => startNextGoal([kind])}
           onViewAchievement={viewAchievement}
+          onEdit={bundle && context ? startEdit : undefined}
         />
       ) : null}
 
@@ -587,117 +613,15 @@ export function GoalsView({ profile, bundle, methodologyError, onLogoClick }: Pr
         </section>
       ) : null}
 
-      {goals && stage !== 'upload' ? (
-        <UploadArea
-          locked={false}
-          canGoToSetup={false}
-          onGoToSetup={() => setupHeading.current?.focus()}
-          limits={limits}
-          onContinue={(read) => {
-            setUploadStatus('')
-            setPendingRead(read)
-          }}
-        />
-      ) : null}
-
       <p className="goals__upload-status" role="status">
         {uploadStatus}
       </p>
 
-      {pendingRead && goals && !context ? (
-        <GoalMessage code="estimates_unavailable" details={<p>Your file was not added.</p>} />
-      ) : null}
-
-      {plan && pendingRead && goals && gaps.length ? (
-        <GoalMessage
-          code="missing_days"
-          details={
-            <ul>
-              {gaps.map((range) => (
-                <li key={range[0]}>{formatRangeLabel(range)}</li>
-              ))}
-            </ul>
-          }
-        />
-      ) : null}
-
-      {plan && pendingRead && goals && revisionCheck?.unchecked.length ? (
-        <GoalMessage
-          code="revision_unchecked"
-          details={<p>{revisionCheck.unchecked.map(formatMonthLabel).join(', ')}.</p>}
-        />
-      ) : null}
-
-      {plan && pendingRead && goals && revisionCheck?.revised.length ? (
-        <RevisionPanel revisions={revisionCheck.revised} onReplace={replaceUpload} />
-      ) : null}
-
-      {plan && !preview && pendingRead && goals ? (
-        <section className="dashboard-card goals-preview" aria-labelledby="goals-counted-title">
-          <h2 id="goals-counted-title">
-            {revisionCheck?.revised.length ? 'No new days in this file' : 'This file is already counted'}
-          </h2>
-          {revisionCheck?.revised.length ? (
-            <p className="dashboard-card__lede">
-              Every day in this file is already counted. You can keep your saved figures or
-              replace them above.
-            </p>
-          ) : (
-            <GoalMessage
-              code="already_counted"
-              details={
-                <p>
-                  {formatRangeLabel([
-                    pendingRead.days[0].date,
-                    pendingRead.days[pendingRead.days.length - 1].date,
-                  ])}{' '}
-                  is already in your history.
-                </p>
-              }
-            />
-          )}
-          {previewError ? <GoalMessage code={previewError} /> : null}
-          <div className="goals-preview__actions">
-            <Button variant="secondary" onClick={() => closePreview('Nothing was saved.')}>
-              Close
-            </Button>
-          </div>
-        </section>
-      ) : null}
-
-      {preview && plan && context && goals ? (
-        <UploadPreview
-          preview={preview}
-          context={context}
-          goals={goals}
-          savedTotals={totals}
-          skippedCount={plan.skippedDays.length}
-          saveError={previewError}
-          onConfirm={confirmUpload}
-          onCancel={() => closePreview('Nothing was saved.')}
-        />
-      ) : null}
-
-      {goals ? (
-        <Suspense
-          fallback={
-            <p className="goals__loading" role="status">
-              Loading your monthly graph…
-            </p>
-          }
-        >
-          <MonthlyChart
-            months={store.months}
-            goals={goals}
-            onGoToUpload={() => document.getElementById('goals-upload-title')?.focus()}
-          />
-        </Suspense>
-      ) : null}
-
-      {goals ? (
-        <HistoryTable
+      {goals && !editing && !nextKinds ? (
+        <ProgressHistory
           months={store.months}
-          onGoToUpload={() => document.getElementById('goals-upload-title')?.focus()}
+          goals={goals}
+          onUpload={openUpload}
           onRemove={(month) => {
             setRemoveError(null)
             setRemoveTarget(month)
@@ -708,15 +632,87 @@ export function GoalsView({ profile, bundle, methodologyError, onLogoClick }: Pr
       {removeError ? <GoalMessage code={removeError} /> : null}
 
       {goals || store.months.length || store.completedGoals.length ? (
-        <section className="goals-danger" aria-labelledby="goals-danger-title">
-          <h2 id="goals-danger-title">Start over</h2>
-          <p>Remove your goals and history from this device and go back to setting new goals.</p>
-          <Button variant="danger" onClick={() => setClearOpen(true)}>
-            Clear my goals and history
+        <footer className="goals-footer">
+          <p>{GOALS_PAGE.footer}</p>
+          <Button variant="secondary" className="goals-footer__clear" onClick={() => setClearOpen(true)}>
+            {GOALS_PAGE.clear}
           </Button>
           {clearError ? <GoalMessage code="write_failed" /> : null}
-        </section>
+        </footer>
       ) : null}
+
+      <UploadDialog
+        open={uploadOpen}
+        limits={limits}
+        onRead={(read) => {
+          setUploadStatus('')
+          setPreviewError(null)
+          setPendingRead(read)
+        }}
+        onClearFile={() => {
+          setPendingRead(null)
+          setPreviewError(null)
+        }}
+        onClose={() => closePreview(pendingRead ? 'Nothing was saved.' : '')}
+        onConfirm={confirmUpload}
+        canConfirm={Boolean(preview && plan && context && goals)}
+        saveError={previewError}
+      >
+        {pendingRead && goals && !context ? (
+          <GoalMessage code="estimates_unavailable" details={<p>Your file was not added.</p>} />
+        ) : null}
+
+        {plan && pendingRead && gaps.length ? (
+          <GoalMessage
+            code="missing_days"
+            details={
+              <ul>
+                {gaps.map((range) => (
+                  <li key={range[0]}>{formatRangeLabel(range)}</li>
+                ))}
+              </ul>
+            }
+          />
+        ) : null}
+
+        {plan && pendingRead && revisionCheck?.unchecked.length ? (
+          <GoalMessage
+            code="revision_unchecked"
+            details={<p>{revisionCheck.unchecked.map(formatMonthLabel).join(', ')}.</p>}
+          />
+        ) : null}
+
+        {plan && pendingRead && revisionCheck?.revised.length ? (
+          <RevisionPanel revisions={revisionCheck.revised} onReplace={replaceUpload} />
+        ) : null}
+
+        {plan && !preview && pendingRead && !revisionCheck?.revised.length ? (
+          <GoalMessage
+            code="already_counted"
+            details={
+              <p>
+                {formatRangeLabel([
+                  pendingRead.days[0].date,
+                  pendingRead.days[pendingRead.days.length - 1].date,
+                ])}{' '}
+                is already in your history.
+              </p>
+            }
+          />
+        ) : null}
+
+        {preview && plan && context && goals ? (
+          <UploadSummary
+            preview={preview}
+            context={context}
+            goals={goals}
+            totals={totals}
+            monthsBefore={store.months}
+            monthsAfter={monthsAfter}
+            skippedCount={plan.skippedDays.length}
+          />
+        ) : null}
+      </UploadDialog>
 
       <LevelUpDialog
         achievement={achievement}

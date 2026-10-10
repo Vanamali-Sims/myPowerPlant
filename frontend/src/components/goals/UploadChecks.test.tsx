@@ -4,7 +4,7 @@
  * Screen tests for invalid rows, missing days, files already counted, and
  * revised data (US8.7 AC2 to AC5).
  *
- * Rule for every case: nothing is added unless confirmed, and a cancelled,
+ * All through the upload dialog. Rule for every case: nothing is added unless confirmed, and a cancelled,
  * failed, or rejected upload leaves saved data exactly as it was. Reduced
  * motion is on so no confetti runs, and jsdom gets a <dialog> stand-in.
  */
@@ -21,6 +21,7 @@ import { melbourneDate, melbourneDayStart, melbourneWallTime } from '../../lib/g
 import { seedMethodologyBundle } from '../../lib/methodologyFixture'
 import { emptyProfile } from '../../types/profile'
 import { GoalsView } from './GoalsView'
+import { updateGoals, uploadCsv, uploadDialog } from './uploadTestUtils'
 
 const bundle = seedMethodologyBundle()
 const SET_ON = '2026-10-01T00:00:00.000Z'
@@ -69,21 +70,16 @@ function renderView() {
 }
 
 async function read(user: ReturnType<typeof userEvent.setup>, text: string) {
-  const tesla = screen.getByRole('radio', { name: 'Tesla' })
-  if (tesla.getAttribute('aria-checked') !== 'true') await user.click(tesla)
-  const input = document.querySelector('input[type="file"]') as HTMLInputElement
-  await user.upload(input, new File([text], 'battery.csv'))
-  await user.click(screen.getByRole('button', { name: 'Read file' }))
-}
-
-async function continueTo(user: ReturnType<typeof userEvent.setup>, label = 'Continue') {
-  await user.click(await screen.findByRole('button', { name: label }))
+  return uploadCsv(user, text)
 }
 
 async function uploadAndConfirm(user: ReturnType<typeof userEvent.setup>, text: string) {
-  await read(user, text)
-  await continueTo(user)
-  await user.click(screen.getByRole('button', { name: 'Confirm and save' }))
+  await uploadCsv(user, text)
+  await updateGoals(user)
+}
+
+function updateButton() {
+  return within(uploadDialog()).getByRole('button', { name: 'Update my goals' })
 }
 
 function message(code: keyof typeof GOAL_MESSAGES) {
@@ -153,11 +149,9 @@ describe('invalid values in the file (AC2)', () => {
 
   it('continues with only fully valid days and guesses nothing', async () => {
     const user = renderView()
-    await read(user, withBadRows(2))
-    await continueTo(user, 'Continue with valid days')
-    const preview = screen.getByRole('region', { name: 'Estimated savings and carbon' })
-    expect(preview.textContent).toContain('2 September 2026 to 3 September 2026, 2 days not counted before.')
-    await user.click(screen.getByRole('button', { name: 'Confirm and save' }))
+    const dialog = await read(user, withBadRows(2))
+    expect(dialog.textContent).toContain('2 days not counted before')
+    await updateGoals(user)
     expect(stored().months[0].coveredRanges).toEqual([['2026-09-02', '2026-09-03']])
   })
 
@@ -165,7 +159,7 @@ describe('invalid values in the file (AC2)', () => {
     const before = localStorage.getItem(GOALS_STORAGE_KEY)
     const user = renderView()
     await read(user, withBadRows(2))
-    await user.click(await screen.findByRole('button', { name: 'Cancel' }))
+    await user.click(within(uploadDialog()).getByRole('button', { name: 'Cancel' }))
     expect(localStorage.getItem(GOALS_STORAGE_KEY)).toBe(before)
   })
 })
@@ -175,13 +169,12 @@ describe('missing days and gaps (AC3)', () => {
     const user = renderView()
     await uploadAndConfirm(user, csv('2026-09-01', '2026-09-20'))
     await read(user, csv('2026-09-25', '2026-09-30'))
-    await continueTo(user)
     const gap = message('missing_days')
     expect(gap?.textContent).toContain('21 September 2026 to 24 September 2026')
     expect(gap?.textContent).toContain(GOAL_MESSAGES.missing_days.nextStep)
-    await user.click(screen.getByRole('button', { name: 'Confirm and save' }))
+    await updateGoals(user)
     expect(stored().months[0].daysCounted).toBe(26)
-    expect(screen.getByText('Partial, 26 of 30 days')).toBeTruthy()
+    expect(screen.getByText('26 of 30 · Partial')).toBeTruthy()
   })
 
   it('accepts an older file that fills the gap', async () => {
@@ -189,25 +182,23 @@ describe('missing days and gaps (AC3)', () => {
     await uploadAndConfirm(user, csv('2026-09-01', '2026-09-10'))
     await uploadAndConfirm(user, csv('2026-09-20', '2026-09-30'))
     await read(user, csv('2026-09-11', '2026-09-19'))
-    await continueTo(user)
     expect(message('missing_days')).toBeNull()
-    await user.click(screen.getByRole('button', { name: 'Confirm and save' }))
+    await updateGoals(user)
     expect(stored().months[0].coveredRanges).toEqual([['2026-09-01', '2026-09-30']])
   })
 })
 
 describe('file already counted (AC4)', () => {
-  it('says so with the date range and offers no Confirm', async () => {
+  it('says so with the date range and offers no update', async () => {
     const user = renderView()
     await uploadAndConfirm(user, csv('2026-09-01', '2026-09-10'))
     const before = localStorage.getItem(GOALS_STORAGE_KEY)
     await read(user, csv('2026-09-01', '2026-09-10'))
-    await continueTo(user)
     const info = message('already_counted')
     expect(info?.getAttribute('role')).toBe('status')
     expect(info?.textContent).toContain('1 September 2026 to 10 September 2026 is already in your history.')
-    expect(screen.queryByRole('button', { name: 'Confirm and save' })).toBeNull()
-    await user.click(screen.getByRole('button', { name: 'Close' }))
+    expect(updateButton()).toHaveProperty('disabled', true)
+    await user.click(within(uploadDialog()).getByRole('button', { name: 'Cancel' }))
     expect(localStorage.getItem(GOALS_STORAGE_KEY)).toBe(before)
   })
 })
@@ -218,13 +209,12 @@ describe('revised data for days already counted (AC5)', () => {
     await uploadAndConfirm(user, csv('2026-09-01', '2026-09-20'))
     const savedDischarge = stored().months[0].dischargeKwh as number
     await read(user, csv('2026-09-01', '2026-09-30', 0.2))
-    await continueTo(user)
     const revised = message('possibly_revised')
     expect(revised?.getAttribute('role')).toBe('status')
     const table = within(revised as HTMLElement).getByRole('table', { name: /September 2026, the same 20 days/ })
     const discharge = within(table).getByRole('row', { name: /Discharge/ })
     expect(discharge.textContent).toBe('Discharge192 kWh384 kWh')
-    await user.click(screen.getByRole('button', { name: 'Confirm and save' }))
+    await updateGoals(user)
     const month = stored().months[0]
     expect(month.revisedOn).toBeUndefined()
     expect(month.daysCounted).toBe(30)
@@ -235,7 +225,6 @@ describe('revised data for days already counted (AC5)', () => {
     const user = renderView()
     await uploadAndConfirm(user, csv('2026-09-01', '2026-09-20'))
     await read(user, csv('2026-09-01', '2026-09-30', 0.2))
-    await continueTo(user)
     await user.click(screen.getByRole('button', { name: 'Replace with the new figures' }))
     expect(stored().months[0].dischargeKwh).toBeCloseTo(192, 6)
     const confirm = screen.getByText(/Replace the saved figures for September 2026/)
@@ -256,9 +245,8 @@ describe('revised data for days already counted (AC5)', () => {
     const user = renderView()
     await uploadAndConfirm(user, csv('2026-09-01', '2026-09-10'))
     await read(user, csv('2026-09-01', '2026-09-10', 0.3))
-    await continueTo(user)
-    expect(screen.getByRole('heading', { name: 'No new days in this file' })).toBeTruthy()
-    expect(screen.queryByRole('button', { name: 'Confirm and save' })).toBeNull()
+    expect(updateButton()).toHaveProperty('disabled', true)
+    expect(message('already_counted')).toBeNull()
     await user.click(screen.getByRole('button', { name: 'Replace with the new figures' }))
     await user.click(screen.getByRole('button', { name: 'Yes, replace them' }))
     expect(stored().months[0].dischargeKwh).toBeCloseTo(10 * 96 * 0.3, 6)
@@ -270,15 +258,13 @@ describe('revised data for days already counted (AC5)', () => {
     await uploadAndConfirm(user, csv('2026-09-01', '2026-09-20'))
     expect(stored().completedGoals).toEqual([])
     await read(user, csv('2026-09-01', '2026-09-20', 0.4))
-    await continueTo(user)
     await user.click(screen.getByRole('button', { name: 'Replace with the new figures' }))
     await user.click(screen.getByRole('button', { name: 'Yes, replace them' }))
     expect(stored().completedGoals).toHaveLength(1)
-    expect(screen.getByRole('dialog', { name: 'You reached your carbon goal' })).toBeTruthy()
-    await user.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Close' }))
+    const level = screen.getByRole('dialog', { name: 'You reached your carbon goal' })
+    await user.click(within(level).getByRole('button', { name: 'Close' }))
 
     await read(user, csv('2026-09-01', '2026-09-20', 0.1))
-    await continueTo(user)
     await user.click(screen.getByRole('button', { name: 'Replace with the new figures' }))
     await user.click(screen.getByRole('button', { name: 'Yes, replace them' }))
     expect(stored().completedGoals).toHaveLength(1)
@@ -289,7 +275,6 @@ describe('revised data for days already counted (AC5)', () => {
     const user = renderView()
     await uploadAndConfirm(user, csv('2026-09-01', '2026-09-20'))
     await read(user, csv('2026-09-15', '2026-09-30', 0.2))
-    await continueTo(user)
     expect(message('possibly_revised')).toBeNull()
     expect(message('revision_unchecked')?.textContent).toContain('September 2026.')
   })
@@ -298,7 +283,6 @@ describe('revised data for days already counted (AC5)', () => {
     const user = renderView()
     await uploadAndConfirm(user, csv('2026-09-01', '2026-09-20'))
     await read(user, csv('2026-09-01', '2026-09-30', 0.2))
-    await continueTo(user)
     const before = localStorage.getItem(GOALS_STORAGE_KEY)
     vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
       throw new Error('full')
@@ -308,6 +292,23 @@ describe('revised data for days already counted (AC5)', () => {
     vi.restoreAllMocks()
     expect(localStorage.getItem(GOALS_STORAGE_KEY)).toBe(before)
     expect(message('write_failed')?.getAttribute('role')).toBe('alert')
-    expect(screen.getByRole('region', { name: 'Estimated savings and carbon' })).toBeTruthy()
+    expect(uploadDialog()).toBeTruthy()
+  })
+})
+
+describe('provider detection', () => {
+  it('names the provider from the file name, and asks when the name does not say', async () => {
+    const user = renderView()
+    const dialog = await uploadCsv(user, csv('2026-09-01', '2026-09-05'), 'amber_export_sept.csv')
+    expect(dialog.textContent).toContain('✓ Amber file detected')
+    await user.click(within(dialog).getByRole('button', { name: 'Remove amber_export_sept.csv' }))
+    const input = dialog.querySelector('input[type="file"]') as HTMLInputElement
+    await user.upload(input, new File([csv('2026-09-01', '2026-09-05')], 'september.csv'))
+    expect(within(dialog).getByRole('radiogroup', { name: 'Which provider is this file from?' })).toBeTruthy()
+    expect(updateButton()).toHaveProperty('disabled', true)
+    await user.click(within(dialog).getByRole('radio', { name: 'Tesla' }))
+    expect(await within(dialog).findByText(/✓ Tesla file · /)).toBeTruthy()
+    await updateGoals(user)
+    expect(stored().months[0].sourceId).toBe('tesla')
   })
 })

@@ -85,15 +85,16 @@ export const TREE_GROWTH_STEP_PERCENT = 5
 export const TREE_MAX_STEP = 100 / TREE_GROWTH_STEP_PERCENT
 
 /**
- * Stage names for the text and aria-label, by tree step (inclusive).
+ * Stage names by tree step (inclusive): seed from 0%, sprout from 20%, sapling
+ * from 40%, young tree from 60%, and harvest at 100% of the carbon goal.
  * To be confirmed by the team.
  */
 export const TREE_STAGE_LABELS = [
-  { from: 0, to: 1, label: 'seed' },
-  { from: 2, to: 5, label: 'sprout' },
-  { from: 6, to: 10, label: 'sapling' },
-  { from: 11, to: 19, label: 'tree' },
-  { from: 20, to: 20, label: 'full canopy' },
+  { from: 0, to: 3, label: 'seed' },
+  { from: 4, to: 7, label: 'sprout' },
+  { from: 8, to: 11, label: 'sapling' },
+  { from: 12, to: 19, label: 'young tree' },
+  { from: 20, to: 20, label: 'harvest' },
 ] as const
 
 /** One fruit appears for every this many percent of the savings goal. */
@@ -138,6 +139,34 @@ export const GOAL_LABELS = {
     title: 'Carbon goal',
     unitLabel: 'kg CO2e',
   },
+} as const
+
+/** Copy for the Goals page once goals are set. */
+export const GOALS_PAGE = {
+  eyebrow: 'Goals',
+  title: 'Grow your savings. Grow your tree.',
+  /** How the tree reads, shown one sentence per line inside the green card. */
+  legend: ['Each orange is 5% of your savings goal.', 'The tree grows with every 5% of your carbon goal.'],
+  /** Under the title: what to do to see progress. */
+  uploadPrompt: 'Upload your battery CSV to see your progress. Nothing counts until a file is added.',
+  uploadPromptAgain: 'Upload your latest battery CSV each month to keep your progress up to date.',
+  edit: 'Edit goals',
+  upload: 'Upload battery CSV',
+  footer: 'All figures are estimates, not a bill or metered result. Goals and history stay on this device.',
+  clear: 'Clear goals and history',
+} as const
+
+/** Copy for the upload dialog. */
+export const GOALS_UPLOAD = {
+  title: 'Upload this month’s file',
+  lede: 'Add your battery activity file to update your goals and grow your tree.',
+  drop: 'Drop your CSV here, or',
+  browse: 'browse',
+  hint: 'Your Tesla or Amber battery export (.csv) — we’ll detect which one.',
+  guide: 'How to get your file',
+  privacy: 'Read on this device only. Never uploaded or kept.',
+  confirm: 'Update my goals',
+  willAdd: 'This file will add',
 } as const
 
 export const GOALS_DEVICE_NOTE =

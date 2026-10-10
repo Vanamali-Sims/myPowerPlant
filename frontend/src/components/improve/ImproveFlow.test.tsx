@@ -138,7 +138,10 @@ describe('access-features form', () => {
     await user.click(screen.getByRole('option', { name: 'Tesla Powerwall 2' }))
     await user.click(screen.getByRole('button', { name: 'Save and continue' }))
 
-    expect(await screen.findByRole('heading', { level: 1, name: 'Goals' })).toBeTruthy()
+    // Goals loads lazily, which can take a moment when the whole suite runs at once.
+    expect(
+      await screen.findByRole('heading', { level: 1, name: 'Grow your savings. Grow your tree.' }, { timeout: 5000 }),
+    ).toBeTruthy()
     const saved = loadProfile()
     expect(saved).toMatchObject({ vppProvider: 'Tesla Energy Plan', monthlyKwh: '540', hasSolar: 'yes' })
     expect(saved.improveUpdated).not.toBeNull()

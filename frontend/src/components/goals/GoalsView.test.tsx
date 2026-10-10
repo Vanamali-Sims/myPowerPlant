@@ -350,8 +350,8 @@ describe('saving goals with the baseline', () => {
     const [savingsBar] = screen.getAllByRole('progressbar')
     expect(Number(savingsBar.getAttribute('aria-valuenow'))).toBeGreaterThan(0)
     expect(Number(savingsBar.getAttribute('aria-valuenow'))).toBeLessThan(50)
-    const upload = screen.getByRole('region', { name: 'Upload your battery file' })
-    expect(within(upload).getByRole('radiogroup', { name: 'VPP provider' })).toBeTruthy()
+    expect(screen.getByRole('button', { name: 'Upload battery CSV' })).toHaveProperty('disabled', false)
+    expect(screen.getByRole('heading', { level: 1, name: 'Grow your savings. Grow your tree.' })).toBeTruthy()
 
     const stored = storedGoals()
     expect(stored.version).toBe(2)
@@ -435,7 +435,7 @@ describe('removing a month from the history', () => {
   it('asks first, and Cancel keeps the month', async () => {
     seedTwoMonths()
     const { user } = renderView()
-    await user.click(screen.getByRole('button', { name: 'Remove August 2026' }))
+    await user.click(screen.getByRole('button', { name: 'Remove Aug 2026' }))
     const dialog = screen.getByRole('dialog', { name: 'Remove August 2026 from your history?' })
     expect(document.activeElement).toBe(within(dialog).getByRole('button', { name: 'Cancel' }))
     await user.click(within(dialog).getByRole('button', { name: 'Cancel' }))
@@ -447,7 +447,7 @@ describe('removing a month from the history', () => {
     const { user } = renderView()
     const [before] = screen.getAllByRole('progressbar')
     expect(before.getAttribute('aria-valuetext')).toMatch(/^\$120 of \$300/)
-    await user.click(screen.getByRole('button', { name: 'Remove August 2026' }))
+    await user.click(screen.getByRole('button', { name: 'Remove Aug 2026' }))
     const dialog = screen.getByRole('dialog', { name: 'Remove August 2026 from your history?' })
     await user.click(within(dialog).getByRole('button', { name: 'Remove August 2026' }))
     expect(
@@ -457,7 +457,7 @@ describe('removing a month from the history', () => {
     const [after] = screen.getAllByRole('progressbar')
     expect(after.getAttribute('aria-valuetext')).toMatch(/^\$60 of \$300/)
     const history = screen.getByRole('table', { name: /Estimated savings and carbon avoided by month/ })
-    expect(within(history).queryByText('August 2026')).toBeNull()
+    expect(within(history).queryByText('Aug 2026')).toBeNull()
   })
 })
 

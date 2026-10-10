@@ -19,6 +19,7 @@ import { melbourneDate, melbourneDayStart, melbourneWallTime } from '../../lib/g
 import { seedMethodologyBundle } from '../../lib/methodologyFixture'
 import { emptyProfile } from '../../types/profile'
 import { GoalsView } from './GoalsView'
+import { updateGoals, uploadCsv } from './uploadTestUtils'
 
 const confetti = vi.hoisted(() => {
   const fire = Object.assign(
@@ -86,12 +87,8 @@ function renderView() {
 }
 
 async function confirmSeptember(user: ReturnType<typeof userEvent.setup>) {
-  await user.click(screen.getByRole('radio', { name: 'Tesla' }))
-  const input = document.querySelector('input[type="file"]') as HTMLInputElement
-  await user.upload(input, new File([csvFor('2026-09-01', '2026-09-30')], 'sept.csv'))
-  await user.click(screen.getByRole('button', { name: 'Read file' }))
-  await user.click(await screen.findByRole('button', { name: 'Continue' }))
-  await user.click(screen.getByRole('button', { name: 'Confirm and save' }))
+  await uploadCsv(user, csvFor('2026-09-01', '2026-09-30'), 'tesla_sept.csv')
+  await updateGoals(user)
 }
 
 function levelDialog() {

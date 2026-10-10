@@ -63,7 +63,7 @@ describe('Goals tab', () => {
     await user.click(screen.getByRole('button', { name: 'Goals' }))
     const goals = screen.getByRole('button', { name: 'Goals' })
     expect(goals.getAttribute('aria-current')).toBe('page')
-    expect(await screen.findByRole('heading', { level: 1, name: 'Goals' })).toBeTruthy()
+    expect(await screen.findByRole('heading', { level: 1, name: 'Grow your savings. Grow your tree.' })).toBeTruthy()
     await user.click(screen.getByRole('button', { name: 'Reminders' }))
     expect(screen.getByRole('button', { name: 'Reminders' }).getAttribute('aria-current')).toBe('page')
     expect(screen.getByRole('button', { name: 'Goals' }).getAttribute('aria-current')).toBeNull()

@@ -48,10 +48,11 @@ function art() {
 describe('the tree shows both goals (AC1)', () => {
   it.each([
     [0, 0, 'seed', 0],
-    [12, 40, 'sprout', 2],
+    [12, 40, 'seed', 2],
+    [25, 40, 'sprout', 5],
     [42, 63, 'sapling', 8],
-    [76, 10, 'tree', 15],
-    [100, 100, 'full canopy', 20],
+    [76, 10, 'young tree', 15],
+    [100, 100, 'harvest', 20],
   ])('carbon %s and savings %s percent read as the %s stage', (carbon, savings, stage, step) => {
     render(<GoalTree carbonPercent={carbon} savingsPercent={savings} />)
     expect(art().getAttribute('aria-label')).toBe(
@@ -60,10 +61,10 @@ describe('the tree shows both goals (AC1)', () => {
     expect(screen.getByText(`Stage: ${stage}`)).toBeTruthy()
   })
 
-  it('shows full canopy only when the carbon goal is reached', () => {
+  it('reaches harvest only when the carbon goal is reached', () => {
     const { rerender } = render(<GoalTree carbonPercent={99.99} savingsPercent={100} />)
     expect(art().className).not.toContain('is-full')
-    expect(art().getAttribute('aria-label')).toContain('tree stage, step 19')
+    expect(art().getAttribute('aria-label')).toContain('young tree stage, step 19')
     rerender(<GoalTree carbonPercent={100} savingsPercent={0} />)
     expect(art().className).toContain('is-full')
   })
@@ -76,6 +77,18 @@ describe('the tree shows both goals (AC1)', () => {
     expect(leaves()).toBe(before + 1)
     rerender(<GoalTree carbonPercent={15} savingsPercent={25} />)
     expect(container.querySelectorAll('.goal-tree__fruit')).toHaveLength(5)
+    expect(container.querySelectorAll('.goal-tree__fruit--ripening')).toHaveLength(0)
+  })
+
+  it('shows one ripening fruit while the next 5 percent of savings is part way', () => {
+    const { container } = render(<GoalTree carbonPercent={15} savingsPercent={27} />)
+    expect(container.querySelectorAll('.goal-tree__fruit')).toHaveLength(6)
+    expect(container.querySelectorAll('.goal-tree__fruit--ripening')).toHaveLength(1)
+  })
+
+  it('can leave out the caption when the page shows the stage elsewhere', () => {
+    render(<GoalTree carbonPercent={15} savingsPercent={27} showCaption={false} />)
+    expect(screen.queryByText(/^Stage:/)).toBeNull()
   })
 
   it('keeps the picture itself hidden from screen readers, with the label on the wrapper', () => {
@@ -118,33 +131,98 @@ describe('reduced motion (AC5)', () => {
   })
 })
 
+function renderGoals(months: unknown[] = []) {
+  localStorage.setItem(
+    GOALS_STORAGE_KEY,
+    JSON.stringify({
+      version: 1,
+      goals: {
+        savings: { target: 300, setOn: '2026-10-01T00:00:00.000Z' },
+        carbon: { target: 500, setOn: '2026-10-01T00:00:00.000Z' },
+      },
+      completedGoals: [],
+      months,
+    }),
+  )
+  render(
+    <GoalsView
+      profile={{ ...emptyProfile(), ...BASELINE_PROFILE, lastUpdated: '2026-10-01T00:00:00.000Z' }}
+      bundle={seedMethodologyBundle()}
+      methodologyError=""
+      onLogoClick={vi.fn()}
+    />,
+  )
+}
+
 describe('before there is enough data (AC5)', () => {
   it('shows the seed, no invented figures, and prompts to upload', () => {
-    localStorage.setItem(
-      GOALS_STORAGE_KEY,
-      JSON.stringify({
-        version: 1,
-        goals: {
-          savings: { target: 300, setOn: '2026-10-01T00:00:00.000Z' },
-          carbon: { target: 500, setOn: '2026-10-01T00:00:00.000Z' },
-        },
-        completedGoals: [],
-        months: [],
-      }),
-    )
-    render(
-      <GoalsView
-        profile={{ ...emptyProfile(), ...BASELINE_PROFILE, lastUpdated: '2026-10-01T00:00:00.000Z' }}
-        bundle={seedMethodologyBundle()}
-        methodologyError=""
-        onLogoClick={vi.fn()}
-      />,
-    )
+    renderGoals()
     expect(art().getAttribute('aria-label')).toContain('seed stage, step 0 of 20')
     const overview = screen.getByRole('region', { name: 'Your goals' })
-    expect(within(overview).getAllByText('Your rate appears after your first complete month.')).toHaveLength(2)
-    expect(within(overview).queryByText(/Estimated finish/)).toBeNull()
-    const history = screen.getByRole('region', { name: 'Month-by-month history' })
-    expect(within(history).getByRole('button', { name: 'Go to upload' })).toBeTruthy()
+    expect(within(overview).getAllByText('After 1 full month')).toHaveLength(2)
+    expect(within(overview).getAllByText('After 2 full months')).toHaveLength(2)
+    const history = screen.getByRole('region', { name: 'Progress history' })
+    expect(within(history).getByRole('button', { name: 'Upload a file' })).toBeTruthy()
+  })
+
+  it('asks for a CSV under the title, and explains the tree inside the green card', () => {
+    renderGoals()
+    expect(
+      screen.getByText('Upload your battery CSV to see your progress. Nothing counts until a file is added.'),
+    ).toBeTruthy()
+    const overview = screen.getByRole('region', { name: 'Your goals' })
+    expect(overview.textContent).toContain(
+      'Each orange is 5% of your savings goal.The tree grows with every 5% of your carbon goal.',
+    )
+  })
+})
+
+describe('goal cards and stage timeline', () => {
+  const september = {
+    month: '2026-09',
+    daysInMonth: 30,
+    daysCounted: 30,
+    coveredRanges: [['2026-09-01', '2026-09-30']],
+    savingsAud: 87,
+    carbonKg: 230,
+    dischargeKwh: 300,
+    intakeKwh: null,
+    sourceId: 'tesla',
+    updatedOn: '2026-10-01T00:00:00.000Z',
+  }
+
+  it('shows each goal with its ring, figures, pace, oranges, and stage', () => {
+    renderGoals([september])
+    const savings = screen.getByRole('article', { name: 'Savings goal' })
+    expect(within(savings).getByRole('progressbar').getAttribute('aria-valuenow')).toBe('29')
+    expect(savings.textContent).toContain('$87')
+    expect(savings.textContent).toContain('of $300')
+    expect(savings.textContent).toContain('5 oranges · 1 ripening')
+    expect(savings.textContent).toContain('~29% / month')
+    const carbon = screen.getByRole('article', { name: 'Carbon goal' })
+    expect(carbon.textContent).toContain('230 kg')
+    expect(carbon.textContent).toContain('of 500 kg CO₂e')
+    expect(carbon.textContent).toContain('Stage 3 of 5 · Sapling')
+  })
+
+  it('asks for the latest CSV once some months are counted', () => {
+    renderGoals([september])
+    expect(
+      screen.getByText('Upload your latest battery CSV each month to keep your progress up to date.'),
+    ).toBeTruthy()
+  })
+
+  it('marks the current stage on the timeline with each stage’s kilograms', () => {
+    renderGoals([september])
+    const stages = within(screen.getByRole('list', { name: 'Tree stages' })).getAllByRole('listitem')
+    expect(stages.map((stage) => stage.textContent)).toEqual([
+      'Seed0 kg',
+      'Sprout100 kg',
+      'Sapling200 kg',
+      'Young tree300 kg',
+      'Harvest500 kg',
+    ])
+    expect(stages[2].getAttribute('aria-current')).toBe('step')
+    expect(screen.getByText('Today · 230 kg')).toBeTruthy()
   })
 })
