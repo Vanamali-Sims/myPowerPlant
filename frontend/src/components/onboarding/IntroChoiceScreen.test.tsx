@@ -1,8 +1,9 @@
 /**
  * @vitest-environment jsdom
  *
- * Screen tests for Screens 1 and 2: the intro over the "Which describes you?"
- * choice. Timers are faked so the 24.6 second intro can be stepped through.
+ * Screen tests for Screens 1 and 2: the brand intro over the "Which describes
+ * you?" choice, and the story intro over the explore home. Timers are faked so
+ * the intros can be stepped through.
  */
 import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
@@ -53,14 +54,20 @@ describe('Screen 1: the intro', () => {
     const overlay = intro()
     expect(overlay).not.toBeNull()
     expect(document.activeElement).toBe(overlay)
-    expect(overlay?.getAttribute('aria-label')).toContain('Every rooftop catches the sun')
-    expect(overlay?.getAttribute('aria-label')).toContain('Share at peak times. Get paid back')
+    expect(overlay?.getAttribute('aria-label')).toContain('A platform that helps you get more from your VPP.')
     expect(document.querySelector('.ic-split')?.hasAttribute('inert')).toBe(true)
   })
 
-  it('ends after 24.6 seconds, then hands focus to the choice', () => {
+  it('shows the logo and spells out the wordmark letter by letter', () => {
+    renderScreen()
+    const letters = Array.from(document.querySelectorAll('.bi-letter'), (node) => node.textContent)
+    expect(letters.join('')).toBe('MyPowerPlant')
+    expect(intro()?.querySelector('.bi-logo .ic-logo-img')).not.toBeNull()
+  })
+
+  it('ends after 7.1 seconds, then hands focus to the choice', () => {
     const { onIntroDone } = renderScreen()
-    act(() => vi.advanceTimersByTime(24_500))
+    act(() => vi.advanceTimersByTime(7_000))
     expect(intro()).not.toBeNull()
     act(() => vi.advanceTimersByTime(200))
     expect(intro()).toBeNull()
@@ -137,17 +144,43 @@ describe('first visit in the app', () => {
     act(() => vi.advanceTimersByTime(1_100))
   }
 
-  it('opens Screen 2.1 from the left card', () => {
+  function story() {
+    return screen.queryByRole('button', { name: /^How a VPP works/ })
+  }
+
+  it('opens Screen 2.1 from the left card, with the story intro playing over it', () => {
     skipIntro()
     fireEvent.click(screen.getByRole('button', { name: /Get started\s*with VPPs/ }))
-    expect(screen.getByRole('heading', { level: 1, name: /Your battery could be/ })).toBeTruthy()
     expect(loadJourney()).toBe('matt')
+    const overlay = story()
+    expect(overlay).not.toBeNull()
+    expect(document.activeElement).toBe(overlay)
+    expect(overlay?.getAttribute('aria-label')).toContain('Every rooftop catches the sun')
+    expect(overlay?.getAttribute('aria-label')).toContain('Share at peak times. Get paid back')
+    expect(document.querySelector('.app-under-intro')?.hasAttribute('inert')).toBe(true)
+
+    fireEvent.keyDown(overlay as HTMLElement, { key: 'Escape' })
+    act(() => vi.advanceTimersByTime(1_100))
+    expect(story()).toBeNull()
+    const heading = screen.getByRole('heading', { level: 1, name: /Your battery could be/ })
+    expect(document.activeElement).toBe(heading)
+    expect(document.querySelector('.app-under-intro')?.hasAttribute('inert')).toBe(false)
   })
 
-  it('opens Screen 3.1 from the right card', () => {
+  it('ends the story intro on its own after 23.1 seconds', () => {
+    skipIntro()
+    fireEvent.click(screen.getByRole('button', { name: /Get started\s*with VPPs/ }))
+    act(() => vi.advanceTimersByTime(23_000))
+    expect(story()).not.toBeNull()
+    act(() => vi.advanceTimersByTime(200))
+    expect(story()).toBeNull()
+  })
+
+  it('opens Screen 3.1 from the right card, with no story intro', () => {
     skipIntro()
     fireEvent.click(screen.getByRole('button', { name: /Improve my\s*VPP setup/ }))
-    expect(screen.getByRole('heading', { level: 1, name: 'Use your VPP setup more efficiently.' })).toBeTruthy()
+    expect(screen.getByRole('heading', { level: 1, name: 'Unlock the full potential of your VPP.' })).toBeTruthy()
+    expect(story()).toBeNull()
     expect(loadJourney()).toBe('rain')
   })
 })

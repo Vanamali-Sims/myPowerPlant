@@ -1,23 +1,43 @@
 /**
- * Improve-setup home: hero with the household's setup, then the three features.
- * Same layout and styles as the explore home page.
+ * Improve-setup home: hero with the household's dashboard, then the three
+ * features. The dashboard shows the goal tree, the next discharge day from the
+ * solar forecast, and the dates the last battery CSV covered.
  */
+import { lazy, Suspense, useEffect, useRef, useState } from 'react'
 import {
+  IMPROVE_DASHBOARD,
   IMPROVE_FEATURES,
   IMPROVE_FEATURES_HEADING,
   IMPROVE_HERO,
-  IMPROVE_SETUP_CARD,
-  IMPROVE_TRY_IT,
   type ImproveFeatureId,
 } from '../../constants/improve'
-import { displayValue } from '../../lib/formatProfile'
+import { formatGoalAud, formatGoalKgAmount } from '../../lib/goals/goalFormat'
+import { deriveTotals } from '../../lib/goals/goalTotals'
+import { loadGoals } from '../../lib/goals/goalsStorage'
+import { melbourneDate } from '../../lib/goals/melbourneTime'
+import { stageForStep, treeStep } from '../../lib/goals/progress'
+import {
+  formatDateRange,
+  formatMonth,
+  formatShortDay,
+  lastUpload,
+  nextDischargeDay,
+} from '../../lib/improveDashboard'
 import { hasImproveAnswers, isImproveReady } from '../../lib/improveProfile'
+import { formatKwh } from '../../lib/kpis'
+import type { MethodologyBundle } from '../../lib/methodologyApi'
+import { loadReminderRecommendations, type ReminderLoadResult } from '../../lib/reminderRecommendations'
 import type { ProfileData } from '../../types/profile'
 import { Button } from '../ui/Button'
-import { BellIcon, BoltIcon, BulbIcon, TargetIcon } from '../ui/icons'
+import { BoltIcon, CheckIcon } from '../ui/icons'
+
+// The tree brings its animation library with it, so it loads after the page.
+const GoalTree = lazy(() => import('../goals/GoalTree').then((module) => ({ default: module.GoalTree })))
 
 type Props = {
   profile: ProfileData
+  /** Rates and solar factors for the forecast; null while loading. */
+  bundle: MethodologyBundle | null
   /** Opens the access-features form. */
   onOpenForm: () => void
   /** Opens a feature, or the form first when the setup is not complete. */
@@ -25,38 +45,130 @@ type Props = {
   onLogoClick: () => void
 }
 
-const FEATURE_ICONS: Record<ImproveFeatureId, typeof BulbIcon> = {
-  whatif: BulbIcon,
-  goals: TargetIcon,
-  reminders: BellIcon,
+const DASH = IMPROVE_DASHBOARD
+
+function percentOf(total: number, target: number): number {
+  return target > 0 ? (total / target) * 100 : 0
 }
 
-const SETUP_ROWS: { field: keyof ProfileData; label: string }[] = [
-  { field: 'vppProvider', label: 'VPP' },
-  { field: 'batteryModel', label: 'Battery' },
-  { field: 'reservePercent', label: 'Reserve' },
-  { field: 'panelCount', label: 'Solar panels' },
-  { field: 'monthlyKwh', label: 'Monthly usage' },
-]
+function capitalise(text: string): string {
+  return text.charAt(0).toUpperCase() + text.slice(1)
+}
 
-function rowValue(profile: ProfileData, field: keyof ProfileData): string | null {
-  const raw = profile[field]
-  if (typeof raw === 'string' && !raw.trim()) return null
-  return displayValue(profile, field)
+type Tile = { value: string; note: string }
+
+/**
+ * useNextDischargeDay
+ * @returns The next discharge day tile, from the same forecast and rules as Reminders
+ *
+ * Looks across the full 14-day forecast. Only runs once the setup is complete.
+ */
+function useNextDischargeDay(profile: ProfileData, bundle: MethodologyBundle | null, ready: boolean): Tile {
+  const [result, setResult] = useState<{ key: string; tile: Tile } | null>(null)
+  const profileRef = useRef(profile)
+  const key = ready && bundle
+    ? JSON.stringify([profile.postcode, profile.hasSolar, profile.panelCount, profile.panelWatts, profile.solarDirection, profile.reservePercent])
+    : ''
+
+  useEffect(() => {
+    profileRef.current = profile
+  }, [profile])
+
+  // The key holds every profile field the forecast uses, so it reruns when one changes.
+  useEffect(() => {
+    if (!key || !bundle) return
+    let cancelled = false
+    void loadReminderRecommendations({
+      profile: profileRef.current,
+      bundle,
+      eventType: 'discharge',
+      reminderPeriodDays: '14',
+      postcode: profileRef.current.postcode,
+    }).then((value) => {
+      if (!cancelled) setResult({ key, tile: nextDayTile(value) })
+    })
+    return () => {
+      cancelled = true
+    }
+  }, [key, bundle])
+
+  if (!ready) return { value: DASH.nextDay.needsSetup, note: DASH.nextDay.needsSetupNote }
+  if (!result || result.key !== key) return { value: DASH.nextDay.loading, note: '' }
+  return result.tile
+}
+
+function nextDayTile(value: ReminderLoadResult): Tile {
+  if (!value.ok) return { value: DASH.nextDay.unavailable, note: DASH.nextDay.unavailableNote }
+  const next = nextDischargeDay(value.recommendations, melbourneDate(Date.now()))
+  if (!next) return { value: DASH.nextDay.none, note: DASH.nextDay.noneNote }
+  return { value: formatShortDay(next.date), note: DASH.nextDay.forecast(formatKwh(next.forecastKwh)) }
+}
+
+function lastUploadTile(upload: ReturnType<typeof lastUpload>): Tile {
+  if (!upload) return { value: DASH.lastUpload.none, note: DASH.lastUpload.noneNote }
+  if (upload.kind === 'baseline') {
+    return { value: formatMonth(upload.month), note: DASH.lastUpload.baseline(formatShortDay(upload.uploadedOn)) }
+  }
+  return { value: formatDateRange(upload.start, upload.end), note: DASH.lastUpload.uploaded(formatShortDay(upload.uploadedOn)) }
+}
+
+function Arrow({ down = false }: { down?: boolean }) {
+  return (
+    <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" className="improve-arrow">
+      <path d={down ? 'M12 5v14M6 13l6 6 6-6' : 'M5 12h14M13 6l6 6-6 6'} />
+    </svg>
+  )
+}
+
+/** Small progress ring with its figure beside it. */
+function GoalRingFigure({ kind, total, target, label }: { kind: 'savings' | 'carbon'; total: number; target: number; label: string }) {
+  const radius = 15
+  const circumference = 2 * Math.PI * radius
+  const shown = Math.min(100, percentOf(total, target))
+  const format = kind === 'savings' ? formatGoalAud : formatGoalKgAmount
+  return (
+    <div className={`improve-dash__ring improve-dash__ring--${kind}`}>
+      <svg viewBox="0 0 40 40" aria-hidden="true">
+        <circle className="improve-dash__ring-track" cx="20" cy="20" r={radius} />
+        <circle
+          className="improve-dash__ring-fill"
+          cx="20"
+          cy="20"
+          r={radius}
+          strokeDasharray={circumference}
+          strokeDashoffset={circumference * (1 - shown / 100)}
+          transform="rotate(-90 20 20)"
+        />
+      </svg>
+      <p>
+        <span className="visually-hidden">{label}: </span>
+        <strong>{format(total)}</strong> of {format(target)}
+      </p>
+    </div>
+  )
 }
 
 /**
  * ImproveHome
- * @param props.profile - Shared answers, shown in the setup card
+ * @param props.profile - Shared answers; decide what the hero button does
  * @returns JSX.Element
  *
- * The hero button reads "Access features" until some answers exist, then
+ * The hero button reads "Access Features" until some answers exist, then
  * "Complete profile" while any required one is missing. Once the setup is
  * complete it scrolls to the feature cards instead of opening the form.
  */
-export function ImproveHome({ profile, onOpenForm, onOpenFeature, onLogoClick }: Props) {
+export function ImproveHome({ profile, bundle, onOpenForm, onOpenFeature, onLogoClick }: Props) {
   const ready = isImproveReady(profile)
   const partial = !ready && hasImproveAnswers(profile)
+  const [store] = useState(loadGoals)
+  const totals = deriveTotals(store.months)
+  const { savings, carbon } = store.goals
+  const hasGoals = Boolean(savings && carbon)
+  const carbonPercent = carbon ? percentOf(totals.carbon, carbon.target) : 0
+  const savingsPercent = savings ? percentOf(totals.savings, savings.target) : 0
+  const stage = capitalise(stageForStep(treeStep(carbonPercent)))
+  const nextDay = useNextDischargeDay(profile, bundle, ready)
+  const upload = lastUploadTile(lastUpload(store))
 
   function heroAction() {
     if (ready) {
@@ -85,64 +197,104 @@ export function ImproveHome({ profile, onOpenForm, onOpenFeature, onLogoClick }:
           <div className="welcome-hero__copy">
             <p className="eyebrow welcome__eyebrow">{IMPROVE_HERO.eyebrow}</p>
             <h1 id="improve-hero-title" className="welcome-hero__title">
-              {IMPROVE_HERO.titleLead} <em>{IMPROVE_HERO.titleEmphasis}</em>
+              {IMPROVE_HERO.titleLead} <em>{IMPROVE_HERO.titleEmphasis}</em> {IMPROVE_HERO.titleTail}
             </h1>
             <p className="welcome-hero__lede">{IMPROVE_HERO.lede}</p>
-            <Button variant="primary" className="welcome__cta" onClick={heroAction}>
-              {partial ? IMPROVE_HERO.completeProfile : IMPROVE_HERO.accessFeatures}
-            </Button>
+            <div className="improve-hero__actions">
+              <Button variant="primary" className="welcome__cta improve-hero__cta" onClick={heroAction}>
+                {partial ? IMPROVE_HERO.completeProfile : IMPROVE_HERO.accessFeatures}
+                {partial ? null : <Arrow down />}
+              </Button>
+              <span className="improve-hero__hint">{IMPROVE_HERO.hint}</span>
+            </div>
           </div>
 
-          <section className="welcome-stat improve-setup-card" aria-labelledby="improve-setup-card-title">
-            <h2 id="improve-setup-card-title" className="welcome-stat__headline improve-setup-card__title">
-              {IMPROVE_SETUP_CARD.title}
+          <section className="improve-dash" aria-labelledby="improve-dash-title">
+            <h2 id="improve-dash-title" className="improve-dash__title">
+              {DASH.title}
             </h2>
-            <dl className="improve-setup-card__rows">
-              {SETUP_ROWS.map((row) => {
-                const value = rowValue(profile, row.field)
-                return (
-                  <div key={row.field} className="improve-setup-card__row">
-                    <dt>{row.label}</dt>
-                    <dd className={value ? '' : 'is-missing'}>{value ?? IMPROVE_SETUP_CARD.missing}</dd>
+
+            <div className="improve-dash__grid">
+              <div className="improve-dash__tile improve-dash__tile--tree">
+                <p className="improve-dash__eyebrow">
+                  {DASH.tree.eyebrow} · {stage}
+                </p>
+                <div className="improve-dash__tree">
+                  <Suspense fallback={null}>
+                    <GoalTree carbonPercent={carbonPercent} savingsPercent={savingsPercent} showCaption={false} />
+                  </Suspense>
+                </div>
+                {savings && carbon ? (
+                  <div className="improve-dash__rings">
+                    <GoalRingFigure kind="savings" total={totals.savings} target={savings.target} label={DASH.savingsLabel} />
+                    <GoalRingFigure kind="carbon" total={totals.carbon} target={carbon.target} label={DASH.carbonLabel} />
                   </div>
-                )
-              })}
-            </dl>
-            <p className="welcome-stat__source">
-              {ready ? IMPROVE_SETUP_CARD.readyNote : IMPROVE_SETUP_CARD.incompleteNote}
-            </p>
+                ) : null}
+                {hasGoals ? null : (
+                  <>
+                    <p className="improve-dash__note">{DASH.tree.noGoals}</p>
+                    <button type="button" className="improve-dash__link" onClick={() => onOpenFeature('goals')}>
+                      {DASH.tree.setGoals}
+                      <Arrow />
+                    </button>
+                  </>
+                )}
+              </div>
+
+              {[
+                { eyebrow: DASH.nextDay.eyebrow, ...nextDay },
+                { eyebrow: DASH.lastUpload.eyebrow, ...upload },
+              ].map((tile) => (
+                <div key={tile.eyebrow} className="improve-dash__tile">
+                  <p className="improve-dash__eyebrow">{tile.eyebrow}</p>
+                  <p className="improve-dash__value">{tile.value}</p>
+                  {tile.note ? <p className="improve-dash__note">{tile.note}</p> : null}
+                </div>
+              ))}
+            </div>
+
+            {ready ? null : (
+              <div className="improve-dash__foot">
+                <p>{DASH.footnote}</p>
+                <button type="button" className="improve-dash__action" onClick={onOpenForm}>
+                  {DASH.action}
+                  <Arrow />
+                </button>
+              </div>
+            )}
           </section>
         </div>
       </section>
 
-      <section className="band welcome-wins" aria-labelledby="improve-features-title">
+      <section className="band improve-features-band" aria-labelledby="improve-features-title">
         <div className="band__inner">
-          <p className="eyebrow welcome__eyebrow welcome-wins__eyebrow">{IMPROVE_FEATURES_HEADING.eyebrow}</p>
-          <h2 id="improve-features-title" className="welcome-wins__title" tabIndex={-1}>
+          <p className="eyebrow welcome__eyebrow improve-features-band__eyebrow">{IMPROVE_FEATURES_HEADING.eyebrow}</p>
+          <h2 id="improve-features-title" className="improve-features-band__title" tabIndex={-1}>
             {IMPROVE_FEATURES_HEADING.title}
           </h2>
-          <ul className="welcome-wins__list improve-features">
-            {IMPROVE_FEATURES.map((feature) => {
-              const Icon = FEATURE_ICONS[feature.id]
-              return (
-                <li key={feature.id} className="welcome-win improve-feature">
-                  <span className="welcome-win__icon">
-                    <Icon width={20} height={20} />
-                  </span>
-                  <p className="eyebrow welcome-win__eyebrow">{feature.eyebrow}</p>
-                  <h3 className="welcome-win__title">{feature.title}</h3>
-                  <p className="welcome-win__body">{feature.body}</p>
-                  <Button
-                    variant="primary"
-                    className="welcome__cta improve-feature__cta"
-                    aria-label={`${IMPROVE_TRY_IT}: ${feature.eyebrow}`}
-                    onClick={() => onOpenFeature(feature.id)}
-                  >
-                    {IMPROVE_TRY_IT}
-                  </Button>
-                </li>
-              )
-            })}
+          <ul className="improve-features">
+            {IMPROVE_FEATURES.map((feature) => (
+              <li key={feature.id} className="improve-feature">
+                <div className="improve-feature__head">
+                  <p className="eyebrow improve-feature__eyebrow">{feature.eyebrow}</p>
+                  <span className="improve-feature__pill">{feature.pill}</span>
+                </div>
+                <h3 className="improve-feature__title">{feature.title}</h3>
+                <p className="improve-feature__body">{feature.body}</p>
+                <ul className="improve-feature__points">
+                  {feature.points.map((point) => (
+                    <li key={point}>
+                      <CheckIcon width={16} height={16} />
+                      {point}
+                    </li>
+                  ))}
+                </ul>
+                <button type="button" className="improve-feature__link" onClick={() => onOpenFeature(feature.id)}>
+                  {feature.action}
+                  <Arrow />
+                </button>
+              </li>
+            ))}
           </ul>
         </div>
       </section>

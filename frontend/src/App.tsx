@@ -11,6 +11,7 @@ import { ImproveProfileView } from './components/improve/ImproveProfileView'
 import { ImproveSetupForm } from './components/improve/ImproveSetupForm'
 import { FlowControls } from './components/onboarding/FlowControls'
 import { FlowControlsDialog } from './components/onboarding/FlowControlsDialog'
+import { ExploreIntro } from './components/onboarding/ExploreIntro'
 import { IntroChoiceScreen } from './components/onboarding/IntroChoiceScreen'
 import { ProfileView } from './components/profile/ProfileView'
 import { RecommendationsView } from './components/recommendations/RecommendationsView'
@@ -71,6 +72,9 @@ function App() {
   const [reminderPeriodDays, setReminderPeriodDays] = useState(DEFAULT_REMINDER_PERIOD_DAYS)
   const [, setSetupStepId] = useState<SetupStepId | null>(null)
   const [flowControlsOpen, setFlowControlsOpen] = useState(false)
+  /** The story intro over the explore home: a new run each time it starts, and whether it is showing. */
+  const [exploreIntroRun, setExploreIntroRun] = useState(0)
+  const [exploreIntroPlaying, setExploreIntroPlaying] = useState(false)
   /** Feature to open once the access-features form is saved. */
   const [pendingFeature, setPendingFeature] = useState<ImproveFeatureId | null>(null)
   /** Whether the access-features form opened with answers from the explore form. */
@@ -126,6 +130,13 @@ function App() {
     setJourney('matt')
     setView('welcome')
     setNotice('')
+  }
+
+  // Picking "Get started with VPPs" plays the story of how a VPP works over the explore home.
+  function chooseExplore() {
+    beginExploreJourney()
+    setExploreIntroRun((run) => run + 1)
+    setExploreIntroPlaying(true)
   }
 
   function beginImproveJourney() {
@@ -307,7 +318,7 @@ function App() {
         <IntroChoiceScreen
           playIntro={view === 'intro'}
           onIntroDone={finishIntro}
-          onExplore={beginExploreJourney}
+          onExplore={chooseExplore}
           onImprove={beginImproveJourney}
         />
       </>
@@ -318,169 +329,180 @@ function App() {
     <>
       <CustomCursor />
       <StickyHover />
-      <AppShell
-        journey={journey}
-        showRail={showRail}
-        active={shellActive()}
-        postcode={profile.postcode}
-        hasProfile={hasProfile}
-        onNavigate={goTo}
-        onLogoClick={goHome}
-        onOpenPathControls={showPathRail ? () => setFlowControlsOpen(true) : undefined}
-        chat={
-          showChat ? (
-            <ChatDock
-              profile={profile}
-              hasProfile={hasProfile}
-              bundle={bundle}
-              methodologyError={methodologyError}
-              eventType={eventType}
-              reminderPeriodDays={reminderPeriodDays}
-              onSaveProfile={saveEdits}
-            />
-          ) : null
-        }
-      >
-        {notice ? (
-          <p className="app-notice" role="status">
-            {notice}
-          </p>
-        ) : null}
-        <div key={view} className="view-enter min-h-full">
-          {!rainJourney && view === 'welcome' ? (
-            <Welcome
-              hasProfile={hasProfile}
-              onGetStarted={startSetup}
-              onViewDashboard={() => {
-                setView('dashboard')
-                setNotice('')
-              }}
-              onLogoClick={goHome}
-            />
-          ) : null}
-          {!rainJourney && view === 'setup' ? (
-            <SetupForm
-              profile={profile}
-              onChange={setProfile}
-              onComplete={completeSetup}
-              onLogoClick={goHome}
-              onStepChange={setSetupStepId}
-            />
-          ) : null}
-          {!rainJourney && view === 'profile' ? (
-            <ProfileView
-              key={profile.lastUpdated ?? 'profile'}
-              profile={profile}
-              onSave={saveEdits}
-              onReset={resetProfile}
-              onLiveChange={setProfile}
-              onLogoClick={goHome}
-              onViewDashboard={() => {
-                setView('dashboard')
-                setNotice('')
-              }}
-            />
-          ) : null}
-          {!rainJourney && view === 'dashboard' ? (
-            <DashboardView
-              profile={profile}
-              hasProfile={hasProfile}
-              bundle={bundle}
-              loadError={methodologyError}
-              timeframe={timeframe}
-              onTimeframe={setTimeframe}
-              onEditProfile={() => {
-                setView('profile')
-                setNotice('')
-              }}
-              onStartSetup={startSetup}
-              onSeeRecommendations={() => {
-                setView('recommendations')
-                setNotice('')
-              }}
-              onLogoClick={goHome}
-            />
-          ) : null}
-          {!rainJourney && view === 'recommendations' ? (
-            <RecommendationsView
-              profile={profile}
-              hasProfile={hasProfile}
-              bundle={bundle}
-              loadError={methodologyError}
-              onStartSetup={startSetup}
-              onEnrollProvider={enrollAsImprove}
-              onLogoClick={goHome}
-            />
-          ) : null}
-          {rainJourney && view === 'rainHub' ? (
-            <ImproveHome
-              profile={profile}
-              onOpenForm={() => startImproveSetup()}
-              onOpenFeature={openFeature}
-              onLogoClick={goHome}
-            />
-          ) : null}
-          {rainJourney && view === 'improveSetup' ? (
-            <ImproveSetupForm
-              profile={profile}
-              bundle={bundle}
-              prefilled={improvePrefilled}
-              onChange={setProfile}
-              onComplete={completeImproveSetup}
-              onExit={exitImproveSetup}
-              onLogoClick={goHome}
-            />
-          ) : null}
-          {rainJourney && view === 'improveProfile' ? (
-            <ImproveProfileView
-              key={profile.improveUpdated ?? 'improve-profile'}
-              profile={profile}
-              bundle={bundle}
-              onSave={saveEdits}
-              onReset={resetImproveProfile}
-              onLogoClick={goHome}
-            />
-          ) : null}
-          {rainJourney && view === 'whatif' ? (
-            <WhatIfView
-              profile={profile}
-              hasProfile={improveReady}
-              bundle={bundle}
-              methodologyError={methodologyError}
-              onSaveProfile={saveEdits}
-              onStartSetup={startSetup}
-              onLogoClick={goHome}
-              hideSetupNavigation
-            />
-          ) : null}
-          {rainJourney && view === 'reminders' ? (
-            <RemindersView
-              profile={profile}
-              onLogoClick={goHome}
-              eventType={eventType}
-              onEventType={setEventType}
-              reminderPeriodDays={reminderPeriodDays}
-              onReminderPeriodDays={setReminderPeriodDays}
-            />
-          ) : null}
-          {rainJourney && view === 'goals' ? (
-            <Suspense
-              fallback={
-                <p className="goals__loading" role="status">
-                  Loading goals…
-                </p>
-              }
-            >
-              <GoalsView
+      {/* The page under the story intro stays out of reach until it ends. */}
+      <div className="app-under-intro" inert={(exploreIntroPlaying && view === 'welcome') || undefined}>
+        <AppShell
+          journey={journey}
+          showRail={showRail}
+          active={shellActive()}
+          postcode={profile.postcode}
+          hasProfile={hasProfile}
+          onNavigate={goTo}
+          onLogoClick={goHome}
+          onOpenPathControls={showPathRail ? () => setFlowControlsOpen(true) : undefined}
+          chat={
+            showChat ? (
+              <ChatDock
                 profile={profile}
+                hasProfile={hasProfile}
                 bundle={bundle}
                 methodologyError={methodologyError}
+                eventType={eventType}
+                reminderPeriodDays={reminderPeriodDays}
+                onSaveProfile={saveEdits}
+              />
+            ) : null
+          }
+        >
+          {notice ? (
+            <p className="app-notice" role="status">
+              {notice}
+            </p>
+          ) : null}
+          <div key={view} className="view-enter min-h-full">
+            {!rainJourney && view === 'welcome' ? (
+              <Welcome
+                hasProfile={hasProfile}
+                onGetStarted={startSetup}
+                onViewDashboard={() => {
+                  setView('dashboard')
+                  setNotice('')
+                }}
                 onLogoClick={goHome}
               />
-            </Suspense>
-          ) : null}
-        </div>
-      </AppShell>
+            ) : null}
+            {!rainJourney && view === 'setup' ? (
+              <SetupForm
+                profile={profile}
+                onChange={setProfile}
+                onComplete={completeSetup}
+                onLogoClick={goHome}
+                onStepChange={setSetupStepId}
+              />
+            ) : null}
+            {!rainJourney && view === 'profile' ? (
+              <ProfileView
+                key={profile.lastUpdated ?? 'profile'}
+                profile={profile}
+                onSave={saveEdits}
+                onReset={resetProfile}
+                onLiveChange={setProfile}
+                onLogoClick={goHome}
+                onViewDashboard={() => {
+                  setView('dashboard')
+                  setNotice('')
+                }}
+              />
+            ) : null}
+            {!rainJourney && view === 'dashboard' ? (
+              <DashboardView
+                profile={profile}
+                hasProfile={hasProfile}
+                bundle={bundle}
+                loadError={methodologyError}
+                timeframe={timeframe}
+                onTimeframe={setTimeframe}
+                onEditProfile={() => {
+                  setView('profile')
+                  setNotice('')
+                }}
+                onStartSetup={startSetup}
+                onSeeRecommendations={() => {
+                  setView('recommendations')
+                  setNotice('')
+                }}
+                onLogoClick={goHome}
+              />
+            ) : null}
+            {!rainJourney && view === 'recommendations' ? (
+              <RecommendationsView
+                profile={profile}
+                hasProfile={hasProfile}
+                bundle={bundle}
+                loadError={methodologyError}
+                onStartSetup={startSetup}
+                onEnrollProvider={enrollAsImprove}
+                onLogoClick={goHome}
+              />
+            ) : null}
+            {rainJourney && view === 'rainHub' ? (
+              <ImproveHome
+                profile={profile}
+                bundle={bundle}
+                onOpenForm={() => startImproveSetup()}
+                onOpenFeature={openFeature}
+                onLogoClick={goHome}
+              />
+            ) : null}
+            {rainJourney && view === 'improveSetup' ? (
+              <ImproveSetupForm
+                profile={profile}
+                bundle={bundle}
+                prefilled={improvePrefilled}
+                onChange={setProfile}
+                onComplete={completeImproveSetup}
+                onExit={exitImproveSetup}
+                onLogoClick={goHome}
+              />
+            ) : null}
+            {rainJourney && view === 'improveProfile' ? (
+              <ImproveProfileView
+                key={profile.improveUpdated ?? 'improve-profile'}
+                profile={profile}
+                bundle={bundle}
+                onSave={saveEdits}
+                onReset={resetImproveProfile}
+                onLogoClick={goHome}
+              />
+            ) : null}
+            {rainJourney && view === 'whatif' ? (
+              <WhatIfView
+                profile={profile}
+                hasProfile={improveReady}
+                bundle={bundle}
+                methodologyError={methodologyError}
+                onSaveProfile={saveEdits}
+                onStartSetup={startSetup}
+                onLogoClick={goHome}
+                hideSetupNavigation
+              />
+            ) : null}
+            {rainJourney && view === 'reminders' ? (
+              <RemindersView
+                profile={profile}
+                onLogoClick={goHome}
+                eventType={eventType}
+                onEventType={setEventType}
+                reminderPeriodDays={reminderPeriodDays}
+                onReminderPeriodDays={setReminderPeriodDays}
+              />
+            ) : null}
+            {rainJourney && view === 'goals' ? (
+              <Suspense
+                fallback={
+                  <p className="goals__loading" role="status">
+                    Loading goals…
+                  </p>
+                }
+              >
+                <GoalsView
+                  profile={profile}
+                  bundle={bundle}
+                  methodologyError={methodologyError}
+                  onLogoClick={goHome}
+                />
+              </Suspense>
+            ) : null}
+          </div>
+        </AppShell>
+      </div>
+      {exploreIntroRun > 0 && view === 'welcome' ? (
+        <ExploreIntro
+          key={exploreIntroRun}
+          onDone={() => setExploreIntroPlaying(false)}
+          focusAfter={() => document.getElementById('welcome-hero-title')}
+        />
+      ) : null}
       <FlowControlsDialog open={flowControlsOpen} onClose={closeFlowControls}>
         <FlowControls
           variant={journey === 'rain' ? 'improve' : 'explore'}

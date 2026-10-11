@@ -1,13 +1,18 @@
 /*
- * Screens 1 and 2: "Which describes you?" split, with the line-art intro on top.
- * Timings follow the design; colours come from tokens.css, plus the intro's
+ * Screens 1 and 2: "Which describes you?" split, with the brand intro on top.
+ * The line-art story intro (.ic-intro--story) plays over the explore home.
+ * Timings follow the designs; colours come from tokens.css, plus the intros'
  * warm highlight (--ic-glow) and sun gold (--ic-sun), which have no token.
  */
 
-.ic-page {
+.ic-page,
+.ic-intro {
   --ic-glow: #f08a4b;
   --ic-sun: #f6c27a;
   --ic-line: var(--paper);
+}
+
+.ic-page {
   position: relative;
   min-height: 100vh;
   overflow: hidden;
@@ -162,9 +167,8 @@
   text-align: center;
 }
 
-/* The app logo already has its own rounded square, so the boxes only clip and size it. */
-.ic-mark,
-.ic-logo {
+/* The app logo already has its own rounded square, so the box only clips and sizes it. */
+.ic-mark {
   display: flex;
   flex-shrink: 0;
   overflow: hidden;
@@ -228,22 +232,23 @@
   outline-offset: 2px;
 }
 
-/* ---------- Intro (Screen 1) ---------- */
+/* ---------- Intros: shared ---------- */
 
 .ic-intro {
-  position: absolute;
+  position: fixed;
   inset: 0;
-  z-index: 30;
+  z-index: 100;
   overflow: hidden;
   cursor: pointer;
-  animation: ic-hide 0s linear 24.6s forwards;
+  font-family: var(--font-body);
 }
 
 .ic-intro:focus {
   outline: none;
 }
 
-.ic-intro:focus-visible .ic-hint {
+.ic-intro:focus-visible .ic-hint,
+.ic-intro:focus-visible .bi-hint {
   outline: 2px solid var(--ic-glow);
   outline-offset: 4px;
 }
@@ -252,11 +257,167 @@
   animation: ic-hide 0s linear 1.05s forwards;
 }
 
+/* ---------- Brand intro (Screen 1, on arrival) ---------- */
+
+.ic-intro--brand {
+  --bi-centre: max(26.389vw, 42.222vh);
+  animation: ic-hide 0s linear 7.1s forwards;
+}
+
+.bi-bg {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse at 50% 40%, var(--surface-raised-on-dark) 0, var(--green-deep) 48%, var(--green-deeper) 100%);
+  animation: ic-fade-out 1.1s ease 5.9s forwards;
+}
+
+.ic-intro.is-skipping .bi-bg {
+  animation: ic-fade-out 0.8s ease 0.15s forwards;
+}
+
+.bi-fx {
+  animation: ic-fade-out 0.6s ease 5.4s forwards;
+}
+
+.ic-intro.is-skipping .bi-fx {
+  animation: ic-fade-out 0.25s ease forwards;
+}
+
+.bi-orbits {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.bi-orbit {
+  fill: none;
+  stroke: var(--ic-line);
+  stroke-width: 1;
+  opacity: 0;
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+  animation: ic-draw 1.4s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+.bi-pulse {
+  fill: none;
+  stroke: var(--ic-glow);
+  stroke-width: 1.5;
+  transform-box: fill-box;
+  transform-origin: center;
+  opacity: 0;
+  animation: bi-pulse 2.2s ease-out forwards;
+}
+
+.bi-spin {
+  transform-origin: 720px 380px;
+  animation: bi-spin 26s linear infinite;
+}
+
+.bi-home {
+  opacity: 0;
+  animation: ic-fade-in 0.6s ease forwards;
+}
+
+.bi-home__dot,
+.bi-home__halo {
+  fill: var(--ic-glow);
+}
+
+.bi-home__halo {
+  fill-opacity: 0.18;
+}
+
+/*
+ * The logo sits on the orbits' centre. The artwork is 1440 × 900, scaled to
+ * cover and pinned to the top, so the centre (y 380) lands at
+ * 380 × max(100vw / 1440, 100vh / 900), kept in --bi-centre.
+ * At the end it shrinks onto the choice header's mark (top 190 + 24 = 214px).
+ */
+.bi-logo {
+  position: absolute;
+  left: 50%;
+  top: var(--bi-centre);
+  width: 132px;
+  height: 132px;
+  margin: -66px 0 0 -66px;
+  display: flex;
+  overflow: hidden;
+  border-radius: 33px;
+  box-shadow: 0 24px 70px rgba(222, 106, 52, 0.45);
+  opacity: 0;
+  transform: scale(0.55);
+  animation: bi-logo-in 0.8s cubic-bezier(0.3, 1.3, 0.5, 1) 0.3s forwards,
+    bi-collapse 1.1s cubic-bezier(0.65, 0, 0.25, 1) 5.9s forwards;
+}
+
+.ic-intro.is-skipping .bi-logo {
+  animation: bi-logo-skip 0.9s cubic-bezier(0.65, 0, 0.25, 1) forwards;
+}
+
+/* The wordmark sits under the logo. */
+.bi-word {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: calc(var(--bi-centre) + 100px);
+  padding: 0 16px;
+  text-align: center;
+  font-family: var(--font-display);
+  font-size: clamp(44px, 5vw, 68px);
+  line-height: 1.1;
+  letter-spacing: -0.025em;
+  color: var(--on-deep);
+}
+
+.bi-letter {
+  display: inline-block;
+  opacity: 0;
+  animation: bi-rise 0.55s cubic-bezier(0.2, 0.7, 0.2, 1) forwards;
+}
+
+.bi-foot {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 96px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  padding: 0 24px;
+  text-align: center;
+}
+
+.bi-slogan {
+  font-family: var(--font-display);
+  font-size: clamp(20px, 2vw, 26px);
+  color: var(--on-deep);
+  opacity: 0;
+  animation: bi-rise 0.9s ease 3.3s forwards;
+}
+
+.bi-hint {
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: var(--on-deep-muted);
+  opacity: 0;
+  animation: ic-fade-in 0.8s ease 1.2s forwards;
+}
+
+/* ---------- Story intro (over the explore home) ---------- */
+
+.ic-intro--story {
+  animation: ic-hide 0s linear 23.1s forwards;
+}
+
 .ic-bg {
   position: absolute;
   inset: 0;
   background: radial-gradient(ellipse at 72% 45%, var(--surface-raised-on-dark) 0, var(--green-deep) 45%, var(--green-deeper) 100%);
-  animation: ic-fade-out 1.1s ease 23.4s forwards;
+  animation: ic-fade-out 0.8s ease 22.3s forwards;
 }
 
 .ic-intro.is-skipping .ic-bg {
@@ -344,14 +505,6 @@
 .ic-fade {
   opacity: 0;
   animation: ic-fade-in 0.8s ease forwards;
-}
-
-.ic-window {
-  fill: var(--ic-glow);
-}
-
-.ic-window.ic-fade {
-  animation-name: ic-fade-in-window;
 }
 
 .ic-fill {
@@ -571,56 +724,6 @@
   stroke-linejoin: round;
 }
 
-/* The logo lands on the choice header's mark (top 190 + 24 = 214px centre). */
-.ic-logo {
-  position: absolute;
-  left: 50%;
-  top: 430px;
-  width: 112px;
-  height: 112px;
-  margin: -56px 0 0 -56px;
-  border-radius: 28px;
-  box-shadow: 0 20px 60px rgba(226, 166, 59, 0.35);
-  opacity: 0;
-  transform: scale(0.7);
-  animation: ic-logo-in 0.9s cubic-bezier(0.3, 1.2, 0.5, 1) 22.2s forwards,
-    ic-collapse 1.1s cubic-bezier(0.65, 0, 0.25, 1) 23.4s forwards;
-}
-
-.ic-intro.is-skipping .ic-logo {
-  animation: ic-logo-skip 0.9s cubic-bezier(0.65, 0, 0.25, 1) forwards;
-}
-
-.ic-word {
-  position: absolute;
-  left: 0;
-  right: 0;
-  top: 514px;
-  text-align: center;
-  opacity: 0;
-  animation: ic-fade-up 0.8s ease 22.5s forwards, ic-fade-out 0.4s ease 23.3s forwards;
-}
-
-.ic-intro.is-skipping .ic-word {
-  display: none;
-}
-
-.ic-word__name {
-  display: block;
-  font-family: var(--font-display);
-  font-size: 44px;
-  letter-spacing: -0.02em;
-  color: var(--on-deep);
-}
-
-.ic-word__tag {
-  display: block;
-  margin-top: 10px;
-  font-size: 17px;
-  letter-spacing: 0.04em;
-  color: var(--terra-200);
-}
-
 /* ---------- Keyframes ---------- */
 
 @keyframes ic-hide {
@@ -638,12 +741,6 @@
 @keyframes ic-fade-in {
   to {
     opacity: 1;
-  }
-}
-
-@keyframes ic-fade-in-window {
-  to {
-    opacity: 0.85;
   }
 }
 
@@ -751,26 +848,37 @@
   }
 }
 
-@keyframes ic-logo-in {
+@keyframes bi-pulse {
+  0% {
+    opacity: 0.7;
+    transform: scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(4);
+  }
+}
+
+@keyframes bi-logo-in {
   to {
     opacity: 1;
     transform: none;
   }
 }
 
-@keyframes ic-collapse {
+@keyframes bi-collapse {
   from {
     opacity: 1;
     transform: none;
   }
   to {
     opacity: 1;
-    transform: translateY(-216px) scale(0.4286);
+    transform: translateY(calc(214px - var(--bi-centre))) scale(0.3636);
     box-shadow: 0 0 0 rgba(0, 0, 0, 0);
   }
 }
 
-@keyframes ic-logo-skip {
+@keyframes bi-logo-skip {
   0% {
     opacity: 0;
     transform: scale(0.8);
@@ -781,15 +889,21 @@
   }
   100% {
     opacity: 1;
-    transform: translateY(-216px) scale(0.4286);
+    transform: translateY(calc(214px - var(--bi-centre))) scale(0.3636);
     box-shadow: 0 0 0 rgba(0, 0, 0, 0);
   }
 }
 
-@keyframes ic-fade-up {
+@keyframes bi-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes bi-rise {
   from {
     opacity: 0;
-    transform: translateY(10px);
+    transform: translateY(14px);
   }
   to {
     opacity: 1;

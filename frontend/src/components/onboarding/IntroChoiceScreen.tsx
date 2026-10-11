@@ -1,15 +1,15 @@
 /**
- * Screens 1 and 2: the line-art intro plays over the "Which describes you?"
- * choice, then the logo lands on the choice header.
+ * Screens 1 and 2: the brand intro (orbiting homes, the logo, and the
+ * MyPowerPlant wordmark) plays over the "Which describes you?" choice. The
+ * logo then lands on the choice header.
  *
  * The intro can be skipped with a click, Enter, Space, or Escape, and replayed.
  * With reduced motion it does not play at all.
  */
-import { useEffect, useRef, useState, type KeyboardEvent } from 'react'
-import { INTRO_COPY, INTRO_STEPS, PATH_CHOICE } from '../../constants/onboarding'
-import { useReducedMotion } from '../../lib/useReducedMotion'
+import { useRef, type CSSProperties } from 'react'
+import { BRAND_INTRO, PATH_CHOICE } from '../../constants/onboarding'
 import { MyPowerPlantMark } from '../ui/MyPowerPlantMark'
-import { IntroScene } from './IntroScene'
+import { useIntroPlayback } from './useIntroPlayback'
 
 type Props = {
   /** Play the intro when the screen opens (every visit); false shows the choice straight away. */
@@ -20,25 +20,94 @@ type Props = {
   onImprove: () => void
 }
 
-type Phase = 'playing' | 'skipping' | 'done'
-
 /** How long the intro runs, and how long the skip takes to clear, in ms (from the design). */
-const INTRO_MS = 24_600
+const INTRO_MS = 7_100
 const SKIP_MS = 1_050
 
-/** When each caption and progress segment starts, in seconds. */
-const STEP_DELAYS = [0.6, 5.9, 11.2, 16.5]
+const INTRO_LABEL = `${BRAND_INTRO.brand} introduction: ${BRAND_INTRO.slogan} Press Enter or click anywhere to skip.`
 
-/** The captions are inside a button, so their words go in its accessible name. */
-const INTRO_LABEL = `MyPowerPlant introduction: ${INTRO_STEPS.map((step) =>
-  `${step.title[0]} ${step.title[1]}`.replace(/\.$/, ''),
-).join('; ')}. Press Enter or click anywhere to skip.`
+/** Orbit rings round the centre, drawn one after another. */
+const ORBITS = [
+  { r: 150, opacity: 0.16, delay: 0.5 },
+  { r: 235, opacity: 0.11, delay: 0.75 },
+  { r: 330, opacity: 0.07, delay: 1 },
+]
+
+/** Pulses that ripple out from the centre. */
+const PULSES = [2, 3.1, 4.2]
+
+/** Homes circling on the orbits: ring radius, lap time, start offset, fade-in, all in seconds. */
+const HOMES = [
+  [150, 26, -1.4, 1.6],
+  [150, 26, -14.4, 1.72],
+  [235, 38, -8.4, 1.84],
+  [235, 38, -26.4, 1.96],
+  [235, 38, -34.8, 2.08],
+  [330, 52, -18.8, 2.2],
+  [330, 52, -43.3, 2.32],
+] as const
+
+const LETTERS = Array.from(BRAND_INTRO.brand)
+
+function delay(seconds: number, duration?: number): CSSProperties {
+  return duration === undefined
+    ? { animationDelay: `${seconds}s` }
+    : { animationDelay: `${seconds}s`, animationDuration: `${duration}s` }
+}
 
 function Arrow() {
   return (
     <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" className="ic-arrow">
       <path d="M5 12h14M13 6l6 6-6 6" />
     </svg>
+  )
+}
+
+/** The orbiting homes, the pulses, the logo, the wordmark, and the slogan. Decorative. */
+function BrandIntro() {
+  return (
+    <>
+      <div className="bi-bg" />
+      <svg className="bi-fx bi-orbits" aria-hidden="true" viewBox="0 0 1440 900" preserveAspectRatio="xMidYMin slice">
+        {ORBITS.map((orbit) => (
+          <circle
+            key={orbit.r}
+            cx="720"
+            cy="380"
+            r={orbit.r}
+            pathLength={1}
+            className="bi-orbit"
+            strokeOpacity={orbit.opacity}
+            style={delay(orbit.delay)}
+          />
+        ))}
+        {PULSES.map((start) => (
+          <circle key={start} cx="720" cy="380" r="70" className="bi-pulse" style={delay(start)} />
+        ))}
+        {HOMES.map(([radius, lap, offset, fadeIn]) => (
+          <g key={`${radius}${offset}`} className="bi-spin" style={delay(offset, lap)}>
+            <g className="bi-home" style={delay(fadeIn)}>
+              <circle cx={720 + radius} cy="380" r="5" className="bi-home__dot" />
+              <circle cx={720 + radius} cy="380" r="11" className="bi-home__halo" />
+            </g>
+          </g>
+        ))}
+      </svg>
+      <div className="bi-logo" aria-hidden="true">
+        <MyPowerPlantMark width={132} height={132} className="ic-logo-img" />
+      </div>
+      <div className="bi-fx bi-word" aria-hidden="true">
+        {LETTERS.map((letter, index) => (
+          <span key={index} className="bi-letter" style={delay(2.2 + index * 0.045)}>
+            {letter}
+          </span>
+        ))}
+      </div>
+      <div className="bi-fx bi-foot" aria-hidden="true">
+        <span className="bi-slogan">{BRAND_INTRO.slogan}</span>
+        <span className="bi-hint">{BRAND_INTRO.skipHint}</span>
+      </div>
+    </>
   )
 }
 
@@ -53,57 +122,14 @@ function Arrow() {
  * intro. When it ends, focus moves to the "Which describes you?" heading.
  */
 export function IntroChoiceScreen({ playIntro, onIntroDone, onExplore, onImprove }: Props) {
-  const reduced = useReducedMotion()
-  const [phase, setPhase] = useState<Phase>(playIntro ? 'playing' : 'done')
-  const [run, setRun] = useState(0)
-  const overlayRef = useRef<HTMLDivElement>(null)
   const headingRef = useRef<HTMLHeadingElement>(null)
-  const doneRef = useRef(onIntroDone)
-  const focusHeadingNext = useRef(false)
-  const showIntro = phase !== 'done' && !reduced
-
-  useEffect(() => {
-    doneRef.current = onIntroDone
-  }, [onIntroDone])
-
-  // Ends the intro after its run, after the skip, or at once under reduced motion.
-  useEffect(() => {
-    if (phase === 'done') return
-    const ms = reduced ? 0 : phase === 'playing' ? INTRO_MS : SKIP_MS
-    const timer = window.setTimeout(() => {
-      focusHeadingNext.current = true
-      setPhase('done')
-      doneRef.current?.()
-    }, ms)
-    return () => window.clearTimeout(timer)
-  }, [phase, reduced, run])
-
-  useEffect(() => {
-    if (showIntro && phase === 'playing') overlayRef.current?.focus()
-  }, [showIntro, phase, run])
-
-  useEffect(() => {
-    if (phase === 'done' && focusHeadingNext.current) {
-      focusHeadingNext.current = false
-      headingRef.current?.focus()
-    }
-  }, [phase])
-
-  function skip() {
-    setPhase((current) => (current === 'playing' ? 'skipping' : current))
-  }
-
-  function onIntroKey(event: KeyboardEvent<HTMLDivElement>) {
-    if (event.key === 'Enter' || event.key === ' ' || event.key === 'Escape') {
-      event.preventDefault()
-      skip()
-    }
-  }
-
-  function replay() {
-    setRun((count) => count + 1)
-    setPhase('playing')
-  }
+  const { reduced, run, showIntro, skipping, overlayRef, skip, onKeyDown, replay } = useIntroPlayback({
+    play: playIntro,
+    introMs: INTRO_MS,
+    skipMs: SKIP_MS,
+    onDone: onIntroDone,
+    focusAfter: () => headingRef.current,
+  })
 
   return (
     <div className="ic-page">
@@ -159,56 +185,14 @@ export function IntroChoiceScreen({ playIntro, onIntroDone, onExplore, onImprove
         <div
           key={run}
           ref={overlayRef}
-          className={`ic-intro${phase === 'skipping' ? ' is-skipping' : ''}`}
+          className={`ic-intro ic-intro--brand${skipping ? ' is-skipping' : ''}`}
           role="button"
           tabIndex={0}
           aria-label={INTRO_LABEL}
           onClick={skip}
-          onKeyDown={onIntroKey}
+          onKeyDown={onKeyDown}
         >
-          <div className="ic-bg" />
-          <IntroScene />
-          <div className="ic-captions">
-            {INTRO_STEPS.map((step, index) => (
-              <div key={step.tag} className="ic-caption" style={{ animationDelay: `${STEP_DELAYS[index]}s` }}>
-                <span className="ic-caption__tag">
-                  <span className="ic-caption__number">{String(index + 1).padStart(2, '0')}</span>
-                  {step.tag}
-                </span>
-                <h2 className="ic-caption__title">
-                  {step.title[0]}
-                  <br />
-                  {step.title[1]}
-                </h2>
-                <p className="ic-caption__body">{step.body}</p>
-              </div>
-            ))}
-          </div>
-          <div className="ic-chrome ic-progress" aria-hidden="true">
-            {STEP_DELAYS.map((delay) => (
-              <span key={delay} className="ic-progress__track">
-                <span className="ic-progress__fill" style={{ animationDelay: `${delay}s` }} />
-              </span>
-            ))}
-          </div>
-          <div className="ic-chrome ic-place" aria-hidden="true">
-            {INTRO_COPY.place}
-          </div>
-          <div className="ic-chrome ic-hint-wrap" aria-hidden="true">
-            <span className="ic-hint">
-              {INTRO_COPY.skipHint}
-              <svg width="16" height="16" viewBox="0 0 24 24">
-                <path d="M5 5l7 7-7 7M13 5l7 7-7 7" />
-              </svg>
-            </span>
-          </div>
-          <div className="ic-logo" aria-hidden="true">
-            <MyPowerPlantMark width={112} height={112} className="ic-logo-img" />
-          </div>
-          <div className="ic-word" aria-hidden="true">
-            <span className="ic-word__name">{INTRO_COPY.brand}</span>
-            <span className="ic-word__tag">{INTRO_COPY.tagline}</span>
-          </div>
+          <BrandIntro />
         </div>
       ) : null}
     </div>

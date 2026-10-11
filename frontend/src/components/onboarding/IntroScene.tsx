@@ -140,7 +140,6 @@ export function IntroScene() {
           {HOUSE.map((d, index) => (
             <Draw key={d} d={d} delay={[0.9, 1.15, 1.4, 1.5][index]} duration={1.4} />
           ))}
-          <rect x="-44" y="-52" width="20" height="20" className="ic-fade ic-window" style={timing(2.2)} />
           <path d={PANEL_OUTLINE} className="ic-fade ic-panel-fill" style={timing(2.4)} />
           <Draw d={PANEL_OUTLINE} delay={1.9} duration={0.7} className="ic-line ic-line--panel" />
           {PANEL_GRID.map((d, index) => (
@@ -161,7 +160,6 @@ export function IntroScene() {
           {HOUSE.map((d, index) => (
             <Draw key={d} d={d} delay={delay + [0, 0.25, 0.5, 0.6][index]} duration={1.4} width={1.44 / scale} />
           ))}
-          <rect x="-44" y="-52" width="20" height="20" className="ic-fade ic-window" style={timing(delay + 0.6)} />
           {/* Every home in the plant has solar and a battery. */}
           <path d={PANEL_OUTLINE} className="ic-fade ic-panel-fill" style={timing(delay + 1)} />
           <Draw d={PANEL_OUTLINE} delay={delay + 0.7} duration={0.6} className="ic-line ic-line--panel" width={1.6 / scale} />

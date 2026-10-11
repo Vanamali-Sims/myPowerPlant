@@ -25,11 +25,16 @@ export const INTRO_STEPS = [
 export const INTRO_COPY = {
   place: 'MyPowerPlant · Victoria',
   skipHint: 'Click anywhere to skip',
-  brand: 'MyPowerPlant',
-  tagline: 'Share, receive, save.',
   eventLabel: 'Peak demand · 6:30 pm',
   eventValue: '+$12.40',
   eventNote: 'paid to you',
+} as const
+
+/** Screen 1: the brand intro on arrival, before the choice. */
+export const BRAND_INTRO = {
+  brand: 'MyPowerPlant',
+  slogan: 'A platform that helps you get more from your VPP.',
+  skipHint: 'Click anywhere to skip',
 } as const
 
 /** Screen 2: "Which describes you?" choice. */

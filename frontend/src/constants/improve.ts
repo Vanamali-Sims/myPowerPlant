@@ -4,58 +4,95 @@
  */
 import type { ImproveStepId } from '../lib/improveProfile'
 
-/** Hero copy. `titleEmphasis` is set in italics after `titleLead`. */
+/** Hero copy. `titleEmphasis` is set in italics between `titleLead` and `titleTail`. */
 export const IMPROVE_HERO = {
   eyebrow: 'For homes already in a VPP',
-  titleLead: 'Use your VPP setup',
-  titleEmphasis: 'more efficiently.',
-  lede: 'Try battery settings, set savings goals, and get reminders before peak events.',
-  accessFeatures: 'Access features',
+  titleLead: 'Unlock the',
+  titleEmphasis: 'full potential',
+  titleTail: 'of your VPP.',
+  lede: 'Set up your profile by sharing your current usage and profile.',
+  accessFeatures: 'Access Features',
   completeProfile: 'Complete profile',
+  hint: 'Get started in just 2 minutes.',
 } as const
 
-/** Summary card beside the hero. */
+/** Used where a profile answer has not been given yet. */
 export const IMPROVE_SETUP_CARD = {
-  title: 'Your setup',
   missing: 'Not added yet',
-  readyNote: 'All three features use these answers.',
-  incompleteNote: 'Add the missing answers to open the features.',
+} as const
+
+/** Dashboard beside the hero, filled from the household's goals, forecast, and uploads. */
+export const IMPROVE_DASHBOARD = {
+  title: 'Your dashboard',
+  tree: { eyebrow: 'Your tree', noGoals: 'Set a savings and a carbon goal to grow your tree.', setGoals: 'Set goals' },
+  savingsLabel: 'Savings goal',
+  carbonLabel: 'Carbon goal',
+  nextDay: {
+    eyebrow: 'Next discharge day',
+    forecast: (kwh: string) => `${kwh} forecast`,
+    loading: 'Checking the forecast…',
+    none: 'None in the next 14 days',
+    noneNote: 'No day clears your reserve margin yet.',
+    unavailable: 'Forecast unavailable',
+    unavailableNote: 'Try again later, or open Reminders.',
+    needsSetup: 'Add your setup',
+    needsSetupNote: 'We use your panels and reserve to pick the day.',
+  },
+  lastUpload: {
+    eyebrow: 'Last CSV uploaded',
+    uploaded: (day: string) => `Uploaded ${day}`,
+    baseline: (day: string) => `Goal baseline · uploaded ${day}`,
+    none: 'None yet',
+    noneNote: 'Upload your battery CSV on the Goals tab.',
+  },
+  footnote: 'Add your setup to fill in your dashboard.',
+  action: 'Add my setup',
 } as const
 
 export type ImproveFeatureId = 'whatif' | 'goals' | 'reminders'
 
 export const IMPROVE_FEATURES_HEADING = {
-  eyebrow: 'Your features',
-  title: 'Three ways to get more from your battery.',
+  eyebrow: 'Our features',
+  title: 'Enhance VPP experience through these features.',
 } as const
 
 export const IMPROVE_FEATURES: {
   id: ImproveFeatureId
   eyebrow: string
+  pill: string
   title: string
   body: string
+  points: string[]
+  action: string
 }[] = [
   {
     id: 'whatif',
     eyebrow: 'What if',
-    title: 'Test a change first',
-    body: 'Try a bigger battery, a different reserve, more panels, or a change in daily use, and see how your yearly VPP payment would move before you change anything.',
+    pill: 'Sandbox · your setup stays the same',
+    title: 'Test a scenario',
+    body: 'See how your yearly VPP savings would change.',
+    points: ['Bigger battery or more panels', 'Different backup reserve', 'Change in daily use'],
+    action: 'Try What if',
   },
   {
     id: 'goals',
     eyebrow: 'Goals',
+    pill: 'Powers ‘Your tree’',
     title: 'Set and track goals',
-    body: 'Choose a savings goal and a carbon goal from a month of your own battery file, then upload each month to watch your progress grow.',
+    body: 'Stay motivated with progress you can actually see.',
+    points: ['Savings and carbon targets', 'Monthly battery file upload', 'Tree grows as you progress'],
+    action: 'Open Goals',
   },
   {
     id: 'reminders',
     eyebrow: 'Reminders',
+    pill: 'Powers ‘Next best day’',
     title: 'Never miss an event',
-    body: 'See the days your solar forecast suits a discharge event, or when to opt out, and add them to your calendar in one click.',
+    body: 'Know the right day to act, without checking every morning.',
+    points: ['Solar forecast for the week', 'Best days to share or opt out', 'One-click calendar reminders'],
+    action: 'Get reminders',
   },
 ]
-
-export const IMPROVE_TRY_IT = 'Try it'
 
 /** Shown once when the form opens with answers from the explore form. */
 export const IMPROVE_PREFILL_NOTICE = {

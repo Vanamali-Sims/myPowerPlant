@@ -38,6 +38,23 @@ function renderApp() {
   return userEvent.setup()
 }
 
+function monthRecord(month: string, coveredRanges: [string, string][], savingsAud: number, carbonKg: number, updatedOn: string) {
+  const [year, number] = month.split('-').map(Number)
+  const dayOf = (date: string) => Number(date.slice(8))
+  return {
+    month,
+    daysInMonth: new Date(Date.UTC(year, number, 0)).getUTCDate(),
+    daysCounted: coveredRanges.reduce((sum, [start, end]) => sum + dayOf(end) - dayOf(start) + 1, 0),
+    coveredRanges,
+    savingsAud,
+    carbonKg,
+    dischargeKwh: 100,
+    intakeKwh: null,
+    sourceId: 'generic',
+    updatedOn,
+  }
+}
+
 function rail() {
   return within(screen.getByRole('complementary', { name: 'App' }))
 }
@@ -91,24 +108,66 @@ afterEach(() => {
 })
 
 describe('improve home', () => {
-  it('shows the hero, the rail with Home and Profile, and three feature cards', () => {
+  it('shows the hero, the rail with Home and Profile, the dashboard, and three feature cards', () => {
     renderApp()
-    expect(screen.getByRole('heading', { level: 1, name: 'Use your VPP setup more efficiently.' })).toBeTruthy()
-    expect(screen.getByRole('heading', { level: 1 }).querySelector('em')?.textContent).toBe('more efficiently.')
+    expect(screen.getByRole('heading', { level: 1, name: 'Unlock the full potential of your VPP.' })).toBeTruthy()
+    expect(screen.getByRole('heading', { level: 1 }).querySelector('em')?.textContent).toBe('full potential')
     expect(rail().getByRole('button', { name: 'Home' }).getAttribute('aria-current')).toBe('page')
     expect(rail().getByRole('button', { name: 'Profile' })).toBeTruthy()
-    expect(screen.getByRole('button', { name: 'Access features' })).toBeTruthy()
-    for (const name of ['What if', 'Goals', 'Reminders']) {
-      expect(screen.getByRole('button', { name: `Try it: ${name}` })).toBeTruthy()
+    expect(screen.getByRole('button', { name: 'Access Features' })).toBeTruthy()
+    expect(screen.getByText('Get started in just 2 minutes.')).toBeTruthy()
+
+    const dashboard = within(screen.getByRole('region', { name: 'Your dashboard' }))
+    expect(dashboard.queryByText('Sample')).toBeNull()
+    expect(dashboard.getByText('Next discharge day')).toBeTruthy()
+    expect(dashboard.getByText('Add your setup')).toBeTruthy()
+    expect(dashboard.getByText('Last CSV uploaded')).toBeTruthy()
+    expect(dashboard.getByText('None yet')).toBeTruthy()
+    expect(dashboard.getByText('Set a savings and a carbon goal to grow your tree.')).toBeTruthy()
+    expect(dashboard.getByText('Add your setup to fill in your dashboard.')).toBeTruthy()
+
+    for (const name of ['Try What if', 'Open Goals', 'Get reminders']) {
+      expect(screen.getByRole('button', { name })).toBeTruthy()
     }
-    expect(screen.getAllByText('Not added yet')).toHaveLength(4)
+    expect(screen.getByRole('heading', { level: 2, name: 'Enhance VPP experience through these features.' })).toBeTruthy()
+  })
+
+  it('fills the dashboard from saved goals and the last battery CSV', () => {
+    saveProfile(ready(), 'improve')
+    localStorage.setItem(
+      GOALS_STORAGE_KEY,
+      JSON.stringify({
+        version: 2,
+        goals: { savings: { target: 745, setOn: SET_ON }, carbon: { target: 1149, setOn: SET_ON } },
+        completedGoals: [],
+        months: [
+          monthRecord('2026-08', [['2026-08-01', '2026-08-31']], 120, 300, '2026-09-02T01:00:00.000Z'),
+          monthRecord('2026-09', [['2026-09-01', '2026-09-28']], 99, 229, '2026-10-08T01:00:00.000Z'),
+        ],
+        baseline: null,
+      }),
+    )
+    renderApp()
+    const dashboard = within(screen.getByRole('region', { name: 'Your dashboard' }))
+    expect(dashboard.getByText('1 Sep – 28 Sep')).toBeTruthy()
+    expect(dashboard.getByText('Uploaded Thu 8 Oct')).toBeTruthy()
+    expect(dashboard.getByText('$219')).toBeTruthy()
+    expect(dashboard.getByText('529 kg')).toBeTruthy()
+    expect(dashboard.getByText('Your tree · Sapling')).toBeTruthy()
+    expect(dashboard.queryByRole('button', { name: 'Add my setup' })).toBeNull()
+  })
+
+  it('opens the setup form from Add my setup', async () => {
+    const user = renderApp()
+    await user.click(screen.getByRole('button', { name: 'Add my setup' }))
+    expect(screen.getByRole('heading', { level: 1, name: 'Your home and VPP' })).toBeTruthy()
   })
 
   it('says Complete profile when some answers are already there', () => {
     saveProfile(ready({ vppProvider: '' }))
     renderApp()
     expect(screen.getByRole('button', { name: 'Complete profile' })).toBeTruthy()
-    expect(screen.queryByRole('button', { name: 'Access features' })).toBeNull()
+    expect(screen.queryByRole('button', { name: 'Access Features' })).toBeNull()
   })
 })
 
@@ -116,7 +175,7 @@ describe('access-features form', () => {
   // Types into every field of the form, so it gets more time when the whole suite runs at once.
   it('opens before a feature when answers are missing, then lands on that feature', async () => {
     const user = renderApp()
-    await user.click(screen.getByRole('button', { name: 'Try it: Goals' }))
+    await user.click(screen.getByRole('button', { name: 'Open Goals' }))
     expect(screen.getByRole('heading', { level: 1, name: 'Your home and VPP' })).toBeTruthy()
 
     await user.click(screen.getByRole('button', { name: 'Continue' }))
@@ -311,7 +370,7 @@ describe('resetting the improve profile', () => {
     addReminders([{ date: '2026-10-20', eventType: 'discharge' }])
     await resetFromProfile()
     expect(screen.getByText('Your improve profile was reset.')).toBeTruthy()
-    expect(screen.getByRole('button', { name: 'Access features' })).toBeTruthy()
+    expect(screen.getByRole('button', { name: 'Access Features' })).toBeTruthy()
     const after = loadProfile()
     expect(after).toMatchObject({ vppProvider: '', postcode: '', monthlyKwh: '', batteryModel: '', improveUpdated: null })
     expect(localStorage.getItem(GOALS_STORAGE_KEY)).toBeNull()

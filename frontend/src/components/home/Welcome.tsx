@@ -60,7 +60,7 @@ export function Welcome({ hasProfile, onGetStarted, onViewDashboard, onLogoClick
         <div className="band__inner welcome-hero__inner">
           <div className="welcome-hero__copy">
             <p className="eyebrow welcome__eyebrow">{WELCOME_HERO.eyebrow}</p>
-            <h1 id="welcome-hero-title" className="welcome-hero__title">
+            <h1 id="welcome-hero-title" className="welcome-hero__title" tabIndex={-1}>
               {WELCOME_HERO.titleLead} <em>{WELCOME_HERO.titleEmphasis}</em>
             </h1>
             <p className="welcome-hero__lede">{WELCOME_HERO.lede}</p>

@@ -184,3 +184,8 @@
     color: var(--euc-200);
   }
 }
+
+/* Wraps the shell so it can be made inert under the story intro; adds no box of its own. */
+.app-under-intro {
+  display: contents;
+}
