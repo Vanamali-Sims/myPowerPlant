@@ -22,7 +22,7 @@ export function formatPlanColumn(matches: SuggestionMatch[], emptyReason: string
     .map((row) => {
       const headroom =
         row.reserveHeadroomKwh != null
-          ? ` — ${formatKwhShort(row.reserveHeadroomKwh)} reserve headroom`
+          ? `, ${formatKwhShort(row.reserveHeadroomKwh)} reserve headroom`
           : ''
       return `${row.plan.brand} ${row.plan.name}${headroom}`
     })
@@ -125,10 +125,10 @@ export function solarCompareRows(now: KpiReport, after: KpiReport): MetricCompar
 export function compareFootnote(kind: WhatIfKind): string | null {
   if (kind === 'battery') return null
   if (kind === 'household') {
-    return 'Modelled from your answers and published appliance ratings — not a live meter reading.'
+    return 'Modelled from your answers and published appliance ratings, not a live meter reading.'
   }
   return (
-    'Reminder dates stay the same — only the typical generation figure behind them ' +
+    'Reminder dates stay the same. Only the typical generation figure behind them ' +
     'changes. Forecast and typical both scale with panel size and direction.'
   )
 }

@@ -13,15 +13,18 @@ type Props = {
   onChange: (profile: ProfileData) => void
   onPatch: <K extends keyof ProfileData>(field: K, value: ProfileData[K]) => void
   onLogoClick: () => void
+  /** Checks a field as focus leaves it. */
+  onFieldBlur?: () => void
 }
 
-export function HomeVppOnboarding({ profile, bundle, errors, onChange, onPatch, onLogoClick }: Props) {
+export function HomeVppOnboarding({ profile, bundle, errors, onChange, onPatch, onLogoClick, onFieldBlur }: Props) {
   return (
-    <div className="home-vpp">
+    <div className="home-vpp" onBlur={onFieldBlur}>
       <FormHeader
         postcode={profile.postcode}
         onPostcodeChange={(postcode) => onPatch('postcode', postcode)}
         onLogoClick={onLogoClick}
+        postcodeError={errors.postcode}
       />
       <header className="home-vpp__intro">
         <h1 className="home-vpp__title">{HOME_VPP_ONBOARDING.pageTitle}</h1>

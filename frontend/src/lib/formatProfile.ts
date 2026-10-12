@@ -16,7 +16,7 @@ function yesNoLabel(value: YesNoNotSure | ''): string {
   if (value === 'yes') return 'Yes'
   if (value === 'no') return 'No'
   if (value === 'not_sure') return NOT_SURE_VALUE
-  return '—'
+  return 'Not set'
 }
 
 function optionLabel(
@@ -26,7 +26,7 @@ function optionLabel(
   const match = options.find((option) => option.value === value)
   if (match) return match.label
   if (value) return value
-  return '—'
+  return 'Not set'
 }
 
 /**
@@ -56,11 +56,11 @@ export function displayValue(
       return optionLabel(coolingOptions, String(value))
     case 'peakPeriod': {
       const option = peakPeriodOptions.find((item) => item.value === value)
-      return option ? `${option.label} (${option.hint})` : '—'
+      return option ? `${option.label} (${option.hint})` : 'Not set'
     }
     case 'usageLevel': {
       const level = usageLevelOptions.find((item) => item.value === value)
-      return level?.label ?? '—'
+      return level?.label ?? 'Not set'
     }
     case 'solarDirection':
       if (value === 'not_sure') return NOT_SURE_VALUE
@@ -72,21 +72,21 @@ export function displayValue(
       if (value === 'NW') return 'North-west'
       if (value === 'SE') return 'South-east'
       if (value === 'SW') return 'South-west'
-      return String(value || '—')
+      return String(value || 'Not set')
     case 'monthlyBill':
-      return value ? `$${value}` : '—'
+      return value ? `$${value}` : 'Not set'
     case 'monthlyKwh':
-      return value ? `${value} kWh` : '—'
+      return value ? `${value} kWh` : 'Not set'
     case 'panelWatts':
-      return value ? `${value} W (watts)` : '—'
+      return value ? `${value} W (watts)` : 'Not set'
     case 'reservePercent':
-      return value ? `${value}%` : '—'
+      return value ? `${value}%` : 'Not set'
     case 'batteryAge':
-      return value ? `${value} years` : '—'
+      return value ? `${value} years` : 'Not set'
     case 'batteryModel':
-      return typeof value === 'string' && isAllowedBatteryModel(value) ? value : '—'
+      return typeof value === 'string' && isAllowedBatteryModel(value) ? value : 'Not set'
     case 'provider':
-      return typeof value === 'string' && isAllowedProvider(value) ? value : '—'
+      return typeof value === 'string' && isAllowedProvider(value) ? value : 'Not set'
     case 'tvHoursPerWeek':
     case 'airconHoursPerWeek':
       return value ? `${value} hrs / week` : 'Typical estimate used'
@@ -96,10 +96,10 @@ export function displayValue(
     case 'fieldSources':
     case 'lastUpdated':
     case 'improveUpdated':
-      return '—'
+      return 'Not set'
     default:
       return value === '' || value === null || value === undefined
-        ? '—'
+        ? 'Not set'
         : String(value)
   }
 }

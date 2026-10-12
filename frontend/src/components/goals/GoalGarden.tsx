@@ -134,7 +134,7 @@ function GoalCard({ kind, goal, total, months, reached, onSetNewGoal, onViewAchi
             {kind === 'savings' ? formatGoalAud(total) : formatGoalKgAmount(total)}
           </p>
           <p className="goal-card__target">
-            of {kind === 'savings' ? formatGoalAud(goal.target) : `${formatGoalKgAmount(goal.target)} CO₂e`}
+            of {kind === 'savings' ? formatGoalAud(goal.target) : `${formatGoalKgAmount(goal.target)} CO₂e avoided`}
           </p>
           <p className="goal-card__detail">{detail}</p>
         </div>

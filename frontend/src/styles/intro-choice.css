@@ -186,6 +186,11 @@
   border-radius: 12px;
 }
 
+/* The intro's own logo lands here at the end, so this one waits until the intro clears. */
+.ic-mark.is-awaiting-intro {
+  visibility: hidden;
+}
+
 .ic-question {
   margin: 0;
   padding: 10px 20px;
@@ -410,14 +415,14 @@
 /* ---------- Story intro (over the explore home) ---------- */
 
 .ic-intro--story {
-  animation: ic-hide 0s linear 23.1s forwards;
+  animation: ic-hide 0s linear calc(23.1s * var(--story-k, 1)) forwards;
 }
 
 .ic-bg {
   position: absolute;
   inset: 0;
   background: radial-gradient(ellipse at 72% 45%, var(--surface-raised-on-dark) 0, var(--green-deep) 45%, var(--green-deeper) 100%);
-  animation: ic-fade-out 0.8s ease 22.3s forwards;
+  animation: ic-fade-out 0.8s ease calc(22.3s * var(--story-k, 1)) forwards;
 }
 
 .ic-intro.is-skipping .ic-bg {
@@ -427,7 +432,7 @@
 .ic-scene,
 .ic-captions,
 .ic-chrome {
-  animation: ic-fade-out 0.7s ease 21.8s forwards;
+  animation: ic-fade-out 0.7s ease calc(21.8s * var(--story-k, 1)) forwards;
 }
 
 .ic-intro.is-skipping .ic-scene,
@@ -504,7 +509,7 @@
 
 .ic-fade {
   opacity: 0;
-  animation: ic-fade-in 0.8s ease forwards;
+  animation: ic-fade-in calc(0.8s * var(--story-k, 1)) ease forwards;
 }
 
 .ic-fill {
@@ -512,7 +517,7 @@
   transform-box: fill-box;
   transform-origin: bottom;
   transform: scaleY(0);
-  animation: ic-fill-up 1.8s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+  animation: ic-fill-up calc(1.8s * var(--story-k, 1)) cubic-bezier(0.4, 0, 0.2, 1) forwards;
 }
 
 .ic-flow {
@@ -522,26 +527,26 @@
   stroke-linecap: round;
   stroke-dasharray: 3 8;
   opacity: 0;
-  animation: ic-flow 2.2s linear forwards;
+  animation: ic-flow calc(2.2s * var(--story-k, 1)) linear forwards;
 }
 
 .ic-main {
-  animation: ic-zoom-out 1.6s cubic-bezier(0.6, 0, 0.2, 1) 11.1s forwards;
+  animation: ic-zoom-out calc(1.6s * var(--story-k, 1)) cubic-bezier(0.6, 0, 0.2, 1) calc(11.1s * var(--story-k, 1)) forwards;
 }
 
 /* As the scene zooms out, the sun dims and drifts to the top-right corner. */
 .ic-sun-group {
-  animation: ic-sun-away 1.6s cubic-bezier(0.6, 0, 0.2, 1) 11.1s forwards;
+  animation: ic-sun-away calc(1.6s * var(--story-k, 1)) cubic-bezier(0.6, 0, 0.2, 1) calc(11.1s * var(--story-k, 1)) forwards;
 }
 
 /* The beam pointed at the sun's old place, so it goes with it. */
 .ic-beam-group {
-  animation: ic-fade-out 0.6s ease 11.1s forwards;
+  animation: ic-fade-out calc(0.6s * var(--story-k, 1)) ease calc(11.1s * var(--story-k, 1)) forwards;
 }
 
 .ic-neighbour {
   opacity: 0;
-  animation: ic-fade-in 0.5s ease forwards;
+  animation: ic-fade-in calc(0.5s * var(--story-k, 1)) ease forwards;
 }
 
 .ic-link {
@@ -558,7 +563,7 @@
   stroke-dasharray: 0.05 1;
   stroke-dashoffset: 0.05;
   opacity: 0;
-  animation: ic-travel 1.4s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+  animation: ic-travel calc(1.4s * var(--story-k, 1)) cubic-bezier(0.4, 0, 0.2, 1) forwards;
 }
 
 .ic-hub {
@@ -566,7 +571,7 @@
   transform-origin: center;
   opacity: 0;
   transform: scale(0.6);
-  animation: ic-hub-in 0.8s cubic-bezier(0.3, 1.3, 0.5, 1) 12.3s forwards;
+  animation: ic-hub-in calc(0.8s * var(--story-k, 1)) cubic-bezier(0.3, 1.3, 0.5, 1) calc(12.3s * var(--story-k, 1)) forwards;
 }
 
 .ic-hub-core {
@@ -581,7 +586,7 @@
 
 .ic-event {
   opacity: 0;
-  animation: ic-event-in 0.7s ease 17.5s forwards;
+  animation: ic-event-in calc(0.7s * var(--story-k, 1)) ease calc(17.5s * var(--story-k, 1)) forwards;
 }
 
 .ic-event-card {
@@ -618,7 +623,7 @@
   gap: 18px;
   opacity: 0;
   transform: translateY(-40%);
-  animation: ic-caption 5.3s ease both;
+  animation: ic-caption calc(5.3s * var(--story-k, 1)) ease both;
 }
 
 .ic-caption__tag {
@@ -676,7 +681,7 @@
   background: var(--ic-glow);
   transform: scaleX(0);
   transform-origin: left;
-  animation: ic-seg-fill 5.3s linear forwards;
+  animation: ic-seg-fill calc(5.3s * var(--story-k, 1)) linear forwards;
 }
 
 .ic-place {

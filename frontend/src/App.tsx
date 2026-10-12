@@ -3,6 +3,7 @@
  */
 import { Suspense, lazy, useEffect, useState } from 'react'
 import { AppShell, type AppNavId } from './components/layout/AppShell'
+import { AssistantBot } from './components/chat/AssistantBot'
 import { ChatDock } from './components/chat/ChatDock'
 import { DashboardView } from './components/dashboard/DashboardView'
 import { Welcome } from './components/home/Welcome'
@@ -16,19 +17,29 @@ import { IntroChoiceScreen } from './components/onboarding/IntroChoiceScreen'
 import { ProfileView } from './components/profile/ProfileView'
 import { RecommendationsView } from './components/recommendations/RecommendationsView'
 import { RemindersView } from './components/reminders/RemindersView'
+import { Tutorial, type TutorialCloseReason } from './components/tutorial/Tutorial'
 import { SetupForm } from './components/setup/SetupForm'
 import { CustomCursor } from './components/ui/CustomCursor'
 import { StickyHover } from './components/ui/StickyHover'
+import { PlayIcon } from './components/ui/icons'
 import { WhatIfView } from './components/whatif/WhatIfView'
 import { fetchMethodology, type MethodologyBundle } from './lib/methodologyApi'
 import type { Timeframe } from './lib/kpis'
-import { DEFAULT_EVENT_TYPE, DEFAULT_REMINDER_PERIOD_DAYS, type ImproveFeatureId } from './constants'
+import {
+  ASSISTANT_COPY,
+  DEFAULT_EVENT_TYPE,
+  DEFAULT_REMINDER_PERIOD_DAYS,
+  TUTORIAL_STEPS,
+  type ImproveFeatureId,
+  type TutorialFlow,
+} from './constants'
 import { clearAllDeviceData } from './lib/deviceReset'
 import { clearGoals } from './lib/goals/goalsStorage'
 import { isImproveReady, prefilledFromExplore, resetImproveAnswers } from './lib/improveProfile'
 import { loadJourney, saveJourney, type UserJourney } from './lib/journeyStorage'
 import { clearStoredProfile, loadProfile, saveProfile, storeProfile } from './lib/profileStorage'
 import { clearReminders } from './lib/reminderStorage'
+import { loadTutorialSeen, markTutorialSeen } from './lib/tutorialStorage'
 import { emptyProfile, type ProfileData, type SetupStepId } from './types/profile'
 import type { EventType } from './types/reminders'
 
@@ -51,6 +62,13 @@ const GoalsView = lazy(() =>
   import('./components/goals/GoalsView').then((module) => ({ default: module.GoalsView })),
 )
 
+/** The home screens each flow's tutorial runs on: explore lands on welcome or dashboard. */
+function tutorialFlowFor(view: View, journey: UserJourney | null): TutorialFlow | null {
+  if (journey === 'matt' && (view === 'welcome' || view === 'dashboard')) return 'explore'
+  if (journey === 'rain' && view === 'rainHub') return 'improve'
+  return null
+}
+
 function initialView(): View {
   const saved = loadJourney()
   if (saved === 'matt') return 'dashboard'
@@ -59,7 +77,14 @@ function initialView(): View {
 }
 
 function App() {
+  /** The saved profile: the only answers every page reads. */
   const [profile, setProfile] = useState<ProfileData>(loadProfile)
+  /**
+   * Answers in an open setup form (explore or improve) that are not saved yet.
+   * Nothing else reads them, so a half-filled or wrong form never reaches the
+   * dashboard, the improve flow, or the header; finishing the form saves them.
+   */
+  const [formDraft, setFormDraft] = useState<ProfileData | null>(null)
   const [journey, setJourney] = useState<UserJourney | null>(loadJourney)
   const [view, setView] = useState<View>(initialView)
   const [notice, setNotice] = useState('')
@@ -77,6 +102,12 @@ function App() {
   const [pendingFeature, setPendingFeature] = useState<ImproveFeatureId | null>(null)
   /** Whether the access-features form opened with answers from the explore form. */
   const [improvePrefilled, setImprovePrefilled] = useState(false)
+  /** Flows whose tutorial was finished or skipped on this device. */
+  const [tutorialSeen, setTutorialSeen] = useState(loadTutorialSeen)
+  /** Tutorial opened again from the assistant's Tutorial item. */
+  const [tutorialReplay, setTutorialReplay] = useState<TutorialFlow | null>(null)
+  /** Flows with nothing to point at on this screen size, so they are not retried this visit. */
+  const [tutorialUnavailable, setTutorialUnavailable] = useState<TutorialFlow[]>([])
 
   const hasProfile = Boolean(profile.lastUpdated)
   const rainJourney = journey === 'rain'
@@ -155,6 +186,7 @@ function App() {
   }
 
   function startSetup() {
+    setFormDraft(null)
     setView('setup')
     setNotice('')
     setSetupStepId('household')
@@ -172,6 +204,7 @@ function App() {
   function completeSetup(next: ProfileData) {
     const saved = saveProfile(next)
     setProfile(saved)
+    setFormDraft(null)
     setView('dashboard')
     setNotice('')
   }
@@ -182,6 +215,7 @@ function App() {
   }
 
   function startImproveSetup(feature: ImproveFeatureId | null = null) {
+    setFormDraft(null)
     setImprovePrefilled(prefilledFromExplore(profile))
     setPendingFeature(feature)
     setView('improveSetup')
@@ -201,6 +235,7 @@ function App() {
   function completeImproveSetup(next: ProfileData) {
     const saved = saveProfile(next, 'improve')
     setProfile(saved)
+    setFormDraft(null)
     setView(pendingFeature ?? 'rainHub')
     setPendingFeature(null)
     setNotice('')
@@ -215,8 +250,8 @@ function App() {
   }
 
   function exitImproveSetup() {
-    // Unsaved edits stay out of storage: reload what was last saved.
-    setProfile(loadProfile())
+    // Unsaved answers are dropped; the saved profile was never changed.
+    setFormDraft(null)
     setPendingFeature(null)
     setView('rainHub')
     setNotice('')
@@ -226,12 +261,15 @@ function App() {
     clearStoredProfile()
     const blank = emptyProfile()
     setProfile(blank)
+    setFormDraft(null)
     setView('setup')
     setNotice('')
   }
 
   function resetDeviceData() {
     wipeLocalAppState()
+    setTutorialSeen({})
+    setTutorialUnavailable([])
     setJourney(null)
     setView('intro')
     setNotice('')
@@ -286,6 +324,29 @@ function App() {
     return null
   }
 
+  // The tutorial waits for the explore story intro and the path dialog to close.
+  const tutorialPageFlow = tutorialFlowFor(view, journey)
+  const tutorialAutoFlow =
+    tutorialPageFlow &&
+    !tutorialSeen[tutorialPageFlow] &&
+    !tutorialUnavailable.includes(tutorialPageFlow) &&
+    !exploreIntroPlaying &&
+    !flowControlsOpen
+      ? tutorialPageFlow
+      : null
+  const tutorialFlow = tutorialReplay ?? tutorialAutoFlow
+  const journeyTutorial: TutorialFlow = rainJourney ? 'improve' : 'explore'
+  const tutorialNew = !tutorialSeen[journeyTutorial]
+
+  function closeTutorial(flow: TutorialFlow, reason: TutorialCloseReason) {
+    setTutorialReplay(null)
+    if (reason === 'unavailable') {
+      setTutorialUnavailable((flows) => (flows.includes(flow) ? flows : [...flows, flow]))
+      return
+    }
+    setTutorialSeen(markTutorialSeen(flow, reason))
+  }
+
   const showShell = view !== 'intro' && view !== 'pathChoice'
   const showRail = showShell && (journey === 'matt' || journey === 'rain')
   const showChat = showShell && !rainJourney && journey === 'matt'
@@ -328,7 +389,10 @@ function App() {
       <CustomCursor />
       <StickyHover />
       {/* The page under the story intro stays out of reach until it ends. */}
-      <div className="app-under-intro" inert={(exploreIntroPlaying && view === 'welcome') || undefined}>
+      <div
+        className="app-under-intro"
+        inert={(exploreIntroPlaying && view === 'welcome') || tutorialFlow !== null || undefined}
+      >
         <AppShell
           journey={journey}
           showRail={showRail}
@@ -344,10 +408,27 @@ function App() {
                 hasProfile={hasProfile}
                 bundle={bundle}
                 methodologyError={methodologyError}
-                eventType={eventType}
-                reminderPeriodDays={reminderPeriodDays}
                 onSaveProfile={saveEdits}
+                onTutorial={() => setTutorialReplay('explore')}
+                tutorialNew={tutorialNew}
+                tutorialActive={tutorialFlow !== null}
               />
+            ) : showRail && rainJourney ? (
+              <div className="chat-dock">
+                <AssistantBot
+                  smiling={tutorialFlow !== null}
+                  items={[
+                    {
+                      id: 'tutorial',
+                      label: ASSISTANT_COPY.tutorial,
+                      icon: <PlayIcon />,
+                      tone: 'accent',
+                      onSelect: () => setTutorialReplay('improve'),
+                      badge: tutorialNew ? ASSISTANT_COPY.tutorialNew : undefined,
+                    },
+                  ]}
+                />
+              </div>
             ) : null
           }
         >
@@ -370,8 +451,8 @@ function App() {
             ) : null}
             {!rainJourney && view === 'setup' ? (
               <SetupForm
-                profile={profile}
-                onChange={setProfile}
+                profile={formDraft ?? profile}
+                onChange={setFormDraft}
                 onComplete={completeSetup}
                 onLogoClick={goHome}
                 onStepChange={setSetupStepId}
@@ -383,7 +464,6 @@ function App() {
                 profile={profile}
                 onSave={saveEdits}
                 onReset={resetProfile}
-                onLiveChange={setProfile}
                 onLogoClick={goHome}
                 onViewDashboard={() => {
                   setView('dashboard')
@@ -433,10 +513,10 @@ function App() {
             ) : null}
             {rainJourney && view === 'improveSetup' ? (
               <ImproveSetupForm
-                profile={profile}
+                profile={formDraft ?? profile}
                 bundle={bundle}
                 prefilled={improvePrefilled}
-                onChange={setProfile}
+                onChange={setFormDraft}
                 onComplete={completeImproveSetup}
                 onLogoClick={exitImproveSetup}
               />
@@ -492,11 +572,21 @@ function App() {
           </div>
         </AppShell>
       </div>
-      {exploreIntroRun > 0 && view === 'welcome' ? (
+      {/* Mounted from the split-screen choice on; once finished it renders nothing and stays
+          mounted, so going back to the explore home later never replays it. */}
+      {exploreIntroRun > 0 ? (
         <ExploreIntro
           key={exploreIntroRun}
           onDone={() => setExploreIntroPlaying(false)}
           focusAfter={() => document.getElementById('welcome-hero-title')}
+        />
+      ) : null}
+      {tutorialFlow ? (
+        <Tutorial
+          key={tutorialFlow}
+          steps={TUTORIAL_STEPS[tutorialFlow]}
+          onClose={(reason) => closeTutorial(tutorialFlow, reason)}
+          fallbackFocus={() => document.querySelector<HTMLElement>('.app-shell__main h1[tabindex]')}
         />
       ) : null}
       <FlowControlsDialog open={flowControlsOpen} onClose={closeFlowControls}>

@@ -8,6 +8,7 @@ import {
   PROFILE_RAIL_ITEM,
   RAIN_NAV,
   RAIN_PROFILE_RAIL_ITEM,
+  TUTORIAL_TARGETS,
   type AppNavId,
   type NavItem,
 } from '../../constants'
@@ -75,6 +76,15 @@ export function AppShell({
     onNavigate(item.id)
   }
 
+  /** Rail items the tutorial points at: Path, and the improve features as one group. */
+  function tourTarget(id: AppNavId) {
+    if (id === 'path') return TUTORIAL_TARGETS.path
+    if (journey === 'rain' && (id === 'whatif' || id === 'goals' || id === 'reminders')) {
+      return TUTORIAL_TARGETS.features
+    }
+    return undefined
+  }
+
   function renderRailItem(item: NavItem, activeId: AppNavId | null) {
     const Icon = item.icon
     const available = isAvailable(item.id)
@@ -89,6 +99,7 @@ export function AppShell({
           aria-current={activeId === item.id ? 'page' : undefined}
           aria-disabled={!available}
           title={available ? item.label : item.unavailableMessage}
+          data-tour={tourTarget(item.id)}
         >
           <Icon />
           {item.label}

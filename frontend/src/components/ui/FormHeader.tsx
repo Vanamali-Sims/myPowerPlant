@@ -1,13 +1,15 @@
 /**
  * Setup-wizard header: wordmark plus the postcode location control.
  */
-import { BoltIcon } from './icons'
+import { MyPowerPlantMark } from './MyPowerPlantMark'
 import { LocationControl } from './LocationControl'
 
 type Props = {
   postcode: string
   onPostcodeChange: (postcode: string) => void
   onLogoClick: () => void
+  /** Postcode message from the form, shown under the postcode. */
+  postcodeError?: string
 }
 
 /**
@@ -19,7 +21,7 @@ type Props = {
  * The logo is a button so keyboard users can leave setup without the rail.
  * Location sits on the right to match the logged-in header pattern.
  */
-export function FormHeader({ postcode, onPostcodeChange, onLogoClick }: Props) {
+export function FormHeader({ postcode, onPostcodeChange, onLogoClick, postcodeError }: Props) {
   return (
     <header className="form-header">
       <button
@@ -28,12 +30,12 @@ export function FormHeader({ postcode, onPostcodeChange, onLogoClick }: Props) {
         onClick={onLogoClick}
         aria-label="MyPowerPlant home"
       >
-        <span className="brand__mark">
-          <BoltIcon width={14} height={14} />
+        <span className="brand__mark brand__mark--logo">
+          <MyPowerPlantMark width={28} height={28} />
         </span>
         MyPowerPlant
       </button>
-      <LocationControl postcode={postcode} onPostcodeChange={onPostcodeChange} />
+      <LocationControl postcode={postcode} onPostcodeChange={onPostcodeChange} error={postcodeError} />
     </header>
   )
 }

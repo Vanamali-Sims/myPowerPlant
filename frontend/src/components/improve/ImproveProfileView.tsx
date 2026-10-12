@@ -25,6 +25,7 @@ import {
 } from '../../lib/improveProfile'
 import type { MethodologyBundle } from '../../lib/methodologyApi'
 import { loadReminders, removeReminder, type SavedReminder } from '../../lib/reminderStorage'
+import { useBlurValidation } from '../../lib/useBlurValidation'
 import { hasErrors, type FieldErrors } from '../../lib/validateProfile'
 import { GOAL_KINDS, type GoalKind, type GoalsStore } from '../../types/goals'
 import type { ProfileData } from '../../types/profile'
@@ -35,7 +36,6 @@ import { Callout } from '../ui/Callout'
 import {
   BatteryIcon,
   BellIcon,
-  BoltIcon,
   CheckIcon,
   LockIcon,
   PencilIcon,
@@ -43,6 +43,7 @@ import {
   ResetIcon,
   TargetIcon,
 } from '../ui/icons'
+import { MyPowerPlantMark } from '../ui/MyPowerPlantMark'
 import { ImproveFields } from './ImproveFields'
 
 type Props = {
@@ -103,9 +104,21 @@ export function ImproveProfileView({ profile, bundle, onSave, onReset, onLogoCli
   const [goalError, setGoalError] = useState<MessageCode | null>(null)
   const [reminders, setReminders] = useState<SavedReminder[]>(loadReminders)
   const [confirmReset, setConfirmReset] = useState(false)
+  // The open section is checked as people leave each field, not only on Save.
+  const blur = useBlurValidation(
+    () =>
+      editing
+        ? SECTION_STEPS[editing].reduce<FieldErrors>(
+            (all, step) => ({ ...all, ...validateImproveStep(step, draft) }),
+            {},
+          )
+        : {},
+    setErrors,
+  )
 
   function patch<K extends keyof ProfileData>(field: K, value: ProfileData[K]) {
     setDraft((current) => ({ ...current, [field]: value }))
+    blur.touch(field)
     if (errors[field]) {
       setErrors((current) => {
         const copy = { ...current }
@@ -118,6 +131,7 @@ export function ImproveProfileView({ profile, bundle, onSave, onReset, onLogoCli
   function startEdit(section: Section) {
     setDraft(profile)
     setErrors({})
+    blur.reset()
     setNotice('')
     setEditing(section)
   }
@@ -167,8 +181,8 @@ export function ImproveProfileView({ profile, bundle, onSave, onReset, onLogoCli
           onClick={onLogoClick}
           aria-label="MyPowerPlant home"
         >
-          <span className="brand__mark">
-            <BoltIcon width={14} height={14} />
+          <span className="brand__mark brand__mark--logo">
+            <MyPowerPlantMark width={28} height={28} />
           </span>
           MyPowerPlant
         </button>
@@ -216,7 +230,7 @@ export function ImproveProfileView({ profile, bundle, onSave, onReset, onLogoCli
                 <p className="dashboard-card__lede">{IMPROVE_PROFILE.householdLede}</p>
               )}
               {isEditing ? (
-                <div className="profile-card__edit">
+                <div className="profile-card__edit" onBlur={blur.onBlur}>
                   {SECTION_STEPS[section].map((step) => (
                     <ImproveFields
                       key={step}

@@ -11,7 +11,7 @@ export function GoalsFileGuidePanel({ id }: Props) {
   const panelId = id ?? fallbackId
   return (
     <div id={panelId} className="goals-file-card__guide-panel vpp-example__panel goals-examples__panel">
-      <p>Go to your VPP provider app (Tesla or Amber) and download the CSV file.</p>
+      <p>Go to your VPP provider app and download the CSV file.</p>
       <p>
         For the template we use, you can{' '}
         <button type="button" className="goals-source__link" onClick={downloadTemplate}>

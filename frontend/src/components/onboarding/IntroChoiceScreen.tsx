@@ -163,7 +163,8 @@ export function IntroChoiceScreen({ playIntro, onIntroDone, onExplore, onImprove
       </div>
 
       <div className="ic-header" inert={showIntro || undefined}>
-        <span className="ic-mark">
+        {/* Hidden while the intro plays: the intro's logo shrinks onto this spot, then this takes over. */}
+        <span className={`ic-mark${showIntro ? ' is-awaiting-intro' : ''}`}>
           <MyPowerPlantMark width={48} height={48} className="ic-logo-img" />
         </span>
         <h1 ref={headingRef} tabIndex={-1} className="ic-question">

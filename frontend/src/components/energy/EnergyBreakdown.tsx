@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, type ReactNode } from 'react'
 import type { Timeframe } from '../../lib/kpis'
 import { riverHeadlineShare, formatShare } from '../../lib/energyRiver'
 import type { EnergyRiverModel } from '../../lib/energyRiver'
@@ -11,6 +11,8 @@ type Props = {
   dischargeLabel: string
   dischargeHint: string
   headlineText: string
+  /** Full-width row under the ring and tree, laid on the same columns (subgrid). */
+  footer?: ReactNode
 }
 
 let entrancePlayedGlobally = false
@@ -18,7 +20,7 @@ let entrancePlayedGlobally = false
 const prefersReducedMotion = () =>
   typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches
 
-export function EnergyBreakdown({ model, dischargeLabel, dischargeHint, headlineText }: Props) {
+export function EnergyBreakdown({ model, dischargeLabel, dischargeHint, headlineText, footer }: Props) {
   const [focus, setFocus] = useState<EnergyFocus>(null)
   const [entrance, setEntrance] = useState(() => !entrancePlayedGlobally && !prefersReducedMotion())
   const [flowReady, setFlowReady] = useState(() => entrancePlayedGlobally || prefersReducedMotion())
@@ -112,6 +114,7 @@ export function EnergyBreakdown({ model, dischargeLabel, dischargeHint, headline
             flowReady={showFlow}
           />
         </div>
+        {footer}
       </div>
     </div>
   )

@@ -64,7 +64,7 @@ export const WELCOME_FEATURES: WelcomeFeature[] = [
     icon: SunIcon,
     title: 'Your solar & battery',
     description:
-      'Tell us about your solar panels and battery — the make, the size, how you use them.',
+      'Tell us about your solar panels and battery: the make, the size, and how you use them.',
     status: 'available',
   },
   {
@@ -78,7 +78,7 @@ export const WELCOME_FEATURES: WelcomeFeature[] = [
     icon: DashboardIcon,
     title: 'Your ongoing recommendation',
     description:
-      'See whether joining a VPP makes sense for your home, and how — kept up to date as your setup changes.',
+      'See whether joining a VPP makes sense for your home, and how. It stays up to date as your setup changes.',
     status: 'available',
   },
 ]
@@ -89,7 +89,7 @@ export const WELCOME_HERO = {
   titleLead: 'Your battery could be',
   titleEmphasis: 'paying you.',
   lede: 'Share your stored energy through a VPP and save on every bill.',
-  cta: 'Simulate my savings',
+  cta: 'Show me how',
 } as const
 
 /** Hero comparison card: share of a regular bill saved, without and with a VPP. */
@@ -132,7 +132,7 @@ export const WELCOME_WINS: WelcomeWin[] = [
   {
     id: 'renewables',
     eyebrow: 'Promoting renewables',
-    title: 'No sunshine wasted',
+    title: 'Take your next step to your renewable journey',
     body: 'Spare solar is stored and shared, not thrown away.',
   },
 ]
@@ -178,7 +178,7 @@ export const VPP_EXPLAINER_FLOW = {
 export const VPP_EXPLAINER_CTA = {
   eyebrow: 'Ready when you are',
   title: 'See how this can help you',
-  body: 'A quick comparison for a home like yours — no sign-up needed.',
+  body: 'A quick comparison for a home like yours, with no sign-up needed.',
   button: 'Show me',
 } as const
 
@@ -214,7 +214,7 @@ export function buildVppExplainerSteps(
     {
       id: 'shortfall',
       headline: 'Why the numbers don’t usually match',
-      body: 'Solar peaks around midday. Most homes use more power in the evening — so there’s almost always a gap to fill, one way or another.',
+      body: 'Solar peaks around midday. Most homes use more power in the evening, so there’s almost always a gap to fill, one way or another.',
     },
     {
       id: 'compare',

@@ -28,7 +28,7 @@ import type { MethodologyBundle } from '../../lib/methodologyApi'
 import { loadReminderRecommendations, type ReminderLoadResult } from '../../lib/reminderRecommendations'
 import type { ProfileData } from '../../types/profile'
 import { Button } from '../ui/Button'
-import { BoltIcon } from '../ui/icons'
+import { MyPowerPlantMark } from '../ui/MyPowerPlantMark'
 import { ImproveFeatureCards } from './ImproveFeatureCards'
 
 // The tree brings its animation library with it, so it loads after the page.
@@ -186,8 +186,8 @@ export function ImproveHome({ profile, bundle, onOpenForm, onOpenFeature, onLogo
         onClick={onLogoClick}
         aria-label="MyPowerPlant home"
       >
-        <span className="brand__mark">
-          <BoltIcon width={14} height={14} />
+        <span className="brand__mark brand__mark--logo">
+          <MyPowerPlantMark width={28} height={28} />
         </span>
         MyPowerPlant
       </button>

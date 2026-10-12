@@ -10,7 +10,7 @@ import { FIELD_BOUNDS } from '../constants/validation'
 import { isAllowedBatteryModel } from '../data/profileOptions'
 import type { MethodologyBundle } from './methodologyApi'
 import { emptyProfile, type ProfileData } from '../types/profile'
-import type { FieldErrors } from './validateProfile'
+import { postcodeError, type FieldErrors } from './validateProfile'
 
 export type ImproveStepId = 'home' | 'solar' | 'battery'
 
@@ -108,6 +108,9 @@ export function validateHomeVppStep(profile: ProfileData): FieldErrors {
   if (battery.batteryModel) errors.batteryModel = battery.batteryModel
   if (battery.reservePercent) errors.reservePercent = battery.reservePercent
   if (battery.batteryUnits) errors.batteryUnits = battery.batteryUnits
+  // The bill fills the postcode, but it can be changed in the header.
+  const postcode = postcodeError(profile.postcode)
+  if (postcode) errors.postcode = postcode
   if (!profile.people.trim()) {
     errors.people = 'Please enter how many people live in your house.'
   } else {

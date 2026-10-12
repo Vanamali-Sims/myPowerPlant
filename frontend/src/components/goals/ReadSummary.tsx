@@ -2,7 +2,6 @@
  * What was read from a battery file, before anything is calculated or saved.
  */
 import { useEffect, useRef } from 'react'
-import { BATTERY_SOURCES } from '../../constants/batterySources'
 import type { ReadResult } from '../../lib/goals/adapters/types'
 import { formatDayLabel } from '../../lib/goals/goalFormat'
 import { Button } from '../ui/Button'
@@ -22,14 +21,13 @@ function dayCount(count: number): string {
 /**
  * ReadSummary
  * @param props.result - Complete days read from the file
- * @returns First and last date, days read, and source, with Continue and Cancel
+ * @returns First and last date and days read, with Continue and Cancel
  *
  * Focus moves to the heading when the summary appears. Nothing here is added
  * to totals or history.
  */
 export function ReadSummary({ result, onContinue, onCancel }: Props) {
   const headingRef = useRef<HTMLHeadingElement>(null)
-  const source = BATTERY_SOURCES.find((item) => item.id === result.sourceId)
   const first = result.days[0].date
   const last = result.days[result.days.length - 1].date
 
@@ -43,10 +41,6 @@ export function ReadSummary({ result, onContinue, onCancel }: Props) {
         File read
       </h3>
       <dl className="goals-summary__facts">
-        <div>
-          <dt>Source</dt>
-          <dd>{source?.label}</dd>
-        </div>
         <div>
           <dt>First day</dt>
           <dd>{formatDayLabel(first)}</dd>

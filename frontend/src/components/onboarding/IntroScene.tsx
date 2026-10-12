@@ -6,14 +6,16 @@
  * the design's, in seconds from the start of the intro. Decorative only.
  */
 import type { CSSProperties } from 'react'
-import { INTRO_COPY } from '../../constants/onboarding'
+import { INTRO_COPY, STORY_SPEED } from '../../constants/onboarding'
 
 type Stroke = { d: string; delay: number; duration: number }
 
+/** Times below are the design's; STORY_SPEED sets the pace actually played. */
 function timing(delay: number, duration?: number): CSSProperties {
+  const at = (seconds: number) => `${(seconds * STORY_SPEED).toFixed(3)}s`
   return duration === undefined
-    ? { animationDelay: `${delay}s` }
-    : { animationDelay: `${delay}s`, animationDuration: `${duration}s` }
+    ? { animationDelay: at(delay) }
+    : { animationDelay: at(delay), animationDuration: at(duration) }
 }
 
 function Draw({ d, delay, duration, className = 'ic-line', width }: Stroke & { className?: string; width?: number }) {

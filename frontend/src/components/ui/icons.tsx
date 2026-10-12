@@ -328,6 +328,15 @@ export function PauseIcon(props: IconProps) {
   )
 }
 
+export function PlayIcon(props: IconProps) {
+  return (
+    <svg {...icon(props)}>
+      <circle cx="12" cy="12" r="9" />
+      <path d="m10 8.5 5 3.5-5 3.5z" />
+    </svg>
+  )
+}
+
 export function StopIcon(props: IconProps) {
   return (
     <svg {...icon(props)}>

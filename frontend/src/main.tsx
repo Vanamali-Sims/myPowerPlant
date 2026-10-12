@@ -23,6 +23,7 @@ import './styles/motion.css'
 import './styles/onboarding.css'
 import './styles/intro-choice.css'
 import './styles/recommendations.css'
+import './styles/tutorial.css'
 import App from './App.tsx'
 
 createRoot(document.getElementById('root')!).render(

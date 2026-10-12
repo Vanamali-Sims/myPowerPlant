@@ -1,9 +1,11 @@
 /**
- * Battery file sources Matt can choose from on the Goals tab.
+ * Battery files on the Goals tab.
  *
- * Both sources are read with the team's battery template layout for now.
- * Mapping each provider's own export onto TEMPLATE_COLUMNS can be added later
- * as another reader in lib/goals/adapters, without changing the rest of the flow.
+ * The person is never asked which VPP provider app a file is from: every
+ * known source is read with the team's battery template layout for now, and
+ * the reader tries each in turn. These ids are internal only. Mapping a
+ * provider's own export onto TEMPLATE_COLUMNS can be added later as another
+ * reader in lib/goals/adapters, without changing the rest of the flow.
  */
 
 export type BatterySourceId = 'tesla' | 'amber'
@@ -12,11 +14,6 @@ export type SourceColumn = {
   name: string
   required: boolean
   description: string
-}
-
-export type BatterySource = {
-  id: BatterySourceId
-  label: string
 }
 
 /** The internal schema every reader converts to. */
@@ -51,11 +48,6 @@ export const INTERVAL_MINUTES_ALLOWED = [5, 15, 30, 60] as const
 export const MAX_FILE_BYTES = 5 * 1024 * 1024
 
 export const TEMPLATE_FILE_NAME = 'mypowerplant-battery-template.csv'
-
-export const BATTERY_SOURCES: BatterySource[] = [
-  { id: 'tesla', label: 'Tesla' },
-  { id: 'amber', label: 'Amber' },
-]
 
 /**
  * Largest single interval, as a multiple of the battery's usable capacity,

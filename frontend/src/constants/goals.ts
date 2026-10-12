@@ -154,13 +154,13 @@ export const GOALS_ONBOARDING = {
     'Read on this device only. Never uploaded or kept. Your goals stay on this device.',
   guideLink: 'How to get your file',
   goalsTitle: 'Your goals',
-  goalsHelper: 'One for money saved, one for carbon avoided. You can change them later.',
+  goalsHelper: 'One for money saved, one for carbon emission avoided. You can change them later.',
   lockedTitle: 'Add your file to see your range',
   lockedBody: "We'll suggest goals that fit how your battery actually performs.",
   rangeTip:
-    'From your recent file month, scaled to a full month—you can set a goal between about 2 and 13 months of that figure.',
+    'From your recent file month, scaled to a full month. You can set a goal between about 2 and 13 months of that figure.',
   carbonTip:
-    'Battery energy out (kWh) × the Victorian grid factor—the same estimate your dashboard uses for carbon avoided.',
+    'Battery energy out (kWh) × the Victorian grid factor, the same estimate your dashboard uses for carbon avoided.',
   profileBattery: (model: string, rateCents: string) =>
     `Battery from your profile: ${model} · about ${rateCents} c/kWh`,
 } as const
@@ -168,7 +168,7 @@ export const GOALS_ONBOARDING = {
 /** Copy for the full-width goals form card (edit, create step 2, next goal). */
 export const GOALS_FORM = {
   editTitle: 'Edit your goals',
-  editHelper: 'One for money saved, one for carbon avoided. You can change them any time.',
+  editHelper: 'One for money saved, one for carbon emission avoided. You can change them any time.',
   createTitle: 'Set your goals',
   createHelper: 'Choose a goal for money saved and a goal for carbon avoided. You can change them later.',
   nextTitle: 'Set your next goal',
@@ -196,9 +196,9 @@ export const GOALS_PAGE = {
 export const GOALS_UPLOAD = {
   title: 'Upload this month’s file',
   lede: 'Add your battery activity file to update your goals and grow your tree.',
-  drop: 'Drop your CSV here, or',
+  drop: 'Drop your CSV here',
   browse: 'browse',
-  hint: 'Your Tesla or Amber battery export (.csv) — we’ll detect which one.',
+  hint: 'The battery export (.csv) from your VPP provider app.',
   guide: 'How to get your file',
   privacy: 'Read on this device only. Never uploaded or kept.',
   confirm: 'Update my goals',

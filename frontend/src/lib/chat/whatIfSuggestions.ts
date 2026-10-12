@@ -41,7 +41,7 @@ function tryPatch(profile: ProfileData, patch: Partial<ProfileData>): ProfileDat
 }
 
 function directionLabel(value: string): string {
-  if (!value) return '—'
+  if (!value) return 'not set'
   return solarDirections.find((row) => row.value === value)?.label ?? value
 }
 

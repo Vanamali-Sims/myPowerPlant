@@ -65,7 +65,7 @@ function reasonFor(
   reservePercent: number,
 ): string {
   if (eventType === 'discharge') {
-    return `Forecast generation of ${formatKwh(forecastKwh)} is at least ${reservePercent}% above this system's typical day (${formatKwh(typicalKwh)}) — the same margin as your battery's reserve level — so the battery should recharge fully even after a discharge event.`
+    return `Forecast generation of ${formatKwh(forecastKwh)} is at least ${reservePercent}% above this system's typical day (${formatKwh(typicalKwh)}), the same margin as your battery's reserve level, so the battery should recharge fully even after a discharge event.`
   }
   return `Forecast generation of ${formatKwh(forecastKwh)} is at least ${reservePercent}% below this system's typical day (${formatKwh(typicalKwh)}). With the battery reserve set to ${reservePercent}%, discharging today risks dropping below that reserve.`
 }
@@ -115,7 +115,7 @@ export function buildReminderRecommendations(
  */
 export function resultsCaption(eventType: EventType, reservePercent: number): string {
   const direction = eventType === 'discharge' ? 'above' : 'below'
-  return `Estimated from your solar forecast — a day qualifies when its generation is at least ${reservePercent}% ${direction} this system's typical day, matching your battery's reserve level. Not a live meter reading.`
+  return `Estimated from your solar forecast. A day qualifies when its generation is at least ${reservePercent}% ${direction} this system's typical day, matching your battery's reserve level. Not a live meter reading.`
 }
 
 /**
@@ -126,5 +126,5 @@ export function resultsCaption(eventType: EventType, reservePercent: number): st
  */
 export function emptyStateMessage(eventType: EventType, reservePercent: number): string {
   const direction = eventType === 'discharge' ? 'above' : 'below'
-  return `None of the days in this period forecast generation at least ${reservePercent}% ${direction} this system's typical day — the margin set by your battery's reserve level. Check back later, choose a longer period, or change your reserve percentage in your profile.`
+  return `None of the days in this period forecast generation at least ${reservePercent}% ${direction} this system's typical day, the margin set by your battery's reserve level. Check back later, choose a longer period, or change your reserve percentage in your profile.`
 }

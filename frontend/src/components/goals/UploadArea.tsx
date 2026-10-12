@@ -5,16 +5,15 @@
  * fetches, posts, or beacons anything.
  */
 import { useId, useRef, useState } from 'react'
-import type { BatterySourceId } from '../../constants/batterySources'
 import type { ReadLimits, ReadResult } from '../../lib/goals/adapters/types'
-import { readBatteryFile } from '../../lib/goals/readBatteryFile'
+import { readBatteryFileAuto } from '../../lib/goals/readBatteryFile'
 import { Button } from '../ui/Button'
 import { LockIcon } from '../ui/icons'
 import { FileChooser } from './FileChooser'
+import { FileGuide } from './FileGuide'
 import { GoalMessage } from './GoalMessage'
 import { ProblemList } from './ProblemList'
 import { ReadSummary } from './ReadSummary'
-import { SourceGuide } from './SourceGuide'
 
 export type ReadDays = Extract<ReadResult, { ok: true }>
 
@@ -37,7 +36,7 @@ const PRIVACY_NOTE =
  * UploadArea
  * @param props.locked - True until both goals are saved
  * @param props.limits - Validity limits for energy values
- * @returns Locked note, or provider choice, file chooser, read status, and summary
+ * @returns Locked note, or file guide, file chooser, read status, and summary
  */
 export function UploadArea({
   title = 'Upload your battery file',
@@ -50,7 +49,6 @@ export function UploadArea({
   const chooseId = useId()
   const guideToggleId = useId()
   const [guideOpen, setGuideOpen] = useState(false)
-  const [sourceId, setSourceId] = useState<BatterySourceId | ''>('')
   const [file, setFile] = useState<File | null>(null)
   const [reading, setReading] = useState(false)
   const [result, setResult] = useState<ReadResult | null>(null)
@@ -83,12 +81,12 @@ export function UploadArea({
   }
 
   async function read() {
-    if (!file || !limits || !sourceId) return
+    if (!file || !limits) return
     const token = (readToken.current += 1)
     setReading(true)
     setResult(null)
     setStatus('Reading your file on this device…')
-    const next = await readBatteryFile(file, sourceId, limits)
+    const next = await readBatteryFileAuto(file, limits)
     if (token !== readToken.current) return
     setReading(false)
     setResult(next)
@@ -129,24 +127,9 @@ export function UploadArea({
         />
       ) : (
         <>
-          <SourceGuide
-            value={sourceId}
-            onChange={(next) => {
-              readToken.current += 1
-              setSourceId(next)
-              setResult(null)
-              setReading(false)
-            }}
-            guideOpen={guideOpen}
-            onGuideOpenChange={setGuideOpen}
-            guideToggleId={guideToggleId}
-          />
+          <FileGuide guideOpen={guideOpen} onGuideOpenChange={setGuideOpen} guideToggleId={guideToggleId} />
 
-          {!sourceId ? (
-            <p className="goals-upload__hint">Choose Tesla or Amber, then add your file.</p>
-          ) : null}
-
-          {sourceId && !result?.ok ? (
+          {!result?.ok ? (
             <FileChooser
               file={file}
               reading={reading}

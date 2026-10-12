@@ -5,7 +5,8 @@
  *
  * Skipped with a click, Enter, Space, or Escape. Never plays with reduced motion.
  */
-import { INTRO_COPY, INTRO_STEPS } from '../../constants/onboarding'
+import type { CSSProperties } from 'react'
+import { INTRO_COPY, INTRO_STEPS, STORY_SPEED } from '../../constants/onboarding'
 import { IntroScene } from './IntroScene'
 import { useIntroPlayback } from './useIntroPlayback'
 
@@ -16,12 +17,15 @@ type Props = {
   focusAfter?: () => HTMLElement | null | undefined
 }
 
-/** How long the intro runs, and how long the skip takes to clear, in ms (from the design). */
-const EXPLORE_INTRO_MS = 23_100
+/** How long the intro runs (the design's 23.1 s at STORY_SPEED), and how long the skip takes to clear, in ms. */
+export const EXPLORE_INTRO_MS = Math.round(23_100 * STORY_SPEED)
 const SKIP_MS = 1_050
 
-/** When each caption and progress segment starts, in seconds. */
-const STEP_DELAYS = [0.6, 5.9, 11.2, 16.5]
+/** When each caption and progress segment starts, in seconds: one every STORY_SLIDE_SECONDS. */
+const STEP_DELAYS = [0.6, 5.9, 11.2, 16.5].map((seconds) => Number((seconds * STORY_SPEED).toFixed(3)))
+
+/** Lets the story's CSS timings scale with STORY_SPEED. */
+const STORY_STYLE = { '--story-k': String(STORY_SPEED) } as CSSProperties
 
 /** The captions are inside a button, so their words go in its accessible name. */
 const INTRO_LABEL = `How a VPP works: ${INTRO_STEPS.map((step) =>
@@ -41,6 +45,7 @@ export function ExploreIntro({ onDone, focusAfter }: Props) {
     <div
       ref={overlayRef}
       className={`ic-intro ic-intro--story${skipping ? ' is-skipping' : ''}`}
+      style={STORY_STYLE}
       role="button"
       tabIndex={0}
       aria-label={INTRO_LABEL}
