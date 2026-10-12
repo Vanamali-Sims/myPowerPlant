@@ -149,7 +149,7 @@ export const GOALS_ONBOARDING = {
     'A CSV from this month or the 3 months before, with at least 14 complete days.',
   dropTitle: 'Drop your battery CSV here',
   browseLink: 'browse your files',
-  worksWith: 'Works with',
+  fileFormatHint: 'Battery activity CSV from your VPP app',
   privacy:
     'Read on this device only. Never uploaded or kept. Your goals stay on this device.',
   guideLink: 'How to get your file',

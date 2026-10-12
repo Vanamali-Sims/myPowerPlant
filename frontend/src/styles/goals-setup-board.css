@@ -7,30 +7,11 @@
   gap: 1.5rem;
 }
 
-.goals-setup-board__file {
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-  min-height: 0;
-}
-
-.goals-setup-board__change {
-  align-self: flex-start;
-  padding: 0;
-  border: none;
-  background: none;
-  font-size: 0.9375rem;
-  font-weight: 500;
-  color: #a8441a;
-  text-decoration: underline;
-  cursor: pointer;
-}
-
 .goals-setup-board {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 1.5rem;
-  align-items: stretch;
+  align-items: start;
   width: 100%;
 }
 
@@ -38,6 +19,7 @@
   display: flex;
   justify-content: flex-end;
   width: 100%;
+  padding-top: 0.5rem;
 }
 
 .goals-setup-footer__save.ui-btn {
@@ -179,53 +161,22 @@
   color: #a8441a;
 }
 
-.goals-file-card__works-with {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: center;
-  gap: 0.5rem;
+.goals-file-card__format-hint {
   margin: 0.25rem 0 0;
   font-size: 0.8125rem;
   color: var(--ink-secondary);
 }
 
-.goals-file-card__chip {
-  padding: 0.3rem 0.75rem;
-  border-radius: 999px;
-  border: 1px solid #e5d9c8;
-  background: #fff;
-  font-size: 0.8125rem;
-  font-weight: 500;
-  color: var(--ink);
-}
-
-.goals-file-card__provider-pick {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-}
-
-.goals-file-card__provider-pick-label {
+.goals-file-card__change {
+  align-self: flex-start;
   margin: 0;
-  font-size: 0.9375rem;
-  font-weight: 600;
-}
-
-.goals-file-card__provider-pick-options {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-}
-
-.goals-file-card__provider-pick-btn {
-  padding: 0.5rem 1rem;
-  border-radius: 999px;
-  border: 1.5px solid #cfc6b5;
-  background: #fff;
+  padding: 0;
+  border: none;
+  background: none;
   font-size: 0.9375rem;
   font-weight: 600;
   color: #a8441a;
+  text-decoration: underline;
   cursor: pointer;
 }
 
@@ -334,37 +285,6 @@
   color: #1f3b31;
   font-size: 0.9375rem;
   line-height: 1.45;
-}
-
-.goals-targets__provider-switch {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 0.5rem 0.75rem;
-  padding: 0.75rem 0;
-}
-
-.goals-targets__provider-switch-label {
-  font-size: 0.9375rem;
-  font-weight: 600;
-  color: var(--ink);
-}
-
-.goals-targets__provider-switch-options {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-}
-
-.goals-targets__provider-switch-btn {
-  padding: 0.35rem 0.875rem;
-  border-radius: 999px;
-  border: 1px solid #e5d9c8;
-  background: #fff;
-  font-size: 0.8125rem;
-  font-weight: 600;
-  color: #a8441a;
-  cursor: pointer;
 }
 
 /* —— Locked placeholders —— */

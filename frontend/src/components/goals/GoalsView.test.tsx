@@ -68,10 +68,6 @@ function renderView({ profile = savedProfile(), bundleLoaded = true, methodology
 async function addFile(user: ReturnType<typeof userEvent.setup>, from = RECENT_FIRST, to = RECENT_LAST) {
   const input = document.querySelector('input[type="file"]') as HTMLInputElement
   await user.upload(input, new File([csvFor(from, to)], 'tesla-battery.csv'))
-  const pick = screen.queryByRole('radiogroup', { name: /Which provider/i })
-  if (pick) {
-    await user.click(within(pick).getByRole('radio', { name: 'Tesla' }))
-  }
   await screen.findByLabelText('Savings goal (AUD)')
 }
 
@@ -188,7 +184,7 @@ describe('step 1: battery and a recent file', () => {
 
     await user.click(screen.getByPlaceholderText('Search battery brand & model'))
     await user.click(screen.getByRole('option', { name: 'Tesla Powerwall 2' }))
-    expect(screen.getByText('Tesla')).toBeTruthy()
+    expect(screen.getByText(/Battery activity CSV from your VPP app/)).toBeTruthy()
   })
 
   it('uses the battery and rate from the profile and goes straight to the upload', () => {

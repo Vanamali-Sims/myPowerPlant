@@ -1,15 +1,13 @@
 /**
- * Left card on first-visit Goals setup: battery CSV drop zone and provider chips.
+ * Left card on first-visit Goals setup: battery CSV drop zone.
  */
-import { useEffect, useId, useRef, useState } from 'react'
-import { BATTERY_SOURCES, type BatterySourceId } from '../../constants/batterySources'
+import { useId, useRef, useState } from 'react'
 import { BASELINE_RULES, GOAL_RATE_CENTS, GOALS_ONBOARDING } from '../../constants/goals'
 import type { MessageCode } from '../../constants/goalMessages'
 import { FIELD_BOUNDS } from '../../constants/validation'
 import { batteryModels, isAllowedBatteryModel, NOT_SURE_VALUE } from '../../data/profileOptions'
 import { maxIntervalKwh } from '../../lib/goals/batteryLimits'
-import { detectSource } from '../../lib/goals/detectSource'
-import { readBatteryFile } from '../../lib/goals/readBatteryFile'
+import { readBatteryFileAuto } from '../../lib/goals/readBatteryFile'
 import type { MethodologyBundle } from '../../lib/methodologyApi'
 import type { GoalBattery } from '../../types/goals'
 import { Callout } from '../ui/Callout'
@@ -34,9 +32,8 @@ type Props = {
   profileRatePerKwh: number | null
   initialRatePerKwh: number | null
   bundle: MethodologyBundle
-  onReady: (draft: BaselineDraft, meta: { file: File; sourceDetected: boolean }) => void
-  /** Re-read the same file with another provider (State B). */
-  retryWithSource?: { file: File; sourceId: BatterySourceId } | null
+  onReady: (draft: BaselineDraft) => void
+  onChooseAnotherFile?: () => void
 }
 
 export function GoalsBatteryFileCard({
@@ -46,7 +43,7 @@ export function GoalsBatteryFileCard({
   initialRatePerKwh,
   bundle,
   onReady,
-  retryWithSource,
+  onChooseAnotherFile,
 }: Props) {
   const inputId = useId()
   const guideToggleId = useId()
@@ -65,7 +62,6 @@ export function GoalsBatteryFileCard({
   const [readProblem, setReadProblem] = useState<import('../../lib/goals/adapters/types').ReadResult | null>(
     null,
   )
-  const [awaitingProvider, setAwaitingProvider] = useState<File | null>(null)
   const readToken = useRef(0)
 
   const modelOk = isAllowedBatteryModel(battery.model)
@@ -84,15 +80,14 @@ export function GoalsBatteryFileCard({
     .filter(Boolean)
     .join(' ')
 
-  async function readWithSource(next: File, sourceId: BatterySourceId) {
+  async function processFile(next: File) {
     if (!limits) return
     setFile(next)
-    setAwaitingProvider(null)
     setReadProblem(null)
     setProblem(null)
     const token = (readToken.current += 1)
     setReading(true)
-    const result = await readBatteryFile(next, sourceId, limits)
+    const result = await readBatteryFileAuto(next, limits)
     if (token !== readToken.current) return
     setReading(false)
     if (!result.ok) {
@@ -104,26 +99,7 @@ export function GoalsBatteryFileCard({
       setProblem(built.reason)
       return
     }
-    onReady(built.draft, { file: next, sourceDetected: Boolean(detectSource(next.name)) })
-  }
-
-  useEffect(() => {
-    if (!retryWithSource) return
-    void readWithSource(retryWithSource.file, retryWithSource.sourceId)
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- one-shot retry when parent sets source
-  }, [retryWithSource?.file, retryWithSource?.sourceId])
-
-  function processFile(next: File) {
-    if (!limits) return
-    const guess = detectSource(next.name)
-    if (guess) {
-      void readWithSource(next, guess)
-      return
-    }
-    setFile(next)
-    setAwaitingProvider(next)
-    setReadProblem(null)
-    setProblem(null)
+    onReady(built.draft)
   }
 
   function onDrop(event: React.DragEvent) {
@@ -131,7 +107,7 @@ export function GoalsBatteryFileCard({
     setDragging(false)
     if (!canUpload) return
     const dropped = event.dataTransfer.files[0]
-    if (dropped) processFile(dropped)
+    if (dropped) void processFile(dropped)
   }
 
   return (
@@ -227,7 +203,7 @@ export function GoalsBatteryFileCard({
             onChange={(event) => {
               const picked = event.target.files?.[0]
               event.target.value = ''
-              if (picked) processFile(picked)
+              if (picked) void processFile(picked)
             }}
           />
         ) : null}
@@ -240,33 +216,8 @@ export function GoalsBatteryFileCard({
             or <span className="goals-file-card__drop-link">{GOALS_ONBOARDING.browseLink}</span>
           </p>
         )}
-        <p className="goals-file-card__works-with">
-          <span>{GOALS_ONBOARDING.worksWith}</span>
-          {BATTERY_SOURCES.map((source) => (
-            <span key={source.id} className="goals-file-card__chip">{source.label}</span>
-          ))}
-        </p>
+        <p className="goals-file-card__format-hint">{GOALS_ONBOARDING.fileFormatHint}</p>
       </label>
-
-      {awaitingProvider && !reading ? (
-        <div className="goals-file-card__provider-pick" role="radiogroup" aria-label="Which provider is this file from?">
-          <p className="goals-file-card__provider-pick-label">Which provider is this file from?</p>
-          <div className="goals-file-card__provider-pick-options">
-            {BATTERY_SOURCES.map((item) => (
-              <button
-                key={item.id}
-                type="button"
-                role="radio"
-                aria-checked={false}
-                className="goals-file-card__provider-pick-btn"
-                onClick={() => void readWithSource(awaitingProvider, item.id)}
-              >
-                {item.label}
-              </button>
-            ))}
-          </div>
-        </div>
-      ) : null}
 
       {reading ? (
         <p className="goals-file-card__status" role="status">Reading your file on this device…</p>
@@ -285,6 +236,12 @@ export function GoalsBatteryFileCard({
             ) : null
           }
         />
+      ) : null}
+
+      {onChooseAnotherFile ? (
+        <button type="button" className="goals-file-card__change" onClick={onChooseAnotherFile}>
+          Use a different file
+        </button>
       ) : null}
 
       <footer className="goals-file-card__footer">

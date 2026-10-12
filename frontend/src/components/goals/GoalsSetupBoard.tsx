@@ -1,5 +1,4 @@
-import { useId, useState, type Ref } from 'react'
-import type { BatterySourceId } from '../../constants/batterySources'
+import { useId, type Ref } from 'react'
 import type { CalculationContext } from '../../lib/goals/calculate'
 import type { GoalSuggestions } from '../../lib/goals/goalSetup'
 import type { MethodologyBundle } from '../../lib/methodologyApi'
@@ -50,45 +49,19 @@ export function GoalsSetupBoard({
   const formId = useId()
   const battery = profileBattery ?? initialBattery
   const displayRate = profileRatePerKwh ?? initialRatePerKwh
-  const [lastFile, setLastFile] = useState<File | null>(null)
-  const [sourceDetected, setSourceDetected] = useState(true)
-  const [retryWithSource, setRetryWithSource] = useState<{ file: File; sourceId: BatterySourceId } | null>(
-    null,
-  )
-
-  function handleReady(draft: BaselineDraft, meta: { file: File; sourceDetected: boolean }) {
-    setLastFile(meta.file)
-    setSourceDetected(meta.sourceDetected)
-    setRetryWithSource(null)
-    onBaselineReady(draft)
-  }
-
-  function handleChooseAnother() {
-    setLastFile(null)
-    setSourceDetected(true)
-    setRetryWithSource(null)
-    onChooseAnotherFile?.()
-  }
 
   return (
     <div className="goals-setup-shell">
       <div className="goals-setup-board">
-        <div className="goals-setup-board__file">
-          <GoalsBatteryFileCard
-            initialBattery={initialBattery}
-            profileBattery={profileBattery}
-            profileRatePerKwh={profileRatePerKwh}
-            initialRatePerKwh={initialRatePerKwh}
-            bundle={bundle}
-            onReady={handleReady}
-            retryWithSource={retryWithSource}
-          />
-          {unlocked && onChooseAnotherFile ? (
-            <button type="button" className="goals-setup-board__change" onClick={handleChooseAnother}>
-              Use a different file
-            </button>
-          ) : null}
-        </div>
+        <GoalsBatteryFileCard
+          initialBattery={initialBattery}
+          profileBattery={profileBattery}
+          profileRatePerKwh={profileRatePerKwh}
+          initialRatePerKwh={initialRatePerKwh}
+          bundle={bundle}
+          onReady={onBaselineReady}
+          onChooseAnotherFile={unlocked ? onChooseAnotherFile : undefined}
+        />
         <GoalsTargetsCard
           headingRef={headingRef}
           unlocked={unlocked}
@@ -101,11 +74,6 @@ export function GoalsSetupBoard({
           saveError={saveError}
           onSave={onSave}
           formId={formId}
-          showProviderSwitch={unlocked && !sourceDetected && Boolean(lastFile)}
-          onProviderSwitch={(sourceId) => {
-            if (!lastFile) return
-            setRetryWithSource({ file: lastFile, sourceId })
-          }}
         />
       </div>
       <footer className="goals-setup-footer">

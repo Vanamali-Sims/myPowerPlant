@@ -99,7 +99,7 @@ describe('upload before goals are saved (AC1)', () => {
     )
     expect(screen.getByRole('heading', { name: 'Your goals' })).toBeTruthy()
     expect(screen.getByRole('heading', { name: 'Add your battery file' })).toBeTruthy()
-    expect(screen.getByText('Tesla')).toBeTruthy()
+    expect(screen.getByRole('heading', { name: 'Add your battery file' })).toBeTruthy()
     expect(screen.queryByRole('region', { name: 'Upload your battery file' })).toBeNull()
     expect(screen.queryByText('Upload unlocks after both goals are saved.')).toBeNull()
   })

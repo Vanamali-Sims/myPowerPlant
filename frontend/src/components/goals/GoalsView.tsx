@@ -187,6 +187,12 @@ export function GoalsView({ profile, bundle, methodologyError, onLogoClick }: Pr
     }
   })
 
+  useEffect(() => {
+    if (!notice) return
+    const id = window.setTimeout(() => setNotice(''), 8000)
+    return () => window.clearTimeout(id)
+  }, [notice])
+
   function today(): string {
     return melbourneDate(Date.now())
   }
@@ -522,8 +528,19 @@ export function GoalsView({ profile, bundle, methodologyError, onLogoClick }: Pr
       </div>
 
       {notice ? (
-        <div role="status">
-          <Callout tone="success" icon={<CheckIcon />}>
+        <div
+          className={`goals-notice${showOnboardingBoard ? ' goals-notice--setup' : ''}`}
+          role="status"
+        >
+          <Callout
+            tone="success"
+            icon={<CheckIcon />}
+            action={
+              <Button variant="secondary" className="goals-notice__dismiss" onClick={() => setNotice('')}>
+                Dismiss
+              </Button>
+            }
+          >
             {notice}
           </Callout>
         </div>
