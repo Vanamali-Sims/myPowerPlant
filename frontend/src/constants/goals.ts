@@ -165,6 +165,16 @@ export const GOALS_ONBOARDING = {
     `Battery from your profile: ${model} · about ${rateCents} c/kWh`,
 } as const
 
+/** Copy for the full-width goals form card (edit, create step 2, next goal). */
+export const GOALS_FORM = {
+  editTitle: 'Edit your goals',
+  editHelper: 'One for money saved, one for carbon avoided. You can change them any time.',
+  createTitle: 'Set your goals',
+  createHelper: 'Choose a goal for money saved and a goal for carbon avoided. You can change them later.',
+  nextTitle: 'Set your next goal',
+  seasonPill: (monthLabel: string) => `Based on ${monthLabel} · may shift with the seasons`,
+} as const
+
 export const GOALS_PAGE = {
   eyebrow: 'Goals',
   title: 'Grow your savings. Grow your tree.',
