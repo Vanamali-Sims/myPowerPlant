@@ -123,7 +123,7 @@ export const IMPROVE_FEATURES: {
 /** Shown once when the form opens with answers from the explore form. */
 export const IMPROVE_PREFILL_NOTICE = {
   title: 'We used your earlier answers',
-  body: 'We filled in what you told us in the Simulate my savings form. Check them, and add anything that is missing.',
+  body: 'We filled in what you told us in the explore form. Check them, and add anything that is missing.',
   action: 'Got it',
 } as const
 
@@ -162,7 +162,7 @@ export const IMPROVE_PROFILE = {
   remindersEmpty: 'No reminders yet. Add event days to your calendar from the Reminders tab.',
   resetHint: 'Start the improve setup again. This cannot be undone.',
   resetKeepsExplore:
-    'This clears your VPP, your goals and history, and your downloaded reminders from this device. Answers from the Simulate my savings form stay, so the setup form fills them in again.',
+    'This clears your VPP, your goals and history, and your downloaded reminders from this device. Answers from the explore form stay, so the setup form fills them in again.',
   resetClearsAll:
     'This clears your setup answers, your goals and history, and your downloaded reminders from this device. You can fill the setup form again afterwards.',
 } as const

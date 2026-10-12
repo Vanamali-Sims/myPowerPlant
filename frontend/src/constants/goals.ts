@@ -196,9 +196,9 @@ export const GOALS_PAGE = {
 export const GOALS_UPLOAD = {
   title: 'Upload this month’s file',
   lede: 'Add your battery activity file to update your goals and grow your tree.',
-  drop: 'Drop your CSV here, or',
+  drop: 'Drop your CSV here',
   browse: 'browse',
-  hint: 'Your Tesla or Amber battery export (.csv) — we’ll detect which one.',
+  hint: 'The battery export (.csv) from your VPP provider app.',
   guide: 'How to get your file',
   privacy: 'Read on this device only. Never uploaded or kept.',
   confirm: 'Update my goals',

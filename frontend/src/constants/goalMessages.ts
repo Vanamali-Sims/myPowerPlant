@@ -107,7 +107,7 @@ export const GOAL_MESSAGES: Record<MessageCode, GoalMessageSpec> = {
   source_not_supported: {
     severity: 'error',
     title: 'We cannot read files from this source yet.',
-    nextStep: 'Choose Tesla or Amber and use the template layout.',
+    nextStep: 'Download the CSV from your VPP provider app, in the template layout.',
   },
   estimates_unavailable: {
     severity: 'error',

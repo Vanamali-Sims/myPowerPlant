@@ -9,6 +9,7 @@ import { useEffect, useId, useState, type Dispatch, type FormEvent, type SetStat
 import { ASSISTANT_COPY } from '../../constants/tutorials'
 import type { MethodologyBundle } from '../../lib/methodologyApi'
 import { applyProfilePatch } from '../../lib/chat/applyProfilePatch'
+import { postcodeError } from '../../lib/validateProfile'
 import type { ProfileData } from '../../types/profile'
 import { ActionsProfileChat } from './ActionsProfileChat'
 import { AssistantBot } from './AssistantBot'
@@ -64,7 +65,10 @@ export function ChatDock({
   const [actionsTab, setActionsTab] = useState<ActionsTab>('location')
   const [postcodeDraft, setPostcodeDraft] = useSyncedDraft(profile.postcode)
   const [status, setStatus] = useState('')
+  /** Why the typed postcode cannot be saved, shown under the box. */
+  const [postcodeProblem, setPostcodeProblem] = useState('')
   const postcodeId = useId()
+  const postcodeProblemId = useId()
   const statusId = useId()
 
   const trayReady = hasProfile && Boolean(bundle) && !methodologyError
@@ -92,11 +96,19 @@ export function ChatDock({
   function savePostcode(event: FormEvent) {
     event.preventDefault()
     const digits = postcodeDraft.trim()
-    const result = applyProfilePatch(profile, { postcode: digits })
-    if (!result.ok) {
-      setStatus(result.message)
+    const problem = postcodeError(digits)
+    if (problem) {
+      setPostcodeProblem(problem)
+      setStatus('')
       return
     }
+    const result = applyProfilePatch(profile, { postcode: digits })
+    if (!result.ok) {
+      setPostcodeProblem(result.errors.postcode ?? result.message)
+      setStatus('')
+      return
+    }
+    setPostcodeProblem('')
     onSaveProfile(result.profile)
     setStatus(result.message)
   }
@@ -161,7 +173,16 @@ export function ChatDock({
                   inputMode="numeric"
                   maxLength={4}
                   value={postcodeDraft}
-                  onChange={(event) => setPostcodeDraft(event.target.value)}
+                  onChange={(event) => {
+                    setPostcodeDraft(event.target.value)
+                    setPostcodeProblem('')
+                  }}
+                  onBlur={() => {
+                    const typed = postcodeDraft.trim()
+                    setPostcodeProblem(typed && typed !== profile.postcode.trim() ? (postcodeError(typed) ?? '') : '')
+                  }}
+                  aria-invalid={postcodeProblem ? true : undefined}
+                  aria-describedby={postcodeProblem ? postcodeProblemId : undefined}
                   autoComplete="postal-code"
                 />
                 <Button
@@ -172,6 +193,11 @@ export function ChatDock({
                 >
                   Save
                 </Button>
+                {postcodeProblem ? (
+                  <p id={postcodeProblemId} className="chat-actions__problem" role="alert">
+                    {postcodeProblem}
+                  </p>
+                ) : null}
               </form>
             ) : null}
             {actionsTab === 'profile' ? (

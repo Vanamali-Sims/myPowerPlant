@@ -239,7 +239,7 @@
 }
 
 .goals-upload__setup.ui-btn,
-.goals-source .ui-btn,
+.goals-file-guide > .ui-btn,
 .goals-file .ui-btn,
 .goals-summary .ui-btn,
 .goal-message .ui-btn {
@@ -267,7 +267,6 @@
   margin-top: 0.15rem;
 }
 
-.goals-source h3,
 .goals-summary h3 {
   margin: 0 0 0.6rem;
   font-size: 1.1rem;
@@ -283,8 +282,8 @@
   overflow-wrap: anywhere;
 }
 
-.goals-source .goals-examples {
-  margin-top: 0.9rem;
+.goals-file-guide {
+  margin-bottom: 0.9rem;
 }
 
 .goals-source__link {
@@ -1996,57 +1995,6 @@
   cursor: pointer;
 }
 
-.upload-drop {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 0.35rem;
-  padding: 1.5rem 1rem;
-  border: 1.5px dashed var(--terra-200);
-  border-radius: 14px;
-  background: var(--terra-50);
-  text-align: center;
-}
-
-.upload-drop.is-dragging {
-  border-color: var(--accent);
-  background: var(--accent-tint);
-}
-
-.upload-drop__icon {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 2.4rem;
-  height: 2.4rem;
-  margin-bottom: 0.35rem;
-  border-radius: 50%;
-  background: var(--terra-100);
-  color: var(--accent-deep);
-  font-weight: 700;
-}
-
-.upload-drop__title {
-  margin: 0;
-  font-weight: 600;
-}
-
-.upload-drop__browse {
-  padding: 0;
-  border: none;
-  background: none;
-  font: inherit;
-  color: var(--accent-contrast);
-  text-decoration: underline;
-  cursor: pointer;
-}
-
-.upload-drop__hint {
-  margin: 0;
-  font-size: 0.78rem;
-  color: var(--ink-secondary);
-}
-
 .upload-file {
   display: flex;
   align-items: center;
@@ -2173,41 +2121,59 @@
 }
 
 .upload-dialog__links {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: space-between;
-  gap: 0.5rem;
-  font-size: 0.75rem;
+  margin: 0;
 }
 
-.upload-dialog__guide {
-  padding: 0;
-  border: none;
-  background: none;
-  font: inherit;
-  font-weight: 600;
-  color: var(--accent-contrast);
-  text-decoration: underline;
-  cursor: pointer;
+/* First-visit drop area (goals-setup-board.css), scaled down for the dialog. */
+.upload-dialog__drop.goals-file-card__drop {
+  flex-grow: 0;
+  min-height: 0;
+  gap: 0.45rem;
+  padding: 1.1rem 1rem 1rem;
 }
 
-.upload-dialog__privacy {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.35rem;
-  color: var(--ink-secondary);
+.upload-dialog__drop .goals-file-card__csv-art {
+  width: 92px;
+  height: auto;
+  margin-bottom: 0.25rem;
 }
 
-.upload-dialog__guide-panel {
-  padding: 0.75rem 0.9rem;
-  border-radius: 10px;
-  background: var(--cream-card);
+.upload-dialog__drop .goals-file-card__drop-title {
+  font-size: 1.2rem;
+}
+
+.upload-dialog__drop .goals-file-card__drop-browse {
+  font-size: 0.875rem;
+}
+
+.upload-dialog__drop .goals-file-card__format-hint {
+  margin-top: 0.1rem;
+  font-size: 0.78rem;
+}
+
+/* The file input sits just before the drop area; its focus shows on the area. */
+.upload-dialog__input:focus-visible + .upload-dialog__drop {
+  outline: 3px solid var(--focus-ring);
+  outline-offset: 3px;
+}
+
+.upload-dialog .goals-file-card__privacy {
+  min-width: 0;
+  font-size: 0.8125rem;
+}
+
+.upload-dialog .goals-file-card__guide {
+  min-height: 0;
+  padding: 0.25rem 0;
+  font-size: 0.875rem;
+}
+
+.upload-dialog .goals-file-card__guide-panel {
   font-size: 0.82rem;
 }
 
-.upload-dialog__guide-panel p,
-.upload-dialog__guide-panel ul {
+.upload-dialog .goals-file-card__guide-panel p,
+.upload-dialog .goals-file-card__guide-panel ul {
   margin: 0 0 0.4rem;
 }
 

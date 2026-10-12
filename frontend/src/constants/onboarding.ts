@@ -1,4 +1,13 @@
 /** Screen 1 intro captions, in the order they play. */
+/** Seconds each caption of the explore story stays up. */
+export const STORY_SLIDE_SECONDS = 3.5
+
+/**
+ * The story was designed at 5.3 s a caption; every scene, caption and
+ * progress timing is scaled by this so the drawing stays in step with the words.
+ */
+export const STORY_SPEED = STORY_SLIDE_SECONDS / 5.3
+
 export const INTRO_STEPS = [
   {
     tag: 'Solar',

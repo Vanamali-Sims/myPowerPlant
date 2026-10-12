@@ -52,7 +52,22 @@ export const RIVER_DISCLAIMER =
 
 export const DASHBOARD_PLANS_CTA = 'Save me money'
 
-export const DASHBOARD_PLANS_CAPTION =
-  'VPP plans that help you achieve these savings'
+/** The band under the balance card: three steps, the plans button, and the yearly saving. */
+export const DASHBOARD_PATH = {
+  eyebrow: '3 steps to start saving',
+  steps: [
+    { title: 'Compare plans', hint: (kwh: string) => `Matched to your ${kwh}` },
+    { title: 'Pick one', hint: () => 'See what each pays' },
+    { title: 'Start earning', hint: () => 'Credits land on your bill' },
+  ],
+  /** Fallback for the first hint when there is nothing left over or short. */
+  matchedToHome: 'Matched to your home',
+  /** Label on the line from the VPP card down to the yearly saving. */
+  via: {
+    surplus: 'via discharge credits',
+    deficit: 'via cheaper VPP energy',
+    balanced: 'via event payments',
+  },
+} as const
 
 export const DASHBOARD_POTENTIAL_SAVINGS_LABEL = 'Potential money saved'

@@ -7,6 +7,9 @@ import { useEffect, useId, useRef, useState, type ReactNode } from 'react'
 import { ASSISTANT_COPY, TUTORIAL_TARGETS } from '../../constants/tutorials'
 import { BotAvatar } from '../ui/BotAvatar'
 
+/** A menu opened by hover closes this long after the mouse leaves, so crossing to it does not flicker. */
+export const HOVER_CLOSE_MS = 300
+
 export type AssistantItem = {
   id: string
   label: string
@@ -34,11 +37,17 @@ type Props = {
  * @param props.smiling - Smile regardless of hover, e.g. during the tutorial
  * @returns JSX.Element
  *
- * Esc or a click elsewhere closes the menu. Choosing an item returns focus to
- * the robot first, so anything the item opens can hand focus back to it.
+ * Hovering the robot with a mouse opens the menu, and it closes shortly after
+ * the mouse leaves the robot and menu. A click (or tap, or Enter) opens it and
+ * keeps it open; clicking the robot again, Esc, or a click elsewhere closes it.
+ * Choosing an item returns focus to the robot first, so anything the item
+ * opens can hand focus back to it.
  */
 export function AssistantBot({ items, smiling = false }: Props) {
   const [open, setOpen] = useState(false)
+  /** Opened by a click: stays open when the mouse leaves. */
+  const [pinned, setPinned] = useState(false)
+  const closeTimer = useRef(0)
   /** Hovered or focused: the robot smiles back. */
   const [noticed, setNoticed] = useState(false)
   const menuId = useId()
@@ -52,10 +61,13 @@ export function AssistantBot({ items, smiling = false }: Props) {
       if (event.key !== 'Escape') return
       event.preventDefault()
       setOpen(false)
+      setPinned(false)
       botRef.current?.focus()
     }
     function onPointerDown(event: PointerEvent) {
-      if (!rootRef.current?.contains(event.target as Node)) setOpen(false)
+      if (rootRef.current?.contains(event.target as Node)) return
+      setOpen(false)
+      setPinned(false)
     }
     document.addEventListener('keydown', onKeyDown)
     document.addEventListener('pointerdown', onPointerDown)
@@ -65,17 +77,52 @@ export function AssistantBot({ items, smiling = false }: Props) {
     }
   }, [open])
 
+  useEffect(() => () => window.clearTimeout(closeTimer.current), [])
+
   const hint = items.find((item) => item.unavailableReason)?.unavailableReason
+
+  function close() {
+    window.clearTimeout(closeTimer.current)
+    setOpen(false)
+    setPinned(false)
+  }
+
+  function toggleFromClick() {
+    window.clearTimeout(closeTimer.current)
+    // Already open from hover: the click keeps it open rather than closing it.
+    if (open && !pinned) {
+      setPinned(true)
+      return
+    }
+    if (open) close()
+    else {
+      setOpen(true)
+      setPinned(true)
+    }
+  }
 
   function choose(item: AssistantItem) {
     if (item.unavailableReason) return
     botRef.current?.focus()
-    setOpen(false)
+    close()
     item.onSelect()
   }
 
   return (
-    <div ref={rootRef} className="assistant">
+    <div
+      ref={rootRef}
+      className="assistant"
+      onPointerEnter={(event) => {
+        if (event.pointerType !== 'mouse') return
+        window.clearTimeout(closeTimer.current)
+        setOpen(true)
+      }}
+      onPointerLeave={(event) => {
+        if (event.pointerType !== 'mouse' || pinned) return
+        window.clearTimeout(closeTimer.current)
+        closeTimer.current = window.setTimeout(close, HOVER_CLOSE_MS)
+      }}
+    >
       {open ? (
         <div id={menuId} className="assistant__menu" role="group" aria-label={ASSISTANT_COPY.menuLabel}>
           {items.map((item) => (
@@ -115,7 +162,7 @@ export function AssistantBot({ items, smiling = false }: Props) {
         aria-expanded={open}
         aria-controls={open ? menuId : undefined}
         data-tour={TUTORIAL_TARGETS.bot}
-        onClick={() => setOpen((current) => !current)}
+        onClick={toggleFromClick}
         onPointerEnter={() => setNoticed(true)}
         onPointerLeave={() => setNoticed(false)}
         onFocus={() => setNoticed(true)}

@@ -5,6 +5,7 @@ import { useEffect, useRef, useState } from 'react'
 import { HOME_VPP_ONBOARDING, IMPROVE_PREFILL_NOTICE } from '../../constants/improve'
 import { finishImproveProfile, validateHomeVppStep } from '../../lib/improveProfile'
 import type { MethodologyBundle } from '../../lib/methodologyApi'
+import { useBlurValidation } from '../../lib/useBlurValidation'
 import { hasErrors, type FieldErrors } from '../../lib/validateProfile'
 import type { ProfileData } from '../../types/profile'
 import { Button } from '../ui/Button'
@@ -29,6 +30,8 @@ export function ImproveSetupForm({
 }: Props) {
   const [errors, setErrors] = useState<FieldErrors>({})
   const [noticeOpen, setNoticeOpen] = useState(prefilled)
+  // Fields are checked as people leave them, not only on save.
+  const blur = useBlurValidation(() => validateHomeVppStep(profile), setErrors)
 
   function patch<K extends keyof ProfileData>(field: K, value: ProfileData[K]) {
     const fieldSources =
@@ -36,6 +39,7 @@ export function ImproveSetupForm({
         ? { ...profile.fieldSources, [field]: 'user' as const }
         : profile.fieldSources
     onChange({ ...profile, [field]: value, fieldSources })
+    blur.touch(field)
     if (errors[field]) {
       setErrors((current) => {
         const copy = { ...current }
@@ -72,6 +76,7 @@ export function ImproveSetupForm({
         onChange={onChange}
         onPatch={patch}
         onLogoClick={onLogoClick}
+        onFieldBlur={blur.onBlur}
       />
       <footer className="home-vpp__footer">
         <Button type="button" variant="primary" className="home-vpp__save" onClick={saveHomeVpp}>

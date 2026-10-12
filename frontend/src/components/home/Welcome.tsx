@@ -11,7 +11,8 @@ import {
   type WelcomeWin,
 } from '../../constants'
 import { Button } from '../ui/Button'
-import { BoltIcon, CoinIcon, SunIcon, SwapIcon } from '../ui/icons'
+import { CoinIcon, SunIcon, SwapIcon } from '../ui/icons'
+import { MyPowerPlantMark } from '../ui/MyPowerPlantMark'
 
 type Props = {
   hasProfile: boolean
@@ -50,8 +51,8 @@ export function Welcome({ hasProfile, onGetStarted, onViewDashboard, onLogoClick
         onClick={onLogoClick}
         aria-label="MyPowerPlant home"
       >
-        <span className="brand__mark">
-          <BoltIcon width={14} height={14} />
+        <span className="brand__mark brand__mark--logo">
+          <MyPowerPlantMark width={28} height={28} />
         </span>
         MyPowerPlant
       </button>

@@ -24,7 +24,8 @@ import {
 import type { ProfileData } from '../../types/profile'
 import type { EventType } from '../../types/reminders'
 import { Button } from '../ui/Button'
-import { BoltIcon, CalendarIcon, DownloadIcon } from '../ui/icons'
+import { CalendarIcon, DownloadIcon } from '../ui/icons'
+import { MyPowerPlantMark } from '../ui/MyPowerPlantMark'
 import { ReminderChart } from './ReminderChart'
 
 /** Used for the forecast when no postcode is set, matching the solar forecast fallback. */
@@ -272,8 +273,8 @@ export function RemindersView({
           onClick={onLogoClick}
           aria-label="MyPowerPlant home"
         >
-          <span className="brand__mark">
-            <BoltIcon width={14} height={14} />
+          <span className="brand__mark brand__mark--logo">
+            <MyPowerPlantMark width={28} height={28} />
           </span>
           MyPowerPlant
         </button>
@@ -285,6 +286,7 @@ export function RemindersView({
           <p className="reminders-page__lede">Know when to share or keep.</p>
         </div>
         <div className="reminders-page__toolbar">
+          <PillToggle label="Event type" value={eventType} options={EVENT_CHOICES} onChange={onEventType} tone="dark" />
           <label className="reminders-period">
             <CalendarIcon width={16} height={16} />
             <span>Reminder period</span>
@@ -296,7 +298,6 @@ export function RemindersView({
               ))}
             </select>
           </label>
-          <PillToggle label="Event type" value={eventType} options={EVENT_CHOICES} onChange={onEventType} tone="dark" />
         </div>
       </div>
 

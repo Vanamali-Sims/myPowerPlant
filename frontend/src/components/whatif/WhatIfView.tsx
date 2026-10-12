@@ -17,7 +17,8 @@ import { kwhPerCycle, modelledWeeklyKwh, withUsageChange } from '../../lib/whati
 import type { ProfileData, SolarDirection } from '../../types/profile'
 import { Button } from '../ui/Button'
 import { Callout } from '../ui/Callout'
-import { BoltIcon, BulbIcon } from '../ui/icons'
+import { BulbIcon } from '../ui/icons'
+import { MyPowerPlantMark } from '../ui/MyPowerPlantMark'
 import { WhatIfDayChart } from './WhatIfDayChart'
 import { WhatIfExplain } from './WhatIfExplain'
 import { WhatIfFlow } from './WhatIfFlow'
@@ -368,8 +369,8 @@ export function WhatIfView({
           onClick={onLogoClick}
           aria-label="MyPowerPlant home"
         >
-          <span className="brand__mark">
-            <BoltIcon width={14} height={14} />
+          <span className="brand__mark brand__mark--logo">
+            <MyPowerPlantMark width={28} height={28} />
           </span>
           MyPowerPlant
         </button>

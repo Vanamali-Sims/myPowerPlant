@@ -17,8 +17,8 @@ type Props = {
 
 const CX = 150
 const CY = 150
-const R_OUTER = 132
-const R_INNER = 104
+const R_OUTER = 140
+const R_INNER = 107
 
 export function EnergyRing({
   generated,
@@ -51,7 +51,7 @@ export function EnergyRing({
   } as CSSProperties
 
   return (
-    <div className={`energy-ring${dimClass}`} style={style}>
+    <div className={`energy-ring${focus ? ` is-focus-${focus}` : ''}${dimClass}`} style={style}>
       <svg
         className="energy-ring__svg"
         viewBox="0 0 300 300"

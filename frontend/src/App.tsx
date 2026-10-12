@@ -77,7 +77,14 @@ function initialView(): View {
 }
 
 function App() {
+  /** The saved profile: the only answers every page reads. */
   const [profile, setProfile] = useState<ProfileData>(loadProfile)
+  /**
+   * Answers in an open setup form (explore or improve) that are not saved yet.
+   * Nothing else reads them, so a half-filled or wrong form never reaches the
+   * dashboard, the improve flow, or the header; finishing the form saves them.
+   */
+  const [formDraft, setFormDraft] = useState<ProfileData | null>(null)
   const [journey, setJourney] = useState<UserJourney | null>(loadJourney)
   const [view, setView] = useState<View>(initialView)
   const [notice, setNotice] = useState('')
@@ -179,6 +186,7 @@ function App() {
   }
 
   function startSetup() {
+    setFormDraft(null)
     setView('setup')
     setNotice('')
     setSetupStepId('household')
@@ -196,6 +204,7 @@ function App() {
   function completeSetup(next: ProfileData) {
     const saved = saveProfile(next)
     setProfile(saved)
+    setFormDraft(null)
     setView('dashboard')
     setNotice('')
   }
@@ -206,6 +215,7 @@ function App() {
   }
 
   function startImproveSetup(feature: ImproveFeatureId | null = null) {
+    setFormDraft(null)
     setImprovePrefilled(prefilledFromExplore(profile))
     setPendingFeature(feature)
     setView('improveSetup')
@@ -225,6 +235,7 @@ function App() {
   function completeImproveSetup(next: ProfileData) {
     const saved = saveProfile(next, 'improve')
     setProfile(saved)
+    setFormDraft(null)
     setView(pendingFeature ?? 'rainHub')
     setPendingFeature(null)
     setNotice('')
@@ -239,8 +250,8 @@ function App() {
   }
 
   function exitImproveSetup() {
-    // Unsaved edits stay out of storage: reload what was last saved.
-    setProfile(loadProfile())
+    // Unsaved answers are dropped; the saved profile was never changed.
+    setFormDraft(null)
     setPendingFeature(null)
     setView('rainHub')
     setNotice('')
@@ -250,6 +261,7 @@ function App() {
     clearStoredProfile()
     const blank = emptyProfile()
     setProfile(blank)
+    setFormDraft(null)
     setView('setup')
     setNotice('')
   }
@@ -439,8 +451,8 @@ function App() {
             ) : null}
             {!rainJourney && view === 'setup' ? (
               <SetupForm
-                profile={profile}
-                onChange={setProfile}
+                profile={formDraft ?? profile}
+                onChange={setFormDraft}
                 onComplete={completeSetup}
                 onLogoClick={goHome}
                 onStepChange={setSetupStepId}
@@ -452,7 +464,6 @@ function App() {
                 profile={profile}
                 onSave={saveEdits}
                 onReset={resetProfile}
-                onLiveChange={setProfile}
                 onLogoClick={goHome}
                 onViewDashboard={() => {
                   setView('dashboard')
@@ -502,10 +513,10 @@ function App() {
             ) : null}
             {rainJourney && view === 'improveSetup' ? (
               <ImproveSetupForm
-                profile={profile}
+                profile={formDraft ?? profile}
                 bundle={bundle}
                 prefilled={improvePrefilled}
-                onChange={setProfile}
+                onChange={setFormDraft}
                 onComplete={completeImproveSetup}
                 onLogoClick={exitImproveSetup}
               />
@@ -561,7 +572,9 @@ function App() {
           </div>
         </AppShell>
       </div>
-      {exploreIntroRun > 0 && view === 'welcome' ? (
+      {/* Mounted from the split-screen choice on; once finished it renders nothing and stays
+          mounted, so going back to the explore home later never replays it. */}
+      {exploreIntroRun > 0 ? (
         <ExploreIntro
           key={exploreIntroRun}
           onDone={() => setExploreIntroPlaying(false)}

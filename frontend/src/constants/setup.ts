@@ -41,7 +41,7 @@ export const SETUP_INTRO = {
   action: 'Continue',
   skipAll: 'Skip all',
   skipAllNote:
-    'Skip all fills any question you have not answered with a typical Kew household, so you can see your dashboard now. You can change the answers later in Profile.',
+    'Skip all fills any question you have not answered with a typical Kew household. You can change it in Profile.',
 } as const
 
 export const SETUP_STEPS: SetupStep[] = [

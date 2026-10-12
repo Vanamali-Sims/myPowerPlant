@@ -89,7 +89,7 @@ export const WELCOME_HERO = {
   titleLead: 'Your battery could be',
   titleEmphasis: 'paying you.',
   lede: 'Share your stored energy through a VPP and save on every bill.',
-  cta: 'Simulate my savings',
+  cta: 'Show me how',
 } as const
 
 /** Hero comparison card: share of a regular bill saved, without and with a VPP. */
@@ -132,7 +132,7 @@ export const WELCOME_WINS: WelcomeWin[] = [
   {
     id: 'renewables',
     eyebrow: 'Promoting renewables',
-    title: 'No sunshine wasted',
+    title: 'Take your next step to your renewable journey',
     body: 'Spare solar is stored and shared, not thrown away.',
   },
 ]

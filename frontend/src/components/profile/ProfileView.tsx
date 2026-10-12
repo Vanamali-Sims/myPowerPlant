@@ -7,6 +7,7 @@ import type { ProfileData, SetupStepId } from '../../types/profile'
 import { displayValue, formatUpdatedAt, isBaseline } from '../../lib/formatProfile'
 import { buildKpiReport } from '../../lib/kpis'
 import { fetchMethodology, type MethodologyBundle } from '../../lib/methodologyApi'
+import { useBlurValidation } from '../../lib/useBlurValidation'
 import { hasErrors, validateStep, type FieldErrors } from '../../lib/validateProfile'
 import { ConsumptionDonut } from '../dashboard/ConsumptionDonut'
 import { BrandWordmark } from '../ui/BrandWordmark'
@@ -24,7 +25,6 @@ type Props = {
   profile: ProfileData
   onSave: (profile: ProfileData) => void
   onReset: () => void
-  onLiveChange?: (profile: ProfileData) => void
   onLogoClick: () => void
   onViewDashboard: () => void
 }
@@ -42,7 +42,6 @@ export function ProfileView({
   profile,
   onSave,
   onReset,
-  onLiveChange,
   onLogoClick,
   onViewDashboard,
 }: Props) {
@@ -51,6 +50,8 @@ export function ProfileView({
   const [errors, setErrors] = useState<FieldErrors>({})
   const [confirmReset, setConfirmReset] = useState(false)
   const [bundle, setBundle] = useState<MethodologyBundle | null>(null)
+  // The open section is checked as people leave each field; the header postcode checks itself.
+  const blur = useBlurValidation(() => (editing ? validateStep(editing, draft) : {}), setErrors)
 
   useEffect(() => {
     let cancelled = false
@@ -80,7 +81,7 @@ export function ProfileView({
       next.panelWatts = ''
     }
     setDraft(next)
-    onLiveChange?.(next)
+    blur.touch(field)
     if (errors[field]) {
       setErrors((current) => {
         const next = { ...current }
@@ -112,6 +113,7 @@ export function ProfileView({
     setEditing(null)
     setConfirmReset(false)
     setErrors({})
+    blur.reset()
   }
 
   function cancel() {
@@ -119,6 +121,7 @@ export function ProfileView({
     setEditing(null)
     setConfirmReset(false)
     setErrors({})
+    blur.reset()
   }
 
   return (
@@ -185,7 +188,7 @@ export function ProfileView({
                   </Button>
                 </div>
                 {isEditing ? (
-                  <div className="profile-card__edit">
+                  <div className="profile-card__edit" onBlur={blur.onBlur}>
                     {section.id === 'household' ? (
                       <HouseholdProfileStep
                         profile={draft}

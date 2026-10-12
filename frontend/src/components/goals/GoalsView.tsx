@@ -40,7 +40,8 @@ import {
 import type { ProfileData } from '../../types/profile'
 import { Button } from '../ui/Button'
 import { Callout } from '../ui/Callout'
-import { BoltIcon, CheckIcon } from '../ui/icons'
+import { CheckIcon } from '../ui/icons'
+import { MyPowerPlantMark } from '../ui/MyPowerPlantMark'
 import type { BaselineDraft } from './baselineDraft'
 import { BaselineStep } from './BaselineStep'
 import { GoalsSetupBoard } from './GoalsSetupBoard'
@@ -499,8 +500,8 @@ export function GoalsView({ profile, bundle, methodologyError, onLogoClick }: Pr
           onClick={onLogoClick}
           aria-label="MyPowerPlant home"
         >
-          <span className="brand__mark">
-            <BoltIcon width={14} height={14} />
+          <span className="brand__mark brand__mark--logo">
+            <MyPowerPlantMark width={28} height={28} />
           </span>
           MyPowerPlant
         </button>
