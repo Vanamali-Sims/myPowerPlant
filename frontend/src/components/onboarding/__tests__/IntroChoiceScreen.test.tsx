@@ -67,6 +67,30 @@ describe('Screen 1: the intro', () => {
     expect(intro()?.querySelector('.bi-logo .ic-logo-img')).not.toBeNull()
   })
 
+  it('has one logo on screen: the header logo waits until the intro’s logo has landed on it', () => {
+    renderScreen()
+    const mark = () => document.querySelector('.ic-header .ic-mark') as HTMLElement
+    expect(mark().classList.contains('is-awaiting-intro')).toBe(true)
+    act(() => vi.advanceTimersByTime(7_000))
+    expect(mark().classList.contains('is-awaiting-intro')).toBe(true)
+    act(() => vi.advanceTimersByTime(200))
+    expect(mark().classList.contains('is-awaiting-intro')).toBe(false)
+  })
+
+  it('shows the header logo once a skipped intro clears', () => {
+    renderScreen()
+    const mark = () => document.querySelector('.ic-header .ic-mark') as HTMLElement
+    fireEvent.keyDown(intro() as HTMLElement, { key: 'Escape' })
+    expect(mark().classList.contains('is-awaiting-intro')).toBe(true)
+    act(() => vi.advanceTimersByTime(1_100))
+    expect(mark().classList.contains('is-awaiting-intro')).toBe(false)
+  })
+
+  it('shows the header logo at once when there is no intro', () => {
+    renderScreen(false)
+    expect(document.querySelector('.ic-header .ic-mark')?.classList.contains('is-awaiting-intro')).toBe(false)
+  })
+
   it('ends after 7.1 seconds, then hands focus to the choice', () => {
     const { onIntroDone } = renderScreen()
     act(() => vi.advanceTimersByTime(7_000))
@@ -119,8 +143,8 @@ describe('Screen 2: Which describes you?', () => {
     fireEvent.click(explore)
     expect(onExplore).toHaveBeenCalledOnce()
 
-    const improve = screen.getByRole('button', { name: /Improve my\s*VPP setup/ })
-    expect(within(improve).getByText('Already have a battery')).toBeTruthy()
+    const improve = screen.getByRole('button', { name: /Improve my\s*VPP experience/ })
+    expect(within(improve).getByText('Already in VPP')).toBeTruthy()
     fireEvent.click(improve)
     expect(onImprove).toHaveBeenCalledOnce()
   })
@@ -209,7 +233,7 @@ describe('first visit in the app', () => {
 
   it('opens Screen 3.1 from the right card, with no story intro', () => {
     skipIntro()
-    fireEvent.click(screen.getByRole('button', { name: /Improve my\s*VPP setup/ }))
+    fireEvent.click(screen.getByRole('button', { name: /Improve my\s*VPP experience/ }))
     expect(screen.getByRole('heading', { level: 1, name: 'Unlock the full potential of your VPP.' })).toBeTruthy()
     expect(story()).toBeNull()
     expect(loadJourney()).toBe('rain')

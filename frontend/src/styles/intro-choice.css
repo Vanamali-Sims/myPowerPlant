@@ -186,6 +186,11 @@
   border-radius: 12px;
 }
 
+/* The intro's own logo lands here at the end, so this one waits until the intro clears. */
+.ic-mark.is-awaiting-intro {
+  visibility: hidden;
+}
+
 .ic-question {
   margin: 0;
   padding: 10px 20px;

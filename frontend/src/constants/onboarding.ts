@@ -57,8 +57,8 @@ export const PATH_CHOICE = {
     action: 'Explore getting started',
   },
   improve: {
-    eyebrow: 'Already have a battery',
-    title: ['Improve my', 'VPP setup'],
+    eyebrow: 'Already in VPP',
+    title: ['Improve my', 'VPP experience'],
     body: 'Try get reminders, goal tracker, and what if scenarios before peak events.',
     action: 'Improve my setup',
   },
