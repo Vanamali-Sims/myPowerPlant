@@ -77,13 +77,12 @@ describe('the tree shows both goals (AC1)', () => {
     expect(leaves()).toBe(before + 1)
     rerender(<GoalTree carbonPercent={15} savingsPercent={25} />)
     expect(container.querySelectorAll('.goal-tree__fruit')).toHaveLength(5)
-    expect(container.querySelectorAll('.goal-tree__fruit--ripening')).toHaveLength(0)
   })
 
-  it('shows one ripening fruit while the next 5 percent of savings is part way', () => {
+  it('shows only whole orange fruit, never a part-grown one', () => {
     const { container } = render(<GoalTree carbonPercent={15} savingsPercent={27} />)
-    expect(container.querySelectorAll('.goal-tree__fruit')).toHaveLength(6)
-    expect(container.querySelectorAll('.goal-tree__fruit--ripening')).toHaveLength(1)
+    expect(container.querySelectorAll('.goal-tree__fruit')).toHaveLength(5)
+    expect(container.querySelectorAll('.goal-tree__fruit--ripening')).toHaveLength(0)
   })
 
   it('can leave out the caption when the page shows the stage elsewhere', () => {
@@ -197,7 +196,8 @@ describe('goal cards and stage timeline', () => {
     expect(within(savings).getByRole('progressbar').getAttribute('aria-valuenow')).toBe('29')
     expect(savings.textContent).toContain('$87')
     expect(savings.textContent).toContain('of $300')
-    expect(savings.textContent).toContain('5 oranges · 1 ripening')
+    expect(savings.textContent).toContain('5 oranges')
+    expect(savings.textContent).not.toContain('ripening')
     expect(savings.textContent).toContain('~29% / month')
     const carbon = screen.getByRole('article', { name: 'Carbon goal' })
     expect(carbon.textContent).toContain('230 kg')

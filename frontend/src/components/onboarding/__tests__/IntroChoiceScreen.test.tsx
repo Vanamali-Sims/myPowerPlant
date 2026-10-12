@@ -174,6 +174,40 @@ describe('first visit in the app', () => {
     return screen.queryByRole('button', { name: /^How a VPP works/ })
   }
 
+  it('does not play the explore story over the improve home after a reset', () => {
+    // jsdom has no modal dialogs; the Path dialog only needs open and close.
+    if (!HTMLDialogElement.prototype.showModal) {
+      HTMLDialogElement.prototype.showModal = function showModal(this: HTMLDialogElement) {
+        this.setAttribute('open', '')
+      }
+      HTMLDialogElement.prototype.close = function close(this: HTMLDialogElement) {
+        this.removeAttribute('open')
+      }
+    }
+    markTutorialSeen('explore', 'done')
+    skipIntro()
+    fireEvent.click(screen.getByRole('button', { name: /Get started\s*with VPPs/ }))
+    act(() => vi.advanceTimersByTime(EXPLORE_INTRO_MS + 100))
+    expect(story()).toBeNull()
+
+    // Switch to improve, then reset everything from Path.
+    const rail = () => within(screen.getByRole('complementary', { name: 'App' }))
+    fireEvent.click(rail().getByRole('button', { name: 'Path' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Switch to improving my VPP setup' }))
+    act(() => vi.advanceTimersByTime(100))
+    expect(story()).toBeNull()
+    fireEvent.click(rail().getByRole('button', { name: 'Path' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Reset everything on this device' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Reset all data' }))
+
+    // Back on the choice screen: skip the brand intro and choose improve.
+    fireEvent.keyDown(intro() as HTMLElement, { key: 'Escape' })
+    act(() => vi.advanceTimersByTime(1_100))
+    fireEvent.click(screen.getByRole('button', { name: /Improve my\s*VPP experience/ }))
+    act(() => vi.advanceTimersByTime(100))
+    expect(story()).toBeNull()
+  })
+
   it('opens Screen 2.1 from the left card, with the story intro playing over it', () => {
     skipIntro()
     fireEvent.click(screen.getByRole('button', { name: /Get started\s*with VPPs/ }))

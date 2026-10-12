@@ -15,7 +15,6 @@ import {
   estimateFinish,
   fruitCount,
   progressRate,
-  ripeningFruit,
   stageForStep,
   stageNumber,
   stageStarts,
@@ -107,9 +106,7 @@ function GoalCard({ kind, goal, total, months, reached, onSetNewGoal, onViewAchi
   const step = treeStep(percent)
   const detail =
     kind === 'savings'
-      ? [plural(fruitCount(percent), 'orange'), ripeningFruit(percent) ? '1 ripening' : '']
-          .filter(Boolean)
-          .join(' · ')
+      ? plural(fruitCount(percent), 'orange')
       : `Stage ${stageNumber(step)} of ${TREE_STAGE_LABELS.length} · ${capitalise(stageForStep(step))}`
   const onTrack =
     finish.kind === 'estimate'
