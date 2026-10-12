@@ -460,55 +460,49 @@
   color: var(--danger, #b42318);
 }
 
-.goals-panel-form__details {
+.goals-panel-form__tips {
   display: flex;
   flex-direction: column;
+  gap: 0.5rem;
   margin-top: auto;
+  padding-top: 0.25rem;
 }
 
-.goals-panel-details {
-  border-top: 1px solid #efe6d8;
-  border-bottom: 1px solid #efe6d8;
-}
-
-.goals-panel-details + .goals-panel-details {
-  border-top: none;
-}
-
-.goals-panel-details summary {
+.goals-panel-form__tip-buttons {
   display: flex;
   align-items: center;
-  min-height: 3rem;
-  padding: 0.75rem 0;
-  font-size: 0.9375rem;
-  font-weight: 600;
+  gap: 0.5rem;
+}
+
+.goals-panel-tip__btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.5rem;
+  height: 1.5rem;
+  padding: 0;
+  border: 1px solid #d8cfbf;
+  border-radius: 50%;
+  background: #fff;
   color: #a8441a;
   cursor: pointer;
-  list-style: none;
 }
 
-.goals-panel-details summary::-webkit-details-marker {
-  display: none;
+.goals-panel-tip__btn:hover,
+.goals-panel-tip__btn--on {
+  border-color: #a8441a;
+  background: #fbf4ec;
 }
 
-.goals-panel-details summary::after {
-  content: '';
-  margin-left: auto;
-  width: 0.5rem;
-  height: 0.5rem;
-  border-right: 2px solid #a8441a;
-  border-bottom: 2px solid #a8441a;
-  transform: rotate(45deg);
-  transition: transform 0.15s ease;
+.goals-panel-tip__btn:focus-visible {
+  outline: 2px solid #24463a;
+  outline-offset: 2px;
 }
 
-.goals-panel-details[open] summary::after {
-  transform: rotate(-135deg);
-}
-
-.goals-panel-details .vpp-example__panel {
-  padding-bottom: 1rem;
-  font-size: 0.875rem;
+.goals-panel-tip__line {
+  margin: 0;
+  font-size: 0.8125rem;
+  line-height: 1.45;
   color: var(--ink-secondary);
 }
 

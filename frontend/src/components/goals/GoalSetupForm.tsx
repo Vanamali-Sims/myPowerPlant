@@ -17,9 +17,10 @@ import { GOAL_KINDS, type GoalBaseline, type GoalKind } from '../../types/goals'
 import type { MessageCode } from '../../constants/goalMessages'
 import { Button } from '../ui/Button'
 import { TextField } from '../ui/TextField'
-import { CarbonExamples, CarbonExamplesPanel } from './CarbonExamples'
+import { CarbonExamples } from './CarbonExamples'
 import { GoalMessage } from './GoalMessage'
-import { RangeExplainer, RangeExplainerPanel } from './RangeExplainer'
+import { GoalsOnboardingInfoTips } from './GoalsOnboardingInfoTips'
+import { RangeExplainer } from './RangeExplainer'
 
 type Values = Record<GoalKind, string>
 
@@ -231,21 +232,7 @@ export function GoalSetupForm(props: Props) {
           })}
         </div>
 
-        <div className="goals-panel-form__details">
-          {mode === 'next' ? null : (
-            <details className="goals-panel-details">
-              <summary>How is the allowed range calculated?</summary>
-              <RangeExplainerPanel suggestions={suggestions} baseline={baseline} context={context} />
-            </details>
-          )}
-          <details className="goals-panel-details">
-            <summary>How is carbon calculated?</summary>
-            <CarbonExamplesPanel
-              factor={context.factor}
-              suggestedKg={suggestions.carbon?.suggested ?? null}
-            />
-          </details>
-        </div>
+        {mode === 'next' ? null : <GoalsOnboardingInfoTips />}
 
         {saveError ? <GoalMessage code={saveError} /> : null}
 

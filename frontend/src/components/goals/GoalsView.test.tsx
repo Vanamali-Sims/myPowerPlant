@@ -11,7 +11,7 @@ import { cleanup, fireEvent, render, screen, within } from '@testing-library/rea
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { EMISSIONS_FACTOR_SOURCE, GOALS_STORAGE_KEY } from '../../constants/goals'
+import { GOALS_STORAGE_KEY } from '../../constants/goals'
 import { GOAL_MESSAGES } from '../../constants/goalMessages'
 import { BASELINE_PROFILE } from '../../data/baselines'
 import { maxIntervalKwh } from '../../lib/goals/batteryLimits'
@@ -269,18 +269,11 @@ describe('step 2: goals from the file', () => {
     expect(screen.getByText(aud(expected.suggestions.savings?.max))).toBeTruthy()
   })
 
-  it('explains the range from 2 to 13 months of the file month', async () => {
+  it('shows a short tip when the allowed-range info button is pressed', async () => {
     const { user } = renderView()
     await addFile(user)
-    const toggle = screen.getByText('How is the allowed range calculated?')
-    await user.click(toggle)
-    const panel = toggle.closest('details')?.querySelector('.goals-examples__panel')
-    const text = panel?.textContent ?? ''
-    expect(text).toContain(`Based on your battery file for ${RECENT_LABEL}`)
-    expect(text).toContain('× 30.4 days')
-    expect(text).toContain(`Lowest: 2 months = ${aud(expected.suggestions.savings?.min)}`)
-    expect(text).toContain(`Filled in for you: 3 months = ${aud(expected.suggestions.savings?.suggested)}`)
-    expect(text).toContain(`Highest: 13 months = ${aud(expected.suggestions.savings?.max)}`)
+    await user.click(screen.getByRole('button', { name: 'How is the allowed range calculated?' }))
+    expect(screen.getByRole('note').textContent).toContain('2 and 13 months')
   })
 
   it('goes back to step 1 for a different file', async () => {
@@ -291,17 +284,11 @@ describe('step 2: goals from the file', () => {
     expect(screen.getByText('Add your file to see your range')).toBeTruthy()
   })
 
-  it('shows worked carbon examples with the factor source', async () => {
+  it('shows a short tip when the carbon info button is pressed', async () => {
     const { user } = renderView()
     await addFile(user)
-    const toggle = screen.getByText('How is carbon calculated?')
-    await user.click(toggle)
-    const panel = toggle.closest('details')?.querySelector('.goals-examples__panel')
-    const text = panel?.textContent ?? ''
-    const factor = bundle.methodology.vicGridKgCo2PerKwh
-    expect(text).toContain(`10 kWh × ${factor} =`)
-    expect(text).toContain('close to your suggested carbon goal')
-    expect(text).toContain(EMISSIONS_FACTOR_SOURCE.label)
+    await user.click(screen.getByRole('button', { name: 'How is carbon calculated?' }))
+    expect(screen.getByRole('note').textContent).toContain('Victorian grid factor')
   })
 })
 
