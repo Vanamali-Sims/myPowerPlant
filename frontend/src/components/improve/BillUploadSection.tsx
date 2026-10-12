@@ -3,7 +3,7 @@
  * Parsed on-device; confirmed figures are merged into the profile automatically.
  */
 import { BILL_UPLOAD } from '../../constants/bills'
-import type { BillFacts, BillReadResult } from '../../lib/bills/types'
+import type { BillReadResult } from '../../lib/bills/types'
 import type { ProfileData } from '../../types/profile'
 import { Button } from '../ui/Button'
 import { LockIcon } from '../ui/icons'

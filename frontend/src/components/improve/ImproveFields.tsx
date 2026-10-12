@@ -3,7 +3,6 @@
  * improve-flow profile so both ask the same questions the same way.
  */
 import { useId } from 'react'
-import { FIELD_BOUNDS } from '../../constants/validation'
 import { batteryModels, NOT_SURE_VALUE } from '../../data/profileOptions'
 import type { ImproveStepId } from '../../lib/improveProfile'
 import type { FieldErrors } from '../../lib/validateProfile'

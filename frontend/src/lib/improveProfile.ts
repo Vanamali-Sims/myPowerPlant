@@ -10,7 +10,7 @@ import { FIELD_BOUNDS } from '../constants/validation'
 import { isAllowedBatteryModel } from '../data/profileOptions'
 import type { MethodologyBundle } from './methodologyApi'
 import { emptyProfile, type ProfileData } from '../types/profile'
-import { isVictorianPostcode, type FieldErrors } from './validateProfile'
+import type { FieldErrors } from './validateProfile'
 
 export type ImproveStepId = 'home' | 'solar' | 'battery'
 

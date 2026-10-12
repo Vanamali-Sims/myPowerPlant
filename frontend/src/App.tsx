@@ -438,7 +438,7 @@ function App() {
                 prefilled={improvePrefilled}
                 onChange={setProfile}
                 onComplete={completeImproveSetup}
-                onLogoClick={goHome}
+                onLogoClick={exitImproveSetup}
               />
             ) : null}
             {rainJourney && view === 'improveProfile' ? (

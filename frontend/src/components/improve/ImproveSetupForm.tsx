@@ -16,7 +16,6 @@ type Props = {
   prefilled: boolean
   onChange: (profile: ProfileData) => void
   onComplete: (profile: ProfileData) => void
-  onExit: () => void
   onLogoClick: () => void
 }
 

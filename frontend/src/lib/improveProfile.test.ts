@@ -95,7 +95,7 @@ describe('required questions', () => {
 
 describe('answers from the explore form', () => {
   it('counts as prefilled when the explore form saved answers and the improve form has not', () => {
-    const explore = {
+    const explore: ProfileData = {
       ...emptyProfile(),
       ...BASELINE_PROFILE,
       lastUpdated: '2026-10-01T00:00:00.000Z',

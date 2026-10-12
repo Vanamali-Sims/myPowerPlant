@@ -65,7 +65,7 @@ function ready(overrides: Partial<ProfileData> = {}): ProfileData {
 }
 
 async function uploadBillPdf(user: ReturnType<typeof userEvent.setup>) {
-  const input = document.querySelector('input[type="file"]')
+  const input = document.querySelector<HTMLInputElement>('input[type="file"]')
   expect(input).toBeTruthy()
   await user.upload(input!, new File(['%PDF'], 'powershop.pdf', { type: 'application/pdf' }))
 }
