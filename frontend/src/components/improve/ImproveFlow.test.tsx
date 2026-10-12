@@ -164,8 +164,12 @@ describe('improve home', () => {
     expect(dashboard.getByText('Set a savings and a carbon goal to grow your tree.')).toBeTruthy()
     expect(dashboard.getByText('Add your setup to fill in your dashboard.')).toBeTruthy()
 
-    for (const name of ['Try What if', 'Open Goals', 'Get reminders']) {
-      expect(screen.getByRole('button', { name })).toBeTruthy()
+    for (const name of [
+      'Open What if: test a scenario',
+      'Open Goals: set and track goals',
+      'Open Reminders: never miss an event',
+    ]) {
+      expect(screen.getByRole('link', { name })).toBeTruthy()
     }
     expect(screen.getByRole('heading', { level: 2, name: 'Enhance VPP experience through these features.' })).toBeTruthy()
   })
@@ -218,7 +222,7 @@ describe('access-features form', () => {
   // Types into every field of the form, so it gets more time when the whole suite runs at once.
   it('opens before a feature when answers are missing, then lands on that feature', async () => {
     const user = renderApp()
-    await user.click(screen.getByRole('button', { name: 'Open Goals' }))
+    await user.click(screen.getByRole('link', { name: 'Open Goals: set and track goals' }))
     expect(screen.getByRole('heading', { level: 1, name: 'Your home and VPP' })).toBeTruthy()
 
     await uploadBillPdf(user)

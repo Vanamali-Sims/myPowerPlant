@@ -101,4 +101,9 @@
     width: min(32rem, 100%);
     padding-top: 2rem;
   }
+
+  .setup.improve-setup--home-vpp {
+    width: min(77.5rem, 100%);
+    margin: 0 auto;
+  }
 }
