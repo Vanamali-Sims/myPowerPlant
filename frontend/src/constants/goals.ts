@@ -158,9 +158,9 @@ export const GOALS_ONBOARDING = {
   lockedTitle: 'Add your file to see your range',
   lockedBody: "We'll suggest goals that fit how your battery actually performs.",
   rangeTip:
-    'From your recent file month, scaled to a full month—you can set a goal between about 2 and 13 months of that figure.',
+    'From your recent file month, scaled to a full month. You can set a goal between about 2 and 13 months of that figure.',
   carbonTip:
-    'Battery energy out (kWh) × the Victorian grid factor—the same estimate your dashboard uses for carbon avoided.',
+    'Battery energy out (kWh) × the Victorian grid factor, the same estimate your dashboard uses for carbon avoided.',
   profileBattery: (model: string, rateCents: string) =>
     `Battery from your profile: ${model} · about ${rateCents} c/kWh`,
 } as const

@@ -36,7 +36,7 @@ export const SETUP_INTRO = {
   eyebrow: 'Before you start',
   title: 'Your details stay with you',
   privacy:
-    'We do not store your information on our servers — it stays on this device only.',
+    'We do not store your information on our servers. It stays on this device only.',
   accuracy: 'The more you fill in, the more accurate your prediction.',
   action: 'Continue',
   skipAll: 'Skip all',

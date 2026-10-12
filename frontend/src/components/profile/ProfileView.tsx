@@ -156,7 +156,7 @@ export function ProfileView({
             </Button>
           }
         >
-          Your profile is saved on this device. The dashboard uses these answers — no need to
+          Your profile is saved on this device. The dashboard uses these answers, so there is no need to
           enter them again.
         </Callout>
 

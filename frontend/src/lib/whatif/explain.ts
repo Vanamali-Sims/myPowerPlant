@@ -162,20 +162,20 @@ export function plansFor(profile: ProfileData, bundle: MethodologyBundle): Sugge
 
 /** The line shown when the model is off, slow, or rejected. */
 export function templateExplain(input: ExplainInput): string {
-  const annual = input.facts.find((item) => item.id === 'save.annual')?.display ?? '—'
-  const weeklyNow = input.facts.find((item) => item.id === 'save.now')?.display ?? '—'
-  const weeklyDraft = input.facts.find((item) => item.id === 'save.draft')?.display ?? '—'
-  const weeklyDelta = input.facts.find((item) => item.id === 'save.delta')?.display ?? '—'
+  const annual = input.facts.find((item) => item.id === 'save.annual')?.display ?? 'an unknown amount'
+  const weeklyNow = input.facts.find((item) => item.id === 'save.now')?.display ?? 'unknown'
+  const weeklyDraft = input.facts.find((item) => item.id === 'save.draft')?.display ?? 'unknown'
+  const weeklyDelta = input.facts.find((item) => item.id === 'save.delta')?.display ?? 'unknown'
 
   let lead: string
   if (input.decision === 'change') {
-    lead = `This setup is recommended. The payment is about ${annual} more over a year — ${weeklyDraft} a week now, was ${weeklyNow}.`
+    lead = `This setup is recommended. The payment is about ${annual} more over a year: ${weeklyDraft} a week now, was ${weeklyNow}.`
   } else if (input.decision === 'unclear') {
     lead = "This setup isn't recommended. There is no matched plan, so there is no payment to compare."
   } else if (input.quiet) {
     lead = `This setup isn't recommended. The payment only moves ${weeklyDelta} a week, too small to switch for.`
   } else {
-    lead = `This setup isn't recommended. The payment is about ${annual} less over a year — ${weeklyDraft} a week now, was ${weeklyNow}.`
+    lead = `This setup isn't recommended. The payment is about ${annual} less over a year: ${weeklyDraft} a week now, was ${weeklyNow}.`
   }
 
   const day =

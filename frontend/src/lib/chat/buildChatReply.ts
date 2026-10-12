@@ -99,7 +99,7 @@ export function buildChatReply(intent: ChatDataIntent | 'profile_display', ctx: 
     const carbon = formatKg(scaleCarbonKg(report.weekly.carbonAvoidedKg, timeframe))
     const deficit = report.weekly.generationKwh < report.weekly.consumptionKwh
     const moneyLine = deficit
-      ? `Net energy cost ${formatAud(scaleAud(Math.abs(report.weekly.netEnergyValueAud), timeframe))} for ${period} — home uses more than it makes.`
+      ? `Net energy cost ${formatAud(scaleAud(Math.abs(report.weekly.netEnergyValueAud), timeframe))} for ${period}. The home uses more than it makes.`
       : `Estimated savings ${formatAud(scaleAud(report.weekly.savingsAud, timeframe))} for ${period}.`
     return [
       `For ${period}, energy used is ${formatKwh(used)}, generated ${formatKwh(generated)}.`,
@@ -131,12 +131,12 @@ export function buildChatReply(intent: ChatDataIntent | 'profile_display', ctx: 
     })
     const stage = riverForkStage(river.fork)
     if (river.fork === 'balanced') {
-      return `For ${period}, generation and use are in balance — the home is not ahead or behind.`
+      return `For ${period}, generation and use are in balance, so the home is not ahead or behind.`
     }
     if (river.fork === 'surplus') {
       return `For ${period}, the home is ahead: ${stage.eyebrow.toLowerCase()} ${formatKwh(river.forkKwh)}.`
     }
-    return `For ${period}, the home is behind: ${stage.eyebrow.toLowerCase()} ${formatKwh(river.forkKwh)} — home uses more than it makes.`
+    return `For ${period}, the home is behind: ${stage.eyebrow.toLowerCase()} ${formatKwh(river.forkKwh)}, as the home uses more than it makes.`
   }
 
   const matchResult = matchSuggestionPlans(
@@ -152,9 +152,9 @@ export function buildChatReply(intent: ChatDataIntent | 'profile_display', ctx: 
     const top = matchResult.matches[0]!
     const { why } = planFitCopy(profile, top)
     return [
-      `Top match: ${top.plan.brand} — ${top.plan.name}.`,
+      `Top match: ${top.plan.brand}, ${top.plan.name}.`,
       why[0] ?? '',
-      'Compiled terms — not a guaranteed return.',
+      'Compiled terms, not a guaranteed return.',
     ]
       .filter(Boolean)
       .join(' ')
@@ -175,10 +175,10 @@ export function buildChatReply(intent: ChatDataIntent | 'profile_display', ctx: 
     }
     let line = `${label}: ${term.valueText}`
     if (isTermStale(term.lastVerified)) {
-      line += ` May be outdated — verified ${formatVerifiedDate(term.lastVerified)}. ${STALE_PROMPT}`
+      line += ` May be outdated, last verified ${formatVerifiedDate(term.lastVerified)}. ${STALE_PROMPT}`
     }
     return line
   })
 
-  return [`${plan.brand} — ${plan.name}.`, ...parts].join(' ')
+  return [`${plan.brand}, ${plan.name}.`, ...parts].join(' ')
 }

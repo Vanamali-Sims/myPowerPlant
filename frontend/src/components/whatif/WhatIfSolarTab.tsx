@@ -61,7 +61,7 @@ export function WhatIfSolarTab({
           <span>Roof faces</span>
           <small className="whatif-meta">
             {directionChanged
-              ? `was ${solarDirections.find((row) => row.value === profile.solarDirection)?.label ?? '—'}`
+              ? `was ${solarDirections.find((row) => row.value === profile.solarDirection)?.label ?? 'not set'}`
               : ''}
             {directionChip}
           </small>

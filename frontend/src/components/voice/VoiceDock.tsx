@@ -180,7 +180,7 @@ export function VoiceDock({
               ))}
             </ul>
             <p className="voice-filled__note" hidden={!filledOpen}>
-              Every answer is on the form above — change any of them before you
+              Every answer is on the form above. Change any of them before you
               press Continue.
             </p>
           </div>
@@ -201,7 +201,7 @@ export function VoiceDock({
               <span className="voice-status__dot" aria-hidden="true" />
               <span className="voice-status__text">
                 {listening ? 'Listening' : 'Paused'}
-                {partial ? <em className="voice-status__partial"> — {partial}</em> : null}
+                {partial ? <em className="voice-status__partial">: {partial}</em> : null}
               </span>
               <div className="voice-status__controls">
                 {listening ? (
@@ -254,7 +254,7 @@ export function VoiceDock({
                 <p className="voice-error__message">{failure.message}</p>
                 {failure.suggestTyping ? (
                   <p className="voice-error__hint">
-                    Typing this one in may be quicker — the form works exactly the
+                    Typing this one in may be quicker, and the form works exactly the
                     same either way.
                   </p>
                 ) : null}

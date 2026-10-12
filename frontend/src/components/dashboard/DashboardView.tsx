@@ -138,7 +138,7 @@ export function DashboardView({
               </Button>
             }
           >
-            Change household details and come back — this report updates automatically.
+            Change household details and come back. This report updates automatically.
           </Callout>
         </footer>
       ) : null}

@@ -32,7 +32,7 @@ export const VPP_STORY_HEADINGS: Record<
   deficit: {
     eyebrow: 'Next step',
     title: 'VPP plans that can help you achieve this saving',
-    lede: 'These Victorian plans fit this battery. They can cover the gap from nearby batteries — and still earn when the grid calls.',
+    lede: 'These Victorian plans fit this battery. They can cover the gap from nearby batteries, and still earn when the grid calls.',
   },
   balanced: {
     eyebrow: 'Next step',

@@ -357,7 +357,7 @@ export function RemindersView({
             />
 
             <p className="reminders-board__note">
-              {forecastView === 'daily' ? 'kWh/hour, today' : 'kWh/day'} · Open-Meteo forecast for {place} — not a
+              {forecastView === 'daily' ? 'kWh/hour, today' : 'kWh/day'} · Open-Meteo forecast for {place}, not a
               meter reading.
               {usingDefaultLocation ? ' Add your postcode to your profile to use your own area.' : ''}
             </p>
@@ -433,7 +433,7 @@ export function RemindersView({
                   Download all
                 </button>
               ) : null}
-              <p className="reminders-board__privacy">Saved to your calendar only — nothing is uploaded.</p>
+              <p className="reminders-board__privacy">Saved to your calendar only. Nothing is uploaded.</p>
               <p className="reminders-board__status" role="status">
                 {status}
               </p>

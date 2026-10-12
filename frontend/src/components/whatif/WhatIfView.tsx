@@ -60,7 +60,7 @@ function resolvedValue(draft: string, saved: string): string {
 }
 
 function directionLabel(value: string): string {
-  if (!value) return '—'
+  if (!value) return 'Not set'
   return solarDirections.find((row) => row.value === value)?.label ?? value
 }
 
@@ -151,7 +151,7 @@ export function WhatIfView({
 
     if (nextPeople !== profile.people.trim()) {
       patch.people = nextPeople
-      items.push({ label: 'People', from: profile.people || '—', to: nextPeople })
+      items.push({ label: 'People', from: profile.people || 'Not set', to: nextPeople })
     }
     if (dishwasherChange) {
       items.push({ label: 'Dishwasher', from: 'today’s use', to: cycleChangeText(dishwasherChange) })
@@ -161,13 +161,13 @@ export function WhatIfView({
     }
     if (nextBattery !== profile.batteryModel) {
       patch.batteryModel = nextBattery
-      items.push({ label: 'Battery', from: profile.batteryModel || '—', to: nextBattery })
+      items.push({ label: 'Battery', from: profile.batteryModel || 'Not set', to: nextBattery })
     }
     if (nextReserve !== profile.reservePercent.trim()) {
       patch.reservePercent = nextReserve
       items.push({
         label: 'Battery reserve',
-        from: `${profile.reservePercent || '—'}%`,
+        from: profile.reservePercent ? `${profile.reservePercent}%` : 'Not set',
         to: `${nextReserve}%`,
       })
     }
@@ -445,7 +445,7 @@ export function WhatIfView({
                 <div className="whatif-lab">
                   <span>Model</span>
                   <small className="whatif-meta">
-                    {batteryChanged ? `was ${profile.batteryModel || '—'}` : ''}
+                    {batteryChanged ? `was ${profile.batteryModel || 'not set'}` : ''}
                     {batteryChanged && deltas?.battery != null && Math.abs(deltas.battery) >= 1 ? (
                       <b
                         className={`whatif-dchip ${deltas.battery > 0 ? 'is-up' : 'is-down'}`}
@@ -471,7 +471,7 @@ export function WhatIfView({
                     Kept for the house · <b>{reserveShown}%</b>
                   </span>
                   <small className="whatif-meta">
-                    {reserveChanged ? `was ${profile.reservePercent || '—'}%` : ''}
+                    {reserveChanged ? (profile.reservePercent ? `was ${profile.reservePercent}%` : 'was not set') : ''}
                     {reserveChanged && deltas?.reserve != null && Math.abs(deltas.reserve) >= 1 ? (
                       <b
                         className={`whatif-dchip ${deltas.reserve > 0 ? 'is-up' : 'is-down'}`}

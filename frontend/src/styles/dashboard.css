@@ -1158,51 +1158,87 @@
   list-style: none;
   margin: 0;
   padding: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 0.85rem;
 }
 
+@media (min-width: 720px) {
+  .vpp-term-list {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+/* Each term is its own green card, so the dialog reads as four facts, not one wall of text. */
 .vpp-term {
-  display: grid;
-  grid-template-columns: 2.25rem 1fr;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  padding: 1rem 1.1rem 0.95rem;
+  border: 1px solid var(--euc-100);
+  border-radius: 16px;
+  background: var(--euc-50);
+}
+
+.vpp-term__head {
+  display: flex;
+  align-items: center;
   gap: 0.7rem;
-  align-items: start;
 }
 
 .vpp-term__icon {
+  flex-shrink: 0;
   width: 2.25rem;
   height: 2.25rem;
-  min-width: 24px;
-  min-height: 24px;
-  border-radius: 0.55rem;
-  background: var(--euc-50);
-  color: var(--euc-600);
+  border-radius: 50%;
+  background: var(--surface-deep);
+  color: var(--on-deep);
   display: grid;
   place-items: center;
 }
 
 .vpp-term__title {
-  margin: 0 0 0.25rem;
+  margin: 0;
   font-family: var(--font-body);
-  font-size: 0.95rem;
+  font-size: 0.98rem;
   font-weight: 700;
-  color: var(--ink);
+  color: var(--euc-900);
+}
+
+.vpp-term__content {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
 }
 
 .vpp-term__body {
   margin: 0;
-  font-size: 0.92rem;
+  font-size: 0.9rem;
+  line-height: 1.55;
   color: var(--ink);
 }
 
+/* Source and verified date as small tags at the foot of the card. */
 .vpp-term__meta {
-  margin: 0.35rem 0 0;
+  margin: auto 0 0;
+  padding-top: 0.7rem;
   display: flex;
   flex-wrap: wrap;
-  gap: 0.35rem 0.85rem;
-  font-size: 0.75rem;
-  color: var(--ink-secondary);
+  gap: 0.4rem;
+  font-size: 0.72rem;
+  color: var(--euc-800);
+}
+
+.vpp-term__meta > span {
+  padding: 0.2rem 0.6rem;
+  border: 1px solid var(--euc-100);
+  border-radius: var(--radius-pill);
+  background: var(--surface);
+}
+
+.vpp-term--unavailable {
+  border-color: var(--border);
+  background: var(--surface-sunken);
 }
 
 .vpp-term--unavailable .vpp-term__icon {
@@ -1259,6 +1295,28 @@
   background: var(--surface-sunken);
   border-radius: var(--radius-input);
   padding: 0.85rem 1rem;
+}
+
+.vpp-dialog .vpp-example__panel {
+  border: 1px solid var(--euc-100);
+  border-radius: 16px;
+  background: var(--euc-50);
+}
+
+.vpp-dialog__lede.vpp-terms__banner {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.65rem 0.9rem;
+  border-radius: 12px;
+  /* The site's orange; dark green text keeps 4.8:1 (white on this orange is 3:1). */
+  background: var(--accent);
+  color: var(--green-deeper);
+  font-weight: 600;
+}
+
+.vpp-terms__banner svg {
+  flex-shrink: 0;
 }
 
 .vpp-example__label {

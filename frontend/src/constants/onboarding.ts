@@ -87,7 +87,7 @@ export const RECOMMENDATIONS_PAGE = {
   notListedFootnote:
     "'Not listed' means the plan's published details don't state it. Check the provider's terms before you switch.",
   ledeNoProfile:
-    'Tell us about your home, solar, and battery first — then we can rank plans that fit you.',
+    'Tell us about your home, solar, and battery first, then we can rank plans that fit you.',
   emptyTitle: 'Set up your household profile',
   emptyBody:
     'Plan cards and matches use your saved answers on this device. Complete the questionnaire to see which VPP offers suit your home.',
