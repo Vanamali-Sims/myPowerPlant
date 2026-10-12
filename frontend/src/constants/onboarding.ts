@@ -53,7 +53,7 @@ export const PATH_CHOICE = {
   explore: {
     eyebrow: 'New to VPPs',
     title: ['Get started', 'with VPPs'],
-    body: 'See if a VPP is worth it, model your home and simulate savings, and get recommended Victorian plans.',
+    body: 'See if a VPP is worth it, model your home and simulate savings, and get recommended plans.',
     action: 'Explore getting started',
   },
   improve: {
