@@ -5,7 +5,7 @@ import type { MethodologyBundle } from '../../lib/methodologyApi'
 import type { GoalBaseline, GoalBattery } from '../../types/goals'
 import type { MessageCode } from '../../constants/goalMessages'
 import { Button } from '../ui/Button'
-import type { BaselineDraft } from './BaselineStep'
+import type { BaselineDraft } from './baselineDraft'
 import { GoalsBatteryFileCard } from './GoalsBatteryFileCard'
 import { GoalsTargetsCard } from './GoalsTargetsCard'
 

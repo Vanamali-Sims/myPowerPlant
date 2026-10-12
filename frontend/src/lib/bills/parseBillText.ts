@@ -12,7 +12,7 @@ function fileNameHintsPowershop(fileName: string): boolean {
  * @param fileName - Optional hint when pdf.js spacing breaks brand detection
  */
 export function parseBillText(text: string, fileName = ''): BillReadResult {
-  const body = text.replace(/\u0000/g, '').trim()
+  const body = text.split('\0').join('').trim()
   if (!body) return { ok: false, reason: 'parse_failed' }
 
   if (isPowershopBill(body) || fileNameHintsPowershop(fileName)) {

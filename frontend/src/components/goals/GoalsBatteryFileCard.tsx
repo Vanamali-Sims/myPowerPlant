@@ -16,7 +16,7 @@ import { SearchSelect } from '../ui/SearchSelect'
 import { StepperField } from '../ui/StepperField'
 import { TextField } from '../ui/TextField'
 import { BatteryCsvIllustration } from './BatteryCsvIllustration'
-import { buildBaselineDraft, readGoalRate, type BaselineDraft } from './BaselineStep'
+import { buildBaselineDraft, readGoalRate, type BaselineDraft } from './baselineDraft'
 import { GoalMessage } from './GoalMessage'
 import { GoalsFileGuidePanel } from './GoalsFileGuidePanel'
 

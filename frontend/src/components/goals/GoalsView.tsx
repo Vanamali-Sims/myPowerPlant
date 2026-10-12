@@ -41,7 +41,8 @@ import type { ProfileData } from '../../types/profile'
 import { Button } from '../ui/Button'
 import { Callout } from '../ui/Callout'
 import { BoltIcon, CheckIcon } from '../ui/icons'
-import { BaselineStep, type BaselineDraft } from './BaselineStep'
+import type { BaselineDraft } from './baselineDraft'
+import { BaselineStep } from './BaselineStep'
 import { GoalsSetupBoard } from './GoalsSetupBoard'
 import { ClearGoalsDialog } from './ClearGoalsDialog'
 import { GoalMessage } from './GoalMessage'
@@ -54,6 +55,14 @@ import { RevisionPanel } from './RevisionPanel'
 import type { ReadDays } from './UploadArea'
 import { UploadDialog } from './UploadDialog'
 import { UploadSummary } from './UploadSummary'
+
+/** Melbourne calendar day, read when the person saves rather than during render. */
+function today(): string {
+  return melbourneDate(Date.now())
+}
+
+/** Stable month label for the sample goals card. Frozen when this module loads. */
+const PREVIEW_BASELINE_MONTH = monthOf(today())
 
 type Props = {
   profile: ProfileData
@@ -192,10 +201,6 @@ export function GoalsView({ profile, bundle, methodologyError, onLogoClick }: Pr
     const id = window.setTimeout(() => setNotice(''), 8000)
     return () => window.clearTimeout(id)
   }, [notice])
-
-  function today(): string {
-    return melbourneDate(Date.now())
-  }
 
   /**
    * save
@@ -477,7 +482,7 @@ export function GoalsView({ profile, bundle, methodologyError, onLogoClick }: Pr
   const previewMonthly = { savings: 50, carbon: 30 }
   const previewSuggestions = suggestGoals(previewMonthly)
   const previewBaseline = {
-    month: monthOf(today()),
+    month: PREVIEW_BASELINE_MONTH,
     days: 30,
     monthly: previewMonthly,
   }

@@ -493,15 +493,11 @@ export function WhatIfFlow({ solarKwh, homeKwh }: WhatIfFlowProps) {
   const vppKwh = Math.abs(net)
 
   const [displayMode, setDisplayMode] = useState(mode)
-  const [fading, setFading] = useState(false)
+  const fading = mode !== displayMode
 
   useEffect(() => {
     if (mode === displayMode) return
-    setFading(true)
-    const timer = window.setTimeout(() => {
-      setDisplayMode(mode)
-      setFading(false)
-    }, 200)
+    const timer = window.setTimeout(() => setDisplayMode(mode), 200)
     return () => window.clearTimeout(timer)
   }, [mode, displayMode])
 
