@@ -9,10 +9,11 @@ import { batteryModels, solarDirections } from '../../data/profileOptions'
 import { FIELD_BOUNDS } from '../../constants/validation'
 import { applyProfilePatch } from '../../lib/chat/applyProfilePatch'
 import { buildWhatIfSuggestions, type WhatIfSuggestion } from '../../lib/chat/whatIfSuggestions'
-import { buildKpiReport } from '../../lib/kpis'
+import { buildKpiReport, parseCount } from '../../lib/kpis'
 import { type MethodologyBundle } from '../../lib/methodologyApi'
 import { buildTypicalDay } from '../../lib/typicalDay'
 import { buildExplainInput, plansFor, reservePercents, surplusLabel } from '../../lib/whatif/explain'
+import { kwhPerCycle, modelledWeeklyKwh, withUsageChange } from '../../lib/whatif/usageChange'
 import type { ProfileData, SolarDirection } from '../../types/profile'
 import { Button } from '../ui/Button'
 import { Callout } from '../ui/Callout'
@@ -31,6 +32,7 @@ type Props = {
   onSaveProfile: (profile: ProfileData) => void
   onStartSetup: () => void
   onLogoClick: () => void
+  hideSetupNavigation?: boolean
 }
 
 type ChangeItem = { label: string; from: string; to: string }
@@ -97,6 +99,11 @@ function useAnimatedNumber(value: number): number {
   return shown
 }
 
+function cycleChangeText(change: number): string {
+  const cycles = Math.abs(change) === 1 ? 'cycle' : 'cycles'
+  return `${change > 0 ? '+' : '−'}${Math.abs(change)} ${cycles} a week`
+}
+
 function daily(weekly: number): number {
   return weekly / 7
 }
@@ -115,11 +122,13 @@ export function WhatIfView({
   onSaveProfile,
   onStartSetup,
   onLogoClick,
+  hideSetupNavigation = false,
 }: Props) {
   const [status, setStatus] = useState('')
   const [peopleDraft, setPeopleDraft] = useSyncedDraft(profile.people)
-  const [dishwasherDraft, setDishwasherDraft] = useSyncedDraft(profile.dishwasherCyclesPerWeek)
-  const [washerDraft, setWasherDraft] = useSyncedDraft(profile.washerCyclesPerWeek)
+  // Appliance cycles are changes from today's use, so they can go below zero.
+  const [dishwasherChange, setDishwasherChange] = useState(0)
+  const [washerChange, setWasherChange] = useState(0)
   const [batteryDraft, setBatteryDraft] = useSyncedDraft(profile.batteryModel)
   const [reserveDraft, setReserveDraft] = useSyncedDraft(profile.reservePercent)
   const [panelCountDraft, setPanelCountDraft] = useSyncedDraft(profile.panelCount)
@@ -128,10 +137,8 @@ export function WhatIfView({
   const ready = hasProfile && Boolean(bundle) && !methodologyError
   const solarOn = profile.hasSolar === 'yes'
 
-  const { draftProfile, changes } = useMemo(() => {
+  const { draftProfile, changes, usageExtra } = useMemo(() => {
     const nextPeople = resolvedValue(peopleDraft, profile.people)
-    const nextDishwasher = resolvedValue(dishwasherDraft, profile.dishwasherCyclesPerWeek)
-    const nextWasher = resolvedValue(washerDraft, profile.washerCyclesPerWeek)
     const nextBattery = batteryDraft || profile.batteryModel
     const nextReserve = resolvedValue(reserveDraft, profile.reservePercent)
     const nextPanelCount = solarOn ? resolvedValue(panelCountDraft, profile.panelCount) : profile.panelCount
@@ -144,21 +151,11 @@ export function WhatIfView({
       patch.people = nextPeople
       items.push({ label: 'People', from: profile.people || '—', to: nextPeople })
     }
-    if (nextDishwasher !== profile.dishwasherCyclesPerWeek.trim()) {
-      patch.dishwasherCyclesPerWeek = nextDishwasher
-      items.push({
-        label: 'Dishwasher',
-        from: `${profile.dishwasherCyclesPerWeek || '0'}/week`,
-        to: `${nextDishwasher}/week`,
-      })
+    if (dishwasherChange) {
+      items.push({ label: 'Dishwasher', from: 'today’s use', to: cycleChangeText(dishwasherChange) })
     }
-    if (nextWasher !== profile.washerCyclesPerWeek.trim()) {
-      patch.washerCyclesPerWeek = nextWasher
-      items.push({
-        label: 'Washing machine',
-        from: `${profile.washerCyclesPerWeek || '0'}/week`,
-        to: `${nextWasher}/week`,
-      })
+    if (washerChange) {
+      items.push({ label: 'Washing machine', from: 'today’s use', to: cycleChangeText(washerChange) })
     }
     if (nextBattery !== profile.batteryModel) {
       patch.batteryModel = nextBattery
@@ -185,17 +182,30 @@ export function WhatIfView({
       })
     }
 
-    if (!Object.keys(patch).length) {
-      return { draftProfile: profile, changes: items }
+    const patched = Object.keys(patch).length ? applyProfilePatch(profile, patch) : null
+    const base = patched?.ok ? patched.profile : profile
+    // Monthly usage is given, so household changes move it rather than the appliance model.
+    const extra = {
+      people: bundle && patch.people ? modelledWeeklyKwh(base, bundle) - modelledWeeklyKwh(profile, bundle) : 0,
+      dishwasher: bundle ? dishwasherChange * kwhPerCycle(bundle, 'dishwasher') : 0,
+      washer: bundle ? washerChange * kwhPerCycle(bundle, 'washer') : 0,
     }
-    const result = applyProfilePatch(profile, patch)
-    return { draftProfile: result.ok ? result.profile : profile, changes: items }
+    const next = withUsageChange(base, extra.people + extra.dishwasher + extra.washer)
+    if (next.monthlyKwh !== profile.monthlyKwh) {
+      items.push({
+        label: 'Monthly usage',
+        from: `${profile.monthlyKwh} kWh`,
+        to: `${next.monthlyKwh} kWh`,
+      })
+    }
+    return { draftProfile: next, changes: items, usageExtra: extra }
   }, [
     profile,
+    bundle,
     solarOn,
     peopleDraft,
-    dishwasherDraft,
-    washerDraft,
+    dishwasherChange,
+    washerChange,
     batteryDraft,
     reserveDraft,
     panelCountDraft,
@@ -206,8 +216,8 @@ export function WhatIfView({
 
   function resetDraft() {
     setPeopleDraft(profile.people)
-    setDishwasherDraft(profile.dishwasherCyclesPerWeek)
-    setWasherDraft(profile.washerCyclesPerWeek)
+    setDishwasherChange(0)
+    setWasherChange(0)
     setBatteryDraft(profile.batteryModel)
     setReserveDraft(profile.reservePercent)
     setPanelCountDraft(profile.panelCount)
@@ -217,7 +227,10 @@ export function WhatIfView({
 
   function applyWhatIf() {
     onSaveProfile(draftProfile)
-    setStatus('Saved on this device. Dashboard and reminders will use this setup.')
+    // The cycle changes are now part of the saved monthly usage.
+    setDishwasherChange(0)
+    setWasherChange(0)
+    setStatus('Saved on this device. Goals, reminders, and your profile will use this setup.')
   }
 
   const reportNow = useMemo(() => (bundle ? buildKpiReport(profile, bundle) : null), [profile, bundle])
@@ -256,8 +269,10 @@ export function WhatIfView({
   function applySuggestion(suggestion: WhatIfSuggestion) {
     const next = suggestion.apply
     if (next.people != null) setPeopleDraft(next.people)
-    if (next.dishwasher != null) setDishwasherDraft(next.dishwasher)
-    if (next.washer != null) setWasherDraft(next.washer)
+    if (next.dishwasher != null) {
+      setDishwasherChange(parseCount(next.dishwasher) - parseCount(profile.dishwasherCyclesPerWeek))
+    }
+    if (next.washer != null) setWasherChange(parseCount(next.washer) - parseCount(profile.washerCyclesPerWeek))
     if (next.battery != null) setBatteryDraft(next.battery)
     if (next.panelCount != null) setPanelCountDraft(next.panelCount)
     if (next.direction != null) setDirectionDraft(next.direction)
@@ -278,13 +293,16 @@ export function WhatIfView({
       return annualPayment(buildKpiReport(result.profile, bundle).weekly.savingsAud) - savedAnnual
     }
     return {
-      people: changes.some((item) => item.label === 'People') ? lone({ people: draftProfile.people }) : null,
-      dishwasher: changes.some((item) => item.label === 'Dishwasher')
-        ? lone({ dishwasherCyclesPerWeek: draftProfile.dishwasherCyclesPerWeek })
+      people: changes.some((item) => item.label === 'People')
+        ? lone({
+            people: draftProfile.people,
+            monthlyKwh: withUsageChange(profile, usageExtra.people).monthlyKwh,
+          })
         : null,
-      washer: changes.some((item) => item.label === 'Washing machine')
-        ? lone({ washerCyclesPerWeek: draftProfile.washerCyclesPerWeek })
+      dishwasher: dishwasherChange
+        ? lone({ monthlyKwh: withUsageChange(profile, usageExtra.dishwasher).monthlyKwh })
         : null,
+      washer: washerChange ? lone({ monthlyKwh: withUsageChange(profile, usageExtra.washer).monthlyKwh }) : null,
       battery: changes.some((item) => item.label === 'Battery')
         ? lone({ batteryModel: draftProfile.batteryModel })
         : null,
@@ -296,7 +314,7 @@ export function WhatIfView({
         ? lone({ solarDirection: draftProfile.solarDirection })
         : null,
     }
-  }, [bundle, profile, draftProfile, changes])
+  }, [bundle, profile, draftProfile, changes, usageExtra, dishwasherChange, washerChange])
 
   const flow = useMemo<FlowFigures>(() => {
     const weekly = reportDraft?.weekly
@@ -373,9 +391,11 @@ export function WhatIfView({
           icon={<BulbIcon />}
           title="Finish your profile to run comparisons"
           action={
-            <Button variant="primary" onClick={onStartSetup}>
-              Start setup
-            </Button>
+            hideSetupNavigation ? undefined : (
+              <Button variant="primary" onClick={onStartSetup}>
+                Start setup
+              </Button>
+            )
           }
         >
           What if needs your saved household answers as the starting point for a scenario.
@@ -469,14 +489,14 @@ export function WhatIfView({
               <WhatIfHouseholdTab
                 profile={profile}
                 peopleDraft={peopleDraft}
-                dishwasherDraft={dishwasherDraft}
-                washerDraft={washerDraft}
+                dishwasherChange={dishwasherChange}
+                washerChange={washerChange}
                 peopleDelta={deltas?.people}
                 dishwasherDelta={deltas?.dishwasher}
                 washerDelta={deltas?.washer}
                 onPeopleDraft={setPeopleDraft}
-                onDishwasherDraft={setDishwasherDraft}
-                onWasherDraft={setWasherDraft}
+                onDishwasherChange={setDishwasherChange}
+                onWasherChange={setWasherChange}
               />
             </div>
 

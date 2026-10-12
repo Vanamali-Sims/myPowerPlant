@@ -19,6 +19,8 @@ import { SourceGuide } from './SourceGuide'
 export type ReadDays = Extract<ReadResult, { ok: true }>
 
 type Props = {
+  /** Section heading; the goal baseline step uses its own wording. */
+  title?: string
   locked: boolean
   /** True when the goal setup form is on the page to go back to. */
   canGoToSetup: boolean
@@ -37,7 +39,14 @@ const PRIVACY_NOTE =
  * @param props.limits - Validity limits for energy values
  * @returns Locked note, or provider choice, file chooser, read status, and summary
  */
-export function UploadArea({ locked, canGoToSetup, onGoToSetup, limits, onContinue }: Props) {
+export function UploadArea({
+  title = 'Upload your battery file',
+  locked,
+  canGoToSetup,
+  onGoToSetup,
+  limits,
+  onContinue,
+}: Props) {
   const chooseId = useId()
   const guideToggleId = useId()
   const [guideOpen, setGuideOpen] = useState(false)
@@ -89,7 +98,7 @@ export function UploadArea({ locked, canGoToSetup, onGoToSetup, limits, onContin
   if (locked) {
     return (
       <section className="dashboard-card goals-upload" aria-labelledby="goals-upload-title">
-        <h2 id="goals-upload-title">Upload your battery file</h2>
+        <h2 id="goals-upload-title">{title}</h2>
         <p className="goals-upload__locked">
           <LockIcon width={16} height={16} />
           <span>Upload unlocks after both goals are saved.</span>
@@ -106,7 +115,7 @@ export function UploadArea({ locked, canGoToSetup, onGoToSetup, limits, onContin
   return (
     <section className="dashboard-card goals-upload" aria-labelledby="goals-upload-title">
       <h2 id="goals-upload-title" tabIndex={-1}>
-        Upload your battery file
+        {title}
       </h2>
       <p className="goals-upload__privacy">
         <LockIcon width={16} height={16} />

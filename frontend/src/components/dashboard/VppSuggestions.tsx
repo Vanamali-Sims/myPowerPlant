@@ -24,6 +24,7 @@ import {
   type MatchReasonCode,
   type SuggestionMatch,
 } from '../../lib/vppSuggestions'
+import { RECOMMENDATIONS_PAGE } from '../../constants/onboarding'
 import { VPP_DEFAULT_HEADING, VPP_STORY_HEADINGS } from '../../constants'
 import type { RiverFork } from '../../lib/energyRiver'
 import type { ProfileData } from '../../types/profile'
@@ -46,6 +47,13 @@ type Props = {
   onStartSetup: () => void
   /** Tighter layout when rendered directly under the annual savings card. */
   fromSavings?: boolean
+  /** When false, onboarding callout has no navigation button (Rain journey). */
+  showSetupAction?: boolean
+  /** Hide duplicate page title when the parent view supplies the heading. */
+  hideSectionHeading?: boolean
+  /** Show per-plan enroll CTA (recommendations page). */
+  enrollMode?: boolean
+  onEnrollProvider?: (provider: string) => void
 }
 
 const EMPTY_REASON: Record<MatchReasonCode, string> = {
@@ -88,6 +96,10 @@ export function VppSuggestions({
   fork = null,
   onStartSetup,
   fromSavings = false,
+  showSetupAction = true,
+  hideSectionHeading = false,
+  enrollMode = false,
+  onEnrollProvider,
 }: Props) {
   const [dialog, setDialog] = useState<OpenDialog | null>(null)
   const openerRef = useRef<HTMLButtonElement | null>(null)
@@ -111,16 +123,22 @@ export function VppSuggestions({
   if (!hasProfile) {
     return (
       <section className="vpp-suggestions" aria-labelledby="vpp-suggestions-heading">
-        <p className="eyebrow">{VPP_DEFAULT_HEADING.eyebrow}</p>
-        <h2 id="vpp-suggestions-heading">{VPP_DEFAULT_HEADING.title}</h2>
+        {hideSectionHeading ? null : (
+          <>
+            <p className="eyebrow">{VPP_DEFAULT_HEADING.eyebrow}</p>
+            <h2 id="vpp-suggestions-heading">{VPP_DEFAULT_HEADING.title}</h2>
+          </>
+        )}
         <Callout
           tone="action"
           icon={<AlertIcon />}
           title="Complete onboarding for personalised VPP recommendations"
           action={
-            <Button variant="outline-accent" onClick={onStartSetup}>
-              Fill the onboarding form
-            </Button>
+            showSetupAction ? (
+              <Button variant="outline-accent" onClick={onStartSetup}>
+                Fill the onboarding form
+              </Button>
+            ) : undefined
           }
         >
           Fill the onboarding form to get personalised VPP recommendations. We don’t show plan
@@ -139,9 +157,13 @@ export function VppSuggestions({
       className={`vpp-suggestions${fromSavings ? ' vpp-suggestions--from-savings' : ''}`}
       aria-labelledby="vpp-suggestions-heading"
     >
-      <p className="eyebrow">{heading.eyebrow}</p>
-      <h2 id="vpp-suggestions-heading">{heading.title}</h2>
-      {heading.lede ? <p className="vpp-suggestions__lede">{heading.lede}</p> : null}
+      {hideSectionHeading ? null : (
+        <>
+          <p className="eyebrow">{heading.eyebrow}</p>
+          <h2 id="vpp-suggestions-heading">{heading.title}</h2>
+          {heading.lede ? <p className="vpp-suggestions__lede">{heading.lede}</p> : null}
+        </>
+      )}
 
       {emptyReason ? (
         <Callout tone="neutral" icon={<AlertIcon />} title="No matching plans yet">
@@ -155,6 +177,12 @@ export function VppSuggestions({
               match={item}
               featured={index === 0}
               onOpen={(kind, opener) => openDialog(item, kind, opener)}
+              enrollMode={enrollMode}
+              onEnroll={
+                onEnrollProvider
+                  ? () => onEnrollProvider(item.plan.brand)
+                  : undefined
+              }
             />
           ))}
         </div>
@@ -179,9 +207,11 @@ type CardProps = {
   match: SuggestionMatch
   featured?: boolean
   onOpen: (kind: DialogKind, opener: HTMLButtonElement) => void
+  enrollMode?: boolean
+  onEnroll?: () => void
 }
 
-function PlanSummaryCard({ match, featured = false, onOpen }: CardProps) {
+function PlanSummaryCard({ match, featured = false, onOpen, enrollMode = false, onEnroll }: CardProps) {
   const facts = compactCardFacts(match.plan, null)
 
   function handleOpen(kind: DialogKind) {
@@ -230,6 +260,18 @@ function PlanSummaryCard({ match, featured = false, onOpen }: CardProps) {
         >
           Learn more
         </button>
+        {enrollMode && onEnroll ? (
+          <button
+            type="button"
+            className="vpp-plan-card__cta vpp-plan-card__cta--enroll"
+            onClick={(event) => {
+              event.stopPropagation()
+              onEnroll()
+            }}
+          >
+            {RECOMMENDATIONS_PAGE.planEnrollAction}
+          </button>
+        ) : null}
       </div>
     </article>
   )
@@ -342,7 +384,7 @@ type TermsDialogProps = {
   onClose: () => void
 }
 
-function TermsDialog({ open, match, onClose }: TermsDialogProps) {
+export function TermsDialog({ open, match, onClose }: TermsDialogProps) {
   const titleId = useId()
   const plan = match?.plan ?? null
   const headroom = match?.reserveHeadroomKwh ?? null

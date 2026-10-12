@@ -2,7 +2,6 @@
  * Household energy dashboard: balance card, cost compare, and VPP plans.
  */
 import { useMemo } from 'react'
-import { VPP_HOW_IT_HELPS } from '../../constants'
 import { locationFromPostcode } from '../../data/profileOptions'
 import { formatUpdatedAt } from '../../lib/formatProfile'
 import { type MethodologyBundle } from '../../lib/methodologyApi'
@@ -11,9 +10,7 @@ import { buildKpiReport, type Timeframe } from '../../lib/kpis'
 import type { ProfileData } from '../../types/profile'
 import { Button } from '../ui/Button'
 import { Callout } from '../ui/Callout'
-import { VppHelpsQuotes } from '../home/VppHelpsQuotes'
 import { EnergyRiver } from './EnergyRiver'
-import { VppSuggestions } from './VppSuggestions'
 import { BoltIcon } from '../ui/icons'
 
 type Props = {
@@ -25,6 +22,7 @@ type Props = {
   onTimeframe: (next: Timeframe) => void
   onEditProfile: () => void
   onStartSetup: () => void
+  onSeeRecommendations: () => void
   onLogoClick: () => void
 }
 
@@ -47,6 +45,7 @@ export function DashboardView({
   onTimeframe,
   onEditProfile,
   onStartSetup,
+  onSeeRecommendations,
   onLogoClick,
 }: Props) {
   const report = useMemo(
@@ -67,16 +66,6 @@ export function DashboardView({
         : null,
     [bundle, report, timeframe],
   )
-
-  const compareWeeks = useMemo(() => {
-    if (!report) return null
-    const gapKwh = Math.abs(report.weekly.generationKwh - report.weekly.consumptionKwh)
-    const vppRate = Math.min(report.recommended.plan.exportRate, report.retailRate)
-    return {
-      withoutWeek: gapKwh * report.retailRate,
-      withWeek: gapKwh * vppRate,
-    }
-  }, [report])
 
   return (
     <div className="dashboard">
@@ -106,9 +95,6 @@ export function DashboardView({
       ) : null}
 
       <header className="dashboard__intro">
-        <p className="eyebrow">
-          Dashboard{place ? ` · ${place}` : ''}
-        </p>
         <h1>Your Numbers and VPP Estimation</h1>
       </header>
 
@@ -116,58 +102,29 @@ export function DashboardView({
         <div className="dashboard__story">
           {river ? (
             <EnergyRiver
-              key={timeframe}
               model={river}
               place={place}
               timeframe={timeframe}
               onTimeframe={onTimeframe}
-              onSeePlans={() => {
-                document.getElementById('vpp-suggestions')?.scrollIntoView({
-                  behavior: 'smooth',
-                  block: 'start',
-                })
-              }}
+              onSeePlans={onSeeRecommendations}
             />
           ) : null}
 
-          {compareWeeks ? (
-            <section
-              className="vpp-explainer__card vpp-helps__card dashboard-vpp-compare"
-              aria-labelledby="dashboard-vpp-compare-heading"
-            >
-              <h2 id="dashboard-vpp-compare-heading" className="vpp-helps__title">
-                {VPP_HOW_IT_HELPS.heading}
-              </h2>
-              <VppHelpsQuotes
-                withoutWeek={compareWeeks.withoutWeek}
-                withWeek={compareWeeks.withWeek}
-              />
-            </section>
-          ) : null}
-
-          {bundle ? (
-            <VppSuggestions
-              hasProfile
-              profile={profile}
-              plans={bundle.vppSuggestionPlans}
-              batteryModels={bundle.batteryModels}
-              fork={river?.fork ?? null}
-              onStartSetup={onStartSetup}
-              fromSavings
-            />
-          ) : null}
         </div>
       ) : null}
 
       {!hasProfile && bundle ? (
-        <VppSuggestions
-          hasProfile={false}
-          profile={profile}
-          plans={bundle.vppSuggestionPlans}
-          batteryModels={bundle.batteryModels}
-          fork={null}
-          onStartSetup={onStartSetup}
-        />
+        <Callout
+          tone="action"
+          title="Complete onboarding for personalised numbers"
+          action={
+            <Button variant="outline-accent" onClick={onStartSetup}>
+              Fill the onboarding form
+            </Button>
+          }
+        >
+          Finish the questionnaire to unlock your dashboard and VPP plan matches.
+        </Callout>
       ) : null}
 
       {hasProfile ? (

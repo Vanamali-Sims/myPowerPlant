@@ -11,7 +11,11 @@ import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import App from '../../App'
-import { NAV } from '../../constants/navigation'
+import { RAIN_NAV } from '../../constants/navigation'
+import { BASELINE_PROFILE } from '../../data/baselines'
+import { saveJourney } from '../../lib/journeyStorage'
+import { saveProfile } from '../../lib/profileStorage'
+import { emptyProfile } from '../../types/profile'
 
 beforeEach(() => {
   localStorage.clear()
@@ -42,23 +46,26 @@ afterEach(() => {
 })
 
 describe('Goals tab', () => {
-  it('sits directly after Reminders in the navigation', () => {
-    const ids = NAV.map((item) => item.id)
-    expect(ids.indexOf('goals')).toBe(ids.indexOf('reminders') + 1)
+  it('lists Goals between What if and Reminders in the Rain rail', () => {
+    const ids = RAIN_NAV.map((item) => item.id)
+    expect(ids).toEqual(['home', 'whatif', 'goals', 'reminders', 'profile'])
   })
 
   it('has a text label and opens the Goals page as the current page', async () => {
     const user = userEvent.setup()
+    saveJourney('rain')
+    saveProfile({ ...emptyProfile(), ...BASELINE_PROFILE, vppProvider: 'Tesla Energy Plan' }, 'improve')
     render(<App />)
     const rail = screen.getByRole('complementary', { name: 'App' })
     const buttons = Array.from(rail.querySelectorAll('nav button')).map((node) => node.textContent)
-    expect(buttons.indexOf('Goals')).toBe(buttons.indexOf('Reminders') + 1)
+    expect(buttons).toEqual(['Home', 'What if', 'Goals', 'Reminders', 'Profile'])
 
+    await user.click(screen.getByRole('button', { name: 'Goals' }))
     const goals = screen.getByRole('button', { name: 'Goals' })
-    expect(goals.getAttribute('aria-current')).toBeNull()
-    await user.click(goals)
-    expect(await screen.findByRole('heading', { level: 1, name: 'Goals' })).toBeTruthy()
-    expect(screen.getByRole('button', { name: 'Goals' }).getAttribute('aria-current')).toBe('page')
-    expect(screen.getByRole('button', { name: 'Reminders' }).getAttribute('aria-current')).toBeNull()
+    expect(goals.getAttribute('aria-current')).toBe('page')
+    expect(await screen.findByRole('heading', { level: 1, name: 'Grow your savings. Grow your tree.' })).toBeTruthy()
+    await user.click(screen.getByRole('button', { name: 'Reminders' }))
+    expect(screen.getByRole('button', { name: 'Reminders' }).getAttribute('aria-current')).toBe('page')
+    expect(screen.getByRole('button', { name: 'Goals' }).getAttribute('aria-current')).toBeNull()
   })
 })

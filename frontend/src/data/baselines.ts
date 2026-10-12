@@ -6,7 +6,7 @@ import { NOT_SURE_VALUE } from './profileOptions'
 import type { ProfileData, SetupStepId } from '../types/profile'
 
 /** Typical Kew household used when the user skips a step or chooses “Not sure”. */
-export const BASELINE_PROFILE: Omit<ProfileData, 'fieldSources' | 'lastUpdated'> =
+export const BASELINE_PROFILE: Omit<ProfileData, 'fieldSources' | 'lastUpdated' | 'improveUpdated'> =
   {
     postcode: '3101',
     people: '3',
@@ -37,6 +37,8 @@ export const BASELINE_PROFILE: Omit<ProfileData, 'fieldSources' | 'lastUpdated'>
     batteryAge: '2',
     batteryModel: 'Tesla Powerwall 2',
     provider: 'AGL Energy',
+    // No typical VPP: the improve flow asks for it and it has no skip.
+    vppProvider: '',
   }
 
 /**
@@ -54,10 +56,35 @@ export function applyBaseline(
 ): ProfileData {
   const next: ProfileData = { ...profile, fieldSources: { ...profile.fieldSources } }
   for (const field of STEP_FIELDS[step]) {
-    if (field === 'fieldSources' || field === 'lastUpdated') continue
+    if (field === 'fieldSources' || field === 'lastUpdated' || field === 'improveUpdated') continue
     const value = BASELINE_PROFILE[field]
     ;(next[field] as typeof value) = value
     next.fieldSources[field] = 'baseline'
+  }
+  return next
+}
+
+/**
+ * fillAllWithBaseline
+ * @param profile - Current answers, which may already hold some from either flow
+ * @returns Every empty setup answer filled from BASELINE_PROFILE and marked as baseline
+ *
+ * Answers already given are kept. Solar details stay empty for a home that
+ * said it has no solar.
+ */
+export function fillAllWithBaseline(profile: ProfileData): ProfileData {
+  const next: ProfileData = { ...profile, fieldSources: { ...profile.fieldSources } }
+  const noSolar = profile.hasSolar === 'no'
+  for (const fields of Object.values(STEP_FIELDS)) {
+    for (const field of fields) {
+      if (field === 'fieldSources' || field === 'lastUpdated' || field === 'improveUpdated') continue
+      if (noSolar && (field === 'solarDirection' || field === 'panelCount' || field === 'panelWatts')) continue
+      const current = next[field]
+      if (typeof current !== 'string' || current.trim() !== '') continue
+      const value = BASELINE_PROFILE[field]
+      ;(next[field] as typeof value) = value
+      next.fieldSources[field] = 'baseline'
+    }
   }
   return next
 }

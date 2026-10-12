@@ -9,7 +9,10 @@ import {
   estimateFinish,
   fruitCount,
   progressRate,
+  ripeningFruit,
   stageForStep,
+  stageNumber,
+  stageStarts,
   treeStep,
 } from './progress'
 
@@ -52,17 +55,30 @@ describe('tree growth every 5 percent (AC1)', () => {
   })
 
   it.each([
-    [0, 'seed'],
-    [1, 'seed'],
-    [2, 'sprout'],
-    [5, 'sprout'],
-    [6, 'sapling'],
-    [10, 'sapling'],
-    [11, 'tree'],
-    [19, 'tree'],
-    [20, 'full canopy'],
-  ])('step %s is the %s stage', (step, stage) => {
+    [0, 'seed', 1],
+    [3, 'seed', 1],
+    [4, 'sprout', 2],
+    [7, 'sprout', 2],
+    [8, 'sapling', 3],
+    [11, 'sapling', 3],
+    [12, 'young tree', 4],
+    [19, 'young tree', 4],
+    [20, 'harvest', 5],
+  ])('step %s is the %s stage, stage %s of 5', (step, stage, number) => {
     expect(stageForStep(step)).toBe(stage)
+    expect(stageNumber(step)).toBe(number)
+  })
+
+  it('starts the stages at 0, 20, 40, 60, and 100 percent of the carbon goal', () => {
+    expect(stageStarts().map((stage) => stage.percent)).toEqual([0, 20, 40, 60, 100])
+  })
+
+  it('shows a ripening fruit only while the next 5 percent is part way', () => {
+    expect(ripeningFruit(0)).toBe(0)
+    expect(ripeningFruit(27)).toBe(1)
+    expect(ripeningFruit(25)).toBe(0)
+    expect(ripeningFruit(99)).toBe(1)
+    expect(ripeningFruit(100)).toBe(0)
   })
 
   it('adds one fruit per 5 percent of savings, up to 20', () => {

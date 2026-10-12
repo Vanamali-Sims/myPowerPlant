@@ -50,9 +50,13 @@
 }
 
 .dashboard__intro h1 {
-  margin: 0.35rem 0 0;
+  margin: 0;
+  font-family: var(--font-display);
   font-size: clamp(2.15rem, 4vw, 2.6rem);
-  max-width: 20ch;
+  font-weight: 500;
+  line-height: 1.12;
+  max-width: 22ch;
+  color: var(--green-deep);
 }
 
 .dashboard__footer {
@@ -61,10 +65,6 @@
   gap: 0.75rem;
   align-items: flex-start;
   margin-top: 0.75rem;
-}
-
-.dashboard__intro .eyebrow {
-  color: var(--dash-accent);
 }
 
 .dashboard__time {
@@ -106,7 +106,7 @@
 .energy-balance__top {
   display: flex;
   flex-wrap: wrap;
-  align-items: center;
+  align-items: flex-start;
   justify-content: space-between;
   gap: 0.75rem 1rem;
 }
@@ -156,24 +156,27 @@
 }
 
 .energy-balance__hero {
-  margin: 1.35rem 0 0;
+  margin: 1rem 0 0;
+  padding: 0;
   color: var(--on-deep);
 }
 
 .energy-balance__lede {
+  margin: 0;
   display: block;
-  max-width: 28ch;
+  max-width: 26ch;
   font-family: var(--font-body);
-  font-size: 0.95rem;
+  font-size: 0.92rem;
   font-weight: 400;
-  line-height: 1.4;
+  line-height: 1.35;
   color: var(--on-deep-muted);
 }
 
 .energy-balance__share {
-  display: inline-block;
+  display: block;
   width: fit-content;
-  margin: 0.15rem 0 0;
+  margin: 0.2rem 0 0;
+  padding: 0;
   font-family: var(--font-display);
   font-size: clamp(2.8rem, 6vw, 3.5rem);
   font-weight: 500;
@@ -184,7 +187,7 @@
 }
 
 .energy-bar {
-  margin-top: 1.35rem;
+  margin-top: 0.85rem;
 }
 
 .energy-bar__track {
@@ -244,15 +247,14 @@
 }
 
 .energy-balance__live {
-  margin: 0.35rem 0 0;
-  min-height: 1.2em;
+  margin: 0.45rem 0 0;
   font-size: 0.82rem;
   color: var(--on-deep-muted);
 }
 
 .energy-legend {
   list-style: none;
-  margin: 0.85rem 0 0;
+  margin: 0.75rem 0 0;
   padding: 0;
   display: grid;
   grid-template-columns: 1fr;
@@ -419,6 +421,11 @@
 }
 
 .energy-legend__hint {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35rem 0.5rem;
+  margin-top: 0.12rem;
   font-size: 0.75rem;
   color: var(--on-deep-muted);
 }
@@ -427,10 +434,77 @@
   display: flex;
   flex-direction: column;
   align-items: stretch;
-  gap: 0.85rem;
+  gap: 1rem;
   margin-top: 1.15rem;
-  padding-top: 1.1rem;
-  border-top: 1px solid rgb(255 255 255 / 0.12);
+  padding: 28px 32px;
+  border: 0;
+  box-shadow: none;
+  background: var(--surface-raised-on-dark);
+  border-radius: 18px;
+}
+
+.energy-savings-wrap--foot {
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+.energy-savings-foot {
+  display: block;
+  width: 100%;
+  max-width: 14rem;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  font: inherit;
+  color: inherit;
+  text-align: left;
+  cursor: help;
+}
+
+.energy-savings-foot .energy-legend__label {
+  color: var(--on-deep-muted);
+}
+
+.energy-savings-foot .energy-savings__info {
+  display: inline-grid;
+  place-items: center;
+  color: var(--on-deep-muted);
+}
+
+.energy-savings-foot .energy-legend__value {
+  margin-top: 0.15rem;
+  font-size: clamp(2.85rem, 3.2vw, 2.25rem);
+  color: var(--accent);
+}
+
+.energy-savings-foot .energy-legend__hint {
+  color: var(--on-deep-muted);
+}
+
+.energy-savings-foot .kpi-badge--on-deep {
+  color: rgb(244 241 232 / 0.88);
+  border-color: rgb(255 255 255 / 0.22);
+  background: rgb(255 255 255 / 0.06);
+}
+
+.energy-legend__swatch--savings {
+  color: var(--accent);
+}
+
+.energy-plans-row {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.55rem;
+}
+
+.energy-plans-caption {
+  margin: 0;
+  font-size: 0.76rem;
+  line-height: 1.35;
+  color: rgb(242 237 227 / 0.82);
+  max-width: 11.5rem;
 }
 
 .energy-savings-wrap {
@@ -1442,7 +1516,7 @@
   }
 
   .energy-legend {
-    grid-template-columns: repeat(4, minmax(0, 1fr));
+    grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: 0;
   }
 
@@ -1459,9 +1533,30 @@
     padding: 0.15rem 0.9rem 0.15rem 0;
   }
 
+  .energy-balance__foot {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 1rem 1.25rem;
+  }
+
+  .energy-plans-row {
+    flex-direction: row;
+    align-items: center;
+    justify-content: flex-end;
+    flex-shrink: 0;
+    gap: 0.75rem;
+    margin-left: auto;
+  }
+
   .energy-plans-cta {
     width: auto;
-    align-self: flex-start;
-    padding-inline: 1.5rem;
+    flex-shrink: 0;
+    padding-inline: 1.35rem;
+  }
+
+  .energy-plans-caption {
+    text-align: left;
+    max-width: 9.5rem;
   }
 }

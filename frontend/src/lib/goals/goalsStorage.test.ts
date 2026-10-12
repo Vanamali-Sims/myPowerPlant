@@ -47,6 +47,15 @@ function storeWith(overrides: Partial<GoalsStore> = {}): GoalsStore {
   }
 }
 
+const BASELINE = {
+  month: '2026-09',
+  days: 30,
+  monthly: { savings: 30, carbon: 20 },
+  battery: { model: 'Tesla Powerwall 2', units: 1 },
+  ratePerKwh: null,
+  setOn: SET_ON,
+}
+
 function writeRaw(value: unknown) {
   localStorage.setItem(GOALS_STORAGE_KEY, typeof value === 'string' ? value : JSON.stringify(value))
 }
@@ -92,7 +101,33 @@ describe('loadGoals', () => {
   })
 
   it('treats an unknown version as empty', () => {
-    writeRaw({ ...storeWith(), version: 2 })
+    writeRaw({ ...storeWith(), version: 3 })
+    expect(loadGoals()).toEqual(emptyGoalsStore())
+  })
+
+  it('moves a v1 store up to v2 with no baseline, keeping goals and history', () => {
+    const { goals, completedGoals } = storeWith()
+    writeRaw({ version: 1, goals, completedGoals, months: [month()] })
+    expect(loadGoals()).toEqual(storeWith({ months: [month()], baseline: null }))
+  })
+
+  it('round-trips a baseline, with and without a rate', () => {
+    for (const ratePerKwh of [null, 0.32]) {
+      const store = storeWith({ baseline: { ...BASELINE, ratePerKwh } })
+      expect(saveGoals(store).ok).toBe(true)
+      expect(loadGoals()).toEqual(store)
+    }
+  })
+
+  it.each([
+    ['a baseline month that is not real', { ...BASELINE, month: '2026-13' }],
+    ['more baseline days than the month has', { ...BASELINE, days: 31 }],
+    ['a negative baseline figure', { ...BASELINE, monthly: { savings: -1, carbon: 20 } }],
+    ['a battery model not in the list', { ...BASELINE, battery: { model: 'Made up', units: 1 } }],
+    ['too many battery units', { ...BASELINE, battery: { model: 'Not sure', units: 99 } }],
+    ['a rate far above any plan', { ...BASELINE, ratePerKwh: 5 }],
+  ])('treats %s as corrupt', (_label, bad) => {
+    writeRaw(storeWith({ baseline: bad }))
     expect(loadGoals()).toEqual(emptyGoalsStore())
   })
 
@@ -157,7 +192,7 @@ describe('saveGoals', () => {
     expect(spy).toHaveBeenCalledTimes(1)
     expect(spy.mock.calls[0][0]).toBe(GOALS_STORAGE_KEY)
     expect(localStorage.getItem(PROFILE_STORAGE_KEY)).toBe('{"postcode":"3101"}')
-    expect(JSON.parse(localStorage.getItem(GOALS_STORAGE_KEY) ?? '{}').version).toBe(1)
+    expect(JSON.parse(localStorage.getItem(GOALS_STORAGE_KEY) ?? '{}').version).toBe(2)
   })
 
   it('reports a failed write and leaves what was saved before', () => {

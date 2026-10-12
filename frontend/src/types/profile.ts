@@ -65,9 +65,14 @@ export type ProfileData = {
   batteryModel: string
 
   provider: string
+  /** VPP the household has joined; asked by the improve-setup flow only. */
+  vppProvider: string
 
   fieldSources: Partial<Record<keyof ProfileData, FieldSource>>
+  /** When the explore setup form last saved these answers. */
   lastUpdated: string | null
+  /** When the improve-setup form last saved these answers. */
+  improveUpdated: string | null
 }
 
 /**
@@ -107,6 +112,8 @@ export const emptyProfile = (): ProfileData => ({
   batteryAge: '',
   batteryModel: '',
   provider: '',
+  vppProvider: '',
   fieldSources: {},
   lastUpdated: null,
+  improveUpdated: null,
 })

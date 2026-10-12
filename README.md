@@ -73,11 +73,13 @@ Compare copy and formatting live in `frontend/src/lib/chat/whatIfCompare.ts`.
 
 ## Environment
 
-| Variable | Where | Local value | Later |
-| --- | --- | --- | --- |
-| `DATABASE_URL` | `backend/.env` | `postgresql+asyncpg://app:app@localhost:5432/app` | Aurora / RDS connection string (same `postgresql+asyncpg://` scheme) |
-| `CORS_ORIGINS` | `backend/.env` | `http://localhost:5173` | Add the Amplify origin, comma-separated |
-| `VITE_API_BASE_URL` | `frontend/.env` | `http://localhost:8000` | API Gateway base URL (no trailing slash) |
+
+| Variable            | Where           | Local value                                       | Later                                                                |
+| ------------------- | --------------- | ------------------------------------------------- | -------------------------------------------------------------------- |
+| `DATABASE_URL`      | `backend/.env`  | `postgresql+asyncpg://app:app@localhost:5432/app` | Aurora / RDS connection string (same `postgresql+asyncpg://` scheme) |
+| `CORS_ORIGINS`      | `backend/.env`  | `http://localhost:5173`                           | Add the Amplify origin, comma-separated                              |
+| `VITE_API_BASE_URL` | `frontend/.env` | `http://localhost:8000`                           | API Gateway base URL (no trailing slash)                             |
+
 
 Do not hardcode `localhost` in fetch calls. Changing `VITE_API_BASE_URL` is enough to point the same frontend at API Gateway.
 
@@ -93,6 +95,8 @@ Application code stays as-is. You change packaging, env vars, and the process th
 - Map API Gateway to the FastAPI routes (`/api/health`, `/api/submit`)
 - Set `DATABASE_URL` and `CORS_ORIGINS` on the function
 - For Aurora in a VPC, place the function in the same VPC (or use RDS Proxy)
+
+
 
 ### Aurora PostgreSQL
 

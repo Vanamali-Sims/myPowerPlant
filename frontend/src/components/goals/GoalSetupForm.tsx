@@ -4,6 +4,7 @@
 import { useId, useState, type FormEvent } from 'react'
 import { GOAL_LABELS } from '../../constants/goals'
 import { fieldMessageIds } from '../../lib/fieldIds'
+import type { CalculationContext } from '../../lib/goals/calculate'
 import { formatGoalValue } from '../../lib/goals/goalFormat'
 import {
   normaliseGoal,
@@ -12,7 +13,7 @@ import {
   type GoalRange,
   type GoalSuggestions,
 } from '../../lib/goals/goalSetup'
-import { GOAL_KINDS, type GoalKind } from '../../types/goals'
+import { GOAL_KINDS, type GoalBaseline, type GoalKind } from '../../types/goals'
 import type { MessageCode } from '../../constants/goalMessages'
 import { Button } from '../ui/Button'
 import { TextField } from '../ui/TextField'
@@ -30,9 +31,10 @@ type Props = {
   /** Shown above the fields, for example how the next goal is worked out. */
   note?: string
   suggestions: GoalSuggestions
-  /** Monthly profile estimate per goal, explained in the allowed-range disclosure. */
-  monthly: Record<GoalKind, number>
-  factor: number
+  /** Battery-file month the ranges come from, explained in the allowed-range disclosure. */
+  baseline: Pick<GoalBaseline, 'month' | 'days' | 'monthly'>
+  /** Rate and emissions factor the baseline was valued with. */
+  context: CalculationContext
   /** Saved goals when editing; suggestions are used when creating. */
   current: Record<GoalKind, number | null>
   /** Why the last save failed, or null. */
@@ -62,7 +64,7 @@ function initialValues(props: Props): Values {
  * as they were.
  */
 export function GoalSetupForm(props: Props) {
-  const { mode, suggestions, monthly, factor, current, saveError, onSave, onCancel, note } = props
+  const { mode, suggestions, baseline, context, current, saveError, onSave, onCancel, note } = props
   const kinds = props.kinds ?? GOAL_KINDS
   const idBase = useId()
   const [values, setValues] = useState<Values>(() => initialValues(props))
@@ -74,7 +76,7 @@ export function GoalSetupForm(props: Props) {
 
   function errorFor(kind: GoalKind, raw: string): string | undefined {
     const range = suggestions[kind]
-    if (!range) return 'We cannot suggest this goal from your profile yet.'
+    if (!range) return 'We cannot suggest this goal from your battery file.'
     return validateGoal(kind, raw, range)
   }
 
@@ -127,7 +129,7 @@ export function GoalSetupForm(props: Props) {
               <p className="goals-form__suggestion" id={rangeId}>
                 {range
                   ? `Allowed range: ${formatGoalValue(kind, range.min)} to ${formatGoalValue(kind, range.max)}`
-                  : 'Your profile estimate for this goal is zero, so we cannot suggest a value. Check your profile answers.'}
+                  : 'Your battery file shows nothing counted for this goal, so we cannot suggest a value. Try a file from another month.'}
               </p>
               {mode === 'edit' && current[kind] !== null ? (
                 <p className="goals-form__current">
@@ -140,8 +142,8 @@ export function GoalSetupForm(props: Props) {
       </div>
 
       <div className="goals-form__explainers">
-        {mode === 'next' ? null : <RangeExplainer suggestions={suggestions} monthly={monthly} />}
-        <CarbonExamples factor={factor} suggestedKg={suggestions.carbon?.suggested ?? null} />
+        {mode === 'next' ? null : <RangeExplainer suggestions={suggestions} baseline={baseline} context={context} />}
+        <CarbonExamples factor={context.factor} suggestedKg={suggestions.carbon?.suggested ?? null} />
       </div>
 
       {saveError ? <GoalMessage code={saveError} /> : null}

@@ -81,8 +81,19 @@
   color: var(--ink-secondary);
 }
 
+.setup-intro__skip-note {
+  margin: 0.75rem 0 0;
+  font-size: 0.85rem;
+  color: var(--ink-secondary);
+}
+
 .setup-intro__footer {
   display: flex;
+  gap: 0.6rem;
+}
+
+.setup-intro__footer .ui-btn {
+  flex: 1;
 }
 
 @media (min-width: 900px) {

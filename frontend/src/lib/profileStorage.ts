@@ -19,6 +19,9 @@ const CONTROL_CHARS = /[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/g
 
 const PROFILE_KEYS = Object.keys(emptyProfile()) as (keyof ProfileData)[]
 
+/** Longest VPP provider name kept; typed freely, so it is capped rather than matched to a list. */
+const VPP_PROVIDER_MAX_LENGTH = 60
+
 const COUNT_FIELDS = [
   ['people', FIELD_BOUNDS.people],
   ['rooms', FIELD_BOUNDS.rooms],
@@ -100,7 +103,14 @@ function sanitiseProfile(parsed: Partial<ProfileData>): ProfileData {
   const next: ProfileData = { ...blank }
 
   for (const key of PROFILE_KEYS) {
-    if (key === 'fieldSources' || key === 'lastUpdated' || key === 'batteryUnits') continue
+    if (
+      key === 'fieldSources' ||
+      key === 'lastUpdated' ||
+      key === 'improveUpdated' ||
+      key === 'batteryUnits'
+    ) {
+      continue
+    }
     const value = parsed[key]
     if (typeof value === 'string') {
       ;(next as Record<string, unknown>)[key] = stripControls(value)
@@ -114,8 +124,10 @@ function sanitiseProfile(parsed: Partial<ProfileData>): ProfileData {
   next.batteryUnits = sanitiseBatteryUnits(parsed.batteryUnits)
   next.batteryModel = isAllowedBatteryModel(next.batteryModel) ? next.batteryModel : ''
   next.provider = isAllowedProvider(next.provider) ? next.provider : ''
+  next.vppProvider = next.vppProvider.trim().slice(0, VPP_PROVIDER_MAX_LENGTH)
   next.fieldSources = sanitiseFieldSources(parsed.fieldSources)
   next.lastUpdated = sanitiseLastUpdated(parsed.lastUpdated)
+  next.improveUpdated = sanitiseLastUpdated(parsed.improveUpdated)
   return next
 }
 
@@ -142,17 +154,33 @@ export function loadProfile(): ProfileData {
 /**
  * saveProfile
  * @param profile - Household answers to persist
- * @returns The same profile with lastUpdated set to now
+ * @param flow - Which flow is saving: explore stamps lastUpdated, improve stamps improveUpdated
+ * @returns The same profile with that flow's timestamp set to now
  *
- * Stamps lastUpdated so the dashboard and profile screen can show when the
- * answers were last confirmed on this device. Sanitises before write so a
- * tampered in-memory object cannot persist null bytes or unbounded JSON.
+ * Both flows share one set of answers, so a change in either shows in the
+ * other. Each keeps its own timestamp, so finishing one flow's form does not
+ * mark the other flow's form as done. Sanitises before write so a tampered
+ * in-memory object cannot persist null bytes or unbounded JSON.
  */
-export function saveProfile(profile: ProfileData): ProfileData {
+export function saveProfile(profile: ProfileData, flow: 'explore' | 'improve' = 'explore'): ProfileData {
+  const now = new Date().toISOString()
   const next = sanitiseProfile({
     ...profile,
-    lastUpdated: new Date().toISOString(),
+    ...(flow === 'explore' ? { lastUpdated: now } : { improveUpdated: now }),
   })
+  localStorage.setItem(PROFILE_STORAGE_KEY, JSON.stringify(next))
+  return next
+}
+
+/**
+ * storeProfile
+ * @param profile - Household answers to persist exactly as given, timestamps included
+ * @returns The sanitised profile that was written
+ *
+ * Used when a flow is undone, so neither timestamp is moved forward.
+ */
+export function storeProfile(profile: ProfileData): ProfileData {
+  const next = sanitiseProfile(profile)
   localStorage.setItem(PROFILE_STORAGE_KEY, JSON.stringify(next))
   return next
 }

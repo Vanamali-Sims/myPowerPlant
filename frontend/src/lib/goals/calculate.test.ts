@@ -1,15 +1,11 @@
 /**
  * Unit tests for estimated savings and carbon (US8.3 AC2, AC3).
  *
- * The consistency checks assert that Goals uses the very same rate and
- * emissions factor values as buildKpiReport, not the same end result: the
- * dashboard values different energy, so its totals are not comparable.
+ * Savings use the rate the person entered, else the typical Victorian rate
+ * from the methodology data. Only discharge counts towards savings and carbon.
  */
 import { describe, expect, it } from 'vitest'
 
-import { BASELINE_PROFILE } from '../../data/baselines'
-import { emptyProfile, type ProfileData } from '../../types/profile'
-import { buildKpiReport } from '../kpis'
 import { seedMethodologyBundle } from '../methodologyFixture'
 import {
   buildCalculationContext,
@@ -21,52 +17,32 @@ import {
 
 const bundle = seedMethodologyBundle()
 
-function profile(overrides: Partial<ProfileData> = {}): ProfileData {
-  return { ...emptyProfile(), ...BASELINE_PROFILE, lastUpdated: '2026-10-01T00:00:00.000Z', ...overrides }
-}
-
-const typical = profile({ monthlyKwh: '' })
-const household = profile({
-  monthlyBill: '200',
-  monthlyKwh: '500',
-  fieldSources: { monthlyBill: 'user', monthlyKwh: 'user' },
-})
-
-describe('same rules as the main website (AC2)', () => {
-  it.each([
-    ['a profile without monthly kWh', typical],
-    ['a profile with its own bill and usage', household],
-  ])('uses the dashboard rate and emissions factor for %s', (_label, answers) => {
-    const report = buildKpiReport(answers, bundle)
-    const context = buildCalculationContext(answers, bundle)
-    expect(context.rate).toBe(report.retailRate)
-    expect(context.rateKind).toBe(report.retailRateKind)
-    expect(context.factor).toBe(bundle.methodology.vicGridKgCo2PerKwh)
-    expect(getEmissionsFactor(bundle)).toBe(bundle.methodology.vicGridKgCo2PerKwh)
-    expect(getRateForInterval(context, '2026-09-01')).toBe(report.retailRate)
+describe('which rate is used (AC2)', () => {
+  it('uses the rate the person entered, marked as theirs', () => {
+    const context = buildCalculationContext(0.35, bundle)
+    expect(context).toEqual({ rate: 0.35, rateKind: 'from_you', factor: bundle.methodology.vicGridKgCo2PerKwh })
+    expect(getRateForInterval(context, '2026-09-01')).toBe(0.35)
   })
 
-  it('falls back to the typical rate from the methodology data when monthly kWh is missing', () => {
-    const context = buildCalculationContext(typical, bundle)
+  it('falls back to the typical Victorian rate as an estimate when none was entered', () => {
+    const context = buildCalculationContext(null, bundle)
     expect(context.rate).toBe(bundle.methodology.defaultRetailRate)
-    expect(context.rateKind).not.toBe('from_you')
+    expect(context.rateKind).toBe('estimate')
   })
 
-  it("marks the household's own bill and usage as from_you", () => {
-    const context = buildCalculationContext(household, bundle)
-    expect(context.rateKind).toBe('from_you')
-    expect(context.rate).toBeCloseTo(0.4, 10)
+  it('uses the shared Victorian emissions factor', () => {
+    expect(getEmissionsFactor(bundle)).toBe(bundle.methodology.vicGridKgCo2PerKwh)
   })
 })
 
-describe('all battery activity counts (AC3)', () => {
+describe('only discharge counts (AC3)', () => {
   const context = { rate: 0.3, rateKind: 'estimate' as const, factor: 0.77 }
 
-  it('counts discharge plus intake as battery energy', () => {
+  it('counts discharge only, never intake', () => {
     const day = calculateDay({ date: '2026-09-01', intervals: 96, dischargeKwh: 6, intakeKwh: 4 }, context)
-    expect(day.energyKwh).toBe(10)
-    expect(day.savingsAud).toBeCloseTo(3, 10)
-    expect(day.carbonKg).toBeCloseTo(7.7, 10)
+    expect(day.energyKwh).toBe(6)
+    expect(day.savingsAud).toBeCloseTo(1.8, 10)
+    expect(day.carbonKg).toBeCloseTo(4.62, 10)
   })
 
   it('keeps a missing intake column as missing, never filled in', () => {
@@ -97,9 +73,9 @@ describe('all battery activity counts (AC3)', () => {
       dayCount: 2,
       dischargeKwh: 8,
       intakeKwh: 7,
-      energyKwh: 15,
+      energyKwh: 8,
     })
-    expect(totals.savingsAud).toBeCloseTo(4.5, 10)
-    expect(totals.carbonKg).toBeCloseTo(11.55, 10)
+    expect(totals.savingsAud).toBeCloseTo(2.4, 10)
+    expect(totals.carbonKg).toBeCloseTo(6.16, 10)
   })
 })

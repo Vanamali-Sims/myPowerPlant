@@ -56,6 +56,8 @@ export const FIELD_BOUNDS = {
 } as const
 
 export const DEFAULT_BATTERY_UNITS = FIELD_BOUNDS.batteryUnits.min
+/** Watts per panel used when the improve flow's optional panel rating is left empty. */
+export const TYPICAL_PANEL_WATTS = FIELD_BOUNDS.panelWatts.example
 export const DEFAULT_RESERVE_PERCENT = String(FIELD_BOUNDS.reservePercent.example)
 
 /**

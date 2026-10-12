@@ -6,17 +6,20 @@ import { LockIcon } from '../ui/icons'
 type Props = {
   open: boolean
   onContinue: () => void
+  /** Fill every unanswered question with typical values and finish setup. */
+  onSkipAll?: () => void
 }
 
 /**
  * SetupIntroDialog
  * @param props.open - Whether the pre-step-1 notice is showing
  * @param props.onContinue - Dismiss and reveal household step 1
+ * @param props.onSkipAll - Fill every unanswered question with typical values instead
  * @returns Modal explaining local-only answers and why detail helps
  *
  * Native dialog so focus is trapped until Continue, Escape, or the backdrop.
  */
-export function SetupIntroDialog({ open, onContinue }: Props) {
+export function SetupIntroDialog({ open, onContinue, onSkipAll }: Props) {
   const dialogRef = useRef<HTMLDialogElement>(null)
 
   useEffect(() => {
@@ -54,8 +57,14 @@ export function SetupIntroDialog({ open, onContinue }: Props) {
               {SETUP_INTRO.privacy}
             </p>
             <p className="vpp-dialog__lede setup-intro__accuracy">{SETUP_INTRO.accuracy}</p>
+            {onSkipAll ? <p className="setup-intro__skip-note">{SETUP_INTRO.skipAllNote}</p> : null}
           </div>
           <footer className="vpp-dialog__footer setup-intro__footer">
+            {onSkipAll ? (
+              <Button variant="secondary" onClick={onSkipAll}>
+                {SETUP_INTRO.skipAll}
+              </Button>
+            ) : null}
             <Button variant="primary" onClick={onContinue}>
               {SETUP_INTRO.action}
             </Button>

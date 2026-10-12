@@ -71,6 +71,17 @@ export function addDays(date: string, days: number): string {
   return new Date(toUtcMs(date) + days * MS_PER_DAY).toISOString().slice(0, 10)
 }
 
+/**
+ * addMonths
+ * @param month - YYYY-MM
+ * @param months - Whole months to move, may be negative
+ * @returns The month label that many months away
+ */
+export function addMonths(month: string, months: number): string {
+  const [year, index] = month.split('-').map(Number)
+  return new Date(Date.UTC(year, index - 1 + months, 1)).toISOString().slice(0, 7)
+}
+
 /** True when the date falls inside any of the ranges. */
 export function isDateCovered(ranges: DateRange[], date: string): boolean {
   return ranges.some(([start, end]) => date >= start && date <= end)
