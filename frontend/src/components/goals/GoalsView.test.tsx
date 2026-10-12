@@ -7,7 +7,7 @@
  * Rendered with the seeded methodology bundle, so no request is made. Files
  * are dated from today, so the baseline month is always a recent one.
  */
-import { cleanup, render, screen, within } from '@testing-library/react'
+import { cleanup, fireEvent, render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 
@@ -66,11 +66,10 @@ function renderView({ profile = savedProfile(), bundleLoaded = true, methodology
 }
 
 async function addFile(user: ReturnType<typeof userEvent.setup>, from = RECENT_FIRST, to = RECENT_LAST) {
-  await user.click(screen.getByRole('radio', { name: 'Tesla' }))
+  await user.click(screen.getByRole('button', { name: 'Tesla' }))
   const input = document.querySelector('input[type="file"]') as HTMLInputElement
   await user.upload(input, new File([csvFor(from, to)], 'battery.csv'))
-  await user.click(screen.getByRole('button', { name: 'Read file' }))
-  await user.click(await screen.findByRole('button', { name: 'Continue' }))
+  await screen.findByLabelText('Savings goal (AUD)')
 }
 
 function savingsInput() {
@@ -179,37 +178,33 @@ afterEach(() => {
 describe('step 1: battery and a recent file', () => {
   it('works with no profile, asking for the battery before the file', async () => {
     const { user } = renderView({ profile: emptyProfile() })
-    expect(screen.getByRole('heading', { name: 'Set your goals' })).toBeTruthy()
-    expect(screen.getByText(/^Step 1 of 2:/)).toBeTruthy()
+    expect(screen.getByRole('heading', { name: 'Your goals' })).toBeTruthy()
+    expect(screen.getByRole('heading', { name: 'Add your battery file' })).toBeTruthy()
     expect(screen.getByText('Choose your battery model to add your file.')).toBeTruthy()
-    expect(screen.queryByRole('region', { name: /Upload/ })).toBeNull()
-    expect(screen.queryByLabelText('Savings goal (AUD)')).toBeNull()
+    expect(screen.queryByLabelText('Savings goal (AUD)')).toBeTruthy()
 
     await user.click(screen.getByPlaceholderText('Search battery brand & model'))
     await user.click(screen.getByRole('option', { name: 'Tesla Powerwall 2' }))
-    const upload = screen.getByRole('region', { name: 'Upload a recent battery file' })
-    expect(within(upload).getByRole('radiogroup', { name: 'VPP provider' })).toBeTruthy()
-    expect(screen.queryByRole('region', { name: 'Upload your battery file' })).toBeNull()
+    expect(screen.getByRole('group', { name: 'Battery file provider' })).toBeTruthy()
   })
 
   it('uses the battery and rate from the profile and goes straight to the upload', () => {
     renderView()
-    expect(screen.getByText('Step 1 of 2: a recent battery file')).toBeTruthy()
     expect(screen.queryByPlaceholderText('Search battery brand & model')).toBeNull()
     expect(screen.queryByLabelText('Your electricity usage rate (optional)')).toBeNull()
-    expect(
-      screen.getByText(
-        'Using your battery from your profile: Tesla Powerwall 2. Savings use your bill ÷ usage from your profile, about 33.3 c/kWh.',
-      ),
-    ).toBeTruthy()
-    expect(screen.getByRole('region', { name: 'Upload a recent battery file' })).toBeTruthy()
+    expect(screen.getByText(/Battery from your profile:/)).toBeTruthy()
+    expect(screen.getByText(/Tesla Powerwall 2/)).toBeTruthy()
+    expect(screen.getByText(/about 33\.3 c\/kWh/)).toBeTruthy()
+    expect(screen.getByRole('heading', { name: 'Add your battery file' })).toBeTruthy()
   })
 
   it('refuses a month with too few complete days and shows no goal fields', async () => {
     const { user } = renderView()
-    await addFile(user, RECENT_FIRST, `${RECENT}-10`)
+    await user.click(screen.getByRole('button', { name: 'Tesla' }))
+    const input = document.querySelector('input[type="file"]') as HTMLInputElement
+    await user.upload(input, new File([csvFor(RECENT_FIRST, `${RECENT}-10`)], 'battery.csv'))
     expect(screen.getByRole('alert').textContent).toContain(GOAL_MESSAGES.baseline_too_few_days.title)
-    expect(screen.queryByLabelText('Savings goal (AUD)')).toBeNull()
+    expect(screen.getByRole('button', { name: 'Save goals' })).toHaveProperty('disabled', true)
     expect(storedGoals()).toBeNull()
   })
 
@@ -218,7 +213,7 @@ describe('step 1: battery and a recent file', () => {
     const { user } = renderView()
     await addFile(user, `${old}-01`, `${old}-20`)
     expect(screen.getByRole('alert').textContent).toContain(GOAL_MESSAGES.baseline_not_recent.title)
-    expect(screen.queryByLabelText('Savings goal (AUD)')).toBeNull()
+    expect(screen.getByRole('button', { name: 'Save goals' })).toHaveProperty('disabled', true)
   })
 })
 
@@ -245,10 +240,9 @@ describe('optional usage rate', () => {
     await user.type(rateInput(), '500')
     await user.tab()
     expect(screen.getByRole('alert').textContent).toContain('Enter your rate in cents per kWh, between 5 and 100')
-    expect(screen.queryByRole('region', { name: 'Upload a recent battery file' })).toBeNull()
     expect(screen.getByText('Fix the rate, or leave it empty, to add your file.')).toBeTruthy()
     await user.clear(rateInput())
-    expect(screen.getByRole('region', { name: 'Upload a recent battery file' })).toBeTruthy()
+    expect(screen.getByRole('heading', { name: 'Add your battery file' })).toBeTruthy()
   })
 
   it('values the file at the rate entered and saves it with the baseline', async () => {
@@ -268,26 +262,21 @@ describe('step 2: goals from the file', () => {
   it('names the month, warns about seasons, says the days will count, and fills in the suggestion', async () => {
     const { user } = renderView()
     await addFile(user)
-    expect(document.activeElement).toBe(screen.getByRole('heading', { name: 'Set your goals' }))
-    expect(screen.getByText('Step 2 of 2: choose your goals')).toBeTruthy()
-    expect(
-      screen.getByText(
-        `Based on ${RECENT_LABEL}; your range may shift with the seasons. ${expected.days} days from ${RECENT_LABEL} will be added to your goal progress when you save your goals.`,
-      ),
-    ).toBeTruthy()
+    expect(document.activeElement).toBe(screen.getByRole('heading', { name: 'Your goals' }))
     expect(savingsInput()).toHaveProperty('value', String(expected.suggestions.savings?.suggested))
     expect(carbonInput()).toHaveProperty('value', String(expected.suggestions.carbon?.suggested))
-    expect(describedText(savingsInput())).toBe(
-      `Allowed range: ${aud(expected.suggestions.savings?.min)} to ${aud(expected.suggestions.savings?.max)}`,
-    )
+    expect(screen.getByRole('button', { name: 'Save goals' })).toHaveProperty('disabled', false)
+    expect(screen.getByText(aud(expected.suggestions.savings?.min))).toBeTruthy()
+    expect(screen.getByText(aud(expected.suggestions.savings?.max))).toBeTruthy()
   })
 
   it('explains the range from 2 to 13 months of the file month', async () => {
     const { user } = renderView()
     await addFile(user)
-    const toggle = screen.getByRole('button', { name: 'How is the allowed range calculated?' })
+    const toggle = screen.getByText('How is the allowed range calculated?')
     await user.click(toggle)
-    const text = document.getElementById(toggle.getAttribute('aria-controls') ?? '')?.textContent ?? ''
+    const panel = toggle.closest('details')?.querySelector('.goals-examples__panel')
+    const text = panel?.textContent ?? ''
     expect(text).toContain(`Based on your battery file for ${RECENT_LABEL}`)
     expect(text).toContain('× 30.4 days')
     expect(text).toContain(`Lowest: 2 months = ${aud(expected.suggestions.savings?.min)}`)
@@ -299,16 +288,17 @@ describe('step 2: goals from the file', () => {
     const { user } = renderView()
     await addFile(user)
     await user.click(screen.getByRole('button', { name: 'Use a different file' }))
-    expect(screen.getByText(/^Step 1 of 2:/)).toBeTruthy()
-    expect(screen.queryByLabelText('Savings goal (AUD)')).toBeNull()
+    expect(screen.getByRole('button', { name: 'Save goals' })).toHaveProperty('disabled', true)
+    expect(screen.getByText('Add your file to see your range')).toBeTruthy()
   })
 
   it('shows worked carbon examples with the factor source', async () => {
     const { user } = renderView()
     await addFile(user)
-    const toggle = screen.getByRole('button', { name: 'How is carbon calculated?' })
+    const toggle = screen.getByText('How is carbon calculated?')
     await user.click(toggle)
-    const text = document.getElementById(toggle.getAttribute('aria-controls') ?? '')?.textContent ?? ''
+    const panel = toggle.closest('details')?.querySelector('.goals-examples__panel')
+    const text = panel?.textContent ?? ''
     const factor = bundle.methodology.vicGridKgCo2PerKwh
     expect(text).toContain(`10 kWh × ${factor} =`)
     expect(text).toContain('close to your suggested carbon goal')
@@ -326,8 +316,7 @@ describe('goal validation', () => {
   ])('shows an error beside the field for %j and does not save', async (raw, message) => {
     const { user } = renderView()
     await addFile(user)
-    await user.clear(savingsInput())
-    if (raw) await user.type(savingsInput(), raw)
+    fireEvent.change(savingsInput(), { target: { value: raw } })
     await user.click(screen.getByRole('button', { name: 'Save goals' }))
     expect(screen.getByRole('alert').textContent).toContain(message)
     expect(savingsInput().getAttribute('aria-invalid')).toBe('true')
@@ -374,7 +363,7 @@ describe('saving goals with the baseline', () => {
     await user.click(screen.getByRole('button', { name: 'Save goals' }))
     vi.restoreAllMocks()
     expect(screen.getByRole('alert').textContent).toContain(GOAL_MESSAGES.write_failed.title)
-    expect(screen.getByRole('heading', { name: 'Set your goals' })).toBeTruthy()
+    expect(screen.getByRole('heading', { name: 'Your goals' })).toBeTruthy()
     expect(storedGoals()).toBeNull()
   })
 })

@@ -20,6 +20,7 @@ import {
   recordReached,
 } from '../../lib/goals/achievements'
 import { melbourneDate } from '../../lib/goals/melbourneTime'
+import { monthOf } from '../../lib/goals/calendar'
 import {
   formatGoalValue,
   formatMonthLabel,
@@ -41,6 +42,7 @@ import { Button } from '../ui/Button'
 import { Callout } from '../ui/Callout'
 import { BoltIcon, CheckIcon } from '../ui/icons'
 import { BaselineStep, type BaselineDraft } from './BaselineStep'
+import { GoalsSetupBoard } from './GoalsSetupBoard'
 import { ClearGoalsDialog } from './ClearGoalsDialog'
 import { GoalMessage } from './GoalMessage'
 import { GoalGarden } from './GoalGarden'
@@ -459,6 +461,19 @@ export function GoalsView({ profile, bundle, methodologyError, onLogoClick }: Pr
   const setupTitle = nextKinds ? 'Set your next goal' : goals ? 'Edit your goals' : 'Set your goals'
 
   const showOverview = Boolean(goals) && !editing && !nextKinds
+  const firstTimeSetup = !goals && !editing && !nextKinds
+  const showOnboardingBoard =
+    firstTimeSetup &&
+    Boolean(bundle) &&
+    (stage === 'upload' || (stage === 'form' && Boolean(draft)))
+  const previewMonthly = { savings: 50, carbon: 30 }
+  const previewSuggestions = suggestGoals(previewMonthly)
+  const previewBaseline = {
+    month: monthOf(today()),
+    days: 30,
+    monthly: previewMonthly,
+  }
+  const onboardingContext = bundle ? buildCalculationContext(rateFromProfile, bundle) : null
 
   return (
     <div className={`goals${showOverview ? ' goals--overview' : ''}`}>
@@ -480,7 +495,9 @@ export function GoalsView({ profile, bundle, methodologyError, onLogoClick }: Pr
         <div className="goals-head__copy">
           <p className="eyebrow goals-head__eyebrow">{GOALS_PAGE.eyebrow}</p>
           <h1 className="goals-head__title">{GOALS_PAGE.title}</h1>
-          {showOverview ? (
+          {firstTimeSetup && bundle ? (
+            <p className="goals-head__lede">{GOALS_PAGE.setupLede}</p>
+          ) : showOverview ? (
             <p className="goals-head__lede">
               {store.months.length ? GOALS_PAGE.uploadPromptAgain : GOALS_PAGE.uploadPrompt}
             </p>
@@ -549,7 +566,32 @@ export function GoalsView({ profile, bundle, methodologyError, onLogoClick }: Pr
         </section>
       ) : null}
 
-      {stage === 'upload' && bundle ? (
+      {showOnboardingBoard && bundle && onboardingContext ? (
+        <GoalsSetupBoard
+          headingRef={setupHeading}
+          unlocked={Boolean(draft)}
+          initialBattery={battery}
+          profileBattery={profileBattery}
+          profileRatePerKwh={rateFromProfile}
+          initialRatePerKwh={store.baseline?.ratePerKwh ?? null}
+          bundle={bundle}
+          previewBaseline={previewBaseline}
+          previewSuggestions={previewSuggestions}
+          context={
+            draft
+              ? buildCalculationContext(draft.baseline.ratePerKwh ?? rateFromProfile, bundle)
+              : onboardingContext
+          }
+          activeBaseline={activeBaseline}
+          formSuggestions={formSuggestions}
+          saveError={saveError}
+          onBaselineReady={acceptBaselineDraft}
+          onSave={save}
+          onChooseAnotherFile={draft ? chooseAnotherFile : undefined}
+        />
+      ) : null}
+
+      {stage === 'upload' && bundle && !showOnboardingBoard ? (
         <BaselineStep
           title={setupTitle}
           headingRef={setupHeading}
@@ -563,7 +605,7 @@ export function GoalsView({ profile, bundle, methodologyError, onLogoClick }: Pr
         />
       ) : null}
 
-      {stage === 'form' && activeBaseline && formSuggestions && bundle ? (
+      {stage === 'form' && activeBaseline && formSuggestions && bundle && !showOnboardingBoard ? (
         <section className="dashboard-card goals-setup" aria-labelledby="goals-setup-title">
           <h2 id="goals-setup-title" ref={setupHeading} tabIndex={-1}>
             {setupTitle}

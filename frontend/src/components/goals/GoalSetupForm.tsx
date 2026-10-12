@@ -1,8 +1,8 @@
 /**
  * Savings and carbon goal fields, used for first-visit setup and for editing.
  */
-import { useId, useState, type FormEvent } from 'react'
-import { GOAL_LABELS } from '../../constants/goals'
+import { useId, useState, type FormEvent, type Ref } from 'react'
+import { GOAL_LABELS, GOALS_ONBOARDING } from '../../constants/goals'
 import { fieldMessageIds } from '../../lib/fieldIds'
 import type { CalculationContext } from '../../lib/goals/calculate'
 import { formatGoalValue } from '../../lib/goals/goalFormat'
@@ -17,15 +17,18 @@ import { GOAL_KINDS, type GoalBaseline, type GoalKind } from '../../types/goals'
 import type { MessageCode } from '../../constants/goalMessages'
 import { Button } from '../ui/Button'
 import { TextField } from '../ui/TextField'
-import { CarbonExamples } from './CarbonExamples'
+import { CarbonExamples, CarbonExamplesPanel } from './CarbonExamples'
 import { GoalMessage } from './GoalMessage'
-import { RangeExplainer } from './RangeExplainer'
+import { RangeExplainer, RangeExplainerPanel } from './RangeExplainer'
 
 type Values = Record<GoalKind, string>
 
 type Props = {
   /** next: a new goal after reaching one, which must be above the total so far. */
   mode: 'create' | 'edit' | 'next'
+  layout?: 'classic' | 'onboarding'
+  /** When onboarding layout: fields are placeholders until a file is read. */
+  unlocked?: boolean
   /** Which goals to show; both unless a single reached goal is being replaced. */
   kinds?: readonly GoalKind[]
   /** Shown above the fields, for example how the next goal is worked out. */
@@ -41,6 +44,7 @@ type Props = {
   saveError: MessageCode | null
   onSave: (targets: Partial<Record<GoalKind, number>>) => void
   onCancel?: () => void
+  formRef?: Ref<HTMLFormElement>
 }
 
 function initialValues(props: Props): Values {
@@ -52,19 +56,112 @@ function initialValues(props: Props): Values {
   return out
 }
 
-/**
- * GoalSetupForm
- * @param props.mode - create on first visit, edit for saved goals
- * @param props.suggestions - Suggested value and allowed range per goal
- * @returns A form that saves only when both goals are valid
- *
- * Each field shows only its allowed range; how the range and the pre-filled
- * suggestion are worked out sits in a disclosure. Invalid text is kept in the
- * field, saved goals are untouched until Save succeeds, and Cancel leaves them
- * as they were.
- */
+function clampToRange(kind: GoalKind, raw: string, range: GoalRange | null): string {
+  if (!range) return raw
+  const parsed = parseGoalInput(raw)
+  if (parsed === null) return raw
+  const clamped = Math.min(range.max, Math.max(range.min, parsed))
+  return String(normaliseGoal(kind, clamped))
+}
+
+function OnboardingGoalField({
+  kind,
+  range,
+  value,
+  error,
+  inputId,
+  onChange,
+  onBlur,
+}: {
+  kind: GoalKind
+  range: GoalRange | null
+  value: string
+  error?: string
+  inputId: string
+  onChange: (raw: string) => void
+  onBlur: () => void
+}) {
+  const sliderId = `${inputId}-slider`
+  const rangeRowId = `${inputId}-range-row`
+  const ids = fieldMessageIds(inputId)
+  const describedBy = [error ? ids.error : '', rangeRowId].filter(Boolean).join(' ')
+  const label = `${GOAL_LABELS[kind].title} (${GOAL_LABELS[kind].unitLabel})`
+  const parsed = parseGoalInput(value)
+  const sliderValue =
+    range && parsed !== null
+      ? Math.min(range.max, Math.max(range.min, parsed))
+      : range?.suggested ?? range?.min ?? 0
+
+  return (
+    <div className={`goals-panel-field goals-panel-field--${kind}`}>
+      <label className="goals-panel-field__label" htmlFor={inputId}>{label}</label>
+      <div className="goals-panel-field__group">
+        {kind === 'savings' ? <span className="goals-panel-field__prefix" aria-hidden>$</span> : null}
+        <input
+          id={inputId}
+          className="goals-panel-field__input"
+          type="text"
+          inputMode="decimal"
+          autoComplete="off"
+          value={value}
+          aria-describedby={describedBy || undefined}
+          aria-invalid={error ? true : undefined}
+          onChange={(event) => onChange(event.target.value)}
+          onBlur={() => {
+            onBlur()
+            if (range) onChange(clampToRange(kind, value, range))
+          }}
+        />
+        <span className="goals-panel-field__suffix" aria-hidden>
+          {kind === 'savings' ? 'AUD' : 'kg CO2e'}
+        </span>
+      </div>
+      {range ? (
+        <>
+          <input
+            id={sliderId}
+            className="goals-panel-field__slider"
+            type="range"
+            min={range.min}
+            max={range.max}
+            step={1}
+            value={sliderValue}
+            aria-labelledby={inputId}
+            onChange={(event) => onChange(event.target.value)}
+          />
+          <div className="goals-panel-field__range-labels" id={rangeRowId}>
+            <span>{formatGoalValue(kind, range.min)}</span>
+            <span>Allowed range</span>
+            <span>{formatGoalValue(kind, range.max)}</span>
+          </div>
+        </>
+      ) : (
+        <p className="goals-panel-field__no-range" id={rangeRowId}>
+          Your battery file shows nothing counted for this goal, so we cannot suggest a value.
+        </p>
+      )}
+      {error ? (
+        <p className="goals-panel-field__error" id={ids.error} role="alert">{error}</p>
+      ) : null}
+    </div>
+  )
+}
+
 export function GoalSetupForm(props: Props) {
-  const { mode, suggestions, baseline, context, current, saveError, onSave, onCancel, note } = props
+  const {
+    mode,
+    layout = 'classic',
+    unlocked = true,
+    suggestions,
+    baseline,
+    context,
+    current,
+    saveError,
+    onSave,
+    onCancel,
+    note,
+    formRef,
+  } = props
   const kinds = props.kinds ?? GOAL_KINDS
   const idBase = useId()
   const [values, setValues] = useState<Values>(() => initialValues(props))
@@ -86,6 +183,7 @@ export function GoalSetupForm(props: Props) {
 
   function submit(event: FormEvent) {
     event.preventDefault()
+    if (!unlocked) return
     setShown({ savings: true, carbon: true })
     const invalid = kinds.find((kind) => errorFor(kind, values[kind]))
     if (invalid) {
@@ -97,6 +195,78 @@ export function GoalSetupForm(props: Props) {
       targets[kind] = normaliseGoal(kind, parseGoalInput(values[kind]) ?? 0)
     }
     onSave(targets)
+  }
+
+  if (layout === 'onboarding') {
+    const locked = !unlocked
+    return (
+      <form
+        ref={formRef}
+        className={`goals-panel-form${locked ? ' goals-panel-form--locked' : ''}`}
+        onSubmit={submit}
+        noValidate
+      >
+        <div className="goals-panel-form__fields-wrap">
+          <div className="goals-panel-form__fields" aria-hidden={locked || undefined}>
+            {kinds.map((kind) => {
+              const range = suggestions[kind]
+              const inputId = `${idBase}-${kind}`
+              const error = shown[kind] ? errorFor(kind, values[kind]) : undefined
+              return (
+                <OnboardingGoalField
+                  key={kind}
+                  kind={kind}
+                  range={range}
+                  value={values[kind]}
+                  error={error}
+                  inputId={inputId}
+                  onChange={(raw) => update(kind, raw)}
+                  onBlur={() => setShown((state) => ({ ...state, [kind]: true }))}
+                />
+              )
+            })}
+          </div>
+          {locked ? (
+            <div className="goals-panel-form__callout" role="status">
+              <span className="goals-panel-form__callout-icon" aria-hidden>←</span>
+              <p className="goals-panel-form__callout-title">{GOALS_ONBOARDING.lockedTitle}</p>
+              <p className="goals-panel-form__callout-body">{GOALS_ONBOARDING.lockedBody}</p>
+            </div>
+          ) : null}
+        </div>
+
+        {unlocked ? (
+          <div className="goals-panel-form__details">
+            {mode === 'next' ? null : (
+              <details className="goals-panel-details">
+                <summary>How is the allowed range calculated?</summary>
+                <RangeExplainerPanel suggestions={suggestions} baseline={baseline} context={context} />
+              </details>
+            )}
+            <details className="goals-panel-details">
+              <summary>How is carbon calculated?</summary>
+              <CarbonExamplesPanel
+                factor={context.factor}
+                suggestedKg={suggestions.carbon?.suggested ?? null}
+              />
+            </details>
+          </div>
+        ) : null}
+
+        {saveError ? <GoalMessage code={saveError} /> : null}
+
+        <div className="goals-panel-form__actions">
+          <Button type="submit" variant="primary" disabled={locked}>
+            Save goals
+          </Button>
+          {onCancel ? (
+            <Button variant="secondary" onClick={onCancel}>
+              Cancel
+            </Button>
+          ) : null}
+        </div>
+      </form>
+    )
   }
 
   return (
@@ -142,7 +312,9 @@ export function GoalSetupForm(props: Props) {
       </div>
 
       <div className="goals-form__explainers">
-        {mode === 'next' ? null : <RangeExplainer suggestions={suggestions} baseline={baseline} context={context} />}
+        {mode === 'next' ? null : (
+          <RangeExplainer suggestions={suggestions} baseline={baseline} context={context} />
+        )}
         <CarbonExamples factor={context.factor} suggestedKg={suggestions.carbon?.suggested ?? null} />
       </div>
 

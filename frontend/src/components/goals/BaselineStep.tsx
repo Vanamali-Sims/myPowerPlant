@@ -27,6 +27,7 @@ import { SearchSelect } from '../ui/SearchSelect'
 import { StepperField } from '../ui/StepperField'
 import { TextField } from '../ui/TextField'
 import { GoalMessage } from './GoalMessage'
+import type { ReadDays } from './UploadArea'
 import { UploadArea } from './UploadArea'
 
 /** A baseline read from a file but not saved yet. */
@@ -44,7 +45,7 @@ const RATE_ERROR = `Enter your rate in cents per kWh, between ${GOAL_RATE_CENTS.
  * @param raw - Text from the rate field, in cents per kWh
  * @returns AUD per kWh, null when empty, or 'invalid'
  */
-function readRate(raw: string): number | null | 'invalid' {
+export function readGoalRate(raw: string): number | null | 'invalid' {
   if (!raw.trim()) return null
   const cents = parseGoalInput(raw.replace(/c$/i, ''))
   if (cents === null || cents < GOAL_RATE_CENTS.min || cents > GOAL_RATE_CENTS.max) return 'invalid'
@@ -53,6 +54,40 @@ function readRate(raw: string): number | null | 'invalid' {
 
 function formatCents(ratePerKwh: number): string {
   return String(Math.round(ratePerKwh * 1000) / 10)
+}
+
+/**
+ * buildBaselineDraft
+ * @returns An unsaved baseline from a successful read, or a baseline rule failure
+ */
+export function buildBaselineDraft(
+  read: ReadDays,
+  battery: GoalBattery,
+  rate: number | null | 'invalid',
+  profileRatePerKwh: number | null,
+  bundle: MethodologyBundle,
+): { ok: true; draft: BaselineDraft } | { ok: false; reason: MessageCode } {
+  if (rate === 'invalid') return { ok: false, reason: 'write_failed' }
+  const context = buildCalculationContext(rate, bundle)
+  const picked = pickBaseline(
+    read.days.map((day) => calculateDay(day, context)),
+    melbourneDate(Date.now()),
+  )
+  if (!picked.ok) return { ok: false, reason: picked.reason }
+  return {
+    ok: true,
+    draft: {
+      baseline: {
+        month: picked.month,
+        days: picked.days.length,
+        monthly: picked.monthly,
+        battery,
+        ratePerKwh: profileRatePerKwh === null ? rate : null,
+      },
+      days: picked.days,
+      sourceId: read.sourceId,
+    },
+  }
 }
 
 type Props = {
@@ -104,7 +139,7 @@ export function BaselineStep({
   // SearchSelect only writes catalogue values, so an unknown model means none chosen yet.
   const modelOk = isAllowedBatteryModel(battery.model)
   // A rate in the profile wins over the field, which is then not shown.
-  const rate = profileRatePerKwh ?? readRate(rateText)
+  const rate = profileRatePerKwh ?? readGoalRate(rateText)
   const rateError = rateShown && rate === 'invalid' ? RATE_ERROR : undefined
   const typicalCents = formatCents(bundle.methodology.defaultRetailRate)
 
@@ -214,29 +249,13 @@ export function BaselineStep({
           onGoToSetup={() => undefined}
           limits={{ maxIntervalKwh: maxIntervalKwh(battery, bundle) }}
           onContinue={(read) => {
-            const context = buildCalculationContext(rate, bundle)
-            // Today's Melbourne date decides which months still count as recent.
-            const picked = pickBaseline(
-              read.days.map((day) => calculateDay(day, context)),
-              melbourneDate(Date.now()),
-            )
-            if (!picked.ok) {
-              setProblem(picked.reason)
+            const built = buildBaselineDraft(read, battery, rate, profileRatePerKwh, bundle)
+            if (!built.ok) {
+              setProblem(built.reason)
               return
             }
             setProblem(null)
-            onReady({
-              baseline: {
-                month: picked.month,
-                days: picked.days.length,
-                monthly: picked.monthly,
-                battery,
-                // A profile rate is read live from the profile, so only a typed rate is kept.
-                ratePerKwh: profileRatePerKwh === null ? rate : null,
-              },
-              days: picked.days,
-              sourceId: read.sourceId,
-            })
+            onReady(built.draft)
           }}
         />
       ) : null}

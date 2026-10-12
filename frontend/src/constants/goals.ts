@@ -142,9 +142,31 @@ export const GOAL_LABELS = {
 } as const
 
 /** Copy for the Goals page once goals are set. */
+export const GOALS_ONBOARDING = {
+  startHere: 'Start here',
+  fileTitle: 'Add your battery file',
+  fileLede:
+    'A CSV from this month or the 3 months before, with at least 14 complete days.',
+  dropTitle: 'Drop your battery CSV here',
+  browseLink: 'browse your files',
+  worksWith: 'Works with',
+  privacy:
+    'Read on this device only. Never uploaded or kept. Your goals stay on this device.',
+  guideLink: 'How to get your file',
+  goalsTitle: 'Your goals',
+  goalsHelper: 'One for money saved, one for carbon avoided. You can change them later.',
+  lockedTitle: 'Add your file to see your range',
+  lockedBody: "We'll suggest goals that fit how your battery actually performs.",
+  profileBattery: (model: string, rateCents: string) =>
+    `Battery from your profile: ${model} · about ${rateCents} c/kWh`,
+} as const
+
 export const GOALS_PAGE = {
   eyebrow: 'Goals',
   title: 'Grow your savings. Grow your tree.',
+  /** First-visit setup under the page title. */
+  setupLede:
+    "Add one recent month of your battery file and we'll suggest a realistic range for your goals.",
   /** How the tree reads, shown one sentence per line inside the green card. */
   legend: ['Each orange is 5% of your savings goal.', 'The tree grows with every 5% of your carbon goal.'],
   /** Under the title: what to do to see progress. */
