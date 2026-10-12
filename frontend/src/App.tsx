@@ -52,11 +52,9 @@ const GoalsView = lazy(() =>
 )
 
 function initialView(): View {
-  if (import.meta.env.MODE === 'test') {
-    const saved = loadJourney()
-    if (saved === 'matt') return 'dashboard'
-    if (saved === 'rain') return 'rainHub'
-  }
+  const saved = loadJourney()
+  if (saved === 'matt') return 'dashboard'
+  if (saved === 'rain') return 'rainHub'
   return 'intro'
 }
 

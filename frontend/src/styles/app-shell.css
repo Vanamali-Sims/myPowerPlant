@@ -163,13 +163,13 @@
     color: var(--on-primary);
   }
 
-  .app-rail__item--path {
+  .app-rail__footer {
     margin-top: 0.35rem;
     width: 100%;
     opacity: 0.92;
   }
 
-  .app-rail__item--path:hover {
+  .app-rail__footer:hover {
     opacity: 1;
   }
 

@@ -1,22 +1,24 @@
 /**
  * Persona-specific app-rail navigation.
  *
- * Matt: home, dashboard, recommendations, profile.
- * Rain: home, what if, goals, reminders, profile.
+ * Matt: home, dashboard, recommendations, path; profile is docked at the rail foot.
+ * Rain: home, what if, goals, reminders, path; profile is docked at the rail foot.
  */
+import { FLOW_CONTROLS } from './onboarding'
 import {
   BellIcon,
   BulbIcon,
   DashboardIcon,
   HomeIcon,
   ProfileIcon,
+  ResetIcon,
   ShieldIcon,
   TargetIcon,
 } from '../components/ui/icons'
 
-export type MattNavId = 'home' | 'dashboard' | 'recommendations' | 'profile'
-export type RainNavId = 'home' | 'whatif' | 'goals' | 'reminders' | 'profile'
-export type AppNavId = MattNavId | RainNavId
+export type MattNavId = 'home' | 'dashboard' | 'recommendations' | 'path'
+export type RainNavId = 'home' | 'whatif' | 'goals' | 'reminders' | 'path'
+export type AppNavId = MattNavId | RainNavId | 'profile'
 
 export type NavItem = {
   id: AppNavId
@@ -45,12 +47,19 @@ export const MATT_NAV: NavItem[] = [
     unavailableMessage: 'Complete setup for personalised plan matches.',
   },
   {
-    id: 'profile',
-    label: 'Profile',
-    icon: ProfileIcon,
-    unavailableMessage: 'Complete setup to view your profile.',
+    id: 'path',
+    label: FLOW_CONTROLS.railLabel,
+    icon: ResetIcon,
+    unavailableMessage: 'Path controls are not available here.',
   },
 ]
+
+export const PROFILE_RAIL_ITEM: NavItem = {
+  id: 'profile',
+  label: 'Profile',
+  icon: ProfileIcon,
+  unavailableMessage: 'Complete setup to view your profile.',
+}
 
 export const RAIN_NAV: NavItem[] = [
   {
@@ -78,12 +87,20 @@ export const RAIN_NAV: NavItem[] = [
     unavailableMessage: 'Reminders need your household answers on this device.',
   },
   {
-    id: 'profile',
-    label: 'Profile',
-    icon: ProfileIcon,
-    unavailableMessage: 'Your profile appears once you add your setup.',
+    id: 'path',
+    label: FLOW_CONTROLS.railLabel,
+    icon: ResetIcon,
+    unavailableMessage: 'Path controls are not available here.',
   },
 ]
+
+/** Docked at the bottom of the rail (above location), separate from {@link MATT_NAV} / {@link RAIN_NAV}. */
+export const RAIN_PROFILE_RAIL_ITEM: NavItem = {
+  id: 'profile',
+  label: 'Profile',
+  icon: ProfileIcon,
+  unavailableMessage: 'Your profile appears once you add your setup.',
+}
 
 /** @deprecated Use MATT_NAV or RAIN_NAV — kept for any legacy imports */
 export const NAV = MATT_NAV

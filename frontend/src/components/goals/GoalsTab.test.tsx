@@ -48,7 +48,7 @@ afterEach(() => {
 describe('Goals tab', () => {
   it('lists Goals between What if and Reminders in the Rain rail', () => {
     const ids = RAIN_NAV.map((item) => item.id)
-    expect(ids).toEqual(['home', 'whatif', 'goals', 'reminders', 'profile'])
+    expect(ids).toEqual(['home', 'whatif', 'goals', 'reminders', 'path'])
   })
 
   it('has a text label and opens the Goals page as the current page', async () => {
@@ -58,7 +58,8 @@ describe('Goals tab', () => {
     render(<App />)
     const rail = screen.getByRole('complementary', { name: 'App' })
     const buttons = Array.from(rail.querySelectorAll('nav button')).map((node) => node.textContent)
-    expect(buttons).toEqual(['Home', 'What if', 'Goals', 'Reminders', 'Profile'])
+    expect(buttons).toEqual(['Home', 'What if', 'Goals', 'Reminders', 'Path'])
+    expect(screen.getByRole('button', { name: 'Profile' })).toBeTruthy()
 
     await user.click(screen.getByRole('button', { name: 'Goals' }))
     const goals = screen.getByRole('button', { name: 'Goals' })

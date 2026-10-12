@@ -2,15 +2,21 @@
  * Logged-in chrome: dark icon rail, wordmark, and location pill.
  */
 import type { ReactNode } from 'react'
-import { DEFAULT_LOCATION_LABEL, FLOW_CONTROLS, MATT_NAV, RAIN_NAV, type AppNavId } from '../../constants'
+import {
+  DEFAULT_LOCATION_LABEL,
+  MATT_NAV,
+  PROFILE_RAIL_ITEM,
+  RAIN_NAV,
+  RAIN_PROFILE_RAIL_ITEM,
+  type AppNavId,
+  type NavItem,
+} from '../../constants'
 import type { UserJourney } from '../../lib/journeyStorage'
 import { locationFromPostcode } from '../../data/profileOptions'
 import { useSlidingHighlight } from '../../lib/useSlidingHighlight'
 import { useTransientPopover } from '../../lib/useTransientPopover'
 import { MyPowerPlantMark } from '../ui/MyPowerPlantMark'
 import { Popover } from '../ui/Popover'
-import { ResetIcon } from '../ui/icons'
-
 export type { AppNavId }
 
 type Props = {
@@ -44,7 +50,10 @@ export function AppShell({
   children,
   chat,
 }: Props) {
-  const nav = journey === 'rain' ? RAIN_NAV : MATT_NAV
+  const profileItem = journey === 'rain' ? RAIN_PROFILE_RAIL_ITEM : PROFILE_RAIL_ITEM
+  const nav = (journey === 'rain' ? RAIN_NAV : MATT_NAV).filter(
+    (item) => item.id !== 'path' || onOpenPathControls,
+  )
   const place = locationFromPostcode(postcode)
   const [openPopover, setOpenPopover] = useTransientPopover()
   const { setRef: setNavRef, box: navBox } = useSlidingHighlight(active, '.app-rail__item.is-active')
@@ -52,17 +61,47 @@ export function AppShell({
   function isAvailable(id: AppNavId) {
     // Rain features open the access-features form first when answers are missing.
     if (journey === 'rain') return true
+    if (id === 'path') return true
     if (id === 'home' || id === 'dashboard' || id === 'recommendations') return true
     return hasProfile
   }
 
-  function handleClick(item: (typeof nav)[number]) {
+  function handleClick(item: NavItem) {
+    if (item.id === 'path') {
+      if (!onOpenPathControls) return
+      setOpenPopover(null)
+      onOpenPathControls()
+      return
+    }
     if (!isAvailable(item.id)) {
       setOpenPopover(item.id)
       return
     }
     setOpenPopover(null)
     onNavigate(item.id)
+  }
+
+  function renderRailItem(item: NavItem, activeId: AppNavId | null) {
+    const Icon = item.icon
+    const available = isAvailable(item.id)
+    return (
+      <div key={item.id} className="popover-anchor app-rail__item-wrap">
+        <button
+          type="button"
+          className={`app-rail__item${activeId === item.id ? ' is-active' : ''}${
+            available ? '' : ' is-unavailable'
+          }`}
+          onClick={() => handleClick(item)}
+          aria-current={activeId === item.id ? 'page' : undefined}
+          aria-disabled={!available}
+          title={available ? item.label : item.unavailableMessage}
+        >
+          <Icon />
+          {item.label}
+        </button>
+        <Popover open={openPopover === item.id} message={item.unavailableMessage} placement="right" />
+      </div>
+    )
   }
 
   return (
@@ -91,44 +130,9 @@ export function AppShell({
                 height: navBox.height,
               }}
             />
-            {nav.map((item) => {
-              const Icon = item.icon
-              const available = isAvailable(item.id)
-              return (
-                <div key={item.id} className="popover-anchor app-rail__item-wrap">
-                  <button
-                    type="button"
-                    className={`app-rail__item${active === item.id ? ' is-active' : ''}${
-                      available ? '' : ' is-unavailable'
-                    }`}
-                    onClick={() => handleClick(item)}
-                    aria-current={active === item.id ? 'page' : undefined}
-                    aria-disabled={!available}
-                    title={available ? item.label : item.unavailableMessage}
-                  >
-                    <Icon />
-                    {item.label}
-                  </button>
-                  <Popover
-                    open={openPopover === item.id}
-                    message={item.unavailableMessage}
-                    placement="right"
-                  />
-                </div>
-              )
-            })}
+            {nav.map((item) => renderRailItem(item, active))}
           </nav>
-          {onOpenPathControls ? (
-            <button
-              type="button"
-              className="app-rail__item app-rail__item--path"
-              onClick={onOpenPathControls}
-              title={FLOW_CONTROLS.title}
-            >
-              <ResetIcon width={18} height={18} />
-              {FLOW_CONTROLS.railLabel}
-            </button>
-          ) : null}
+          <div className="app-rail__footer">{renderRailItem(profileItem, active)}</div>
           <span className="app-rail__place">
             <span className="location-pill__dot" />
             {place || DEFAULT_LOCATION_LABEL}
