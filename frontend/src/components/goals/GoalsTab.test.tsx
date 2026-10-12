@@ -54,7 +54,20 @@ describe('Goals tab', () => {
   it('has a text label and opens the Goals page as the current page', async () => {
     const user = userEvent.setup()
     saveJourney('rain')
-    saveProfile({ ...emptyProfile(), ...BASELINE_PROFILE, vppProvider: 'Tesla Energy Plan' }, 'improve')
+    saveProfile(
+      {
+        ...emptyProfile(),
+        ...BASELINE_PROFILE,
+        vppProvider: 'Tesla Energy Plan',
+        fieldSources: {
+          postcode: 'bill',
+          monthlyKwh: 'bill',
+          monthlyBill: 'bill',
+          provider: 'bill',
+        },
+      },
+      'improve',
+    )
     render(<App />)
     const rail = screen.getByRole('complementary', { name: 'App' })
     const buttons = Array.from(rail.querySelectorAll('nav button')).map((node) => node.textContent)
