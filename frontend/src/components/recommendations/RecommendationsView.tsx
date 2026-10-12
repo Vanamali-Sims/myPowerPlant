@@ -7,7 +7,8 @@ import { PlansMasterDetail } from './PlansMasterDetail'
 import { Button } from '../ui/Button'
 import { Callout } from '../ui/Callout'
 import { SelectField } from '../ui/SelectField'
-import { AlertIcon, BoltIcon } from '../ui/icons'
+import { AlertIcon } from '../ui/icons'
+import { MyPowerPlantMark } from '../ui/MyPowerPlantMark'
 
 type Props = {
   profile: ProfileData
@@ -52,8 +53,8 @@ export function RecommendationsView({
           onClick={onLogoClick}
           aria-label="MyPowerPlant home"
         >
-          <span className="brand__mark">
-            <BoltIcon width={14} height={14} />
+          <span className="brand__mark brand__mark--logo">
+            <MyPowerPlantMark width={28} height={28} />
           </span>
           MyPowerPlant
         </button>

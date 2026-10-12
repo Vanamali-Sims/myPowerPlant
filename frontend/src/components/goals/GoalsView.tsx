@@ -3,7 +3,7 @@
  * carbon goal from it, then track progress from battery files read on this device.
  */
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { GOALS_PAGE, GOAL_SUGGESTION_MONTHS } from '../../constants/goals'
+import { GOALS_FORM, GOALS_PAGE, GOAL_SUGGESTION_MONTHS } from '../../constants/goals'
 import type { MessageCode } from '../../constants/goalMessages'
 import { batteryFromProfile, maxIntervalKwh, savedProfileBattery } from '../../lib/goals/batteryLimits'
 import { buildCalculationContext, calculateDay, profileRate, summariseDays } from '../../lib/goals/calculate'
@@ -20,6 +20,7 @@ import {
   recordReached,
 } from '../../lib/goals/achievements'
 import { melbourneDate } from '../../lib/goals/melbourneTime'
+import { monthOf } from '../../lib/goals/calendar'
 import {
   formatGoalValue,
   formatMonthLabel,
@@ -39,19 +40,30 @@ import {
 import type { ProfileData } from '../../types/profile'
 import { Button } from '../ui/Button'
 import { Callout } from '../ui/Callout'
-import { BoltIcon, CheckIcon } from '../ui/icons'
-import { BaselineStep, type BaselineDraft } from './BaselineStep'
+import { CheckIcon } from '../ui/icons'
+import { MyPowerPlantMark } from '../ui/MyPowerPlantMark'
+import type { BaselineDraft } from './baselineDraft'
+import { BaselineStep } from './BaselineStep'
+import { GoalsSetupBoard } from './GoalsSetupBoard'
 import { ClearGoalsDialog } from './ClearGoalsDialog'
 import { GoalMessage } from './GoalMessage'
 import { GoalGarden } from './GoalGarden'
 import { LevelUpDialog, type Achievement } from './LevelUpDialog'
-import { GoalSetupForm } from './GoalSetupForm'
+import { GoalsFormBoard } from './GoalsFormBoard'
 import { RemoveMonthDialog } from './RemoveMonthDialog'
 import { ProgressHistory } from './ProgressHistory'
 import { RevisionPanel } from './RevisionPanel'
 import type { ReadDays } from './UploadArea'
 import { UploadDialog } from './UploadDialog'
 import { UploadSummary } from './UploadSummary'
+
+/** Melbourne calendar day, read when the person saves rather than during render. */
+function today(): string {
+  return melbourneDate(Date.now())
+}
+
+/** Stable month label for the sample goals card. Frozen when this module loads. */
+const PREVIEW_BASELINE_MONTH = monthOf(today())
 
 type Props = {
   profile: ProfileData
@@ -185,9 +197,11 @@ export function GoalsView({ profile, bundle, methodologyError, onLogoClick }: Pr
     }
   })
 
-  function today(): string {
-    return melbourneDate(Date.now())
-  }
+  useEffect(() => {
+    if (!notice) return
+    const id = window.setTimeout(() => setNotice(''), 8000)
+    return () => window.clearTimeout(id)
+  }, [notice])
 
   /**
    * save
@@ -459,9 +473,26 @@ export function GoalsView({ profile, bundle, methodologyError, onLogoClick }: Pr
   const setupTitle = nextKinds ? 'Set your next goal' : goals ? 'Edit your goals' : 'Set your goals'
 
   const showOverview = Boolean(goals) && !editing && !nextKinds
+  const firstTimeSetup = !goals && !editing && !nextKinds
+  const showOnboardingBoard =
+    firstTimeSetup &&
+    Boolean(bundle) &&
+    (stage === 'upload' || (stage === 'form' && Boolean(draft)))
+  const showFormBoard =
+    stage === 'form' && Boolean(activeBaseline) && Boolean(formSuggestions) && Boolean(bundle) && !showOnboardingBoard
+  const previewMonthly = { savings: 50, carbon: 30 }
+  const previewSuggestions = suggestGoals(previewMonthly)
+  const previewBaseline = {
+    month: PREVIEW_BASELINE_MONTH,
+    days: 30,
+    monthly: previewMonthly,
+  }
+  const onboardingContext = bundle ? buildCalculationContext(rateFromProfile, bundle) : null
 
   return (
-    <div className={`goals${showOverview ? ' goals--overview' : ''}`}>
+    <div
+      className={`goals${showOverview ? ' goals--overview' : ''}${showOnboardingBoard ? ' goals--setup-board' : ''}${showFormBoard ? ' goals--form-board' : ''}`}
+    >
       <header className="goals__top">
         <button
           type="button"
@@ -469,8 +500,8 @@ export function GoalsView({ profile, bundle, methodologyError, onLogoClick }: Pr
           onClick={onLogoClick}
           aria-label="MyPowerPlant home"
         >
-          <span className="brand__mark">
-            <BoltIcon width={14} height={14} />
+          <span className="brand__mark brand__mark--logo">
+            <MyPowerPlantMark width={28} height={28} />
           </span>
           MyPowerPlant
         </button>
@@ -480,7 +511,9 @@ export function GoalsView({ profile, bundle, methodologyError, onLogoClick }: Pr
         <div className="goals-head__copy">
           <p className="eyebrow goals-head__eyebrow">{GOALS_PAGE.eyebrow}</p>
           <h1 className="goals-head__title">{GOALS_PAGE.title}</h1>
-          {showOverview ? (
+          {firstTimeSetup && bundle ? (
+            <p className="goals-head__lede">{GOALS_PAGE.setupLede}</p>
+          ) : showOverview ? (
             <p className="goals-head__lede">
               {store.months.length ? GOALS_PAGE.uploadPromptAgain : GOALS_PAGE.uploadPrompt}
             </p>
@@ -503,8 +536,19 @@ export function GoalsView({ profile, bundle, methodologyError, onLogoClick }: Pr
       </div>
 
       {notice ? (
-        <div role="status">
-          <Callout tone="success" icon={<CheckIcon />}>
+        <div
+          className={`goals-notice${showOnboardingBoard || showFormBoard ? ' goals-notice--setup' : ''}`}
+          role="status"
+        >
+          <Callout
+            tone="success"
+            icon={<CheckIcon />}
+            action={
+              <Button variant="secondary" className="goals-notice__dismiss" onClick={() => setNotice('')}>
+                Dismiss
+              </Button>
+            }
+          >
             {notice}
           </Callout>
         </div>
@@ -549,7 +593,32 @@ export function GoalsView({ profile, bundle, methodologyError, onLogoClick }: Pr
         </section>
       ) : null}
 
-      {stage === 'upload' && bundle ? (
+      {showOnboardingBoard && bundle && onboardingContext ? (
+        <GoalsSetupBoard
+          headingRef={setupHeading}
+          unlocked={Boolean(draft)}
+          initialBattery={battery}
+          profileBattery={profileBattery}
+          profileRatePerKwh={rateFromProfile}
+          initialRatePerKwh={store.baseline?.ratePerKwh ?? null}
+          bundle={bundle}
+          previewBaseline={previewBaseline}
+          previewSuggestions={previewSuggestions}
+          context={
+            draft
+              ? buildCalculationContext(draft.baseline.ratePerKwh ?? rateFromProfile, bundle)
+              : onboardingContext
+          }
+          activeBaseline={activeBaseline}
+          formSuggestions={formSuggestions}
+          saveError={saveError}
+          onBaselineReady={acceptBaselineDraft}
+          onSave={save}
+          onChooseAnotherFile={draft ? chooseAnotherFile : undefined}
+        />
+      ) : null}
+
+      {stage === 'upload' && bundle && !showOnboardingBoard ? (
         <BaselineStep
           title={setupTitle}
           headingRef={setupHeading}
@@ -563,54 +632,65 @@ export function GoalsView({ profile, bundle, methodologyError, onLogoClick }: Pr
         />
       ) : null}
 
-      {stage === 'form' && activeBaseline && formSuggestions && bundle ? (
-        <section className="dashboard-card goals-setup" aria-labelledby="goals-setup-title">
-          <h2 id="goals-setup-title" ref={setupHeading} tabIndex={-1}>
-            {setupTitle}
-          </h2>
-          {draft ? <p className="goals-setup__step">Step 2 of 2: choose your goals</p> : null}
-          <p className="dashboard-card__lede">
-            {nextKinds
-              ? 'Your reached goal stays on record. Your next goal counts on from your total so far, so it needs to be higher than that total.'
-              : 'Choose a goal for money saved and a goal for carbon avoided. You can change them later.'}
-          </p>
-          <p className="goals-form__note goals-setup__baseline">
-            Based on {formatMonthLabel(activeBaseline.month)}; your range may shift with the
-            seasons.
-            {draft ? ` ${baselineDaysSentence(draft, draftNewDays.length, 'will be')}` : ''}
-          </p>
-          {draft ? (
-            <Button variant="edit" className="goals-setup__change" onClick={chooseAnotherFile}>
-              Use a different file
-            </Button>
-          ) : null}
-          <GoalSetupForm
-            key={nextKinds ? `next-${nextKinds.join('-')}` : 'goals'}
-            mode={nextKinds ? 'next' : goals ? 'edit' : 'create'}
-            kinds={nextKinds ?? undefined}
-            note={
-              nextKinds
-                ? `So far: ${nextKinds
-                    .map((kind) => formatGoalValue(kind, formTotals[kind]))
-                    .join(' and ')}. The suggested next goal adds about ${GOAL_SUGGESTION_MONTHS.suggested} more months of your ${formatMonthLabel(activeBaseline.month)} figures.`
-                : undefined
-            }
-            suggestions={formSuggestions}
-            baseline={activeBaseline}
-            context={buildCalculationContext(activeBaseline.ratePerKwh ?? rateFromProfile, bundle)}
-            current={
-              nextKinds
-                ? { savings: null, carbon: null }
-                : {
-                    savings: store.goals.savings?.target ?? null,
-                    carbon: store.goals.carbon?.target ?? null,
-                  }
-            }
-            saveError={saveError}
-            onSave={save}
-            onCancel={goals ? cancelEdit : undefined}
-          />
-        </section>
+      {showFormBoard && activeBaseline && formSuggestions ? (
+        <GoalsFormBoard
+          title={
+            nextKinds
+              ? GOALS_FORM.nextTitle
+              : goals
+                ? GOALS_FORM.editTitle
+                : GOALS_FORM.createTitle
+          }
+          helper={
+            nextKinds
+              ? GOALS_FORM.createHelper
+              : goals
+                ? GOALS_FORM.editHelper
+                : GOALS_FORM.createHelper
+          }
+          headingRef={setupHeading}
+          baselineMonth={activeBaseline.month}
+          note={
+            nextKinds
+              ? `So far: ${nextKinds
+                  .map((kind) => formatGoalValue(kind, formTotals[kind]))
+                  .join(' and ')}. The suggested next goal adds about ${GOAL_SUGGESTION_MONTHS.suggested} more months of your ${formatMonthLabel(activeBaseline.month)} figures.`
+              : undefined
+          }
+          formMode={nextKinds ? 'next' : goals ? 'edit' : 'create'}
+          kinds={nextKinds ?? undefined}
+          suggestions={formSuggestions}
+          baseline={activeBaseline}
+          context={buildCalculationContext(activeBaseline.ratePerKwh ?? rateFromProfile, bundle!)}
+          current={
+            nextKinds
+              ? { savings: null, carbon: null }
+              : {
+                  savings: store.goals.savings?.target ?? null,
+                  carbon: store.goals.carbon?.target ?? null,
+                }
+          }
+          saveError={saveError}
+          onSave={save}
+          onCancel={goals ? cancelEdit : undefined}
+          showUtilityFooter={Boolean(goals || store.months.length || store.completedGoals.length)}
+          onClear={() => setClearOpen(true)}
+          beforeForm={
+            draft ? (
+              <>
+                <p className="goals-setup__step">Step 2 of 2: choose your goals</p>
+                {draft ? (
+                  <p className="goals-form-board__baseline-days">
+                    {baselineDaysSentence(draft, draftNewDays.length, 'will be')}
+                  </p>
+                ) : null}
+                <Button variant="edit" className="goals-setup__change" onClick={chooseAnotherFile}>
+                  Use a different file
+                </Button>
+              </>
+            ) : null
+          }
+        />
       ) : null}
 
       <p className="goals__upload-status" role="status">
@@ -631,7 +711,7 @@ export function GoalsView({ profile, bundle, methodologyError, onLogoClick }: Pr
 
       {removeError ? <GoalMessage code={removeError} /> : null}
 
-      {goals || store.months.length || store.completedGoals.length ? (
+      {(goals || store.months.length || store.completedGoals.length) && !showFormBoard ? (
         <footer className="goals-footer">
           <p>{GOALS_PAGE.footer}</p>
           <Button variant="secondary" className="goals-footer__clear" onClick={() => setClearOpen(true)}>

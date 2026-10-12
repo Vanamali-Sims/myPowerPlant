@@ -26,7 +26,8 @@
   color: var(--on-deep);
 }
 
-.app-rail .brand__mark--logo {
+/* The MyPowerPlant icon, used by the rail and every page header (phones show the headers). */
+.brand__mark--logo {
   width: 1.85rem;
   height: 1.85rem;
   padding: 0;
@@ -35,7 +36,7 @@
   border-radius: 0.45rem;
 }
 
-.app-rail .brand__mark--logo .ui-icon-img {
+.brand__mark--logo .ui-icon-img {
   width: 100%;
   height: 100%;
   display: block;
@@ -163,25 +164,17 @@
     color: var(--on-primary);
   }
 
-  .app-rail__item--path {
+  .app-rail__footer {
+    display: flex;
+    flex-direction: column;
+    gap: 0.55rem;
     margin-top: 0.35rem;
     width: 100%;
     opacity: 0.92;
   }
 
-  .app-rail__item--path:hover {
+  .app-rail__footer:hover {
     opacity: 1;
-  }
-
-  .app-rail__place {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 0.3rem;
-    font-size: 0.65rem;
-    text-align: center;
-    line-height: 1.25;
-    color: var(--euc-200);
   }
 }
 

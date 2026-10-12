@@ -1,7 +1,7 @@
 /**
  * Labelled text input with optional prefix, suffix, and trailing icon.
  */
-import type { ChangeEvent, InputHTMLAttributes, ReactNode } from 'react'
+import { useId, type ChangeEvent, type InputHTMLAttributes, type ReactNode } from 'react'
 import { fieldMessageIds } from '../../lib/fieldIds'
 import { Field } from './Field'
 
@@ -40,7 +40,8 @@ function filterNumeric(value: string, mode: NumericMode): string {
  *
  * Prefix/suffix sit inside the input so units like $ or % stay attached.
  * Spreads remaining input attributes through to the native control.
- * Passing an id links the visible label, hint, and error to the input.
+ * The visible label, hint, and error are always linked to the input; an id
+ * is made up when none is passed.
  */
 export function TextField({
   label,
@@ -53,12 +54,13 @@ export function TextField({
   className = '',
   numeric,
   onChange,
+  id: givenId,
   ...props
 }: Props) {
-  const ids = props.id ? fieldMessageIds(props.id) : null
-  const describedBy = ids
-    ? [error ? ids.error : '', hint ? ids.hint : ''].filter(Boolean).join(' ') || undefined
-    : undefined
+  const autoId = useId()
+  const id = givenId ?? autoId
+  const ids = fieldMessageIds(id)
+  const describedBy = [error ? ids.error : '', hint ? ids.hint : ''].filter(Boolean).join(' ') || undefined
 
   function handleChange(event: ChangeEvent<HTMLInputElement>) {
     if (numeric) {
@@ -68,7 +70,7 @@ export function TextField({
   }
 
   return (
-    <Field label={label} hint={hint} error={error} info={info} inputId={props.id}>
+    <Field label={label} hint={hint} error={error} info={info} inputId={id}>
       <div
         className={`ui-input-wrap${prefix ? ' ui-input-wrap--prefix' : ''}`}
       >
@@ -78,6 +80,7 @@ export function TextField({
           aria-invalid={Boolean(error)}
           aria-describedby={describedBy}
           {...props}
+          id={id}
           onChange={handleChange}
         />
         {suffix ? <span className="ui-input__affix ui-input__affix--suffix">{suffix}</span> : null}

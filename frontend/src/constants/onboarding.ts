@@ -1,4 +1,13 @@
 /** Screen 1 intro captions, in the order they play. */
+/** Seconds each caption of the explore story stays up. */
+export const STORY_SLIDE_SECONDS = 3.5
+
+/**
+ * The story was designed at 5.3 s a caption; every scene, caption and
+ * progress timing is scaled by this so the drawing stays in step with the words.
+ */
+export const STORY_SPEED = STORY_SLIDE_SECONDS / 5.3
+
 export const INTRO_STEPS = [
   {
     tag: 'Solar',
@@ -44,12 +53,12 @@ export const PATH_CHOICE = {
   explore: {
     eyebrow: 'New to VPPs',
     title: ['Get started', 'with VPPs'],
-    body: 'See if a VPP is worth it, model your home and simulate savings, and get recommended Victorian plans.',
+    body: 'See if a VPP is worth it, model your home and simulate savings, and get recommended plans.',
     action: 'Explore getting started',
   },
   improve: {
-    eyebrow: 'Already have a battery',
-    title: ['Improve my', 'VPP setup'],
+    eyebrow: 'Already in VPP',
+    title: ['Improve my', 'VPP experience'],
     body: 'Try get reminders, goal tracker, and what if scenarios before peak events.',
     action: 'Improve my setup',
   },
@@ -78,7 +87,7 @@ export const RECOMMENDATIONS_PAGE = {
   notListedFootnote:
     "'Not listed' means the plan's published details don't state it. Check the provider's terms before you switch.",
   ledeNoProfile:
-    'Tell us about your home, solar, and battery first — then we can rank plans that fit you.',
+    'Tell us about your home, solar, and battery first, then we can rank plans that fit you.',
   emptyTitle: 'Set up your household profile',
   emptyBody:
     'Plan cards and matches use your saved answers on this device. Complete the questionnaire to see which VPP offers suit your home.',

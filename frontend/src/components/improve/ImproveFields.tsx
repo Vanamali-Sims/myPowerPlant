@@ -3,11 +3,11 @@
  * improve-flow profile so both ask the same questions the same way.
  */
 import { useId } from 'react'
-import { FIELD_BOUNDS } from '../../constants/validation'
 import { batteryModels, NOT_SURE_VALUE } from '../../data/profileOptions'
-import { VPP_NOT_LISTED, type ImproveStepId } from '../../lib/improveProfile'
+import type { ImproveStepId } from '../../lib/improveProfile'
 import type { FieldErrors } from '../../lib/validateProfile'
 import type { ProfileData } from '../../types/profile'
+import { BillUploadSection } from './BillUploadSection'
 import { DirectionGrid } from '../ui/DirectionGrid'
 import { SearchSelect } from '../ui/SearchSelect'
 import { StepperField } from '../ui/StepperField'
@@ -18,8 +18,8 @@ type Props = {
   profile: ProfileData
   errors: FieldErrors
   onChange: <K extends keyof ProfileData>(field: K, value: ProfileData[K]) => void
-  /** VPP brands from the Plans list; empty while plans load, which shows a text box instead. */
-  vppOptions?: string[]
+  /** Replace the whole profile after a bill upload merge. */
+  onApplyProfile: (profile: ProfileData) => void
 }
 
 /**
@@ -28,85 +28,16 @@ type Props = {
  * @param props.onChange - Patch a single profile field
  * @returns The inputs for that group; optional ones say so in their label
  */
-export function ImproveFields({ step, profile, errors, onChange, vppOptions = [] }: Props) {
+export function ImproveFields({ step, profile, errors, onChange, onApplyProfile }: Props) {
   const id = useId()
 
   if (step === 'home') {
     return (
-      <>
-        {vppOptions.length ? (
-          <SearchSelect
-            label="Which VPP have you joined?"
-            hint="Select your VPP from the list."
-            placeholder="Search VPP providers"
-            heading="VPP providers"
-            options={vppOptions}
-            extraOptions={[VPP_NOT_LISTED]}
-            value={profile.vppProvider}
-            onChange={(value) => onChange('vppProvider', value)}
-            error={errors.vppProvider}
-            info="The company that runs your virtual power plant. If yours is missing, choose Not listed."
-          />
-        ) : (
-          <TextField
-            id={`${id}-vpp`}
-            label="Which VPP have you joined?"
-            placeholder="e.g. Tesla Energy Plan"
-            autoComplete="off"
-            maxLength={60}
-            value={profile.vppProvider}
-            onChange={(event) => onChange('vppProvider', event.target.value)}
-            error={errors.vppProvider}
-            info="The company that runs your virtual power plant. It may be different from your electricity retailer."
-          />
-        )}
-        <TextField
-          id={`${id}-postcode`}
-          label="What is your postcode?"
-          placeholder="e.g. 3101"
-          inputMode="numeric"
-          numeric="integer"
-          maxLength={FIELD_BOUNDS.postcodeLength}
-          value={profile.postcode}
-          onChange={(event) => onChange('postcode', event.target.value)}
-          error={errors.postcode}
-        />
-        <TextField
-          id={`${id}-people`}
-          label="How many people live in your house?"
-          placeholder={`e.g. ${FIELD_BOUNDS.people.example}`}
-          inputMode="numeric"
-          numeric="integer"
-          suffix="people"
-          value={profile.people}
-          onChange={(event) => onChange('people', event.target.value)}
-          error={errors.people}
-        />
-        <TextField
-          id={`${id}-kwh`}
-          label="Average electricity usage for a month"
-          placeholder={`e.g. ${FIELD_BOUNDS.monthlyKwh.example}`}
-          inputMode="decimal"
-          numeric="decimal"
-          suffix="kWh"
-          value={profile.monthlyKwh}
-          onChange={(event) => onChange('monthlyKwh', event.target.value)}
-          error={errors.monthlyKwh}
-          info="Shown on your electricity bill as usage or consumption. Divide a quarterly figure by 3."
-        />
-        <TextField
-          id={`${id}-bill`}
-          label="Average monthly electricity bill (optional)"
-          placeholder="Enter amount"
-          inputMode="decimal"
-          numeric="decimal"
-          prefix="$"
-          suffix="AUD"
-          value={profile.monthlyBill}
-          onChange={(event) => onChange('monthlyBill', event.target.value)}
-          error={errors.monthlyBill}
-        />
-      </>
+      <BillUploadSection
+        profile={profile}
+        uploadError={errors.billUpload}
+        onChange={onApplyProfile}
+      />
     )
   }
 

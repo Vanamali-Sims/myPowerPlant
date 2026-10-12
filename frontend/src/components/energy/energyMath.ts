@@ -52,8 +52,9 @@ export function computeEnergyArcs(
   const usedLen = Math.max(0, usedPct - (usedPct > 0 ? ARC_GAP : 0))
   const dischargeLen = Math.max(0, dischargePct - (dischargePct > 0 ? ARC_GAP : 0))
 
-  const usedRotate = -90 + (usedPct > 0 ? (ARC_GAP / 2) * 3.6 : 0)
-  const dischargeRotate = -90 + usedPct * 3.6 + (dischargePct > 0 ? (ARC_GAP / 2) * 3.6 : 0)
+  // The VPP share starts at 12 o'clock so it reads first; use follows it clockwise.
+  const dischargeRotate = -90 + (dischargePct > 0 ? (ARC_GAP / 2) * 3.6 : 0)
+  const usedRotate = -90 + dischargePct * 3.6 + (usedPct > 0 ? (ARC_GAP / 2) * 3.6 : 0)
 
   return {
     usedPct,

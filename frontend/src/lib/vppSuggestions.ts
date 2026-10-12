@@ -337,7 +337,7 @@ export function planFitCopy(profile: ProfileData, match: SuggestionMatch): PlanF
     'The provider decides when your battery charges or discharges for VPP events. You cannot pick those times yourself.',
   ]
   if (opt === 'Notice') {
-    tradeoffs.push('Leaving is not instant — compiled terms list a notice period.')
+    tradeoffs.push('Leaving is not instant. Compiled terms list a notice period.')
   } else if (opt === 'Ongoing') {
     tradeoffs.push('The agreement is listed as ongoing, so confirm how to leave with the provider.')
   }

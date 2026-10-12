@@ -55,6 +55,15 @@ export type PlanComparison = {
   isRecommended: boolean
 }
 
+/**
+ * Modelled weekly export credits for energy sent to the matched VPP plan
+ * (distributed kWh × that plan’s sample export rate). Excludes bill savings
+ * from solar you use at home.
+ */
+export function weeklyVppPaymentAud(report: KpiReport): number {
+  return report.weekly.energyDistributedKwh * report.recommended.plan.exportRate
+}
+
 export type KpiReport = {
   locationLabel: string
   season: Season

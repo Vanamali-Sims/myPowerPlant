@@ -433,7 +433,10 @@ export function TermsDialog({ open, match, onClose }: TermsDialogProps) {
     >
       {plan ? (
         <>
-          <p className="vpp-dialog__lede">Compiled terms — not a guaranteed return.</p>
+          <p className="vpp-dialog__lede vpp-terms__banner">
+            <InfoIcon width={16} height={16} aria-hidden />
+            <span>Compiled terms, not a guaranteed return.</span>
+          </p>
           <ul className="vpp-term-list">
             {TERM_ORDER.map((key) => {
               const term = termByKey(plan, key)
@@ -465,14 +468,14 @@ export function TermsDialog({ open, match, onClose }: TermsDialogProps) {
               {exampleOpen ? (
                 <div id={exampleId} className="vpp-example__panel">
                   <p className="vpp-example__label">
-                    Illustrative example — not a guaranteed return.
+                    Illustrative example, not a guaranteed return.
                   </p>
                   <p>
                     If {formatKwhShort(exampleKwh)} were dispatched at the compiled rate of{' '}
                     {formatExampleAud(plan.illustrativeRatePerKwh ?? 0)} per kWh, that would be{' '}
                     {formatExampleAud(exampleAud ?? 0)} in credits. This uses a round figure
                     {headroom != null ? ' (your reserve headroom)' : ' (10 kWh)'} so you can see
-                    the arithmetic — it is not what your home would earn.
+                    the arithmetic. It is not what your home would earn.
                   </p>
                 </div>
               ) : null}
@@ -498,14 +501,16 @@ function TermRow({ planId, termKey, term, extraExplanation }: TermRowProps) {
   const stale = term ? isTermStale(term.lastVerified) : false
 
   return (
-    <li className={available ? 'vpp-term' : 'vpp-term vpp-term--unavailable'}>
-      <span className="vpp-term__icon" aria-hidden="true">
-        <Icon />
-      </span>
-      <div>
+    <li className={available ? 'vpp-term' : 'vpp-term vpp-term--unavailable'} aria-labelledby={headingId}>
+      <div className="vpp-term__head">
+        <span className="vpp-term__icon" aria-hidden="true">
+          <Icon />
+        </span>
         <h4 id={headingId} className="vpp-term__title">
           {TERM_LABELS[termKey]}
         </h4>
+      </div>
+      <div className="vpp-term__content">
         {available ? (
           <p className="vpp-term__body">
             {term?.valueText}

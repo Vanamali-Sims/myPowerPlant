@@ -41,23 +41,10 @@ function monthWord(count: number): string {
  * Same mechanism as the carbon examples: a button with aria-expanded that
  * shows or hides one panel.
  */
-export function RangeExplainer({ suggestions, baseline, context }: Props) {
-  const panelId = useId()
-  const [open, setOpen] = useState(false)
+export function RangeExplainerPanel({ suggestions, baseline, context }: Props) {
   const month = formatMonthLabel(baseline.month)
-
   return (
-    <div className="vpp-example goals-examples">
-      <Button
-        variant="outline-accent"
-        aria-expanded={open}
-        aria-controls={panelId}
-        onClick={() => setOpen((state) => !state)}
-      >
-        How is the allowed range calculated?
-      </Button>
-      {open ? (
-        <div id={panelId} className="vpp-example__panel goals-examples__panel">
+    <div className="vpp-example__panel goals-examples__panel">
           <p className="vpp-example__label">
             Based on your battery file for {month}{' '}
             <span className="kpi-badge kpi-badge--estimate">Estimate</span>
@@ -103,10 +90,31 @@ export function RangeExplainer({ suggestions, baseline, context }: Props) {
               </div>
             )
           })}
-          <p className="goals-range__note">
-            One month is a guide, not a forecast. Solar and battery use change with the seasons,
-            so your real progress may be higher or lower.
-          </p>
+      <p className="goals-range__note">
+        One month is a guide, not a forecast. Solar and battery use change with the seasons, so
+        your real progress may be higher or lower.
+      </p>
+    </div>
+  )
+}
+
+export function RangeExplainer({ suggestions, baseline, context }: Props) {
+  const panelId = useId()
+  const [open, setOpen] = useState(false)
+
+  return (
+    <div className="vpp-example goals-examples">
+      <Button
+        variant="outline-accent"
+        aria-expanded={open}
+        aria-controls={panelId}
+        onClick={() => setOpen((state) => !state)}
+      >
+        How is the allowed range calculated?
+      </Button>
+      {open ? (
+        <div id={panelId}>
+          <RangeExplainerPanel suggestions={suggestions} baseline={baseline} context={context} />
         </div>
       ) : null}
     </div>

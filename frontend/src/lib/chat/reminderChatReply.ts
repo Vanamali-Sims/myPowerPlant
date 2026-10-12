@@ -73,7 +73,7 @@ export async function buildAsyncChatReply(
   )
   return `Downloaded ${loaded.recommendations.length} reminder day${
     loaded.recommendations.length === 1 ? '' : 's'
-  } to your calendar file — the same entries as on Reminders.`
+  } to your calendar file, the same entries as on Reminders.`
 }
 
 import { emptyStateMessage } from '../reminderForecast'

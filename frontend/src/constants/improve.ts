@@ -10,7 +10,7 @@ export const IMPROVE_HERO = {
   titleLead: 'Unlock the',
   titleEmphasis: 'full potential',
   titleTail: 'of your VPP.',
-  lede: 'Set up your profile by sharing your current usage and profile.',
+  lede: 'Set up your profile by sharing your current usage and setup.',
   accessFeatures: 'Access Features',
   completeProfile: 'Complete profile',
   hint: 'Get started in just 2 minutes.',
@@ -20,6 +20,29 @@ export const IMPROVE_HERO = {
 export const IMPROVE_SETUP_CARD = {
   missing: 'Not added yet',
 } as const
+
+/** Combined bill upload and household details on improve setup step 1 (desktop). */
+export const HOME_VPP_ONBOARDING = {
+  pageTitle: 'Your home and VPP',
+  pageLede: 'Upload your bill, then tell us about your solar, battery and VPP.',
+  billTitle: 'Upload your electricity bill',
+  billLede: 'PDF from your retailer. Powershop bills are supported.',
+  dropTitle: 'Drop your bill PDF here',
+  browseLink: 'browse your files',
+  chips: ['Usage', 'Cost', 'Postcode'] as const,
+  privacy:
+    'Read on this device, never uploaded. We only keep the usage, cost, and postcode you confirm.',
+  detailsTitle: 'Your details',
+  detailsLede: 'Not sure of an answer? Pick "use a baseline" and we\'ll use a typical value.',
+  saveLabel: 'Save changes',
+  vppPlaceholder: 'Select a VPP',
+  vppNotJoined: "I haven't joined one yet",
+  vppNotListed: 'Not listed',
+  vppBaseline: "I'm not sure, use a baseline",
+} as const
+
+/** Select value for an empty vppProvider when the household has not joined a VPP. */
+export const VPP_NOT_JOINED_SELECT = 'none'
 
 /** Dashboard beside the hero, filled from the household's goals, forecast, and uploads. */
 export const IMPROVE_DASHBOARD = {
@@ -62,50 +85,53 @@ export const IMPROVE_FEATURES: {
   pill: string
   title: string
   body: string
-  points: string[]
   action: string
+  ariaLabel: string
 }[] = [
   {
     id: 'whatif',
     eyebrow: 'What if',
-    pill: 'Sandbox · your setup stays the same',
+    pill: 'Sandbox · nothing changes',
     title: 'Test a scenario',
-    body: 'See how your yearly VPP savings would change.',
-    points: ['Bigger battery or more panels', 'Different backup reserve', 'Change in daily use'],
+    body:
+      'See how your yearly VPP savings would change with a bigger battery, more panels, a different backup reserve or new daily use.',
     action: 'Try What if',
+    ariaLabel: 'Open What if: test a scenario',
   },
   {
     id: 'goals',
     eyebrow: 'Goals',
-    pill: 'Powers ‘Your tree’',
+    pill: 'Powers Your tree',
     title: 'Set and track goals',
-    body: 'Stay motivated with progress you can actually see.',
-    points: ['Savings and carbon targets', 'Monthly battery file upload', 'Tree grows as you progress'],
+    body:
+      'Pick a savings and carbon target, upload your battery file each month, and watch your tree grow as you get closer.',
     action: 'Open Goals',
+    ariaLabel: 'Open Goals: set and track goals',
   },
   {
     id: 'reminders',
     eyebrow: 'Reminders',
-    pill: 'Powers ‘Next best day’',
+    pill: 'Powers Next discharge day',
     title: 'Never miss an event',
-    body: 'Know the right day to act, without checking every morning.',
-    points: ['Solar forecast for the week', 'Best days to share or opt out', 'One-click calendar reminders'],
+    body:
+      'A solar forecast for the week shows the best days to share or opt out, with one-click calendar reminders.',
     action: 'Get reminders',
+    ariaLabel: 'Open Reminders: never miss an event',
   },
 ]
 
 /** Shown once when the form opens with answers from the explore form. */
 export const IMPROVE_PREFILL_NOTICE = {
   title: 'We used your earlier answers',
-  body: 'We filled in what you told us in the Simulate my savings form. Check them, and add anything that is missing.',
+  body: 'We filled in what you told us in the explore form. Check them, and add anything that is missing.',
   action: 'Got it',
 } as const
 
 export const IMPROVE_STEPS: { id: ImproveStepId; title: string; lede: string }[] = [
   {
     id: 'home',
-    title: 'Your home and VPP',
-    lede: 'Tell us which VPP you have joined and how much electricity your home uses.',
+    title: 'Your electricity bill',
+    lede: 'Upload a PDF from your retailer. We read usage and postcode on this device only, then you add solar and battery on the next steps.',
   },
   {
     id: 'solar',
@@ -125,7 +151,8 @@ export const IMPROVE_FORM_DONE = 'Save and continue'
 export const IMPROVE_PROFILE = {
   title: 'Your profile',
   lede: 'Everything What if, Goals, and Reminders use. Change it here and every feature uses the new answers.',
-  household: 'Your home and VPP',
+  household: 'From your bill',
+  householdLede: 'Postcode, usage, and charges read on this device. VPP and household size are set on What if.',
   baseline: 'What if baseline',
   baselineLede: 'What if starts every scenario from this setup. Change it here to change the starting point.',
   goals: 'Your goals',
@@ -135,7 +162,7 @@ export const IMPROVE_PROFILE = {
   remindersEmpty: 'No reminders yet. Add event days to your calendar from the Reminders tab.',
   resetHint: 'Start the improve setup again. This cannot be undone.',
   resetKeepsExplore:
-    'This clears your VPP, your goals and history, and your downloaded reminders from this device. Answers from the Simulate my savings form stay, so the setup form fills them in again.',
+    'This clears your VPP, your goals and history, and your downloaded reminders from this device. Answers from the explore form stay, so the setup form fills them in again.',
   resetClearsAll:
     'This clears your setup answers, your goals and history, and your downloaded reminders from this device. You can fill the setup form again afterwards.',
 } as const

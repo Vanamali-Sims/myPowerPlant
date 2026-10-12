@@ -16,7 +16,7 @@ for (const [step, fields] of Object.entries(STEP_FIELDS) as [SetupStepId, (keyof
   }
 }
 
-export type FieldErrors = Partial<Record<keyof ProfileData, string>>
+export type FieldErrors = Partial<Record<keyof ProfileData, string>> & { billUpload?: string }
 
 function required(value: string, message: string): string | undefined {
   if (!value.trim()) return message
@@ -36,6 +36,24 @@ export function isVictorianPostcode(postcode: string): boolean {
 }
 
 /**
+ * postcodeError
+ * @param postcode - Raw postcode string from any form or the Actions panel
+ * @returns Why the postcode cannot be used, or undefined when it is Victorian
+ *
+ * A well-formed postcode from another state gets its own message, so people
+ * know the app covers Victorian homes rather than thinking they mistyped.
+ */
+export function postcodeError(postcode: string): string | undefined {
+  const value = postcode.trim()
+  if (!value) return 'Please enter your postcode.'
+  if (!/^\d{4}$/.test(value)) return 'Enter a 4-digit postcode, for example 3101.'
+  if (!isVictorianPostcode(value)) {
+    return `${value} isn’t a Victorian postcode. MyPowerPlant is for Victorian homes, so enter a postcode starting with 3.`
+  }
+  return undefined
+}
+
+/**
  * validateStep
  * @param step - Wizard step being checked
  * @param profile - Current household answers
@@ -51,11 +69,8 @@ export function validateStep(
   const errors: FieldErrors = {}
 
   if (step === 'household') {
-    if (!profile.postcode.trim()) {
-      errors.postcode = 'Please enter a valid Victorian postcode (4 digits).'
-    } else if (!isVictorianPostcode(profile.postcode)) {
-      errors.postcode = 'Please enter a valid Victorian postcode (4 digits).'
-    }
+    const postcode = postcodeError(profile.postcode)
+    if (postcode) errors.postcode = postcode
     if (!profile.people.trim()) {
       errors.people = 'Please enter how many people live in your house.'
     } else if (!isPositiveNumber(profile.people, FIELD_BOUNDS.people.min, FIELD_BOUNDS.people.max)) {

@@ -2,21 +2,20 @@
  * "Upload this month's file" dialog: drop or browse for a CSV, read it on this
  * device, then show what it adds before "Update my goals".
  *
- * The file is read as soon as it is chosen. Tesla and Amber files share one
- * layout, so the provider comes from the file name, or is asked when the name
- * does not say.
+ * The file is read as soon as it is chosen. Every VPP provider app's export
+ * uses the same template layout, so the person is never asked which one.
  */
 import { useEffect, useId, useRef, useState, type DragEvent, type ReactNode } from 'react'
-import { BATTERY_SOURCES, TEMPLATE_COLUMNS, type BatterySourceId } from '../../constants/batterySources'
+import { TEMPLATE_COLUMNS } from '../../constants/batterySources'
 import { GOALS_UPLOAD } from '../../constants/goals'
 import type { MessageCode } from '../../constants/goalMessages'
 import type { ReadLimits, ReadResult } from '../../lib/goals/adapters/types'
-import { detectSource } from '../../lib/goals/detectSource'
 import { formatDayLabel, formatRangeLabel } from '../../lib/goals/goalFormat'
-import { readBatteryFile } from '../../lib/goals/readBatteryFile'
+import { readBatteryFileAuto } from '../../lib/goals/readBatteryFile'
 import { downloadTemplate } from '../../lib/goals/template'
 import { Button } from '../ui/Button'
 import { CloseIcon, LockIcon } from '../ui/icons'
+import { BatteryCsvIllustration } from './BatteryCsvIllustration'
 import { GoalMessage } from './GoalMessage'
 import { ProblemList } from './ProblemList'
 import type { ReadDays } from './UploadArea'
@@ -36,10 +35,6 @@ type Props = {
   saveError: MessageCode | null
   /** Summary and notices for the file, from the parent. */
   children?: ReactNode
-}
-
-function sourceLabel(id: BatterySourceId): string {
-  return BATTERY_SOURCES.find((source) => source.id === id)?.label ?? id
 }
 
 function dayWord(count: number): string {
@@ -64,11 +59,9 @@ export function UploadDialog({
   children,
 }: Props) {
   const dialogRef = useRef<HTMLDialogElement>(null)
-  const inputRef = useRef<HTMLInputElement>(null)
+  const inputId = useId()
   const guideId = useId()
   const [file, setFile] = useState<File | null>(null)
-  const [source, setSource] = useState<BatterySourceId | null>(null)
-  const [detected, setDetected] = useState(false)
   const [reading, setReading] = useState(false)
   const [result, setResult] = useState<ReadResult | null>(null)
   const [dragging, setDragging] = useState(false)
@@ -88,8 +81,6 @@ export function UploadDialog({
   function reset() {
     readToken.current += 1
     setFile(null)
-    setSource(null)
-    setDetected(false)
     setReading(false)
     setResult(null)
   }
@@ -100,12 +91,12 @@ export function UploadDialog({
     onClose()
   }
 
-  async function read(next: File, sourceId: BatterySourceId) {
+  async function read(next: File) {
     if (!limits) return
     const token = (readToken.current += 1)
     setReading(true)
     setResult(null)
-    const outcome = await readBatteryFile(next, sourceId, limits)
+    const outcome = await readBatteryFileAuto(next, limits)
     if (token !== readToken.current) return
     setReading(false)
     setResult(outcome)
@@ -114,17 +105,9 @@ export function UploadDialog({
 
   function choose(next: File) {
     onClearFile()
-    const guess = detectSource(next.name)
     setFile(next)
-    setSource(guess)
-    setDetected(Boolean(guess))
     setResult(null)
-    if (guess) void read(next, guess)
-  }
-
-  function chooseSource(sourceId: BatterySourceId) {
-    setSource(sourceId)
-    if (file) void read(file, sourceId)
+    void read(next)
   }
 
   function removeFile() {
@@ -132,7 +115,7 @@ export function UploadDialog({
     onClearFile()
   }
 
-  function onDrop(event: DragEvent<HTMLDivElement>) {
+  function onDrop(event: DragEvent<HTMLLabelElement>) {
     event.preventDefault()
     setDragging(false)
     const dropped = event.dataTransfer.files[0]
@@ -180,23 +163,39 @@ export function UploadDialog({
                 <p className="upload-file__meta" role="status">
                   {reading
                     ? 'Reading on this device…'
-                    : ok && source
-                      ? `✓ ${sourceLabel(source)} file${detected ? ' detected' : ''} · ${formatRangeLabel([
+                    : ok
+                      ? `✓ File read · ${formatRangeLabel([
                           ok.days[0].date,
                           ok.days[ok.days.length - 1].date,
                         ])} · ${dayWord(ok.days.length)}`
                       : failed
                         ? 'This file could not be read.'
-                        : 'Which provider is this file from?'}
+                        : ''}
                 </p>
               </div>
               <button type="button" className="upload-file__remove" aria-label={`Remove ${file.name}`} onClick={removeFile}>
                 <CloseIcon width={14} height={14} />
               </button>
             </div>
-          ) : (
-            <div
-              className={`upload-drop${dragging ? ' is-dragging' : ''}`}
+          ) : null}
+
+          <input
+            id={inputId}
+            className="visually-hidden upload-dialog__input"
+            type="file"
+            accept=".csv,text/csv"
+            tabIndex={file || !limits ? -1 : undefined}
+            onChange={(event) => {
+              const chosen = event.target.files?.[0]
+              event.target.value = ''
+              if (chosen) choose(chosen)
+            }}
+          />
+          {limits && !file ? (
+            // Same drop area as the first Goals visit, scaled down for the dialog.
+            <label
+              htmlFor={inputId}
+              className={`goals-file-card__drop upload-dialog__drop${dragging ? ' goals-file-card__drop--active' : ''}`}
               onDragOver={(event) => {
                 event.preventDefault()
                 setDragging(true)
@@ -204,48 +203,13 @@ export function UploadDialog({
               onDragLeave={() => setDragging(false)}
               onDrop={onDrop}
             >
-              <span className="upload-drop__icon" aria-hidden="true">
-                ↑
+              <BatteryCsvIllustration />
+              <span className="goals-file-card__drop-title">{GOALS_UPLOAD.drop}</span>
+              <span className="goals-file-card__drop-browse">
+                or <span className="goals-file-card__drop-link">{GOALS_UPLOAD.browse}</span>
               </span>
-              <p className="upload-drop__title">
-                {GOALS_UPLOAD.drop}{' '}
-                <button type="button" className="upload-drop__browse" onClick={() => inputRef.current?.click()}>
-                  {GOALS_UPLOAD.browse}
-                </button>
-              </p>
-              <p className="upload-drop__hint">{GOALS_UPLOAD.hint}</p>
-            </div>
-          )}
-
-          <input
-            ref={inputRef}
-            className="visually-hidden"
-            type="file"
-            accept=".csv,text/csv"
-            tabIndex={-1}
-            aria-hidden="true"
-            onChange={(event) => {
-              const chosen = event.target.files?.[0]
-              event.target.value = ''
-              if (chosen) choose(chosen)
-            }}
-          />
-
-          {file && !source && !reading ? (
-            <div className="upload-source" role="radiogroup" aria-label="Which provider is this file from?">
-              {BATTERY_SOURCES.map((item) => (
-                <button
-                  key={item.id}
-                  type="button"
-                  role="radio"
-                  aria-checked={false}
-                  className="upload-source__option"
-                  onClick={() => chooseSource(item.id)}
-                >
-                  {item.label}
-                </button>
-              ))}
-            </div>
+              <span className="goals-file-card__format-hint">{GOALS_UPLOAD.hint}</span>
+            </label>
           ) : null}
 
           {failed ? (
@@ -288,24 +252,24 @@ export function UploadDialog({
 
           {saveError ? <GoalMessage code={saveError} /> : null}
 
-          <div className="upload-dialog__links">
+          <div className="goals-file-card__footer upload-dialog__links">
+            <p className="goals-file-card__privacy">
+              <LockIcon width={16} height={16} aria-hidden />
+              <span>{GOALS_UPLOAD.privacy}</span>
+            </p>
             <button
               type="button"
-              className="upload-dialog__guide"
+              className="goals-file-card__guide"
               aria-expanded={guideOpen}
               aria-controls={guideId}
               onClick={() => setGuideOpen((state) => !state)}
             >
               {GOALS_UPLOAD.guide}
             </button>
-            <span className="upload-dialog__privacy">
-              <LockIcon width={12} height={12} />
-              {GOALS_UPLOAD.privacy}
-            </span>
           </div>
           {guideOpen ? (
-            <div id={guideId} className="upload-dialog__guide-panel">
-              <p>Download the CSV file from your Tesla or Amber app.</p>
+            <div id={guideId} className="goals-file-card__guide-panel vpp-example__panel goals-examples__panel">
+              <p>Download the CSV file from your VPP provider app.</p>
               <p>
                 It needs these columns, as in our{' '}
                 <button type="button" className="goals-source__link" onClick={downloadTemplate}>

@@ -5,6 +5,7 @@ import { useEffect, useState } from 'react'
 import { SETUP_STEPS, STEP_FIELDS } from '../../constants'
 import { applyBaseline, fillAllWithBaseline, markUserFields } from '../../data/baselines'
 import { formProgress } from '../../lib/formProgress'
+import { useBlurValidation } from '../../lib/useBlurValidation'
 import { hasErrors, validateStep, type FieldErrors } from '../../lib/validateProfile'
 import { useVoiceInput } from '../../lib/voice/useVoiceInput'
 import type { ProfileData, SetupStepId } from '../../types/profile'
@@ -45,6 +46,8 @@ export function SetupForm({ profile, onChange, onComplete, onExit, onLogoClick, 
   const total = SETUP_STEPS.length
   // Measured from answers, not from which step is open.
   const progress = formProgress(profile)
+  // Fields are checked as people leave them, not only on Continue.
+  const blur = useBlurValidation(() => validateStep(step.id, profile), setErrors)
 
   useEffect(() => {
     onStepChange?.(step.id)
@@ -59,6 +62,7 @@ export function SetupForm({ profile, onChange, onComplete, onExit, onLogoClick, 
       next.panelWatts = ''
     }
     onChange(next)
+    blur.touch(field)
     if (errors[field]) {
       setErrors((current) => {
         const copy = { ...current }
@@ -84,6 +88,7 @@ export function SetupForm({ profile, onChange, onComplete, onExit, onLogoClick, 
       next.panelWatts = ''
     }
     onChange(next)
+    blur.touch(...(Object.keys(updates) as (keyof ProfileData)[]))
     setErrors((current) => {
       const copy = { ...current }
       for (const field of Object.keys(updates)) delete copy[field as keyof ProfileData]
@@ -111,6 +116,7 @@ export function SetupForm({ profile, onChange, onComplete, onExit, onLogoClick, 
     const saved = markUserFields(profile, STEP_FIELDS[step.id])
     onChange(saved)
     setErrors({})
+    blur.reset()
     if (stepIndex === total - 1) {
       onComplete(saved)
       return
@@ -122,6 +128,7 @@ export function SetupForm({ profile, onChange, onComplete, onExit, onLogoClick, 
     const skipped = applyBaseline(profile, step.id)
     onChange(skipped)
     setErrors({})
+    blur.reset()
     if (stepIndex === total - 1) {
       onComplete(skipped)
       return
@@ -137,6 +144,7 @@ export function SetupForm({ profile, onChange, onComplete, onExit, onLogoClick, 
 
   function goBack() {
     setErrors({})
+    blur.reset()
     if (stepIndex === 0) {
       onExit?.()
       return
@@ -184,7 +192,7 @@ export function SetupForm({ profile, onChange, onComplete, onExit, onLogoClick, 
           <h1>{step.title}</h1>
           <p>{step.lede}</p>
         </div>
-        <div className="setup__fields">
+        <div className="setup__fields" onBlur={blur.onBlur}>
           {step.id === 'household' ? (
             <HouseholdProfileStep profile={profile} errors={errors} onChange={changeField} />
           ) : null}

@@ -1,0 +1,20 @@
+Powershop Australia Pty Ltd
+Electricity Statement - Tax Invoice
+Supply Address  1 Example Street, Example Town, 3167, VIC
+Bill Issue Date  14/09/2026
+Total amount due on your account
+$460.55
+Understand your bill
+Billing Period 14/08/26 to 13/09/26 (31 days)
+Account Summary
+14/08/26  Opening account balance  $327.82
+Total amount due on your account  $460.55
+Supply charges  Quantity  Rate (incl. GST)  Period  Amount
+Daily Supply Charge  31 days  $0.9166/day  14/08/26 - 13/09/26  $28.41
+Usage charges  Quantity  Rate (incl. GST)  Period  Amount
+All Day Usage  364 kWh  $0.2866/kWh  14/08/26 - 13/09/26  $104.32
+Charges subtotal  $132.73
+Total tax invoice (incl. GST of $12.06)  $132.73
+Your meter readings
+All Day Usage  364  069891.000  070255.000
+This period: 11.74 kWh per day

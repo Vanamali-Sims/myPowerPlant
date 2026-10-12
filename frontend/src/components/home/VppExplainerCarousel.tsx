@@ -264,7 +264,7 @@ function CompareVisual({ copy, mode, onMode }: CompareVisualProps) {
           <p className="vpp-compare__cost-label">{side.costLabel}</p>
           <div className="vpp-compare__cost-stack">
             <p className="vpp-compare__cost-value">
-              {side.costAud != null ? formatExplainerYearAud(side.costAud) : '—'}
+              {side.costAud != null ? formatExplainerYearAud(side.costAud) : 'N/A'}
               {side.costAud != null ? <span className="vpp-compare__per">/year</span> : null}
               <span className="visually-hidden"> Estimate</span>
             </p>
@@ -337,7 +337,7 @@ function ShortfallCompareBars({ generatedKwh, usedKwh, gapKwh }: ShortfallBarsPr
 
       <p className="vpp-shortfall-bars__gap">
         <strong>{gapLabel} kWh gap</strong>
-        <span> — it has to come from somewhere</span>
+        <span>, and it has to come from somewhere</span>
       </p>
     </div>
   )

@@ -14,6 +14,7 @@ const VIEW_LABEL: Record<AppNavId | 'setup', string> = {
   whatif: 'What if',
   reminders: 'Reminders',
   goals: 'Goals',
+  path: 'Path',
 }
 
 const TIMEFRAME_LABEL: Record<Timeframe, string> = {

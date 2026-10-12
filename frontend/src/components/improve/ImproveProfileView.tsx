@@ -16,15 +16,16 @@ import { suggestGoals } from '../../lib/goals/goalSetup'
 import { loadGoals, saveGoals } from '../../lib/goals/goalsStorage'
 import { deriveTotals } from '../../lib/goals/goalTotals'
 import { melbourneDate } from '../../lib/goals/melbourneTime'
+import { IMPROVE_BILL_DISPLAY_FIELDS } from '../../lib/bills/billProfile'
 import {
   IMPROVE_STEP_FIELDS,
   finishImproveProfile,
   validateImproveStep,
-  vppProviderOptions,
   type ImproveStepId,
 } from '../../lib/improveProfile'
 import type { MethodologyBundle } from '../../lib/methodologyApi'
 import { loadReminders, removeReminder, type SavedReminder } from '../../lib/reminderStorage'
+import { useBlurValidation } from '../../lib/useBlurValidation'
 import { hasErrors, type FieldErrors } from '../../lib/validateProfile'
 import { GOAL_KINDS, type GoalKind, type GoalsStore } from '../../types/goals'
 import type { ProfileData } from '../../types/profile'
@@ -35,7 +36,6 @@ import { Callout } from '../ui/Callout'
 import {
   BatteryIcon,
   BellIcon,
-  BoltIcon,
   CheckIcon,
   LockIcon,
   PencilIcon,
@@ -43,6 +43,7 @@ import {
   ResetIcon,
   TargetIcon,
 } from '../ui/icons'
+import { MyPowerPlantMark } from '../ui/MyPowerPlantMark'
 import { ImproveFields } from './ImproveFields'
 
 type Props = {
@@ -61,10 +62,11 @@ const SECTION_STEPS: Record<Section, ImproveStepId[]> = {
   baseline: ['battery', 'solar'],
 }
 
+const HOUSEHOLD_FIELDS = IMPROVE_BILL_DISPLAY_FIELDS
+
 const FIELD_LABELS: Partial<Record<keyof ProfileData, string>> = {
-  vppProvider: 'VPP',
+  provider: 'Electricity retailer',
   postcode: 'Postcode',
-  people: 'People in household',
   monthlyKwh: 'Monthly electricity usage',
   monthlyBill: 'Monthly bill',
   batteryModel: 'Battery model',
@@ -102,9 +104,21 @@ export function ImproveProfileView({ profile, bundle, onSave, onReset, onLogoCli
   const [goalError, setGoalError] = useState<MessageCode | null>(null)
   const [reminders, setReminders] = useState<SavedReminder[]>(loadReminders)
   const [confirmReset, setConfirmReset] = useState(false)
+  // The open section is checked as people leave each field, not only on Save.
+  const blur = useBlurValidation(
+    () =>
+      editing
+        ? SECTION_STEPS[editing].reduce<FieldErrors>(
+            (all, step) => ({ ...all, ...validateImproveStep(step, draft) }),
+            {},
+          )
+        : {},
+    setErrors,
+  )
 
   function patch<K extends keyof ProfileData>(field: K, value: ProfileData[K]) {
     setDraft((current) => ({ ...current, [field]: value }))
+    blur.touch(field)
     if (errors[field]) {
       setErrors((current) => {
         const copy = { ...current }
@@ -117,6 +131,7 @@ export function ImproveProfileView({ profile, bundle, onSave, onReset, onLogoCli
   function startEdit(section: Section) {
     setDraft(profile)
     setErrors({})
+    blur.reset()
     setNotice('')
     setEditing(section)
   }
@@ -166,8 +181,8 @@ export function ImproveProfileView({ profile, bundle, onSave, onReset, onLogoCli
           onClick={onLogoClick}
           aria-label="MyPowerPlant home"
         >
-          <span className="brand__mark">
-            <BoltIcon width={14} height={14} />
+          <span className="brand__mark brand__mark--logo">
+            <MyPowerPlantMark width={28} height={28} />
           </span>
           MyPowerPlant
         </button>
@@ -191,7 +206,10 @@ export function ImproveProfileView({ profile, bundle, onSave, onReset, onLogoCli
           const isEditing = editing === section
           const Icon = section === 'household' ? PeopleIcon : BatteryIcon
           const title = section === 'household' ? IMPROVE_PROFILE.household : IMPROVE_PROFILE.baseline
-          const fields = SECTION_STEPS[section].flatMap((step) => IMPROVE_STEP_FIELDS[step])
+          const fields =
+            section === 'household'
+              ? HOUSEHOLD_FIELDS
+              : SECTION_STEPS[section].flatMap((step) => IMPROVE_STEP_FIELDS[step])
           return (
             <section key={section} className="profile-card" aria-labelledby={`improve-${section}-title`}>
               <div className="profile-card__head">
@@ -208,9 +226,11 @@ export function ImproveProfileView({ profile, bundle, onSave, onReset, onLogoCli
               </div>
               {section === 'baseline' ? (
                 <p className="dashboard-card__lede">{IMPROVE_PROFILE.baselineLede}</p>
-              ) : null}
+              ) : (
+                <p className="dashboard-card__lede">{IMPROVE_PROFILE.householdLede}</p>
+              )}
               {isEditing ? (
-                <div className="profile-card__edit">
+                <div className="profile-card__edit" onBlur={blur.onBlur}>
                   {SECTION_STEPS[section].map((step) => (
                     <ImproveFields
                       key={step}
@@ -218,7 +238,7 @@ export function ImproveProfileView({ profile, bundle, onSave, onReset, onLogoCli
                       profile={draft}
                       errors={errors}
                       onChange={patch}
-                      vppOptions={vppProviderOptions(bundle)}
+                      onApplyProfile={setDraft}
                     />
                   ))}
                   <div className="goals-form__actions">

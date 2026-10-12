@@ -43,8 +43,7 @@ export function VppHelpsQuotes({ withoutWeek, withWeek }: Props) {
           ≈ {formatExplainerWeekAud(withWeek)}
           {yearSave > 0.5 ? (
             <>
-              {' '}
-              — about {formatExplainerYearAud(yearSave)} less a year
+              , about {formatExplainerYearAud(yearSave)} less a year
             </>
           ) : null}
         </p>

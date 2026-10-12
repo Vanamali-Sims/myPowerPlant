@@ -1,0 +1,124 @@
+/*
+ * Guided tutorial overlay (components/tutorial/Tutorial.tsx).
+ *
+ * Contrast (WCAG 2.2 AA): tooltip title --ink on --surface 15.8:1, body and
+ * step count --ink-secondary 6.6:1, Next --on-deep on --surface-deep. The
+ * backdrop is --green-deeper at 62%; the spotlight ring (--paper) and the
+ * tooltip edge stay above 4:1 against it on light and dark pages.
+ */
+
+.tutorial {
+  position: fixed;
+  inset: 0;
+  /* Above the chat dock and the explore intro; the custom cursor stays on top. */
+  z-index: 1000;
+}
+
+.tutorial--no-target {
+  background: rgba(14, 36, 30, 0.62);
+}
+
+.tutorial__spotlight {
+  position: absolute;
+  border-radius: var(--radius-card);
+  box-shadow:
+    0 0 0 2px var(--paper),
+    0 0 0 9999px rgba(14, 36, 30, 0.62);
+  pointer-events: none;
+  transition:
+    top 220ms ease,
+    left 220ms ease,
+    width 220ms ease,
+    height 220ms ease;
+}
+
+.tutorial__dialog {
+  position: absolute;
+  width: min(22rem, calc(100vw - 2rem));
+  padding: 1.1rem 1.2rem 1rem;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-card);
+  background: var(--surface);
+  color: var(--ink);
+  box-shadow: 0 18px 40px rgba(14, 36, 30, 0.28);
+  transition:
+    top 220ms ease,
+    left 220ms ease;
+}
+
+.tutorial__dialog:focus {
+  outline: none;
+}
+
+.tutorial__dialog:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 3px;
+}
+
+.tutorial--reduced .tutorial__spotlight,
+.tutorial--reduced .tutorial__dialog {
+  transition: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tutorial__spotlight,
+  .tutorial__dialog {
+    transition: none;
+  }
+}
+
+.tutorial__header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 0.6rem;
+}
+
+.tutorial__avatar {
+  flex-shrink: 0;
+}
+
+.tutorial__counter {
+  margin: 0 0 0.15rem;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-secondary);
+}
+
+.tutorial__title {
+  margin: 0;
+  font-size: 1.15rem;
+}
+
+.tutorial__body {
+  margin: 0 0 1rem;
+  font-size: 0.95rem;
+  line-height: 1.5;
+  color: var(--ink-secondary);
+}
+
+.tutorial__actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.tutorial__nav {
+  display: flex;
+  gap: 0.5rem;
+  margin-left: auto;
+}
+
+/* The shared orange primary is 3:1 with its text; the tutorial needs 4.5:1. */
+.tutorial__next.ui-btn--primary {
+  background: var(--surface-deep);
+  color: var(--on-deep);
+}
+
+.tutorial__next.ui-btn--primary:hover {
+  background: var(--structure);
+}

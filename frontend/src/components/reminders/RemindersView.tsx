@@ -24,7 +24,8 @@ import {
 import type { ProfileData } from '../../types/profile'
 import type { EventType } from '../../types/reminders'
 import { Button } from '../ui/Button'
-import { BoltIcon, CalendarIcon, DownloadIcon } from '../ui/icons'
+import { CalendarIcon, DownloadIcon } from '../ui/icons'
+import { MyPowerPlantMark } from '../ui/MyPowerPlantMark'
 import { ReminderChart } from './ReminderChart'
 
 /** Used for the forecast when no postcode is set, matching the solar forecast fallback. */
@@ -65,10 +66,12 @@ function nextDayDetail(entry: ReminderRecommendation, eventType: EventType): str
   return `${kwh} forecast · ${percentFrom(entry.forecastKwh, entry.typicalKwh)}% ${direction} a typical day`
 }
 
-function recommendedLede(count: number): string {
-  if (count === 0) return 'No recommended days in this period.'
-  if (count === 1) return 'Here is the 1 recommended day.'
-  return `Here are the ${count} recommended days.`
+/** Says which kind of day is listed, so the list matches the Discharge / Opt-out choice. */
+function recommendedLede(count: number, eventType: EventType): string {
+  const purpose = eventType === 'discharge' ? 'for discharge' : 'for opt out'
+  if (count === 0) return `No recommended days ${purpose} in this period.`
+  if (count === 1) return `Here is the 1 recommended day ${purpose}.`
+  return `Here are the ${count} recommended days ${purpose}.`
 }
 
 function dayBadge(date: string): { weekday: string; day: string } {
@@ -272,8 +275,8 @@ export function RemindersView({
           onClick={onLogoClick}
           aria-label="MyPowerPlant home"
         >
-          <span className="brand__mark">
-            <BoltIcon width={14} height={14} />
+          <span className="brand__mark brand__mark--logo">
+            <MyPowerPlantMark width={28} height={28} />
           </span>
           MyPowerPlant
         </button>
@@ -285,6 +288,7 @@ export function RemindersView({
           <p className="reminders-page__lede">Know when to share or keep.</p>
         </div>
         <div className="reminders-page__toolbar">
+          <PillToggle label="Event type" value={eventType} options={EVENT_CHOICES} onChange={onEventType} tone="dark" />
           <label className="reminders-period">
             <CalendarIcon width={16} height={16} />
             <span>Reminder period</span>
@@ -296,7 +300,6 @@ export function RemindersView({
               ))}
             </select>
           </label>
-          <PillToggle label="Event type" value={eventType} options={EVENT_CHOICES} onChange={onEventType} tone="dark" />
         </div>
       </div>
 
@@ -354,7 +357,7 @@ export function RemindersView({
             />
 
             <p className="reminders-board__note">
-              {forecastView === 'daily' ? 'kWh/hour, today' : 'kWh/day'} · Open-Meteo forecast for {place} — not a
+              {forecastView === 'daily' ? 'kWh/hour, today' : 'kWh/day'} · Open-Meteo forecast for {place}, not a
               meter reading.
               {usingDefaultLocation ? ' Add your postcode to your profile to use your own area.' : ''}
             </p>
@@ -369,7 +372,7 @@ export function RemindersView({
           <div className="reminders-board__list">
             <div className="reminders-board__list-inner">
               <h2 className="reminders-board__list-title">Remind me</h2>
-              <p className="reminders-board__list-lede">{recommendedLede(recommendations.length)}</p>
+              <p className="reminders-board__list-lede">{recommendedLede(recommendations.length, eventType)}</p>
               {recommendations.length === 0 ? (
                 <p className="reminders-board__empty">{emptyStateMessage(eventType, reservePercent)}</p>
               ) : (
@@ -430,7 +433,7 @@ export function RemindersView({
                   Download all
                 </button>
               ) : null}
-              <p className="reminders-board__privacy">Saved to your calendar only — nothing is uploaded.</p>
+              <p className="reminders-board__privacy">Saved to your calendar only. Nothing is uploaded.</p>
               <p className="reminders-board__status" role="status">
                 {status}
               </p>
