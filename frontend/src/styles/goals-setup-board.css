@@ -381,9 +381,16 @@
   gap: 1.375rem;
 }
 
+.goals-panel-field__label-row {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  margin-bottom: 0.5rem;
+}
+
 .goals-panel-field__label {
   display: block;
-  margin-bottom: 0.5rem;
+  margin: 0;
   font-size: 0.9375rem;
   font-weight: 600;
 }
@@ -460,50 +467,63 @@
   color: var(--danger, #b42318);
 }
 
-.goals-panel-form__tips {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-  margin-top: auto;
-  padding-top: 0.25rem;
+.goals-panel-tip {
+  position: relative;
+  display: inline-flex;
+  flex-shrink: 0;
 }
 
-.goals-panel-form__tip-buttons {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.goals-panel-tip__btn {
+.goals-panel-tip__icon {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 1.5rem;
-  height: 1.5rem;
-  padding: 0;
+  width: 1.125rem;
+  height: 1.125rem;
   border: 1px solid #d8cfbf;
   border-radius: 50%;
   background: #fff;
   color: #a8441a;
-  cursor: pointer;
+  cursor: default;
 }
 
-.goals-panel-tip__btn:hover,
-.goals-panel-tip__btn--on {
+.goals-panel-tip:hover .goals-panel-tip__icon,
+.goals-panel-tip:focus-within .goals-panel-tip__icon {
   border-color: #a8441a;
   background: #fbf4ec;
 }
 
-.goals-panel-tip__btn:focus-visible {
+.goals-panel-tip__icon:focus-visible {
   outline: 2px solid #24463a;
   outline-offset: 2px;
 }
 
 .goals-panel-tip__line {
+  position: absolute;
+  left: 0;
+  top: calc(100% + 0.35rem);
+  z-index: 3;
+  width: min(18rem, calc(100vw - 2rem));
   margin: 0;
+  padding: 0.5rem 0.65rem;
+  border: 1px solid #e5ddd0;
+  border-radius: 0.5rem;
+  background: #fff;
+  box-shadow: 0 4px 12px rgb(36 70 58 / 0.08);
   font-size: 0.8125rem;
   line-height: 1.45;
+  font-weight: 400;
   color: var(--ink-secondary);
+  white-space: normal;
+  pointer-events: none;
+  visibility: hidden;
+  opacity: 0;
+  transition: opacity 0.12s ease, visibility 0.12s ease;
+}
+
+.goals-panel-tip:hover .goals-panel-tip__line,
+.goals-panel-tip:focus-within .goals-panel-tip__line {
+  visibility: visible;
+  opacity: 1;
 }
 
 @media (max-width: 900px) {

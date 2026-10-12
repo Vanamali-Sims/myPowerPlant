@@ -269,11 +269,11 @@ describe('step 2: goals from the file', () => {
     expect(screen.getByText(aud(expected.suggestions.savings?.max))).toBeTruthy()
   })
 
-  it('shows a short tip when the allowed-range info button is pressed', async () => {
+  it('shows a short tip when hovering the savings goal info icon', async () => {
     const { user } = renderView()
     await addFile(user)
-    await user.click(screen.getByRole('button', { name: 'How is the allowed range calculated?' }))
-    expect(screen.getByRole('note').textContent).toContain('2 and 13 months')
+    await user.hover(screen.getByLabelText('How is the allowed range calculated?'))
+    expect(screen.getByRole('tooltip', { name: /2 and 13 months/ }).textContent).toContain('2 and 13 months')
   })
 
   it('goes back to step 1 for a different file', async () => {
@@ -284,11 +284,13 @@ describe('step 2: goals from the file', () => {
     expect(screen.getByText('Add your file to see your range')).toBeTruthy()
   })
 
-  it('shows a short tip when the carbon info button is pressed', async () => {
+  it('shows a short tip when hovering the carbon goal info icon', async () => {
     const { user } = renderView()
     await addFile(user)
-    await user.click(screen.getByRole('button', { name: 'How is carbon calculated?' }))
-    expect(screen.getByRole('note').textContent).toContain('Victorian grid factor')
+    await user.hover(screen.getByLabelText('How is carbon calculated?'))
+    expect(screen.getByRole('tooltip', { name: /Victorian grid factor/ }).textContent).toContain(
+      'Victorian grid factor',
+    )
   })
 })
 

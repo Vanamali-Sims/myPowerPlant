@@ -19,7 +19,7 @@ import { Button } from '../ui/Button'
 import { TextField } from '../ui/TextField'
 import { CarbonExamples } from './CarbonExamples'
 import { GoalMessage } from './GoalMessage'
-import { GoalsOnboardingInfoTips } from './GoalsOnboardingInfoTips'
+import { GoalsOnboardingInfoTip } from './GoalsOnboardingInfoTips'
 import { RangeExplainer } from './RangeExplainer'
 
 type Values = Record<GoalKind, string>
@@ -98,7 +98,10 @@ function OnboardingGoalField({
 
   return (
     <div className={`goals-panel-field goals-panel-field--${kind}`}>
-      <label className="goals-panel-field__label" htmlFor={inputId}>{label}</label>
+      <div className="goals-panel-field__label-row">
+        <label className="goals-panel-field__label" htmlFor={inputId}>{label}</label>
+        <GoalsOnboardingInfoTip kind={kind} />
+      </div>
       <div className="goals-panel-field__group">
         {kind === 'savings' ? <span className="goals-panel-field__prefix" aria-hidden>$</span> : null}
         <input
@@ -231,8 +234,6 @@ export function GoalSetupForm(props: Props) {
             )
           })}
         </div>
-
-        {mode === 'next' ? null : <GoalsOnboardingInfoTips />}
 
         {saveError ? <GoalMessage code={saveError} /> : null}
 
