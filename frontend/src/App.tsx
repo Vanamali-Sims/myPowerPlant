@@ -169,6 +169,9 @@ function App() {
   }
 
   function beginImproveJourney() {
+    // The story belongs to the explore start only; never carry it into improve.
+    setExploreIntroRun(0)
+    setExploreIntroPlaying(false)
     saveJourney('rain')
     setJourney('rain')
     setView('rainHub')
@@ -270,6 +273,9 @@ function App() {
     wipeLocalAppState()
     setTutorialSeen({})
     setTutorialUnavailable([])
+    // A reset is a fresh start: the story plays again only if Explore is picked.
+    setExploreIntroRun(0)
+    setExploreIntroPlaying(false)
     setJourney(null)
     setView('intro')
     setNotice('')
@@ -572,9 +578,9 @@ function App() {
           </div>
         </AppShell>
       </div>
-      {/* Mounted from the split-screen choice on; once finished it renders nothing and stays
-          mounted, so going back to the explore home later never replays it. */}
-      {exploreIntroRun > 0 ? (
+      {/* Mounted from the split-screen Explore choice on; once finished it renders nothing and
+          stays mounted, so going back to the explore home later never replays it. Explore only. */}
+      {exploreIntroRun > 0 && journey === 'matt' ? (
         <ExploreIntro
           key={exploreIntroRun}
           onDone={() => setExploreIntroPlaying(false)}

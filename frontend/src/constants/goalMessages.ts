@@ -58,11 +58,30 @@ export type GoalMessageSpec = {
 
 const CHOOSE_ANOTHER = 'Choose another file, or open "How to get your file" to check the steps and columns.'
 
+/**
+ * One message for any file we cannot read as a battery file: wrong type,
+ * unreadable, wrong layout, missing columns, no data rows, or an unknown
+ * source. "How to get your file" shows the format we accept.
+ */
+export const FORMAT_NOT_ACCEPTED = {
+  title: 'The uploaded format is not accepted.',
+  nextStep: 'Click How to get your file for the correct format.',
+} as const
+
+/** Reasons that mean the file's format is wrong, so they share FORMAT_NOT_ACCEPTED. */
+export const FORMAT_REASONS = [
+  'not_csv',
+  'unreadable',
+  'malformed_csv',
+  'missing_columns',
+  'no_rows',
+  'source_not_supported',
+] as const
+
 export const GOAL_MESSAGES: Record<MessageCode, GoalMessageSpec> = {
   not_csv: {
     severity: 'error',
-    title: 'This file is not a CSV file.',
-    nextStep: `Download the CSV file from your provider's app. ${CHOOSE_ANOTHER}`,
+    ...FORMAT_NOT_ACCEPTED,
   },
   empty_file: {
     severity: 'error',
@@ -76,23 +95,19 @@ export const GOAL_MESSAGES: Record<MessageCode, GoalMessageSpec> = {
   },
   unreadable: {
     severity: 'error',
-    title: 'We could not read this file.',
-    nextStep: `Save it again as a CSV file. ${CHOOSE_ANOTHER}`,
+    ...FORMAT_NOT_ACCEPTED,
   },
   malformed_csv: {
     severity: 'error',
-    title: 'This file is not laid out as a CSV table we can read.',
-    nextStep: `Check that each row is on its own line and any quotes are closed. ${CHOOSE_ANOTHER}`,
+    ...FORMAT_NOT_ACCEPTED,
   },
   missing_columns: {
     severity: 'error',
-    title: 'This file is missing columns we need.',
-    nextStep: `Use the column names from the template. ${CHOOSE_ANOTHER}`,
+    ...FORMAT_NOT_ACCEPTED,
   },
   no_rows: {
     severity: 'error',
-    title: 'This file has column names but no rows of battery data.',
-    nextStep: `Add your battery data under the column names. ${CHOOSE_ANOTHER}`,
+    ...FORMAT_NOT_ACCEPTED,
   },
   mixed_intervals: {
     severity: 'error',
@@ -106,8 +121,7 @@ export const GOAL_MESSAGES: Record<MessageCode, GoalMessageSpec> = {
   },
   source_not_supported: {
     severity: 'error',
-    title: 'We cannot read files from this source yet.',
-    nextStep: 'Download the CSV from your VPP provider app, in the template layout.',
+    ...FORMAT_NOT_ACCEPTED,
   },
   estimates_unavailable: {
     severity: 'error',

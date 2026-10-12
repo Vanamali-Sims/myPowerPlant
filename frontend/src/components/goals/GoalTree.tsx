@@ -10,7 +10,7 @@ import { AnimatePresence, LazyMotion, domAnimation, type Transition } from 'moti
 import * as m from 'motion/react-m'
 import { TREE_MAX_STEP } from '../../constants/goals'
 import { formatPercent } from '../../lib/goals/goalFormat'
-import { fruitCount, ripeningFruit, stageForStep, treeStep } from '../../lib/goals/progress'
+import { fruitCount, stageForStep, treeStep } from '../../lib/goals/progress'
 import { useReducedMotion } from '../../lib/useReducedMotion'
 
 type Props = {
@@ -135,8 +135,8 @@ export function GoalTree({ carbonPercent, savingsPercent, showCaption = true }: 
   const reduced = useReducedMotion()
   const step = treeStep(carbonPercent)
   const stage = stageForStep(step)
+  // Only whole fruit: one orange for each full 5 percent of the savings goal.
   const fruit = fruitCount(savingsPercent)
-  const ripening = ripeningFruit(savingsPercent)
   const transition: Transition = reduced
     ? { duration: 0 }
     : { type: 'spring', stiffness: 90, damping: 18, mass: 0.9 }
@@ -241,16 +241,6 @@ export function GoalTree({ carbonPercent, savingsPercent, showCaption = true }: 
                 />
               )
             })}
-            {ripening ? (
-              <m.circle
-                key={`ripening-${fruit}`}
-                className="goal-tree__fruit goal-tree__fruit--ripening"
-                initial={{ ...fruitSpot(fruit, step), r: 0 }}
-                animate={{ ...fruitSpot(fruit, step), r: 3.2 }}
-                exit={{ r: 0 }}
-                transition={transition}
-              />
-            ) : null}
           </AnimatePresence>
         </svg>
         </LazyMotion>

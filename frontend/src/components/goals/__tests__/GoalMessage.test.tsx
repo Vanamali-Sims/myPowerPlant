@@ -7,6 +7,8 @@ import { cleanup, render, screen } from '@testing-library/react'
 import { afterEach, describe, expect, it } from 'vitest'
 
 import {
+  FORMAT_NOT_ACCEPTED,
+  FORMAT_REASONS,
   GOAL_MESSAGES,
   ROW_PROBLEM_MESSAGES,
   SEVERITY_LABELS,
@@ -80,4 +82,25 @@ describe('shared message component (AC6)', () => {
       expect(screen.queryByRole('alert')).toBeNull()
     },
   )
+})
+
+describe('wrong file format', () => {
+  it.each(FORMAT_REASONS)('%s says the format is not accepted and points to How to get your file', (code) => {
+    expect(GOAL_MESSAGES[code].title).toBe('The uploaded format is not accepted.')
+    expect(GOAL_MESSAGES[code].nextStep).toBe('Click How to get your file for the correct format.')
+  })
+
+  it('keeps its own message for a correctly formatted file with a data problem', () => {
+    for (const code of ['empty_file', 'file_too_large', 'mixed_intervals', 'no_complete_days'] as const) {
+      expect(GOAL_MESSAGES[code].title).not.toBe(FORMAT_NOT_ACCEPTED.title)
+    }
+  })
+
+  it('shows the message and next step on screen', () => {
+    render(<GoalMessage code="missing_columns" details={<p>Missing: interval_minutes.</p>} />)
+    const alert = screen.getByRole('alert')
+    expect(alert.textContent).toContain('The uploaded format is not accepted.')
+    expect(alert.textContent).toContain('What to do next: Click How to get your file for the correct format.')
+    expect(alert.textContent).toContain('Missing: interval_minutes.')
+  })
 })

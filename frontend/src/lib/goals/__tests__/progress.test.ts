@@ -9,7 +9,6 @@ import {
   estimateFinish,
   fruitCount,
   progressRate,
-  ripeningFruit,
   stageForStep,
   stageNumber,
   stageStarts,
@@ -73,13 +72,6 @@ describe('tree growth every 5 percent (AC1)', () => {
     expect(stageStarts().map((stage) => stage.percent)).toEqual([0, 20, 40, 60, 100])
   })
 
-  it('shows a ripening fruit only while the next 5 percent is part way', () => {
-    expect(ripeningFruit(0)).toBe(0)
-    expect(ripeningFruit(27)).toBe(1)
-    expect(ripeningFruit(25)).toBe(0)
-    expect(ripeningFruit(99)).toBe(1)
-    expect(ripeningFruit(100)).toBe(0)
-  })
 
   it('adds one fruit per 5 percent of savings, up to 20', () => {
     expect(fruitCount(0)).toBe(0)

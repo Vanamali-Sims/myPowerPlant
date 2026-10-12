@@ -73,16 +73,6 @@ export function stageStarts(): { label: TreeStage; percent: number }[] {
   return TREE_STAGE_LABELS.map((stage) => ({ label: stage.label, percent: stage.from * TREE_GROWTH_STEP_PERCENT }))
 }
 
-/**
- * ripeningFruit
- * @param savingsPercent - Real savings progress
- * @returns 1 when the next fruit is part grown, else 0
- */
-export function ripeningFruit(savingsPercent: number): number {
-  if (!(savingsPercent > 0) || fruitCount(savingsPercent) >= 100 / SAVINGS_FRUIT_STEP_PERCENT) return 0
-  return savingsPercent % SAVINGS_FRUIT_STEP_PERCENT > 1e-9 ? 1 : 0
-}
-
 /** Months where every day is counted, oldest first. */
 export function completeMonths(months: MonthRecord[]): MonthRecord[] {
   return months.filter((record) => record.daysCounted === record.daysInMonth)
