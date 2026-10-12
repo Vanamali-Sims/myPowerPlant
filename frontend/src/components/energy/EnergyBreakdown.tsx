@@ -15,10 +15,13 @@ type Props = {
 
 let entrancePlayedGlobally = false
 
+const prefersReducedMotion = () =>
+  typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches
+
 export function EnergyBreakdown({ model, dischargeLabel, dischargeHint, headlineText }: Props) {
   const [focus, setFocus] = useState<EnergyFocus>(null)
-  const [entrance, setEntrance] = useState(!entrancePlayedGlobally)
-  const [flowReady, setFlowReady] = useState(entrancePlayedGlobally)
+  const [entrance, setEntrance] = useState(() => !entrancePlayedGlobally && !prefersReducedMotion())
+  const [flowReady, setFlowReady] = useState(() => entrancePlayedGlobally || prefersReducedMotion())
   const [pauseContinuous, setPauseContinuous] = useState(false)
   const rootRef = useRef<HTMLDivElement>(null)
 
@@ -30,13 +33,6 @@ export function EnergyBreakdown({ model, dischargeLabel, dischargeHint, headline
   const shareLabel = formatShare(riverHeadlineShare(model))
 
   const generatedHint = model.solarIsPotential ? 'modelled from the roof' : 'from the roof'
-
-  useEffect(() => {
-    if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
-    entrancePlayedGlobally = true
-    setEntrance(false)
-    setFlowReady(true)
-  }, [])
 
   useEffect(() => {
     if (!entrance) return
@@ -71,9 +67,7 @@ export function EnergyBreakdown({ model, dischargeLabel, dischargeHint, headline
     }
   }, [])
 
-  const reducedMotion =
-    typeof window !== 'undefined' &&
-    window.matchMedia('(prefers-reduced-motion: reduce)').matches
+  const reducedMotion = prefersReducedMotion()
 
   const showEntrance = entrance && !reducedMotion
   const showFlow = (flowReady || !showEntrance) && !reducedMotion

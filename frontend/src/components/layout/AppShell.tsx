@@ -50,9 +50,8 @@ export function AppShell({
   const { setRef: setNavRef, box: navBox } = useSlidingHighlight(active, '.app-rail__item.is-active')
 
   function isAvailable(id: AppNavId) {
-    if (journey === 'rain') {
-      return id === 'whatif' || id === 'goals' || id === 'reminders'
-    }
+    // Rain features open the access-features form first when answers are missing.
+    if (journey === 'rain') return true
     if (id === 'home' || id === 'dashboard' || id === 'recommendations') return true
     return hasProfile
   }

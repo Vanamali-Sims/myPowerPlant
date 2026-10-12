@@ -63,6 +63,26 @@ export function fruitCount(savingsPercent: number): number {
   return Math.min(100 / SAVINGS_FRUIT_STEP_PERCENT, Math.floor(savingsPercent / SAVINGS_FRUIT_STEP_PERCENT + 1e-9))
 }
 
+/** Stage number, 1 to TREE_STAGE_LABELS.length, for a tree step. */
+export function stageNumber(step: number): number {
+  return TREE_STAGE_LABELS.findIndex((stage) => step >= stage.from && step <= stage.to) + 1 || 1
+}
+
+/** Percent of the carbon goal at which each stage starts, for the stage timeline. */
+export function stageStarts(): { label: TreeStage; percent: number }[] {
+  return TREE_STAGE_LABELS.map((stage) => ({ label: stage.label, percent: stage.from * TREE_GROWTH_STEP_PERCENT }))
+}
+
+/**
+ * ripeningFruit
+ * @param savingsPercent - Real savings progress
+ * @returns 1 when the next fruit is part grown, else 0
+ */
+export function ripeningFruit(savingsPercent: number): number {
+  if (!(savingsPercent > 0) || fruitCount(savingsPercent) >= 100 / SAVINGS_FRUIT_STEP_PERCENT) return 0
+  return savingsPercent % SAVINGS_FRUIT_STEP_PERCENT > 1e-9 ? 1 : 0
+}
+
 /** Months where every day is counted, oldest first. */
 export function completeMonths(months: MonthRecord[]): MonthRecord[] {
   return months.filter((record) => record.daysCounted === record.daysInMonth)

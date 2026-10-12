@@ -10,7 +10,7 @@ import {
   WEEKS_PER_FORTNIGHT,
   WEEKS_PER_MONTH,
 } from '../constants/kpiMethodology'
-import { DEFAULT_LOCATION_LABEL, FIELD_BOUNDS, clampNumber } from '../constants/validation'
+import { DEFAULT_LOCATION_LABEL, FIELD_BOUNDS, TYPICAL_PANEL_WATTS, clampNumber } from '../constants/validation'
 import { locationFromPostcode } from '../data/profileOptions'
 import { currentSeason, SEASON_LABELS, type Season } from './season'
 import type { PeakPeriod, ProfileData } from '../types/profile'
@@ -262,6 +262,16 @@ function applianceLines(
   return lines
 }
 
+/**
+ * panelWattsOrTypical
+ * @param profile - Household answers
+ * @returns The panel rating given, kept in bounds, or a typical rating when it was left empty
+ */
+export function panelWattsOrTypical(profile: ProfileData): number {
+  if (!profile.panelWatts.trim()) return TYPICAL_PANEL_WATTS
+  return clampNumber(parseCount(profile.panelWatts), FIELD_BOUNDS.panelWatts.min, FIELD_BOUNDS.panelWatts.max)
+}
+
 function weeklySolarKwh(
   profile: ProfileData,
   potential: boolean,
@@ -274,7 +284,7 @@ function weeklySolarKwh(
   const kw = potential
     ? data.methodology.typicalPotentialKw
     : (clampNumber(parseCount(profile.panelCount), FIELD_BOUNDS.panelCount.min, FIELD_BOUNDS.panelCount.max) *
-        clampNumber(parseCount(profile.panelWatts), FIELD_BOUNDS.panelWatts.min, FIELD_BOUNDS.panelWatts.max)) /
+        panelWattsOrTypical(profile)) /
       1000
   if (kw <= 0) return 0
   const daily =

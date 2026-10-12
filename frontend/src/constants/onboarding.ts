@@ -1,47 +1,59 @@
-export const VPP_INTRO = {
-  eyebrow: 'Virtual Power Plants',
-  title: 'Your solar, battery, and neighbourhood — connected',
-  lede:
-    'A VPP shares spare battery power when the grid needs it. You stay in control and can earn credits instead of only feeding in at a low rate.',
-  skip: 'Skip',
-  continue: 'Continue',
-}
+/** Screen 1 intro captions, in the order they play. */
+export const INTRO_STEPS = [
+  {
+    tag: 'Solar',
+    title: ['Every rooftop', 'catches the sun.'],
+    body: 'Panels make the most energy in the middle of the day.',
+  },
+  {
+    tag: 'Storage',
+    title: ['Your battery keeps', 'what you don’t use.'],
+    body: 'Instead of exporting it for cents, store it for later.',
+  },
+  {
+    tag: 'Connection',
+    title: ['Thousands of batteries.', 'One power plant.'],
+    body: 'Linked together, homes can act like a power station.',
+  },
+  {
+    tag: 'Reward',
+    title: ['Share at peak times.', 'Get paid back.'],
+    body: 'When the grid needs power most, your energy is worth more.',
+  },
+] as const
 
+export const INTRO_COPY = {
+  place: 'MyPowerPlant · Victoria',
+  skipHint: 'Click anywhere to skip',
+  eventLabel: 'Peak demand · 6:30 pm',
+  eventValue: '+$12.40',
+  eventNote: 'paid to you',
+} as const
+
+/** Screen 1: the brand intro on arrival, before the choice. */
+export const BRAND_INTRO = {
+  brand: 'MyPowerPlant',
+  slogan: 'A platform that helps you get more from your VPP.',
+  skipHint: 'Click anywhere to skip',
+} as const
+
+/** Screen 2: "Which describes you?" choice. */
 export const PATH_CHOICE = {
-  title: 'How can we help today?',
-  lede: 'Pick the path that fits where you are with a Virtual Power Plant.',
+  title: 'Which describes you?',
+  replay: 'Replay intro',
   explore: {
-    title: 'Get started with VPPs',
-    body: 'See if a VPP is worth it, model your home, and compare Victorian plans.',
+    eyebrow: 'New to VPPs',
+    title: ['Get started', 'with VPPs'],
+    body: 'See if a VPP is worth it, model your home and simulate savings, and get recommended Victorian plans.',
     action: 'Explore getting started',
   },
   improve: {
-    title: 'Let’s improve my VPP setup',
-    body: 'Try battery settings, set savings goals, and get reminders before peak events.',
+    eyebrow: 'Already have a battery',
+    title: ['Improve my', 'VPP setup'],
+    body: 'Try get reminders, goal tracker, and what if scenarios before peak events.',
     action: 'Improve my setup',
   },
-}
-
-export const RAIN_HUB = {
-  title: 'Great! What would you like to do?',
-  cards: {
-    whatif: {
-      title: 'What if',
-      body: 'Try different battery settings and see how your VPP earnings would change.',
-      action: 'Explore scenarios',
-    },
-    goals: {
-      title: 'Goal',
-      body: 'Set a savings target and track how close your VPP credits get you.',
-      action: 'Set a goal',
-    },
-    reminders: {
-      title: 'Reminder',
-      body: 'Get a nudge before peak events, bill dates, or a settings check-in.',
-      action: 'Add a reminder',
-    },
-  },
-}
+} as const
 
 export const FLOW_CONTROLS = {
   railLabel: 'Path',

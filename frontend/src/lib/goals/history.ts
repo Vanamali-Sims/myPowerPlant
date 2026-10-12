@@ -103,6 +103,16 @@ export function applyDays(
   return [...byMonth.values()].sort((a, b) => a.month.localeCompare(b.month))
 }
 
+/**
+ * removeMonth
+ * @param months - Stored monthly records
+ * @param month - YYYY-MM to take out
+ * @returns The records without that month; reached goals are kept elsewhere and not touched
+ */
+export function removeMonth(months: MonthRecord[], month: string): MonthRecord[] {
+  return months.filter((record) => record.month !== month)
+}
+
 /** The latest day counted in any month, or null before any upload. */
 export function lastCountedDate(months: MonthRecord[]): string | null {
   let latest: string | null = null

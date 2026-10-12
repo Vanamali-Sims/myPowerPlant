@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useMemo, useState } from 'react'
 import type { BatteryModelRow, VppSuggestionPlan } from '../../lib/methodologyApi'
 import {
   compactCardFacts,
@@ -47,15 +47,7 @@ export function PlansMasterDetail({ profile, plans, batteryModels, onEnrollProvi
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [termsOpen, setTermsOpen] = useState(false)
 
-  useEffect(() => {
-    if (matches.length === 0) {
-      setSelectedId(null)
-      return
-    }
-    const stillValid = matches.some((m) => m.plan.id === selectedId)
-    if (!stillValid) setSelectedId(matches[0].plan.id)
-  }, [matches, selectedId])
-
+  // A selection that drops out of the matches falls back to the top match.
   const selected =
     matches.find((m) => m.plan.id === selectedId) ?? matches[0] ?? null
   const selectedIndex = selected ? matches.findIndex((m) => m.plan.id === selected.plan.id) : -1

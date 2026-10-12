@@ -52,7 +52,10 @@ function optOutFactor(reservePercent: number): number {
  */
 function formatDayLabel(iso: string): string {
   const date = new Date(`${iso}T00:00:00`)
-  return date.toLocaleDateString('en-AU', { weekday: 'long', day: 'numeric', month: 'long' })
+  // Built from parts so the comma does not depend on the browser's locale data.
+  const weekday = date.toLocaleDateString('en-AU', { weekday: 'long' })
+  const month = date.toLocaleDateString('en-AU', { month: 'long' })
+  return `${weekday}, ${date.getDate()} ${month}`
 }
 
 function reasonFor(

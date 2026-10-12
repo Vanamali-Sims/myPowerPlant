@@ -378,25 +378,28 @@ data "aws_iam_policy_document" "github_actions_apigateway" {
   }
 }
 
-# Read the SSM parameter during plan/refresh. The lifecycle ignore_changes
-# on its value (see terraform/ssm.tf) means CI never needs write access to
-# it, only enough to read it back for the plan to complete.
+# Read the SSM parameters during plan/refresh. The lifecycle ignore_changes
+# on their values (see terraform/ssm.tf) means CI never needs write access to
+# them, only enough to read them back for the plan to complete.
 data "aws_iam_policy_document" "github_actions_ssm" {
   statement {
-    sid    = "ReadDatabaseUrlParameter"
+    sid    = "ReadConfigParameters"
     effect = "Allow"
     actions = [
       "ssm:GetParameter",
       "ssm:ListTagsForResource",
     ]
-    resources = [aws_ssm_parameter.database_url.arn]
+    resources = [
+      aws_ssm_parameter.database_url.arn,
+      aws_ssm_parameter.llm_api_key.arn,
+    ]
   }
 
   # DescribeParameters has no resource-level permission support (like
   # ecr:GetAuthorizationToken above), so it can only be granted on "*"
-  # even though it is only ever used here to refresh one parameter.
+  # even though it is only ever used here to refresh the parameters above.
   statement {
-    sid       = "DescribeDatabaseUrlParameter"
+    sid       = "DescribeConfigParameters"
     effect    = "Allow"
     actions   = ["ssm:DescribeParameters"]
     resources = ["*"]

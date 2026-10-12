@@ -78,7 +78,7 @@ export function treeEquivalent(carbonKg: number): number {
 /**
  * nextGoalRange
  * @param total - What is already counted towards this goal
- * @param range - The usual range from the profile estimate
+ * @param range - The usual range from the battery-file baseline
  * @returns A range for the next goal that always starts above the current total
  *
  * Progress continues from the cumulative total, so the next goal adds the

@@ -10,12 +10,14 @@ import { AnimatePresence, LazyMotion, domAnimation, type Transition } from 'moti
 import * as m from 'motion/react-m'
 import { TREE_MAX_STEP } from '../../constants/goals'
 import { formatPercent } from '../../lib/goals/goalFormat'
-import { fruitCount, stageForStep, treeStep } from '../../lib/goals/progress'
+import { fruitCount, ripeningFruit, stageForStep, treeStep } from '../../lib/goals/progress'
 import { useReducedMotion } from '../../lib/useReducedMotion'
 
 type Props = {
   carbonPercent: number
   savingsPercent: number
+  /** Stage and legend text under the picture; the Goals page shows them elsewhere. */
+  showCaption?: boolean
 }
 
 const CX = 120
@@ -129,11 +131,12 @@ function fruitSpot(index: number, step: number) {
  * Grows from the previous step to the new one. With reduced motion the final
  * state shows at once.
  */
-export function GoalTree({ carbonPercent, savingsPercent }: Props) {
+export function GoalTree({ carbonPercent, savingsPercent, showCaption = true }: Props) {
   const reduced = useReducedMotion()
   const step = treeStep(carbonPercent)
   const stage = stageForStep(step)
   const fruit = fruitCount(savingsPercent)
+  const ripening = ripeningFruit(savingsPercent)
   const transition: Transition = reduced
     ? { duration: 0 }
     : { type: 'spring', stiffness: 90, damping: 18, mass: 0.9 }
@@ -238,17 +241,29 @@ export function GoalTree({ carbonPercent, savingsPercent }: Props) {
                 />
               )
             })}
+            {ripening ? (
+              <m.circle
+                key={`ripening-${fruit}`}
+                className="goal-tree__fruit goal-tree__fruit--ripening"
+                initial={{ ...fruitSpot(fruit, step), r: 0 }}
+                animate={{ ...fruitSpot(fruit, step), r: 3.2 }}
+                exit={{ r: 0 }}
+                transition={transition}
+              />
+            ) : null}
           </AnimatePresence>
         </svg>
         </LazyMotion>
       </div>
-      <figcaption className="goal-tree__caption">
-        <span className="goal-tree__stage">Stage: {stage}</span>
-        <span>
-          The tree grows every 5 percent of your carbon goal. Each fruit is 5 percent of your
-          savings goal.
-        </span>
-      </figcaption>
+      {showCaption ? (
+        <figcaption className="goal-tree__caption">
+          <span className="goal-tree__stage">Stage: {stage}</span>
+          <span>
+            The tree grows every 5 percent of your carbon goal. Each fruit is 5 percent of your
+            savings goal.
+          </span>
+        </figcaption>
+      ) : null}
     </figure>
   )
 }

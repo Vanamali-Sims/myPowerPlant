@@ -9,6 +9,9 @@ export const PROFILE_STORAGE_KEY = 'mypowerplant.profile'
 /** Matt vs Rain path — separate from the household profile blob. */
 export const JOURNEY_STORAGE_KEY = 'mypowerplant.journey'
 
+/** Reminders downloaded from the Reminders tab, listed on the improve-flow profile. */
+export const REMINDERS_STORAGE_KEY = 'mypowerplant.reminders'
+
 /** Reject a stored blob larger than this so a tampered key cannot fill the origin quota. */
 export const PROFILE_MAX_JSON_BYTES = 8192
 
