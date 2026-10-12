@@ -154,7 +154,7 @@ export const GOALS_ONBOARDING = {
     'Read on this device only. Never uploaded or kept. Your goals stay on this device.',
   guideLink: 'How to get your file',
   goalsTitle: 'Your goals',
-  goalsHelper: 'One for money saved, one for carbon avoided. You can change them later.',
+  goalsHelper: 'One for money saved, one for carbon emission avoided. You can change them later.',
   lockedTitle: 'Add your file to see your range',
   lockedBody: "We'll suggest goals that fit how your battery actually performs.",
   rangeTip:
@@ -168,7 +168,7 @@ export const GOALS_ONBOARDING = {
 /** Copy for the full-width goals form card (edit, create step 2, next goal). */
 export const GOALS_FORM = {
   editTitle: 'Edit your goals',
-  editHelper: 'One for money saved, one for carbon avoided. You can change them any time.',
+  editHelper: 'One for money saved, one for carbon emission avoided. You can change them any time.',
   createTitle: 'Set your goals',
   createHelper: 'Choose a goal for money saved and a goal for carbon avoided. You can change them later.',
   nextTitle: 'Set your next goal',

@@ -10,7 +10,7 @@ export const IMPROVE_HERO = {
   titleLead: 'Unlock the',
   titleEmphasis: 'full potential',
   titleTail: 'of your VPP.',
-  lede: 'Set up your profile by sharing your current usage and profile.',
+  lede: 'Set up your profile by sharing your current usage and setup.',
   accessFeatures: 'Access Features',
   completeProfile: 'Complete profile',
   hint: 'Get started in just 2 minutes.',

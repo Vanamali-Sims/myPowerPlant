@@ -201,7 +201,7 @@ describe('goal cards and stage timeline', () => {
     expect(savings.textContent).toContain('~29% / month')
     const carbon = screen.getByRole('article', { name: 'Carbon goal' })
     expect(carbon.textContent).toContain('230 kg')
-    expect(carbon.textContent).toContain('of 500 kg CO₂e')
+    expect(carbon.textContent).toContain('of 500 kg CO₂e avoided')
     expect(carbon.textContent).toContain('Stage 3 of 5 · Sapling')
   })
 

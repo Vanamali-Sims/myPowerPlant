@@ -117,7 +117,7 @@ describe('Get Reminded page', () => {
     )
 
     expect(screen.getByRole('img', { name: /Predicted solar generation/ }).textContent).toContain('kWh/day')
-    expect(screen.getByText('Here are the 4 recommended days.')).toBeTruthy()
+    expect(screen.getByText('Here are the 4 recommended days for discharge.')).toBeTruthy()
     expect(days()).toHaveLength(4)
     expect(days()[0].textContent).toContain('SAT10')
     expect(days()[0].textContent).toContain('+22% above target')
@@ -168,7 +168,7 @@ describe('Get Reminded page', () => {
     const user = await renderPage()
     await user.click(screen.getByRole('radio', { name: 'Opt-out' }))
     expect(days()).toHaveLength(1)
-    expect(screen.getByText('Here is the 1 recommended day.')).toBeTruthy()
+    expect(screen.getByText('Here is the 1 recommended day for opt out.')).toBeTruthy()
     expect(days()[0].textContent).toContain('MON12')
     expect(days()[0].textContent).toMatch(/−\d+% below target/)
   })

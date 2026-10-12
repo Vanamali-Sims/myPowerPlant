@@ -66,10 +66,12 @@ function nextDayDetail(entry: ReminderRecommendation, eventType: EventType): str
   return `${kwh} forecast · ${percentFrom(entry.forecastKwh, entry.typicalKwh)}% ${direction} a typical day`
 }
 
-function recommendedLede(count: number): string {
-  if (count === 0) return 'No recommended days in this period.'
-  if (count === 1) return 'Here is the 1 recommended day.'
-  return `Here are the ${count} recommended days.`
+/** Says which kind of day is listed, so the list matches the Discharge / Opt-out choice. */
+function recommendedLede(count: number, eventType: EventType): string {
+  const purpose = eventType === 'discharge' ? 'for discharge' : 'for opt out'
+  if (count === 0) return `No recommended days ${purpose} in this period.`
+  if (count === 1) return `Here is the 1 recommended day ${purpose}.`
+  return `Here are the ${count} recommended days ${purpose}.`
 }
 
 function dayBadge(date: string): { weekday: string; day: string } {
@@ -370,7 +372,7 @@ export function RemindersView({
           <div className="reminders-board__list">
             <div className="reminders-board__list-inner">
               <h2 className="reminders-board__list-title">Remind me</h2>
-              <p className="reminders-board__list-lede">{recommendedLede(recommendations.length)}</p>
+              <p className="reminders-board__list-lede">{recommendedLede(recommendations.length, eventType)}</p>
               {recommendations.length === 0 ? (
                 <p className="reminders-board__empty">{emptyStateMessage(eventType, reservePercent)}</p>
               ) : (
