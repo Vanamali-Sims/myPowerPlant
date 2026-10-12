@@ -6,8 +6,10 @@
 
 export * from './api'
 export * from './dashboard'
+export * from './improve'
 export * from './kpiMethodology'
 export * from './navigation'
+export * from './onboarding'
 export * from './reminders'
 export * from './setup'
 export * from './storage'

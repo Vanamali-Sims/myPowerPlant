@@ -42,6 +42,10 @@ resource "aws_lambda_function" "backend" {
       ])
       # Sourced from SSM at apply time, never a literal string in this repo.
       DATABASE_URL = aws_ssm_parameter.database_url.value
+      # Name only. The key itself is read from SSM at runtime so a console
+      # update is not wiped by the next deploy.
+      LLM_PROVIDER     = var.llm_provider
+      LLM_API_KEY_PARAM = aws_ssm_parameter.llm_api_key.name
     }
   }
 

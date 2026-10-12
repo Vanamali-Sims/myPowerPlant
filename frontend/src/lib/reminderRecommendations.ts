@@ -4,7 +4,7 @@
  */
 import { DEFAULT_RESERVE_PERCENT, FIELD_BOUNDS, clampNumber } from '../constants/validation'
 import { coordsFromPostcode } from '../data/profileOptions'
-import { parseCount, formatKwh } from './kpis'
+import { formatKwh, panelWattsOrTypical, parseCount } from './kpis'
 import type { MethodologyBundle } from './methodologyApi'
 import {
   buildReminderRecommendations,
@@ -35,7 +35,7 @@ function solarInputsFor(
 ): SolarInputs | null {
   const hasOwnSolar = profile.hasSolar === 'yes'
   const systemKw = hasOwnSolar
-    ? (parseCount(profile.panelCount) * parseCount(profile.panelWatts)) / 1000
+    ? (parseCount(profile.panelCount) * panelWattsOrTypical(profile)) / 1000
     : bundle.methodology.typicalPotentialKw
   const orientationFactor =
     bundle.orientationFactors[profile.solarDirection] ?? bundle.orientationFactors.not_sure ?? 1

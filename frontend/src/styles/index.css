@@ -9,6 +9,7 @@
   --color-surface: var(--surface);
   --color-surface-sunken: var(--surface-sunken);
   --color-surface-deep: var(--surface-deep);
+  --color-surface-raised-on-dark: var(--surface-raised-on-dark);
   --color-border: var(--border);
   --color-border-strong: var(--border-strong);
   --color-ink: var(--ink);

@@ -1,5 +1,5 @@
 /**
- * Welcome-page marketing copy and learning links.
+ * Welcome-page marketing copy.
  *
  * Kept out of Welcome.tsx so a teammate can edit home-page content without
  * reading the layout component.
@@ -17,14 +17,6 @@ export type WelcomeFeature = {
   title: string
   description: string
   status: FeatureStatus
-}
-
-export type WelcomeArticle = {
-  tag: string
-  title: string
-  excerpt: string
-  source: string
-  href: string
 }
 
 /** Optional modelled week for the VPP explainer when a profile exists. */
@@ -91,32 +83,63 @@ export const WELCOME_FEATURES: WelcomeFeature[] = [
   },
 ]
 
-export const WELCOME_ARTICLES: WelcomeArticle[] = [
+/** Hero copy. `titleEmphasis` is set in italics after `titleLead`. */
+export const WELCOME_HERO = {
+  eyebrow: 'For homes with solar + battery',
+  titleLead: 'Your battery could be',
+  titleEmphasis: 'paying you.',
+  lede: 'Share your stored energy through a VPP and save on every bill.',
+  cta: 'Simulate my savings',
+} as const
+
+/** Hero comparison card: share of a regular bill saved, without and with a VPP. */
+export const WELCOME_SAVINGS_STAT = {
+  multiple: '2×',
+  headline: 'the potential savings.',
+  subline: 'Same solar, same battery.',
+  bars: [
+    { id: 'solar', label: 'Solar + battery', value: '~30%', percent: 30 },
+    { id: 'vpp', label: '+ VPP', value: '~60%', percent: 60 },
+  ],
+  source: 'Saved off a regular bill; varies by state. Source: ACCC, June 2026.',
+} as const
+
+export type WelcomeWin = {
+  id: 'savings' | 'grid' | 'renewables'
+  eyebrow: string
+  title: string
+  body: string
+}
+
+export const WELCOME_WINS_HEADING = {
+  eyebrow: 'Why join a VPP',
+  title: 'One battery. Three wins.',
+} as const
+
+export const WELCOME_WINS: WelcomeWin[] = [
   {
-    tag: 'Basics',
-    title: 'How does a virtual power plant work?',
-    excerpt:
-      'A plain-language explainer from Solar Victoria on what a VPP is and how home batteries take part.',
-    source: 'solar.vic.gov.au',
-    href: 'https://www.solar.vic.gov.au/how-does-virtual-power-plant-work',
+    id: 'savings',
+    eyebrow: 'Financial savings',
+    title: 'Lower bills',
+    body: 'Earn credits on your bill for the energy you share.',
   },
   {
-    tag: 'Solar & battery',
-    title: 'Is your battery virtual power plant ready?',
-    excerpt:
-      'Solar Victoria on what makes a home battery eligible to join a VPP, and what to check first.',
-    source: 'solar.vic.gov.au',
-    href: 'https://www.solar.vic.gov.au/virtual-power-plant-ready',
+    id: 'grid',
+    eyebrow: 'Grid stability',
+    title: 'It runs both ways',
+    body: 'Draw from the grid when you’re short, supply to it when it needs you.',
   },
   {
-    tag: 'Providers & schemes',
-    title: 'Virtual power plants explained',
-    excerpt:
-      'The Clean Energy Regulator on how VPPs fit into the small-scale renewable energy scheme.',
-    source: 'cer.gov.au',
-    href: 'https://cer.gov.au/schemes/renewable-energy-target/small-scale-renewable-energy-scheme/small-scale-renewable-energy-systems/solar-batteries/virtual-power-plants',
+    id: 'renewables',
+    eyebrow: 'Promoting renewables',
+    title: 'No sunshine wasted',
+    body: 'Spare solar is stored and shared, not thrown away.',
   },
 ]
+
+export const WELCOME_CLOSING = {
+  title: 'Stop leaving savings on the table.',
+} as const
 
 export const FEATURE_STATUS_LABEL: Record<FeatureStatus, string> = {
   available: 'Available now',

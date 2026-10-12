@@ -13,8 +13,13 @@ import './styles/voice.css'
 import './styles/profile.css'
 import './styles/dashboard.css'
 import './styles/reminders.css'
+import './styles/goals.css'
 import './styles/chat.css'
+import './styles/whatif.css'
 import './styles/motion.css'
+import './styles/onboarding.css'
+import './styles/intro-choice.css'
+import './styles/recommendations.css'
 import App from './App.tsx'
 
 createRoot(document.getElementById('root')!).render(

@@ -20,3 +20,16 @@ resource "aws_ssm_parameter" "database_url" {
     ignore_changes = [value]
   }
 }
+
+# Created as "unset". A later `aws ssm put-parameter --overwrite` sticks,
+# because CI applies ignore this value. The Lambda reads it at runtime.
+resource "aws_ssm_parameter" "llm_api_key" {
+  name        = "/${local.name_prefix}/llm-api-key"
+  description = "Groq or Gemini key for What if phrasing. Leave unset to keep the fixed sentence."
+  type        = "SecureString"
+  value       = "unset"
+
+  lifecycle {
+    ignore_changes = [value]
+  }
+}

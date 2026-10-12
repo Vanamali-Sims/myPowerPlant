@@ -107,6 +107,7 @@ export function riverPeriod(timeframe: Timeframe): string {
  * @returns Whole-percent string such as "54%"
  */
 export function formatShare(share: number): string {
+  if (!Number.isFinite(share)) return '0%'
   return `${Math.round(share * 100)}%`
 }
 
@@ -124,27 +125,57 @@ export function riverForkStage(fork: RiverFork): { eyebrow: string; hint: string
 /**
  * riverBarSlices
  * @param model - Current balance figures
- * @returns Adjacent widths for generated, used, and leftover or gap
+ * @returns Widths for the parts of energy generated
  *
- * Widths are shares of generated + used + leftover/gap so the three legend
- * colours sit on one line. Break-even homes omit the third slice.
+ * The track is generation (100%). Used energy and potential discharge are
+ * shares of that total, left to right. They are normalised so rounding cannot
+ * overflow the track or leave a gap. No generation returns an empty bar.
  */
 export function riverBarSlices(model: EnergyRiverModel): RiverBarSlice[] {
-  const vppTone = model.fork === 'deficit' ? 'borrow' : 'discharge'
-  const parts: Array<{ id: RiverBarSliceId; tone: RiverBarSlice['tone']; kwh: number }> = [
-    { id: 'generated', tone: 'generated', kwh: model.generatedKwh },
-    { id: 'used', tone: 'used', kwh: model.usedKwh },
-    { id: 'vpp', tone: vppTone, kwh: model.forkKwh },
-  ]
-  const visible = parts.filter((part) => part.kwh > 0)
-  const total = visible.reduce((sum, part) => sum + part.kwh, 0)
-  if (total <= 0) return []
+  const generated = model.generatedKwh
+  if (!(generated > 0) || !Number.isFinite(generated)) return []
 
-  let allocated = 0
-  return visible.map((part, index) => {
-    const isLast = index === visible.length - 1
-    const pct = isLast ? Math.max(0, 100 - allocated) : (part.kwh / total) * 100
-    allocated += pct
-    return { id: part.id, tone: part.tone, pct }
-  })
+  const usedKwh = Number.isFinite(model.usedKwh) ? Math.max(0, model.usedKwh) : 0
+  const dischargeKwh =
+    model.fork === 'surplus' && Number.isFinite(model.forkKwh) ? Math.max(0, model.forkKwh) : 0
+
+  let usedPct = (usedKwh / generated) * 100
+  let dischargePct = (dischargeKwh / generated) * 100
+  if (!Number.isFinite(usedPct)) usedPct = 0
+  if (!Number.isFinite(dischargePct)) dischargePct = 0
+
+  usedPct = Math.min(100, Math.max(0, usedPct))
+  dischargePct = Math.min(100, Math.max(0, dischargePct))
+
+  const sum = usedPct + dischargePct
+  if (sum <= 0) return []
+
+  usedPct = (usedPct / sum) * 100
+  dischargePct = (dischargePct / sum) * 100
+
+  const parts: RiverBarSlice[] = []
+  if (usedPct > 0) parts.push({ id: 'used', tone: 'used', pct: usedPct })
+  if (dischargePct > 0) parts.push({ id: 'vpp', tone: 'discharge', pct: dischargePct })
+  if (!parts.length) return []
+
+  const prior = parts.slice(0, -1).reduce((total, slice) => total + slice.pct, 0)
+  parts[parts.length - 1].pct = Math.max(0, 100 - prior)
+  return parts.filter((slice) => slice.pct > 0)
+}
+
+/**
+ * riverHeadlineShare
+ * @param model - Current balance figures
+ * @returns 0–1 fraction shown above the bar
+ *
+ * Surplus uses the same discharge ÷ generated ratio as the green segment.
+ * Deficit stays the borrow share of use. Break-even is fully covered.
+ */
+export function riverHeadlineShare(model: EnergyRiverModel): number {
+  if (model.fork === 'balanced') return 1
+  if (model.fork === 'deficit') {
+    return model.usedKwh > 0 && Number.isFinite(model.forkKwh) ? model.forkKwh / model.usedKwh : 0
+  }
+  const discharge = riverBarSlices(model).find((slice) => slice.id === 'vpp')
+  return discharge ? discharge.pct / 100 : 0
 }

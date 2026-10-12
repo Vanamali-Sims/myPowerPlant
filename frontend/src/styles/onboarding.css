@@ -1,0 +1,93 @@
+/* Path and device-data controls (rail "Path" dialog). The intro and choice screens live in intro-choice.css. */
+
+.flow-controls {
+  margin: 2.5rem 1.25rem 2rem;
+  padding: 1.25rem 1.15rem;
+  border-radius: var(--radius-card);
+  border: 1px solid var(--border);
+  background: var(--surface-sunken);
+  max-width: 40rem;
+}
+
+.flow-controls--embedded {
+  margin-top: 0;
+}
+
+.flow-controls--dialog {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  max-width: none;
+}
+
+.flow-controls-dialog {
+  width: min(24rem, calc(100vw - 1.5rem));
+}
+
+.flow-controls-dialog__body .flow-controls__lede {
+  margin: 0 0 1.1rem;
+  color: var(--ink-secondary);
+  font-size: 0.92rem;
+  line-height: 1.5;
+}
+
+.flow-controls__actions--dialog {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0.55rem;
+}
+
+.flow-controls__actions--dialog .ui-btn {
+  width: 100%;
+}
+
+.flow-controls__actions--dialog .ui-btn--ghost {
+  width: 100%;
+  text-decoration: none;
+  padding: 0.85rem 1.25rem;
+}
+
+.flow-controls--improve-hub,
+.rain-hub-page .flow-controls--improve-hub {
+  background: rgba(13, 33, 26, 0.75);
+  border-color: rgba(163, 188, 169, 0.22);
+  color: var(--on-deep);
+}
+
+.flow-controls--improve-hub .flow-controls__lede {
+  color: var(--on-deep-muted);
+}
+
+.flow-controls--improve-hub .flow-controls__title {
+  color: var(--on-deep);
+}
+
+.flow-controls--improve-hub .ui-btn--secondary {
+  background: var(--paper);
+  color: var(--ink);
+}
+
+.flow-controls__title {
+  font-family: var(--font-display);
+  font-size: 1.1rem;
+  margin: 0 0 0.35rem;
+}
+
+.flow-controls__lede {
+  margin: 0 0 1rem;
+  font-size: 0.9rem;
+  color: var(--ink-secondary);
+  line-height: 1.5;
+}
+
+.flow-controls__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.flow-controls .callout {
+  margin-top: 1rem;
+}

@@ -10,7 +10,10 @@ const VIEW_LABEL: Record<AppNavId | 'setup', string> = {
   setup: 'Setup',
   profile: 'Profile',
   dashboard: 'Dashboard',
+  recommendations: 'VPP plans',
+  whatif: 'What if',
   reminders: 'Reminders',
+  goals: 'Goals',
 }
 
 const TIMEFRAME_LABEL: Record<Timeframe, string> = {

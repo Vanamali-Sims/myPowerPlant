@@ -1,0 +1,577 @@
+.energy-breakdown {
+  --energy-generated: #4c9fcb;
+  --energy-used: #a9b5ad;
+  --energy-discharge: #7fd9a8;
+  --ring-track: #1f4036;
+  --card-raised: #1a3a32;
+  --card-border: #2e4b42;
+  --hero-bg: #17302a;
+  --ease-draw: cubic-bezier(0.65, 0, 0.35, 1);
+  --ease-rise: cubic-bezier(0.33, 1, 0.68, 1);
+  margin-top: 1rem;
+}
+
+.energy-breakdown__grid {
+  display: grid;
+  grid-template-columns: minmax(260px, 340px) minmax(0, 1fr);
+  align-items: center;
+  gap: 40px 64px;
+}
+
+@media (max-width: 759px) {
+  .energy-breakdown__grid {
+    grid-template-columns: 1fr;
+    justify-items: center;
+    align-items: start;
+  }
+}
+
+.energy-breakdown__ring-col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  max-width: 340px;
+}
+
+.energy-breakdown__tree-col {
+  position: relative;
+  min-width: 0;
+  width: 100%;
+}
+
+.energy-breakdown.is-pause-continuous .energy-breakdown__continuous {
+  animation-play-state: paused !important;
+}
+
+/* —— Ring —— */
+.energy-ring {
+  position: relative;
+  width: min(100%, 340px);
+  aspect-ratio: 1;
+}
+
+.energy-ring__svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  overflow: visible;
+}
+
+.energy-ring__track {
+  fill: none;
+  stroke: var(--ring-track);
+}
+
+.energy-ring__outer-track {
+  stroke-width: 10;
+}
+
+.energy-ring__inner-track {
+  stroke-width: 28;
+}
+
+.energy-ring__outer-fill {
+  fill: none;
+  stroke: var(--energy-generated);
+  stroke-width: 10;
+  stroke-linecap: round;
+  transition: opacity 0.2s ease;
+}
+
+.energy-ring__used {
+  fill: none;
+  stroke: var(--energy-used);
+  stroke-width: 28;
+  stroke-linecap: butt;
+  transition: opacity 0.2s ease, stroke-dasharray 0.6s var(--ease-draw);
+}
+
+.energy-ring__discharge-wrap {
+  transition: opacity 0.2s ease;
+}
+
+.energy-ring__discharge {
+  fill: none;
+  stroke: var(--energy-discharge);
+  stroke-width: 28;
+  stroke-linecap: butt;
+  transition: stroke-dasharray 0.6s var(--ease-draw);
+}
+
+.energy-ring__discharge-glow {
+  fill: none;
+  stroke: var(--energy-discharge);
+  stroke-width: 40;
+  stroke-linecap: butt;
+  opacity: 0;
+}
+
+.energy-ring.is-dim-used .energy-ring__used,
+.energy-ring.is-dim-discharge .energy-ring__discharge-wrap,
+.energy-ring.is-dim-generated .energy-ring__outer-fill {
+  opacity: 0.28;
+}
+
+.energy-ring__centre {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 56%;
+  margin: 0;
+  padding: 0;
+  text-align: center;
+  pointer-events: none;
+}
+
+.energy-ring__pct {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 58px;
+  font-weight: 500;
+  line-height: 1.05;
+  letter-spacing: -0.02em;
+  color: var(--on-deep, #f2ede3);
+  transition: opacity 0.2s ease;
+}
+
+.energy-ring__pct--hover {
+  font-size: 34px;
+}
+
+.energy-ring__sub {
+  margin: 0.35rem 0 0;
+  font-family: var(--font-body);
+  font-size: 13px;
+  line-height: 1.35;
+  color: #c9d3cc;
+  white-space: normal;
+  text-wrap: balance;
+  transition: opacity 0.2s ease;
+}
+
+.energy-breakdown--entrance .energy-ring__centre {
+  opacity: 0;
+}
+
+.energy-breakdown__hint {
+  margin: 0.65rem 0 0;
+  font-size: 13px;
+  color: #9db3a8;
+  text-align: center;
+}
+
+.energy-breakdown__value-fade {
+  transition: opacity 0.2s ease;
+}
+
+.energy-breakdown__value-fade.is-fading {
+  opacity: 0;
+}
+
+/* Entrance */
+.energy-breakdown--entrance .energy-ring__outer-fill {
+  stroke-dasharray: 100 100;
+  stroke-dashoffset: 100;
+  animation: energy-ring-outer-draw 1.6s var(--ease-draw) 0.15s both;
+}
+
+.energy-breakdown--entrance .energy-ring__used {
+  stroke-dashoffset: var(--used-len, 0);
+  animation: energy-ring-used-draw 1.1s var(--ease-draw) 1.05s both;
+}
+
+.energy-breakdown--entrance .energy-ring__discharge {
+  stroke-dashoffset: var(--discharge-len, 0);
+  animation: energy-ring-discharge-draw 0.6s var(--ease-draw) 2.05s both;
+}
+
+.energy-breakdown--entrance .energy-ring__centre {
+  animation: energy-centre-in 0.8s var(--ease-rise) 1.2s both;
+}
+
+@keyframes energy-ring-outer-draw {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+@keyframes energy-ring-used-draw {
+  from {
+    stroke-dashoffset: var(--used-len, 100);
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+@keyframes energy-ring-discharge-draw {
+  from {
+    stroke-dashoffset: var(--discharge-len, 100);
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+@keyframes energy-centre-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* Continuous strobe */
+.energy-breakdown--flow .energy-ring__discharge-wrap {
+  animation: energy-discharge-strobe 2.2s ease-in-out infinite;
+  animation-delay: 2.7s;
+}
+
+.energy-breakdown--flow .energy-ring__discharge-glow {
+  animation: energy-discharge-glow 2.2s ease-in-out infinite;
+  animation-delay: 2.7s;
+}
+
+@keyframes energy-discharge-strobe {
+  0%,
+  100% {
+    opacity: 0.62;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+@keyframes energy-discharge-glow {
+  0%,
+  100% {
+    opacity: 0;
+  }
+  50% {
+    opacity: 0.85;
+  }
+}
+
+/* —— Tree cards —— */
+.energy-tree {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0;
+  width: 100%;
+  min-width: 0;
+}
+
+.energy-tree__stage {
+  position: relative;
+  width: 100%;
+  min-width: 0;
+}
+
+.energy-tree__generated-wrap {
+  width: 100%;
+  max-width: 420px;
+}
+
+.energy-tree__children {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+  width: 100%;
+}
+
+.energy-card {
+  display: block;
+  width: 100%;
+  margin: 0;
+  padding: 18px 22px;
+  border: 1.5px solid var(--card-border);
+  border-radius: 16px;
+  background: var(--card-raised);
+  font: inherit;
+  color: inherit;
+  text-align: center;
+  cursor: pointer;
+  transition:
+    background 0.2s ease,
+    border-color 0.2s ease,
+    opacity 0.2s ease;
+}
+
+.energy-card:focus-visible {
+  outline: 2px solid #5e7a6f;
+  outline-offset: 2px;
+}
+
+.energy-card.is-active {
+  background: #214438;
+  border-color: #5e7a6f;
+}
+
+.energy-card.is-dim {
+  opacity: 0.45;
+}
+
+.energy-card__label-row {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45rem;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #b9c7bf;
+}
+
+.energy-card__swatch {
+  width: 12px;
+  height: 12px;
+  border-radius: 3px;
+  flex-shrink: 0;
+}
+
+.energy-card__swatch--generated {
+  background: var(--energy-generated);
+}
+
+.energy-card__swatch--used {
+  background: var(--energy-used);
+}
+
+.energy-card__swatch--discharge {
+  background: var(--energy-discharge);
+}
+
+.energy-card__value {
+  display: block;
+  margin-top: 0.35rem;
+  font-family: var(--font-display);
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+  color: var(--paper, #f2ede3);
+  line-height: 1.1;
+}
+
+.energy-card__value--lg {
+  font-size: 48px;
+}
+
+.energy-card__value--sm {
+  font-size: 38px;
+}
+
+.energy-card__hint {
+  display: block;
+  margin-top: 0.25rem;
+  font-size: 15px;
+  color: #b9c7bf;
+}
+
+.energy-tree__connector-slot {
+  width: 100%;
+  height: 52px;
+  flex-shrink: 0;
+}
+
+.energy-tree__overlay-svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  pointer-events: none;
+}
+
+.energy-tree__junction {
+  fill: var(--energy-generated);
+  stroke: var(--hero-bg);
+  stroke-width: 4;
+  transform-origin: center;
+  transform-box: fill-box;
+}
+
+.energy-breakdown--flow .energy-tree__junction-pulse {
+  animation: energy-junction-pulse 2.2s ease-in-out infinite;
+  animation-delay: 2.7s;
+}
+
+@keyframes energy-junction-pulse {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.15);
+  }
+}
+
+.energy-connector__base {
+  fill: none;
+  stroke-width: 2;
+  opacity: 0.35;
+  transition: opacity 0.2s ease;
+}
+
+.energy-connector__base.is-dim {
+  opacity: 0.12;
+}
+
+.energy-connector__flow {
+  fill: none;
+  stroke-linecap: round;
+  stroke-width: 3;
+}
+
+.energy-connector__flow--used {
+  stroke-width: 3;
+  stroke-dasharray: 2 10;
+  filter: drop-shadow(0 0 4px var(--energy-used));
+}
+
+.energy-connector__flow--discharge {
+  stroke-width: 2.5;
+  stroke-dasharray: 2 16;
+  filter: drop-shadow(0 0 4px var(--energy-discharge));
+}
+
+.energy-connector__flow--stem {
+  stroke: var(--energy-generated);
+  stroke-dasharray: 2 14;
+  filter: drop-shadow(0 0 4px var(--energy-generated));
+}
+
+.energy-breakdown--flow .energy-connector__flow {
+  animation: energy-flow-dash linear infinite;
+  animation-delay: 2.2s;
+}
+
+.energy-breakdown--flow .energy-connector__flow--discharge {
+  animation-name: energy-flow-dash, energy-discharge-strobe;
+  animation-duration: var(--flow-dur-discharge, 2s), 2.2s;
+  animation-timing-function: linear, ease-in-out;
+  animation-iteration-count: infinite, infinite;
+  animation-delay: 2.2s, 2.7s;
+}
+
+@keyframes energy-flow-dash {
+  from {
+    stroke-dashoffset: 0;
+  }
+  to {
+    stroke-dashoffset: -32;
+  }
+}
+
+/* Entrance connector (decorative slot between cards) */
+.energy-breakdown--entrance .energy-tree__stem-entrance {
+  transform-origin: top center;
+  transform: scaleY(0);
+  animation: energy-stem-grow 0.35s var(--ease-rise) 1.25s both;
+}
+
+.energy-breakdown--entrance .energy-tree__junction-entrance {
+  transform: scale(0);
+  transform-origin: center;
+  transform-box: fill-box;
+  animation: energy-junction-pop 0.3s var(--ease-rise) 1.5s both;
+}
+
+.energy-breakdown--entrance .energy-tree__branch-h-entrance--left {
+  transform: scaleX(0);
+  transform-origin: right center;
+  animation: energy-branch-h 0.4s var(--ease-rise) 1.55s both;
+}
+
+.energy-breakdown--entrance .energy-tree__branch-h-entrance--right {
+  transform: scaleX(0);
+  transform-origin: left center;
+  animation: energy-branch-h 0.4s var(--ease-rise) 1.55s both;
+}
+
+.energy-breakdown--entrance .energy-tree__branch-v-entrance {
+  transform: scaleY(0);
+  transform-origin: top center;
+  animation: energy-branch-v 0.3s var(--ease-rise) 1.95s both;
+}
+
+.energy-breakdown--entrance .energy-tree__card-rise {
+  opacity: 0;
+  transform: translateY(14px);
+}
+
+.energy-breakdown--entrance .energy-tree__card-rise--generated {
+  animation: energy-card-rise 0.7s var(--ease-rise) 0.2s both;
+}
+
+.energy-breakdown--entrance .energy-tree__card-rise--child {
+  animation: energy-card-rise 0.7s var(--ease-rise) 2.15s both;
+}
+
+@keyframes energy-stem-grow {
+  to {
+    transform: scaleY(1);
+  }
+}
+
+@keyframes energy-junction-pop {
+  to {
+    transform: scale(1);
+  }
+}
+
+@keyframes energy-branch-h {
+  to {
+    transform: scaleX(1);
+  }
+}
+
+@keyframes energy-branch-v {
+  to {
+    transform: scaleY(1);
+  }
+}
+
+@keyframes energy-card-rise {
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .energy-breakdown--entrance .energy-ring__outer-fill,
+  .energy-breakdown--entrance .energy-ring__used,
+  .energy-breakdown--entrance .energy-ring__discharge,
+  .energy-breakdown--entrance .energy-ring__centre,
+  .energy-breakdown--entrance .energy-tree__stem-entrance,
+  .energy-breakdown--entrance .energy-tree__junction-entrance,
+  .energy-breakdown--entrance .energy-tree__branch-h-entrance,
+  .energy-breakdown--entrance .energy-tree__branch-v-entrance,
+  .energy-breakdown--entrance .energy-tree__card-rise {
+    animation: none !important;
+    opacity: 1 !important;
+    transform: none !important;
+    stroke-dashoffset: 0 !important;
+  }
+
+  .energy-breakdown--flow .energy-ring__discharge-wrap,
+  .energy-breakdown--flow .energy-ring__discharge-glow,
+  .energy-breakdown--flow .energy-connector__flow,
+  .energy-breakdown--flow .energy-tree__junction-pulse {
+    animation: none !important;
+    opacity: 1 !important;
+  }
+
+  .energy-ring__discharge-wrap {
+    opacity: 1 !important;
+  }
+
+  .energy-connector__base {
+    opacity: 0.85 !important;
+  }
+}

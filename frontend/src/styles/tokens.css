@@ -28,7 +28,11 @@
   --muted: #918d80;
   --accent: #de6a34;
   --accent-deep: #b94f21;
+  /* Slightly darker terracotta for small bold text on buttons (~4.5:1 on cream). */
+  --accent-contrast: #c4551f;
+  --accent-contrast-hover: #a8481a;
   --accent-tint: rgba(222, 106, 52, 0.12);
+  --dock-panel: #fbf8f1;
   --blue: #4fa3d1;
   --track-dark: rgba(244, 241, 232, 0.16);
   --track-light: #e3dfd0;
@@ -38,6 +42,8 @@
   --surface: #ffffff;
   --surface-sunken: var(--cream-card);
   --surface-deep: var(--green-deep);
+  /* Lighter than the dark green card, so a panel on it reads as raised. */
+  --surface-raised-on-dark: #214438;
   --border: #e4ded2;
   --border-strong: #d2c9b8;
 
@@ -69,6 +75,13 @@
   --chart-6: #b5ab99;
 
   --font-display: "Lora", "Source Serif 4", Georgia, serif;
+  --energy-generated: #4c9fcb;
+  --energy-used: #a9b5ad;
+  --energy-discharge: #7fd9a8;
+  --ring-track: #1f4036;
+  --card-raised: #1a3a32;
+  --card-border: #2e4b42;
+  --hero-bg: #17302a;
   --font-body: "Inter", system-ui, sans-serif;
 
   --radius-pill: 999px;
