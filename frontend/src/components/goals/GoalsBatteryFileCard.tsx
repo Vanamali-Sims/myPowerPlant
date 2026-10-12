@@ -1,22 +1,23 @@
 /**
  * Left card on first-visit Goals setup: battery CSV drop zone and provider chips.
  */
-import { useId, useRef, useState } from 'react'
+import { useEffect, useId, useRef, useState } from 'react'
 import { BATTERY_SOURCES, type BatterySourceId } from '../../constants/batterySources'
 import { BASELINE_RULES, GOAL_RATE_CENTS, GOALS_ONBOARDING } from '../../constants/goals'
 import type { MessageCode } from '../../constants/goalMessages'
 import { FIELD_BOUNDS } from '../../constants/validation'
 import { batteryModels, isAllowedBatteryModel, NOT_SURE_VALUE } from '../../data/profileOptions'
 import { maxIntervalKwh } from '../../lib/goals/batteryLimits'
+import { detectSource } from '../../lib/goals/detectSource'
 import { readBatteryFile } from '../../lib/goals/readBatteryFile'
 import type { MethodologyBundle } from '../../lib/methodologyApi'
 import type { GoalBattery } from '../../types/goals'
-import { Button } from '../ui/Button'
 import { Callout } from '../ui/Callout'
 import { BulbIcon, LockIcon } from '../ui/icons'
 import { SearchSelect } from '../ui/SearchSelect'
 import { StepperField } from '../ui/StepperField'
 import { TextField } from '../ui/TextField'
+import { BatteryCsvIllustration } from './BatteryCsvIllustration'
 import { buildBaselineDraft, readGoalRate, type BaselineDraft } from './BaselineStep'
 import { GoalMessage } from './GoalMessage'
 import { GoalsFileGuidePanel } from './GoalsFileGuidePanel'
@@ -33,7 +34,9 @@ type Props = {
   profileRatePerKwh: number | null
   initialRatePerKwh: number | null
   bundle: MethodologyBundle
-  onReady: (draft: BaselineDraft) => void
+  onReady: (draft: BaselineDraft, meta: { file: File; sourceDetected: boolean }) => void
+  /** Re-read the same file with another provider (State B). */
+  retryWithSource?: { file: File; sourceId: BatterySourceId } | null
 }
 
 export function GoalsBatteryFileCard({
@@ -43,6 +46,7 @@ export function GoalsBatteryFileCard({
   initialRatePerKwh,
   bundle,
   onReady,
+  retryWithSource,
 }: Props) {
   const inputId = useId()
   const guideToggleId = useId()
@@ -54,7 +58,6 @@ export function GoalsBatteryFileCard({
   )
   const [rateShown, setRateShown] = useState(false)
   const rateId = useId()
-  const [sourceId, setSourceId] = useState<BatterySourceId | ''>('')
   const [dragging, setDragging] = useState(false)
   const [file, setFile] = useState<File | null>(null)
   const [reading, setReading] = useState(false)
@@ -62,6 +65,7 @@ export function GoalsBatteryFileCard({
   const [readProblem, setReadProblem] = useState<import('../../lib/goals/adapters/types').ReadResult | null>(
     null,
   )
+  const [awaitingProvider, setAwaitingProvider] = useState<File | null>(null)
   const readToken = useRef(0)
 
   const modelOk = isAllowedBatteryModel(battery.model)
@@ -80,9 +84,10 @@ export function GoalsBatteryFileCard({
     .filter(Boolean)
     .join(' ')
 
-  async function processFile(next: File) {
-    if (!limits || !sourceId) return
+  async function readWithSource(next: File, sourceId: BatterySourceId) {
+    if (!limits) return
     setFile(next)
+    setAwaitingProvider(null)
     setReadProblem(null)
     setProblem(null)
     const token = (readToken.current += 1)
@@ -99,15 +104,34 @@ export function GoalsBatteryFileCard({
       setProblem(built.reason)
       return
     }
-    onReady(built.draft)
+    onReady(built.draft, { file: next, sourceDetected: Boolean(detectSource(next.name)) })
+  }
+
+  useEffect(() => {
+    if (!retryWithSource) return
+    void readWithSource(retryWithSource.file, retryWithSource.sourceId)
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- one-shot retry when parent sets source
+  }, [retryWithSource?.file, retryWithSource?.sourceId])
+
+  function processFile(next: File) {
+    if (!limits) return
+    const guess = detectSource(next.name)
+    if (guess) {
+      void readWithSource(next, guess)
+      return
+    }
+    setFile(next)
+    setAwaitingProvider(next)
+    setReadProblem(null)
+    setProblem(null)
   }
 
   function onDrop(event: React.DragEvent) {
     event.preventDefault()
     setDragging(false)
-    if (!canUpload || !sourceId) return
+    if (!canUpload) return
     const dropped = event.dataTransfer.files[0]
-    if (dropped) void processFile(dropped)
+    if (dropped) processFile(dropped)
   }
 
   return (
@@ -183,40 +207,18 @@ export function GoalsBatteryFileCard({
         <p className="goals-file-card__hint">Fix the rate, or leave it empty, to add your file.</p>
       ) : null}
 
-      <div className="goals-file-card__providers">
-        <span className="goals-file-card__providers-label">{GOALS_ONBOARDING.worksWith}</span>
-        <div className="goals-file-card__chips" role="group" aria-label="Battery file provider">
-          {BATTERY_SOURCES.map((source) => (
-            <button
-              key={source.id}
-              type="button"
-              className={`goals-file-card__chip${sourceId === source.id ? ' goals-file-card__chip--on' : ''}`}
-              aria-pressed={sourceId === source.id}
-              onClick={() => {
-                readToken.current += 1
-                setSourceId(source.id)
-                setReadProblem(null)
-                setProblem(null)
-              }}
-            >
-              {source.label}
-            </button>
-          ))}
-        </div>
-      </div>
-
       <label
         className={dropClass}
-        htmlFor={canUpload && sourceId ? inputId : undefined}
+        htmlFor={canUpload ? inputId : undefined}
         onDragOver={(event) => {
-          if (!canUpload || !sourceId) return
+          if (!canUpload) return
           event.preventDefault()
           setDragging(true)
         }}
         onDragLeave={() => setDragging(false)}
         onDrop={onDrop}
       >
-        {canUpload && sourceId ? (
+        {canUpload ? (
           <input
             id={inputId}
             type="file"
@@ -225,14 +227,11 @@ export function GoalsBatteryFileCard({
             onChange={(event) => {
               const picked = event.target.files?.[0]
               event.target.value = ''
-              if (picked) void processFile(picked)
+              if (picked) processFile(picked)
             }}
           />
         ) : null}
-        <span className="goals-file-card__illus" aria-hidden>
-          <span className="goals-file-card__illus-file">CSV</span>
-          <span className="goals-file-card__illus-arrow">↓</span>
-        </span>
+        <BatteryCsvIllustration />
         <p className="goals-file-card__drop-title">
           {file ? file.name : GOALS_ONBOARDING.dropTitle}
         </p>
@@ -241,10 +240,33 @@ export function GoalsBatteryFileCard({
             or <span className="goals-file-card__drop-link">{GOALS_ONBOARDING.browseLink}</span>
           </p>
         )}
-        {!sourceId ? (
-          <p className="goals-file-card__drop-hint">Choose Tesla or Amber above first.</p>
-        ) : null}
+        <p className="goals-file-card__works-with">
+          <span>{GOALS_ONBOARDING.worksWith}</span>
+          {BATTERY_SOURCES.map((source) => (
+            <span key={source.id} className="goals-file-card__chip">{source.label}</span>
+          ))}
+        </p>
       </label>
+
+      {awaitingProvider && !reading ? (
+        <div className="goals-file-card__provider-pick" role="radiogroup" aria-label="Which provider is this file from?">
+          <p className="goals-file-card__provider-pick-label">Which provider is this file from?</p>
+          <div className="goals-file-card__provider-pick-options">
+            {BATTERY_SOURCES.map((item) => (
+              <button
+                key={item.id}
+                type="button"
+                role="radio"
+                aria-checked={false}
+                className="goals-file-card__provider-pick-btn"
+                onClick={() => void readWithSource(awaitingProvider, item.id)}
+              >
+                {item.label}
+              </button>
+            ))}
+          </div>
+        </div>
+      ) : null}
 
       {reading ? (
         <p className="goals-file-card__status" role="status">Reading your file on this device…</p>
@@ -270,16 +292,16 @@ export function GoalsBatteryFileCard({
           <LockIcon width={16} height={16} aria-hidden />
           <span>{GOALS_ONBOARDING.privacy}</span>
         </p>
-        <Button
+        <button
           id={guideToggleId}
-          variant="edit"
+          type="button"
           className="goals-file-card__guide"
           aria-expanded={guideOpen}
           aria-controls="goals-file-guide-panel"
           onClick={() => setGuideOpen((open) => !open)}
         >
           {GOALS_ONBOARDING.guideLink}
-        </Button>
+        </button>
       </footer>
 
       {guideOpen ? <GoalsFileGuidePanel id="goals-file-guide-panel" /> : null}

@@ -66,9 +66,12 @@ function renderView({ profile = savedProfile(), bundleLoaded = true, methodology
 }
 
 async function addFile(user: ReturnType<typeof userEvent.setup>, from = RECENT_FIRST, to = RECENT_LAST) {
-  await user.click(screen.getByRole('button', { name: 'Tesla' }))
   const input = document.querySelector('input[type="file"]') as HTMLInputElement
-  await user.upload(input, new File([csvFor(from, to)], 'battery.csv'))
+  await user.upload(input, new File([csvFor(from, to)], 'tesla-battery.csv'))
+  const pick = screen.queryByRole('radiogroup', { name: /Which provider/i })
+  if (pick) {
+    await user.click(within(pick).getByRole('radio', { name: 'Tesla' }))
+  }
   await screen.findByLabelText('Savings goal (AUD)')
 }
 
@@ -181,11 +184,11 @@ describe('step 1: battery and a recent file', () => {
     expect(screen.getByRole('heading', { name: 'Your goals' })).toBeTruthy()
     expect(screen.getByRole('heading', { name: 'Add your battery file' })).toBeTruthy()
     expect(screen.getByText('Choose your battery model to add your file.')).toBeTruthy()
-    expect(screen.queryByLabelText('Savings goal (AUD)')).toBeTruthy()
+    expect(screen.getByText('Add your file to see your range')).toBeTruthy()
 
     await user.click(screen.getByPlaceholderText('Search battery brand & model'))
     await user.click(screen.getByRole('option', { name: 'Tesla Powerwall 2' }))
-    expect(screen.getByRole('group', { name: 'Battery file provider' })).toBeTruthy()
+    expect(screen.getByText('Tesla')).toBeTruthy()
   })
 
   it('uses the battery and rate from the profile and goes straight to the upload', () => {
@@ -200,9 +203,8 @@ describe('step 1: battery and a recent file', () => {
 
   it('refuses a month with too few complete days and shows no goal fields', async () => {
     const { user } = renderView()
-    await user.click(screen.getByRole('button', { name: 'Tesla' }))
     const input = document.querySelector('input[type="file"]') as HTMLInputElement
-    await user.upload(input, new File([csvFor(RECENT_FIRST, `${RECENT}-10`)], 'battery.csv'))
+    await user.upload(input, new File([csvFor(RECENT_FIRST, `${RECENT}-10`)], 'tesla-battery.csv'))
     expect(screen.getByRole('alert').textContent).toContain(GOAL_MESSAGES.baseline_too_few_days.title)
     expect(screen.getByRole('button', { name: 'Save goals' })).toHaveProperty('disabled', true)
     expect(storedGoals()).toBeNull()
@@ -211,7 +213,8 @@ describe('step 1: battery and a recent file', () => {
   it('refuses a file with no recent days', async () => {
     const old = addMonths(monthOf(TODAY), -6)
     const { user } = renderView()
-    await addFile(user, `${old}-01`, `${old}-20`)
+    const input = document.querySelector('input[type="file"]') as HTMLInputElement
+    await user.upload(input, new File([csvFor(`${old}-01`, `${old}-20`)], 'tesla-battery.csv'))
     expect(screen.getByRole('alert').textContent).toContain(GOAL_MESSAGES.baseline_not_recent.title)
     expect(screen.getByRole('button', { name: 'Save goals' })).toHaveProperty('disabled', true)
   })

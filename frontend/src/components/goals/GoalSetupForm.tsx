@@ -2,7 +2,7 @@
  * Savings and carbon goal fields, used for first-visit setup and for editing.
  */
 import { useId, useState, type FormEvent, type Ref } from 'react'
-import { GOAL_LABELS, GOALS_ONBOARDING } from '../../constants/goals'
+import { GOAL_LABELS } from '../../constants/goals'
 import { fieldMessageIds } from '../../lib/fieldIds'
 import type { CalculationContext } from '../../lib/goals/calculate'
 import { formatGoalValue } from '../../lib/goals/goalFormat'
@@ -45,6 +45,9 @@ type Props = {
   onSave: (targets: Partial<Record<GoalKind, number>>) => void
   onCancel?: () => void
   formRef?: Ref<HTMLFormElement>
+  formId?: string
+  /** Onboarding: submit button lives in the page footer. */
+  saveInFooter?: boolean
 }
 
 function initialValues(props: Props): Values {
@@ -161,6 +164,8 @@ export function GoalSetupForm(props: Props) {
     onCancel,
     note,
     formRef,
+    formId,
+    saveInFooter,
   } = props
   const kinds = props.kinds ?? GOAL_KINDS
   const idBase = useId()
@@ -197,74 +202,65 @@ export function GoalSetupForm(props: Props) {
     onSave(targets)
   }
 
-  if (layout === 'onboarding') {
-    const locked = !unlocked
+  if (layout === 'onboarding' && unlocked) {
     return (
       <form
         ref={formRef}
-        className={`goals-panel-form${locked ? ' goals-panel-form--locked' : ''}`}
+        id={formId}
+        className="goals-panel-form"
         onSubmit={submit}
         noValidate
       >
-        <div className="goals-panel-form__fields-wrap">
-          <div className="goals-panel-form__fields" aria-hidden={locked || undefined}>
-            {kinds.map((kind) => {
-              const range = suggestions[kind]
-              const inputId = `${idBase}-${kind}`
-              const error = shown[kind] ? errorFor(kind, values[kind]) : undefined
-              return (
-                <OnboardingGoalField
-                  key={kind}
-                  kind={kind}
-                  range={range}
-                  value={values[kind]}
-                  error={error}
-                  inputId={inputId}
-                  onChange={(raw) => update(kind, raw)}
-                  onBlur={() => setShown((state) => ({ ...state, [kind]: true }))}
-                />
-              )
-            })}
-          </div>
-          {locked ? (
-            <div className="goals-panel-form__callout" role="status">
-              <span className="goals-panel-form__callout-icon" aria-hidden>←</span>
-              <p className="goals-panel-form__callout-title">{GOALS_ONBOARDING.lockedTitle}</p>
-              <p className="goals-panel-form__callout-body">{GOALS_ONBOARDING.lockedBody}</p>
-            </div>
-          ) : null}
+        <div className="goals-panel-form__fields">
+          {kinds.map((kind) => {
+            const range = suggestions[kind]
+            const inputId = `${idBase}-${kind}`
+            const error = shown[kind] ? errorFor(kind, values[kind]) : undefined
+            return (
+              <OnboardingGoalField
+                key={kind}
+                kind={kind}
+                range={range}
+                value={values[kind]}
+                error={error}
+                inputId={inputId}
+                onChange={(raw) => update(kind, raw)}
+                onBlur={() => setShown((state) => ({ ...state, [kind]: true }))}
+              />
+            )
+          })}
         </div>
 
-        {unlocked ? (
-          <div className="goals-panel-form__details">
-            {mode === 'next' ? null : (
-              <details className="goals-panel-details">
-                <summary>How is the allowed range calculated?</summary>
-                <RangeExplainerPanel suggestions={suggestions} baseline={baseline} context={context} />
-              </details>
-            )}
+        <div className="goals-panel-form__details">
+          {mode === 'next' ? null : (
             <details className="goals-panel-details">
-              <summary>How is carbon calculated?</summary>
-              <CarbonExamplesPanel
-                factor={context.factor}
-                suggestedKg={suggestions.carbon?.suggested ?? null}
-              />
+              <summary>How is the allowed range calculated?</summary>
+              <RangeExplainerPanel suggestions={suggestions} baseline={baseline} context={context} />
             </details>
-          </div>
-        ) : null}
+          )}
+          <details className="goals-panel-details">
+            <summary>How is carbon calculated?</summary>
+            <CarbonExamplesPanel
+              factor={context.factor}
+              suggestedKg={suggestions.carbon?.suggested ?? null}
+            />
+          </details>
+        </div>
 
         {saveError ? <GoalMessage code={saveError} /> : null}
 
-        <div className="goals-panel-form__actions">
-          <Button type="submit" variant="primary" disabled={locked}>
-            Save goals
-          </Button>
-          {onCancel ? (
-            <Button variant="secondary" onClick={onCancel}>
-              Cancel
+        {saveInFooter ? null : (
+          <div className="goals-panel-form__actions">
+            <Button type="submit" variant="primary">
+              Save goals
             </Button>
-          ) : null}
-        </div>
+            {onCancel ? (
+              <Button variant="secondary" onClick={onCancel}>
+                Cancel
+              </Button>
+            ) : null}
+          </div>
+        )}
       </form>
     )
   }

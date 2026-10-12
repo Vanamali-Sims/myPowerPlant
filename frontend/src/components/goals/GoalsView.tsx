@@ -476,7 +476,9 @@ export function GoalsView({ profile, bundle, methodologyError, onLogoClick }: Pr
   const onboardingContext = bundle ? buildCalculationContext(rateFromProfile, bundle) : null
 
   return (
-    <div className={`goals${showOverview ? ' goals--overview' : ''}`}>
+    <div
+      className={`goals${showOverview ? ' goals--overview' : ''}${showOnboardingBoard ? ' goals--setup-board' : ''}`}
+    >
       <header className="goals__top">
         <button
           type="button"

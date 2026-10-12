@@ -1242,6 +1242,20 @@
   gap: 1.75rem;
 }
 
+.goals.goals--setup-board {
+  width: 100%;
+  max-width: none;
+  margin: 0;
+  padding: 3rem 3.5rem 2.5rem;
+  gap: 1.75rem;
+}
+
+.goals.goals--setup-board .goals-head {
+  width: 100%;
+  max-width: 1240px;
+  margin-inline: auto;
+}
+
 .goals-head {
   display: flex;
   flex-direction: column;
