@@ -261,6 +261,14 @@
   color: var(--paper-soft);
 }
 
+.whatif-payment-lede {
+  margin: 0.35rem 0 0;
+  max-width: 28rem;
+  font-size: 0.82rem;
+  line-height: 1.45;
+  color: var(--paper-soft);
+}
+
 .whatif-big {
   font-family: var(--font-display);
   font-weight: 600;

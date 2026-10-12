@@ -24,6 +24,7 @@ import {
   parseCount,
   scaleAud,
   scaleKwh,
+  weeklyVppPaymentAud,
 } from './kpis'
 
 // Mirrors the Alembic-seeded methodology data — no running API needed.
@@ -316,6 +317,13 @@ describe('plan comparison', () => {
       selfConsumedKwh * report.retailRate +
       energyDistributedKwh * report.recommended.plan.exportRate
     expect(report.weekly.savingsAud).toBeCloseTo(expected, 6)
+  })
+
+  it('computes VPP payment as distributed kWh times the matched plan export rate', () => {
+    const report = buildKpiReport(profile(), data)
+    const expected = report.weekly.energyDistributedKwh * report.recommended.plan.exportRate
+    expect(weeklyVppPaymentAud(report)).toBeCloseTo(expected, 6)
+    expect(weeklyVppPaymentAud(report)).toBeLessThanOrEqual(report.weekly.savingsAud)
   })
 
   it('only offers plans compatible with the household battery', () => {

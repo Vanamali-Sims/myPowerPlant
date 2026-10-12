@@ -1,8 +1,8 @@
 /**
  * Persona-specific app-rail navigation.
  *
- * Matt: home, dashboard, recommendations, path; profile is docked at the rail foot.
- * Rain: home, what if, goals, reminders, path; profile is docked at the rail foot.
+ * Matt: home, dashboard, recommendations; profile and path are docked at the rail foot.
+ * Rain: home, what if, goals, reminders; profile and path are docked at the rail foot.
  */
 import { FLOW_CONTROLS } from './onboarding'
 import {
@@ -16,9 +16,9 @@ import {
   TargetIcon,
 } from '../components/ui/icons'
 
-export type MattNavId = 'home' | 'dashboard' | 'recommendations' | 'path'
-export type RainNavId = 'home' | 'whatif' | 'goals' | 'reminders' | 'path'
-export type AppNavId = MattNavId | RainNavId | 'profile'
+export type MattNavId = 'home' | 'dashboard' | 'recommendations'
+export type RainNavId = 'home' | 'whatif' | 'goals' | 'reminders'
+export type AppNavId = MattNavId | RainNavId | 'profile' | 'path'
 
 export type NavItem = {
   id: AppNavId
@@ -46,13 +46,14 @@ export const MATT_NAV: NavItem[] = [
     icon: ShieldIcon,
     unavailableMessage: 'Complete setup for personalised plan matches.',
   },
-  {
-    id: 'path',
-    label: FLOW_CONTROLS.railLabel,
-    icon: ResetIcon,
-    unavailableMessage: 'Path controls are not available here.',
-  },
 ]
+
+export const PATH_RAIL_ITEM: NavItem = {
+  id: 'path',
+  label: FLOW_CONTROLS.railLabel,
+  icon: ResetIcon,
+  unavailableMessage: 'Path controls are not available here.',
+}
 
 export const PROFILE_RAIL_ITEM: NavItem = {
   id: 'profile',
@@ -86,15 +87,9 @@ export const RAIN_NAV: NavItem[] = [
     icon: BellIcon,
     unavailableMessage: 'Reminders need your household answers on this device.',
   },
-  {
-    id: 'path',
-    label: FLOW_CONTROLS.railLabel,
-    icon: ResetIcon,
-    unavailableMessage: 'Path controls are not available here.',
-  },
 ]
 
-/** Docked at the bottom of the rail (above location), separate from {@link MATT_NAV} / {@link RAIN_NAV}. */
+/** Docked at the bottom of the rail, separate from {@link MATT_NAV} / {@link RAIN_NAV}. */
 export const RAIN_PROFILE_RAIL_ITEM: NavItem = {
   id: 'profile',
   label: 'Profile',

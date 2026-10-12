@@ -1,10 +1,10 @@
 /**
- * Logged-in chrome: dark icon rail, wordmark, and location pill.
+ * Logged-in chrome: dark icon rail and wordmark.
  */
 import type { ReactNode } from 'react'
 import {
-  DEFAULT_LOCATION_LABEL,
   MATT_NAV,
+  PATH_RAIL_ITEM,
   PROFILE_RAIL_ITEM,
   RAIN_NAV,
   RAIN_PROFILE_RAIL_ITEM,
@@ -12,7 +12,6 @@ import {
   type NavItem,
 } from '../../constants'
 import type { UserJourney } from '../../lib/journeyStorage'
-import { locationFromPostcode } from '../../data/profileOptions'
 import { useSlidingHighlight } from '../../lib/useSlidingHighlight'
 import { useTransientPopover } from '../../lib/useTransientPopover'
 import { MyPowerPlantMark } from '../ui/MyPowerPlantMark'
@@ -23,7 +22,6 @@ type Props = {
   journey: UserJourney
   active: AppNavId | null
   showRail: boolean
-  postcode: string
   hasProfile: boolean
   onNavigate: (id: AppNavId) => void
   onLogoClick: () => void
@@ -42,7 +40,6 @@ export function AppShell({
   journey,
   active,
   showRail,
-  postcode,
   hasProfile,
   onNavigate,
   onLogoClick,
@@ -51,10 +48,7 @@ export function AppShell({
   chat,
 }: Props) {
   const profileItem = journey === 'rain' ? RAIN_PROFILE_RAIL_ITEM : PROFILE_RAIL_ITEM
-  const nav = (journey === 'rain' ? RAIN_NAV : MATT_NAV).filter(
-    (item) => item.id !== 'path' || onOpenPathControls,
-  )
-  const place = locationFromPostcode(postcode)
+  const nav = journey === 'rain' ? RAIN_NAV : MATT_NAV
   const [openPopover, setOpenPopover] = useTransientPopover()
   const { setRef: setNavRef, box: navBox } = useSlidingHighlight(active, '.app-rail__item.is-active')
 
@@ -132,11 +126,10 @@ export function AppShell({
             />
             {nav.map((item) => renderRailItem(item, active))}
           </nav>
-          <div className="app-rail__footer">{renderRailItem(profileItem, active)}</div>
-          <span className="app-rail__place">
-            <span className="location-pill__dot" />
-            {place || DEFAULT_LOCATION_LABEL}
-          </span>
+          <div className="app-rail__footer">
+            {renderRailItem(profileItem, active)}
+            {onOpenPathControls ? renderRailItem(PATH_RAIL_ITEM, active) : null}
+          </div>
         </aside>
       ) : null}
       <div className="app-shell__main">

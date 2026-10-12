@@ -9,7 +9,7 @@ import { batteryModels, solarDirections } from '../../data/profileOptions'
 import { FIELD_BOUNDS } from '../../constants/validation'
 import { applyProfilePatch } from '../../lib/chat/applyProfilePatch'
 import { buildWhatIfSuggestions, type WhatIfSuggestion } from '../../lib/chat/whatIfSuggestions'
-import { buildKpiReport, parseCount } from '../../lib/kpis'
+import { buildKpiReport, parseCount, weeklyVppPaymentAud } from '../../lib/kpis'
 import { type MethodologyBundle } from '../../lib/methodologyApi'
 import { buildTypicalDay } from '../../lib/typicalDay'
 import { buildExplainInput, plansFor, reservePercents, surplusLabel } from '../../lib/whatif/explain'
@@ -62,7 +62,10 @@ function directionLabel(value: string): string {
   return solarDirections.find((row) => row.value === value)?.label ?? value
 }
 
-function annualPayment(weekly: number): number {
+const VPP_PAYMENT_LEDE =
+  'Yearly export credits for energy you send to your matched VPP plan (kWh × sample export rate).'
+
+function annualVppPayment(weekly: number): number {
   return Math.round(weekly * 52)
 }
 
@@ -279,18 +282,18 @@ export function WhatIfView({
     setStatus('')
   }
 
-  const annualNow = reportNow ? annualPayment(reportNow.weekly.savingsAud) : 0
-  const annualDraft = reportDraft ? annualPayment(reportDraft.weekly.savingsAud) : 0
+  const annualNow = reportNow ? annualVppPayment(weeklyVppPaymentAud(reportNow)) : 0
+  const annualDraft = reportDraft ? annualVppPayment(weeklyVppPaymentAud(reportDraft)) : 0
   const annualShown = useAnimatedNumber(annualDraft)
   const yearDelta = annualDraft - annualNow
 
   const deltas = useMemo(() => {
     if (!bundle) return null
-    const savedAnnual = annualPayment(buildKpiReport(profile, bundle).weekly.savingsAud)
+    const savedAnnual = annualVppPayment(weeklyVppPaymentAud(buildKpiReport(profile, bundle)))
     const lone = (patch: Partial<ProfileData>) => {
       const result = applyProfilePatch(profile, patch)
       if (!result.ok) return null
-      return annualPayment(buildKpiReport(result.profile, bundle).weekly.savingsAud) - savedAnnual
+      return annualVppPayment(weeklyVppPaymentAud(buildKpiReport(result.profile, bundle))) - savedAnnual
     }
     return {
       people: changes.some((item) => item.label === 'People')
@@ -518,6 +521,7 @@ export function WhatIfView({
             <section className="whatif-stage" aria-live="polite">
               <div>
                 <p className="eyebrow">VPP payment · a year</p>
+                <p className="whatif-payment-lede">{VPP_PAYMENT_LEDE}</p>
                 <div className="whatif-big">
                   <span>{money(annualShown)}</span>
                   <small>/yr</small>

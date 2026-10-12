@@ -164,6 +164,9 @@
   }
 
   .app-rail__footer {
+    display: flex;
+    flex-direction: column;
+    gap: 0.55rem;
     margin-top: 0.35rem;
     width: 100%;
     opacity: 0.92;
@@ -171,17 +174,6 @@
 
   .app-rail__footer:hover {
     opacity: 1;
-  }
-
-  .app-rail__place {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 0.3rem;
-    font-size: 0.65rem;
-    text-align: center;
-    line-height: 1.25;
-    color: var(--euc-200);
   }
 }
 

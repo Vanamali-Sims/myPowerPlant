@@ -333,7 +333,6 @@ function App() {
           journey={journey}
           showRail={showRail}
           active={shellActive()}
-          postcode={profile.postcode}
           hasProfile={hasProfile}
           onNavigate={goTo}
           onLogoClick={goHome}
