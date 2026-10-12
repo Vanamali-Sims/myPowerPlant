@@ -16,7 +16,7 @@ for (const [step, fields] of Object.entries(STEP_FIELDS) as [SetupStepId, (keyof
   }
 }
 
-export type FieldErrors = Partial<Record<keyof ProfileData, string>>
+export type FieldErrors = Partial<Record<keyof ProfileData, string>> & { billUpload?: string }
 
 function required(value: string, message: string): string | undefined {
   if (!value.trim()) return message

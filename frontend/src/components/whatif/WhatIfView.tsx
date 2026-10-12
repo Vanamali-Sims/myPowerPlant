@@ -21,6 +21,7 @@ import { BoltIcon, BulbIcon } from '../ui/icons'
 import { WhatIfDayChart } from './WhatIfDayChart'
 import { WhatIfExplain } from './WhatIfExplain'
 import { WhatIfFlow, type FlowFigures } from './WhatIfFlow'
+import { VppProviderField } from '../improve/VppProviderField'
 import { WhatIfHouseholdTab } from './WhatIfHouseholdTab'
 import { WhatIfSolarTab } from './WhatIfSolarTab'
 
@@ -419,6 +420,20 @@ export function WhatIfView({
       {ready ? (
         <div className="whatif__layout">
           <aside className="whatif-card whatif-controls" aria-label="Adjust a setting">
+            <div className="whatif-group">
+              <h2>Your VPP</h2>
+              <VppProviderField
+                profile={profile}
+                bundle={bundle}
+                onChange={(vppProvider) =>
+                  onSaveProfile({
+                    ...profile,
+                    vppProvider,
+                    fieldSources: { ...profile.fieldSources, vppProvider: 'user' },
+                  })
+                }
+              />
+            </div>
             <div className="whatif-group">
               <h2>Solar</h2>
               <WhatIfSolarTab

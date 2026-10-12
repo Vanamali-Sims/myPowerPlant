@@ -6,7 +6,6 @@
 import { lazy, Suspense, useEffect, useRef, useState } from 'react'
 import {
   IMPROVE_DASHBOARD,
-  IMPROVE_FEATURES,
   IMPROVE_FEATURES_HEADING,
   IMPROVE_HERO,
   type ImproveFeatureId,
@@ -29,7 +28,8 @@ import type { MethodologyBundle } from '../../lib/methodologyApi'
 import { loadReminderRecommendations, type ReminderLoadResult } from '../../lib/reminderRecommendations'
 import type { ProfileData } from '../../types/profile'
 import { Button } from '../ui/Button'
-import { BoltIcon, CheckIcon } from '../ui/icons'
+import { BoltIcon } from '../ui/icons'
+import { ImproveFeatureCards } from './ImproveFeatureCards'
 
 // The tree brings its animation library with it, so it loads after the page.
 const GoalTree = lazy(() => import('../goals/GoalTree').then((module) => ({ default: module.GoalTree })))
@@ -272,30 +272,7 @@ export function ImproveHome({ profile, bundle, onOpenForm, onOpenFeature, onLogo
           <h2 id="improve-features-title" className="improve-features-band__title" tabIndex={-1}>
             {IMPROVE_FEATURES_HEADING.title}
           </h2>
-          <ul className="improve-features">
-            {IMPROVE_FEATURES.map((feature) => (
-              <li key={feature.id} className="improve-feature">
-                <div className="improve-feature__head">
-                  <p className="eyebrow improve-feature__eyebrow">{feature.eyebrow}</p>
-                  <span className="improve-feature__pill">{feature.pill}</span>
-                </div>
-                <h3 className="improve-feature__title">{feature.title}</h3>
-                <p className="improve-feature__body">{feature.body}</p>
-                <ul className="improve-feature__points">
-                  {feature.points.map((point) => (
-                    <li key={point}>
-                      <CheckIcon width={16} height={16} />
-                      {point}
-                    </li>
-                  ))}
-                </ul>
-                <button type="button" className="improve-feature__link" onClick={() => onOpenFeature(feature.id)}>
-                  {feature.action}
-                  <Arrow />
-                </button>
-              </li>
-            ))}
-          </ul>
+          <ImproveFeatureCards onOpenFeature={onOpenFeature} />
         </div>
       </section>
     </div>

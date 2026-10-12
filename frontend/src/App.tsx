@@ -438,7 +438,6 @@ function App() {
                 prefilled={improvePrefilled}
                 onChange={setProfile}
                 onComplete={completeImproveSetup}
-                onExit={exitImproveSetup}
                 onLogoClick={goHome}
               />
             ) : null}

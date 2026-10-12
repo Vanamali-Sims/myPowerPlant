@@ -1,0 +1,143 @@
+import { IMPROVE_FEATURES, type ImproveFeatureId } from '../../constants/improve'
+
+type Props = {
+  onOpenFeature: (id: ImproveFeatureId) => void
+}
+
+function FeatureArrow() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true">
+      <path
+        d="M5 12h14M13 6l6 6-6 6"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  )
+}
+
+function WhatIfPreview() {
+  return (
+    <div className="feature-preview feature-preview--whatif">
+      <div className="feature-preview__sliders">
+        <div className="feature-preview__slider">
+          <span className="feature-preview__slider-label">Battery</span>
+          <div className="feature-preview__track">
+            <span className="feature-preview__knob" />
+          </div>
+        </div>
+        <div className="feature-preview__slider">
+          <span className="feature-preview__slider-label">Panels</span>
+          <div className="feature-preview__track">
+            <span className="feature-preview__knob" />
+          </div>
+        </div>
+      </div>
+      <div className="feature-preview__bars">
+        <div className="feature-preview__bar-wrap">
+          <div className="feature-preview__bar feature-preview__bar--now" />
+          <span>Now</span>
+        </div>
+        <div className="feature-preview__bar-wrap">
+          <div className="feature-preview__bar feature-preview__bar--whatif" />
+          <span>What if</span>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function GoalsPreview() {
+  const radius = 52
+  const circumference = 2 * Math.PI * radius
+  const progress = circumference * (2 / 3)
+  return (
+    <div className="feature-preview feature-preview--goals">
+      <svg className="feature-preview__goals-ring" viewBox="0 0 140 140" aria-hidden="true">
+        <circle className="feature-preview__ring-track" cx="70" cy="70" r={radius} />
+        <circle
+          className="feature-preview__ring-progress"
+          cx="70"
+          cy="70"
+          r={radius}
+          strokeDasharray={circumference}
+          strokeDashoffset={circumference - progress}
+        />
+        <g className="feature-preview__tree">
+          <rect x="66" y="78" width="8" height="28" rx="2" fill="#8B5E3C" />
+          <path d="M70 78 L58 92 L82 92 Z" fill="#8B5E3C" />
+          <circle className="feature-preview__leaf" cx="58" cy="68" r="14" fill="#5E9B6E" />
+          <circle className="feature-preview__leaf" cx="82" cy="68" r="14" fill="#6BAD78" />
+          <circle className="feature-preview__leaf" cx="70" cy="54" r="16" fill="#7BC48A" />
+        </g>
+      </svg>
+    </div>
+  )
+}
+
+function RemindersPreview() {
+  const days = ['M', 'T', 'W', 'T', 'F', 'S', 'S']
+  return (
+    <div className="feature-preview feature-preview--reminders">
+      {days.map((day, index) => (
+        <div
+          key={`${day}-${index}`}
+          className={`feature-preview__day${index === 3 ? ' feature-preview__day--best' : ''}`}
+        >
+          <span className="feature-preview__day-icon" aria-hidden="true">
+            {index === 3 ? '🔔' : index % 2 === 0 ? '☀' : '☁'}
+          </span>
+          <span className="feature-preview__day-label">{day}</span>
+          {index === 3 ? <span className="feature-preview__day-best">BEST</span> : null}
+        </div>
+      ))}
+    </div>
+  )
+}
+
+function Preview({ id }: { id: ImproveFeatureId }) {
+  if (id === 'whatif') return <WhatIfPreview />
+  if (id === 'goals') return <GoalsPreview />
+  return <RemindersPreview />
+}
+
+export function ImproveFeatureCards({ onOpenFeature }: Props) {
+  return (
+    <ul className="improve-feature-cards">
+      {IMPROVE_FEATURES.map((feature) => (
+        <li key={feature.id} className="improve-feature-cards__item">
+          <a
+            className={`improve-feature-card improve-feature-card--${feature.id}`}
+            href={`#${feature.id}`}
+            onClick={(event) => {
+              event.preventDefault()
+              onOpenFeature(feature.id)
+            }}
+            aria-label={feature.ariaLabel}
+          >
+            <div className="improve-feature-card__preview" aria-hidden="true">
+              <Preview id={feature.id} />
+            </div>
+            <div className="improve-feature-card__body">
+              <div className="improve-feature-card__head">
+                <span className="improve-feature-card__eyebrow">{feature.eyebrow}</span>
+                <span className="improve-feature-card__pill">{feature.pill}</span>
+              </div>
+              <h3 className="improve-feature-card__title">{feature.title}</h3>
+              <p className="improve-feature-card__desc">{feature.body}</p>
+              <div className="improve-feature-card__foot">
+                <span className="improve-feature-card__cta">{feature.action}</span>
+                <span className="improve-feature-card__arrow">
+                  <FeatureArrow />
+                </span>
+              </div>
+            </div>
+          </a>
+        </li>
+      ))}
+    </ul>
+  )
+}

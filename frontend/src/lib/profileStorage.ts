@@ -80,7 +80,7 @@ function sanitiseFieldSources(raw: unknown): ProfileData['fieldSources'] {
   const out: ProfileData['fieldSources'] = {}
   for (const key of PROFILE_KEYS) {
     const value = input[key]
-    if (value === 'user' || value === 'baseline') out[key] = value as FieldSource
+    if (value === 'user' || value === 'baseline' || value === 'bill') out[key] = value as FieldSource
   }
   return out
 }
