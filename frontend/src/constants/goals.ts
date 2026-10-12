@@ -142,9 +142,45 @@ export const GOAL_LABELS = {
 } as const
 
 /** Copy for the Goals page once goals are set. */
+export const GOALS_ONBOARDING = {
+  startHere: 'Start here',
+  fileTitle: 'Add your battery file',
+  fileLede:
+    'A CSV from this month or the 3 months before, with at least 14 complete days.',
+  dropTitle: 'Drop your battery CSV here',
+  browseLink: 'browse your files',
+  fileFormatHint: 'Battery activity CSV from your VPP app',
+  privacy:
+    'Read on this device only. Never uploaded or kept. Your goals stay on this device.',
+  guideLink: 'How to get your file',
+  goalsTitle: 'Your goals',
+  goalsHelper: 'One for money saved, one for carbon avoided. You can change them later.',
+  lockedTitle: 'Add your file to see your range',
+  lockedBody: "We'll suggest goals that fit how your battery actually performs.",
+  rangeTip:
+    'From your recent file month, scaled to a full month—you can set a goal between about 2 and 13 months of that figure.',
+  carbonTip:
+    'Battery energy out (kWh) × the Victorian grid factor—the same estimate your dashboard uses for carbon avoided.',
+  profileBattery: (model: string, rateCents: string) =>
+    `Battery from your profile: ${model} · about ${rateCents} c/kWh`,
+} as const
+
+/** Copy for the full-width goals form card (edit, create step 2, next goal). */
+export const GOALS_FORM = {
+  editTitle: 'Edit your goals',
+  editHelper: 'One for money saved, one for carbon avoided. You can change them any time.',
+  createTitle: 'Set your goals',
+  createHelper: 'Choose a goal for money saved and a goal for carbon avoided. You can change them later.',
+  nextTitle: 'Set your next goal',
+  seasonPill: (monthLabel: string) => `Based on ${monthLabel} · may shift with the seasons`,
+} as const
+
 export const GOALS_PAGE = {
   eyebrow: 'Goals',
   title: 'Grow your savings. Grow your tree.',
+  /** First-visit setup under the page title. */
+  setupLede:
+    "Add one recent month of your battery file and we'll suggest a realistic range for your goals.",
   /** How the tree reads, shown one sentence per line inside the green card. */
   legend: ['Each orange is 5% of your savings goal.', 'The tree grows with every 5% of your carbon goal.'],
   /** Under the title: what to do to see progress. */

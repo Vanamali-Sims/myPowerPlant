@@ -29,6 +29,7 @@ export default defineConfig(({ mode }) => {
   const api = env.VITE_API_BASE_URL || 'http://localhost:8000'
   const shared = [
     "default-src 'self'",
+    "worker-src 'self' blob:",
     "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
     "font-src 'self' https://fonts.gstatic.com",
     "img-src 'self' data:",

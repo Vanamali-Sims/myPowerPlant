@@ -147,7 +147,7 @@ describe('history is remembered on this device (AC2)', () => {
   it('treats corrupt stored data as empty without breaking the tab', () => {
     localStorage.setItem(GOALS_STORAGE_KEY, '{"version":1,"goals":')
     renderView()
-    expect(screen.getByRole('heading', { name: 'Set your goals' })).toBeTruthy()
+    expect(screen.getByRole('heading', { name: 'Your goals' })).toBeTruthy()
   })
 })
 
@@ -249,7 +249,7 @@ describe('clear my goals and history (AC5)', () => {
     expect(localStorage.getItem(GOALS_STORAGE_KEY)).toBeNull()
     expect(localStorage.getItem(PROFILE_STORAGE_KEY)).toBe('{"postcode":"3101"}')
     expect(screen.getByText('Your goals and history were cleared from this device.')).toBeTruthy()
-    expect(document.activeElement).toBe(screen.getByRole('heading', { name: 'Set your goals' }))
+    expect(document.activeElement).toBe(screen.getByRole('heading', { name: 'Your goals' }))
     expect(screen.queryByRole('region', { name: 'Progress history' })).toBeNull()
   })
 })

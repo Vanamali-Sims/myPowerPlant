@@ -7,7 +7,7 @@ export type YesNo = 'yes' | 'no'
 
 export type YesNoNotSure = YesNo | 'not_sure'
 
-export type FieldSource = 'user' | 'baseline'
+export type FieldSource = 'user' | 'baseline' | 'bill'
 
 export type PeakPeriod = 'morning' | 'afternoon' | 'evening' | 'night'
 

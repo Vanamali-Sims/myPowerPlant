@@ -6,7 +6,7 @@
  * the fixed line is shown instead.
  */
 import { API_BASE_URL, API_PATHS } from '../../constants/api'
-import { formatKwh, type KpiReport } from '../kpis'
+import { formatKwh, weeklyVppPaymentAud, type KpiReport } from '../kpis'
 import { buildTypicalDay, formatHour, leftoverHours, type HourPoint } from '../typicalDay'
 import {
   householdControlScore,
@@ -104,8 +104,8 @@ export function buildExplainInput(
   reserveNow: number | null,
   reserveDraft: number | null,
 ): ExplainInput {
-  const nowSave = reportNow.weekly.savingsAud
-  const draftSave = reportDraft.weekly.savingsAud
+  const nowSave = weeklyVppPaymentAud(reportNow)
+  const draftSave = weeklyVppPaymentAud(reportDraft)
   const delta = draftSave - nowSave
   const annualNumeric = Math.round(Math.abs(delta) * 52)
   const nowMoney = cents(nowSave)

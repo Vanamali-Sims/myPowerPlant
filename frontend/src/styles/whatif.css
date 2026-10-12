@@ -247,18 +247,141 @@
   border-radius: 24px;
   color: var(--paper);
   background:
-    radial-gradient(120% 90% at 100% 0%, rgba(222, 106, 52, 0.22), transparent 55%),
-    radial-gradient(80% 80% at 0% 100%, rgba(127, 209, 168, 0.1), transparent 60%),
-    linear-gradient(160deg, var(--green-deep), var(--green-deeper));
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 0.75rem;
-  padding: 1.6rem 1.4rem 1.2rem;
+    radial-gradient(90% 70% at 100% 0%, rgba(240, 163, 94, 0.12), transparent 55%),
+    radial-gradient(70% 60% at 0% 100%, rgba(111, 211, 168, 0.08), transparent 60%),
+    #133029;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 2rem 2rem 1.5rem;
   box-shadow: 0 24px 60px -24px rgba(14, 36, 30, 0.55);
 }
 
-.whatif-stage .eyebrow {
-  color: var(--paper-soft);
+.whatif-top {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 2rem;
+  min-width: 0;
+}
+
+.whatif-headline {
+  flex: 1 1 16rem;
+  max-width: 28.75rem;
+  min-width: 0;
+}
+
+.whatif-headline__eyebrow {
+  margin: 0;
+  color: #a9bdb4;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.whatif-headline__amount {
+  margin: 0.35rem 0 0.65rem;
+  font-family: var(--font-display);
+  font-size: clamp(2.75rem, 8vw, 4.5rem);
+  font-weight: 600;
+  line-height: 1;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+  color: #e8e2d6;
+}
+
+.whatif-headline__suffix {
+  margin-left: 0.35rem;
+  font-family: var(--font-body);
+  font-size: 1.1rem;
+  font-weight: 500;
+  color: #a9bdb4;
+  letter-spacing: 0;
+}
+
+.whatif-headline__lede {
+  margin: 0;
+  max-width: 28rem;
+  font-size: 0.9375rem;
+  line-height: 1.45;
+  color: #d4ddd8;
+}
+
+.whatif-setup {
+  flex: 1 1 14rem;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.875rem;
+  max-width: 20rem;
+  min-width: 0;
+  text-align: right;
+}
+
+.whatif-setup .whatif-verdict {
+  margin: 0;
+  max-width: none;
+  min-height: 0;
+  font-family: var(--font-body);
+  font-size: 0.9375rem;
+  font-weight: 400;
+  line-height: 1.45;
+  color: #d4ddd8;
+}
+
+.whatif-setup .whatif-actions {
+  margin: 0;
+  justify-content: flex-end;
+}
+
+.whatif-setup .whatif-delta {
+  justify-content: flex-end;
+}
+
+.whatif-setup .whatif-status {
+  margin: 0;
+  text-align: right;
+}
+
+@media (max-width: 639px) {
+  .whatif-setup {
+    align-items: flex-start;
+    max-width: none;
+    text-align: left;
+  }
+
+  .whatif-setup .whatif-actions,
+  .whatif-setup .whatif-delta {
+    justify-content: flex-start;
+  }
+
+  .whatif-setup .whatif-status {
+    text-align: left;
+  }
+}
+
+.whatif-flow-story-pill {
+  display: inline-block;
+  align-self: flex-start;
+  margin: 0 0 0.75rem;
+  padding: 0.4rem 0.8rem;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  font-weight: 600;
+}
+
+.whatif-flow-story-pill--surplus {
+  background: rgba(8, 24, 20, 0.45);
+  border: 1px solid rgba(143, 224, 188, 0.28);
+  color: #c9e8d8;
+}
+
+.whatif-flow-story-pill--deficit {
+  background: rgba(8, 24, 20, 0.45);
+  border: 1px solid rgba(242, 184, 128, 0.35);
+  color: #f2d4b3;
 }
 
 .whatif-big {
@@ -435,91 +558,175 @@
   font-size: 0.82rem;
 }
 
-.whatif-flow__svg {
+/* —— House energy-flow diagram (context/vpp-flow-reference.html) —— */
+.whatif-diagram-wrap {
+  min-width: 0;
+  transition: opacity 0.2s ease;
+}
+
+.whatif-diagram-wrap--fading {
+  opacity: 0.35;
+}
+
+.whatif-diagram {
   width: 100%;
   height: auto;
   display: block;
+  font-family: var(--font-body);
 }
 
-.whatif-flow__track {
+.whatif-diagram .flow {
   fill: none;
-  stroke: rgba(244, 241, 232, 0.07);
   stroke-linecap: round;
-  transition: stroke-width 0.5s;
+  stroke-width: 5;
+  stroke-dasharray: 0 16;
+  animation: whatif-vpp-dash 1s linear infinite;
 }
 
-.whatif-flow__node {
-  fill: rgba(244, 241, 232, 0.05);
-  stroke: rgba(244, 241, 232, 0.16);
-}
-
-.whatif-flow__icon {
+.whatif-diagram .thin {
   fill: none;
-  stroke: var(--paper);
-  stroke-width: 1.6;
+  stroke-linecap: butt;
+  stroke-width: 1.5;
+  stroke-dasharray: 4 5;
+  stroke-opacity: 0.45;
+  animation: whatif-vpp-dash9 1.8s linear infinite;
+}
+
+.whatif-diagram .mesh {
+  fill: none;
+  stroke-linecap: butt;
+  stroke-width: 1.5;
+  stroke-dasharray: 4 5;
+  stroke-opacity: 0.45;
+  animation: whatif-vpp-dash9 3s linear infinite;
+}
+
+.whatif-diagram .rev {
+  animation-direction: reverse;
+}
+
+.whatif-diagram .track {
+  fill: none;
   stroke-linecap: round;
-  stroke-linejoin: round;
+  stroke-width: 5;
+  stroke-opacity: 0.16;
 }
 
-.whatif-flow__lbl {
-  fill: var(--paper-soft);
-  font: 500 11px var(--font-body);
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
+@keyframes whatif-vpp-dash {
+  to {
+    stroke-dashoffset: -16;
+  }
 }
 
-.whatif-flow__val {
-  fill: var(--paper);
-  font: 600 15px var(--font-body);
-  font-variant-numeric: tabular-nums;
+@keyframes whatif-vpp-dash9 {
+  to {
+    stroke-dashoffset: -9;
+  }
 }
 
-.whatif-flow__sub {
-  fill: var(--paper-soft);
-  font: 500 11px var(--font-body);
+.whatif-diagram .q1 {
+  animation: whatif-vpp-q1 6s ease-in-out infinite;
 }
 
-.whatif-flow__ring-track {
-  fill: none;
-  stroke: rgba(244, 241, 232, 0.1);
-  stroke-width: 3;
+.whatif-diagram .q2 {
+  animation: whatif-vpp-q2 6s ease-in-out infinite;
 }
 
-.whatif-flow__ring {
-  fill: none;
-  stroke: #7fd1a8;
-  stroke-width: 3;
-  stroke-linecap: round;
-  transition: stroke-dashoffset 0.6s cubic-bezier(0.2, 0.8, 0.2, 1);
+.whatif-diagram .q3 {
+  animation: whatif-vpp-q3 6s ease-in-out infinite;
 }
 
-.whatif-flow__legend {
-  display: flex;
-  gap: 0.9rem;
-  justify-content: center;
-  font-size: 0.7rem;
-  color: var(--paper-soft);
+.whatif-diagram .q4 {
+  animation: whatif-vpp-q4 6s ease-in-out infinite;
 }
 
-.whatif-flow__dot {
-  display: inline-block;
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  margin-right: 5px;
-  vertical-align: middle;
+@keyframes whatif-vpp-q1 {
+  0% {
+    opacity: 0.15;
+  }
+  8%,
+  88% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0.15;
+  }
 }
 
-.whatif-flow__dot--solar {
-  background: #f0a36b;
+@keyframes whatif-vpp-q2 {
+  0%,
+  25% {
+    opacity: 0.15;
+  }
+  33%,
+  88% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0.15;
+  }
 }
 
-.whatif-flow__dot--battery {
-  background: #7fd1a8;
+@keyframes whatif-vpp-q3 {
+  0%,
+  50% {
+    opacity: 0.15;
+  }
+  58%,
+  88% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0.15;
+  }
 }
 
-.whatif-flow__dot--grid {
-  background: var(--paper-soft);
+@keyframes whatif-vpp-q4 {
+  0%,
+  62% {
+    opacity: 0.15;
+  }
+  70%,
+  88% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0.15;
+  }
+}
+
+.whatif-diagram .panelglow {
+  animation: whatif-vpp-pg 6s ease-in-out infinite;
+}
+
+@keyframes whatif-vpp-pg {
+  0% {
+    fill-opacity: 0.25;
+  }
+  10%,
+  88% {
+    fill-opacity: 0.7;
+  }
+  100% {
+    fill-opacity: 0.25;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .whatif-diagram .flow,
+  .whatif-diagram .thin,
+  .whatif-diagram .mesh {
+    animation: none;
+    stroke-dasharray: none;
+  }
+
+  .whatif-diagram .q1,
+  .whatif-diagram .q2,
+  .whatif-diagram .q3,
+  .whatif-diagram .q4,
+  .whatif-diagram .panelglow {
+    animation: none;
+  }
 }
 
 .whatif-day {
@@ -701,12 +908,6 @@
   margin: 0.4rem 0.1rem 0;
   font-size: 0.72rem;
   color: var(--ink-muted);
-}
-
-@media (min-width: 820px) {
-  .whatif-stage {
-    grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
-  }
 }
 
 @media (min-width: 980px) {

@@ -97,9 +97,9 @@ describe('upload before goals are saved (AC1)', () => {
         onLogoClick={vi.fn()}
       />,
     )
-    expect(screen.getByRole('heading', { name: 'Set your goals' })).toBeTruthy()
-    const upload = screen.getByRole('region', { name: 'Upload a recent battery file' })
-    expect(within(upload).getByRole('radiogroup', { name: 'VPP provider' })).toBeTruthy()
+    expect(screen.getByRole('heading', { name: 'Your goals' })).toBeTruthy()
+    expect(screen.getByRole('heading', { name: 'Add your battery file' })).toBeTruthy()
+    expect(screen.getByRole('heading', { name: 'Add your battery file' })).toBeTruthy()
     expect(screen.queryByRole('region', { name: 'Upload your battery file' })).toBeNull()
     expect(screen.queryByText('Upload unlocks after both goals are saved.')).toBeNull()
   })

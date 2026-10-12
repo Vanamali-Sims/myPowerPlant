@@ -9,7 +9,7 @@ import { batteryModels, solarDirections } from '../../data/profileOptions'
 import { FIELD_BOUNDS } from '../../constants/validation'
 import { applyProfilePatch } from '../../lib/chat/applyProfilePatch'
 import { buildWhatIfSuggestions, type WhatIfSuggestion } from '../../lib/chat/whatIfSuggestions'
-import { buildKpiReport, parseCount } from '../../lib/kpis'
+import { buildKpiReport, parseCount, weeklyVppPaymentAud } from '../../lib/kpis'
 import { type MethodologyBundle } from '../../lib/methodologyApi'
 import { buildTypicalDay } from '../../lib/typicalDay'
 import { buildExplainInput, plansFor, reservePercents, surplusLabel } from '../../lib/whatif/explain'
@@ -20,7 +20,8 @@ import { Callout } from '../ui/Callout'
 import { BoltIcon, BulbIcon } from '../ui/icons'
 import { WhatIfDayChart } from './WhatIfDayChart'
 import { WhatIfExplain } from './WhatIfExplain'
-import { WhatIfFlow, type FlowFigures } from './WhatIfFlow'
+import { WhatIfFlow } from './WhatIfFlow'
+import { VppProviderField } from '../improve/VppProviderField'
 import { WhatIfHouseholdTab } from './WhatIfHouseholdTab'
 import { WhatIfSolarTab } from './WhatIfSolarTab'
 
@@ -62,7 +63,7 @@ function directionLabel(value: string): string {
   return solarDirections.find((row) => row.value === value)?.label ?? value
 }
 
-function annualPayment(weekly: number): number {
+function annualVppPayment(weekly: number): number {
   return Math.round(weekly * 52)
 }
 
@@ -279,18 +280,18 @@ export function WhatIfView({
     setStatus('')
   }
 
-  const annualNow = reportNow ? annualPayment(reportNow.weekly.savingsAud) : 0
-  const annualDraft = reportDraft ? annualPayment(reportDraft.weekly.savingsAud) : 0
+  const annualNow = reportNow ? annualVppPayment(weeklyVppPaymentAud(reportNow)) : 0
+  const annualDraft = reportDraft ? annualVppPayment(weeklyVppPaymentAud(reportDraft)) : 0
   const annualShown = useAnimatedNumber(annualDraft)
   const yearDelta = annualDraft - annualNow
 
   const deltas = useMemo(() => {
     if (!bundle) return null
-    const savedAnnual = annualPayment(buildKpiReport(profile, bundle).weekly.savingsAud)
+    const savedAnnual = annualVppPayment(weeklyVppPaymentAud(buildKpiReport(profile, bundle)))
     const lone = (patch: Partial<ProfileData>) => {
       const result = applyProfilePatch(profile, patch)
       if (!result.ok) return null
-      return annualPayment(buildKpiReport(result.profile, bundle).weekly.savingsAud) - savedAnnual
+      return annualVppPayment(weeklyVppPaymentAud(buildKpiReport(result.profile, bundle))) - savedAnnual
     }
     return {
       people: changes.some((item) => item.label === 'People')
@@ -316,24 +317,18 @@ export function WhatIfView({
     }
   }, [bundle, profile, draftProfile, changes, usageExtra, dishwasherChange, washerChange])
 
-  const flow = useMemo<FlowFigures>(() => {
+  const flowKwh = useMemo(() => {
     const weekly = reportDraft?.weekly
-    const reserve = Number(draftProfile.reservePercent)
-    const generated = daily(weekly?.generationKwh ?? 0)
-    const shifted = daily(weekly?.batteryShiftedKwh ?? 0)
-    const self = daily(weekly?.selfConsumedKwh ?? 0)
-    const consumed = daily(weekly?.consumptionKwh ?? 0)
     return {
-      solarKwh: generated,
-      homeKwh: consumed,
-      toVppKwh: daily(weekly?.energyDistributedKwh ?? 0),
-      boughtKwh: Math.max(0, consumed - self),
-      selfKwh: Math.max(0, self - shifted),
-      toBatteryKwh: shifted,
-      fromBatteryKwh: shifted,
-      reserve: Number.isFinite(reserve) ? reserve / 100 : 0,
+      solarKwh: daily(weekly?.generationKwh ?? 0),
+      homeKwh: daily(weekly?.consumptionKwh ?? 0),
     }
-  }, [reportDraft, draftProfile.reservePercent])
+  }, [reportDraft])
+
+  const flowNet = flowKwh.solarKwh - flowKwh.homeKwh
+  const flowMode = flowNet >= 0 ? 'surplus' : 'deficit'
+  const flowVppKwh = Math.abs(flowNet)
+  const flowVppShown = useAnimatedNumber(flowVppKwh)
 
   const batteryChanged = (batteryDraft || profile.batteryModel) !== profile.batteryModel
   const reserveChanged = resolvedValue(reserveDraft, profile.reservePercent) !== profile.reservePercent.trim()
@@ -416,6 +411,20 @@ export function WhatIfView({
       {ready ? (
         <div className="whatif__layout">
           <aside className="whatif-card whatif-controls" aria-label="Adjust a setting">
+            <div className="whatif-group">
+              <h2>Your VPP</h2>
+              <VppProviderField
+                profile={profile}
+                bundle={bundle}
+                onChange={(vppProvider) =>
+                  onSaveProfile({
+                    ...profile,
+                    vppProvider,
+                    fieldSources: { ...profile.fieldSources, vppProvider: 'user' },
+                  })
+                }
+              />
+            </div>
             <div className="whatif-group">
               <h2>Solar</h2>
               <WhatIfSolarTab
@@ -516,37 +525,66 @@ export function WhatIfView({
 
           <div className="whatif-main">
             <section className="whatif-stage" aria-live="polite">
-              <div>
-                <p className="eyebrow">VPP payment · a year</p>
-                <div className="whatif-big">
-                  <span>{money(annualShown)}</span>
-                  <small>/yr</small>
+              <div className="whatif-top">
+                <div className="whatif-headline">
+                  {flowMode === 'surplus' ? (
+                    <>
+                      <p className="whatif-headline__eyebrow">VPP payment · a year</p>
+                      <p className="whatif-headline__amount">
+                        {money(annualShown)}
+                        <span className="whatif-headline__suffix">/yr</span>
+                      </p>
+                      <p className="whatif-flow-story-pill whatif-flow-story-pill--surplus">Energy leaves your house</p>
+                      <p className="whatif-headline__lede">
+                        Your house makes more than it needs. The extra heads out the door to homes in the VPP.
+                      </p>
+                    </>
+                  ) : (
+                    <>
+                      <p className="whatif-headline__eyebrow">VPP top-up · a day</p>
+                      <p className="whatif-headline__amount">
+                        {flowVppShown.toFixed(1)}
+                        <span className="whatif-headline__suffix">kWh</span>
+                      </p>
+                      <p className="whatif-flow-story-pill whatif-flow-story-pill--deficit">Energy comes into your house</p>
+                      <p className="whatif-headline__lede">
+                        Your house needs a little more than it makes. Homes in the VPP send it in through the door, into
+                        your battery.
+                      </p>
+                    </>
+                  )}
                 </div>
-                <div className="whatif-delta">
-                  <span className={`whatif-pill ${pillTone}`}>{pillText}</span>
-                  {hasChange ? <span className="whatif-was">was {money(annualNow)}</span> : null}
+                <div className="whatif-setup">
+                  <div className="whatif-delta">
+                    <span className={`whatif-pill ${pillTone}`}>{pillText}</span>
+                    {hasChange ? <span className="whatif-was">was {money(annualNow)}</span> : null}
+                  </div>
+                  <WhatIfExplain active={hasChange} input={explainInput} />
+                  <div className="whatif-actions">
+                    <button type="button" className="whatif-btn whatif-btn--primary" disabled={!hasChange} onClick={applyWhatIf}>
+                      Use this setup
+                    </button>
+                    <button
+                      type="button"
+                      className="whatif-btn whatif-btn--ghost"
+                      hidden={!hasChange}
+                      onClick={resetDraft}
+                    >
+                      Reset
+                    </button>
+                  </div>
+                  {status ? (
+                    <p className="whatif-status" role="status">
+                      {status}
+                    </p>
+                  ) : null}
                 </div>
-                <WhatIfExplain active={hasChange} input={explainInput} />
-                <div className="whatif-actions">
-                  <button type="button" className="whatif-btn whatif-btn--primary" disabled={!hasChange} onClick={applyWhatIf}>
-                    Use this setup
-                  </button>
-                  <button
-                    type="button"
-                    className="whatif-btn whatif-btn--ghost"
-                    hidden={!hasChange}
-                    onClick={resetDraft}
-                  >
-                    Reset
-                  </button>
-                </div>
-                {status ? (
-                  <p className="whatif-status" role="status">
-                    {status}
-                  </p>
-                ) : null}
               </div>
-              <WhatIfFlow figures={flow} />
+              <WhatIfFlow
+                solarKwh={flowKwh.solarKwh}
+                homeKwh={flowKwh.homeKwh}
+                annualPayment={annualShown}
+              />
             </section>
 
             <section className="whatif-card whatif-day">

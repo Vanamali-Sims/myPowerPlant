@@ -12,11 +12,30 @@ import { cleanup, render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 
+vi.mock('../../lib/bills/readBillFile', () => ({
+  readBillFile: vi.fn(async () => ({
+    ok: true,
+    facts: {
+      retailerId: 'powershop',
+      retailerLabel: 'Powershop',
+      postcode: '3101',
+      periodDays: 31,
+      periodUsageKwh: 364,
+      periodChargeAud: 132.73,
+      monthlyKwh: '357',
+      monthlyBill: '130',
+      hadOpeningBalance: false,
+      parserId: 'powershop-v2',
+    },
+  })),
+}))
+
 import App from '../../App'
 import { GOALS_STORAGE_KEY } from '../../constants/goals'
 import { BASELINE_PROFILE } from '../../data/baselines'
 import { loadGoals } from '../../lib/goals/goalsStorage'
-import { vppProviderOptions } from '../../lib/improveProfile'
+import { finishImproveProfile, vppProviderOptions } from '../../lib/improveProfile'
+import { readBillFile } from '../../lib/bills/readBillFile'
 import { saveJourney } from '../../lib/journeyStorage'
 import { seedMethodologyBundle } from '../../lib/methodologyFixture'
 import { loadProfile, saveProfile } from '../../lib/profileStorage'
@@ -29,7 +48,26 @@ const bundle = seedMethodologyBundle()
 const SET_ON = '2026-10-01T00:00:00.000Z'
 
 function ready(overrides: Partial<ProfileData> = {}): ProfileData {
-  return { ...emptyProfile(), ...BASELINE_PROFILE, vppProvider: 'Tesla Energy Plan', ...overrides }
+  const { fieldSources: fieldSourceOverrides, ...rest } = overrides
+  return finishImproveProfile({
+    ...emptyProfile(),
+    ...BASELINE_PROFILE,
+    vppProvider: 'Tesla Energy Plan',
+    fieldSources: {
+      postcode: 'bill',
+      monthlyKwh: 'bill',
+      monthlyBill: 'bill',
+      provider: 'bill',
+      ...fieldSourceOverrides,
+    },
+    ...rest,
+  })
+}
+
+async function uploadBillPdf(user: ReturnType<typeof userEvent.setup>) {
+  const input = document.querySelector<HTMLInputElement>('input[type="file"]')
+  expect(input).toBeTruthy()
+  await user.upload(input!, new File(['%PDF'], 'powershop.pdf', { type: 'application/pdf' }))
 }
 
 function renderApp() {
@@ -126,8 +164,12 @@ describe('improve home', () => {
     expect(dashboard.getByText('Set a savings and a carbon goal to grow your tree.')).toBeTruthy()
     expect(dashboard.getByText('Add your setup to fill in your dashboard.')).toBeTruthy()
 
-    for (const name of ['Try What if', 'Open Goals', 'Get reminders']) {
-      expect(screen.getByRole('button', { name })).toBeTruthy()
+    for (const name of [
+      'Open What if: test a scenario',
+      'Open Goals: set and track goals',
+      'Open Reminders: never miss an event',
+    ]) {
+      expect(screen.getByRole('link', { name })).toBeTruthy()
     }
     expect(screen.getByRole('heading', { level: 2, name: 'Enhance VPP experience through these features.' })).toBeTruthy()
   })
@@ -164,7 +206,12 @@ describe('improve home', () => {
   })
 
   it('says Complete profile when some answers are already there', () => {
-    saveProfile(ready({ vppProvider: '' }))
+    saveProfile({
+      ...emptyProfile(),
+      ...BASELINE_PROFILE,
+      lastUpdated: SET_ON,
+      fieldSources: { postcode: 'user', monthlyKwh: 'user' },
+    })
     renderApp()
     expect(screen.getByRole('button', { name: 'Complete profile' })).toBeTruthy()
     expect(screen.queryByRole('button', { name: 'Access Features' })).toBeNull()
@@ -175,47 +222,42 @@ describe('access-features form', () => {
   // Types into every field of the form, so it gets more time when the whole suite runs at once.
   it('opens before a feature when answers are missing, then lands on that feature', async () => {
     const user = renderApp()
-    await user.click(screen.getByRole('button', { name: 'Open Goals' }))
+    await user.click(screen.getByRole('link', { name: 'Open Goals: set and track goals' }))
     expect(screen.getByRole('heading', { level: 1, name: 'Your home and VPP' })).toBeTruthy()
 
-    await user.click(screen.getByRole('button', { name: 'Continue' }))
-    expect(screen.getByText('Please enter the VPP you have joined.')).toBeTruthy()
-
-    await user.type(screen.getByLabelText('Which VPP have you joined?'), 'Tesla Energy Plan')
-    await user.type(screen.getByLabelText('What is your postcode?'), '3101')
-    await user.type(screen.getByLabelText('How many people live in your house?'), '3')
-    await user.type(screen.getByLabelText('Average electricity usage for a month'), '540')
-    await user.click(screen.getByRole('button', { name: 'Continue' }))
-
-    expect(screen.getByRole('heading', { level: 1, name: 'Your solar panels' })).toBeTruthy()
-    await user.type(screen.getByLabelText('How many solar panels do you have?'), '12')
-    await user.click(screen.getByRole('radio', { name: 'N' }))
-    await user.click(screen.getByRole('button', { name: 'Continue' }))
-
-    expect(screen.getByRole('heading', { level: 1, name: 'Your battery' })).toBeTruthy()
-    await user.click(screen.getByPlaceholderText('Search battery brand & model'))
+    await uploadBillPdf(user)
+    expect(readBillFile).toHaveBeenCalled()
+    await user.type(screen.getByLabelText('Panel count'), '12')
+    await user.selectOptions(screen.getByLabelText('Panel direction'), 'N')
+    await user.click(screen.getByPlaceholderText('Search battery models'))
     await user.click(screen.getByRole('option', { name: 'Tesla Powerwall 2' }))
-    await user.click(screen.getByRole('button', { name: 'Save and continue' }))
+    await user.type(screen.getByLabelText('People in home'), '3')
+    await user.selectOptions(screen.getByLabelText('Which VPP joined'), 'Not listed')
+    await user.click(screen.getByRole('button', { name: 'Save changes' }))
 
     // Goals loads lazily, which can take a moment when the whole suite runs at once.
     expect(
       await screen.findByRole('heading', { level: 1, name: 'Grow your savings. Grow your tree.' }, { timeout: 5000 }),
     ).toBeTruthy()
     const saved = loadProfile()
-    expect(saved).toMatchObject({ vppProvider: 'Tesla Energy Plan', monthlyKwh: '540', hasSolar: 'yes' })
+    expect(saved).toMatchObject({ monthlyKwh: '357', postcode: '3101', hasSolar: 'yes' })
     expect(saved.improveUpdated).not.toBeNull()
     expect(saved.lastUpdated).toBeNull()
   }, 15_000)
 
   it('says in a pop-up when it uses answers from the explore form, and asks only for what is missing', async () => {
-    saveProfile(ready({ vppProvider: '' }))
+    saveProfile({
+      ...emptyProfile(),
+      ...BASELINE_PROFILE,
+      lastUpdated: SET_ON,
+      fieldSources: { postcode: 'user', monthlyKwh: 'user' },
+    })
     const user = renderApp()
     await user.click(screen.getByRole('button', { name: 'Complete profile' }))
     const dialog = screen.getByRole('dialog', { name: 'We used your earlier answers' })
     expect(dialog.textContent).toContain('Simulate my savings form')
     await user.click(within(dialog).getByRole('button', { name: 'Got it' }))
-    expect(screen.getByLabelText('What is your postcode?')).toHaveProperty('value', '3101')
-    expect(screen.getByLabelText('Which VPP have you joined?')).toHaveProperty('value', '')
+    expect(screen.getByRole('heading', { level: 1, name: 'Your home and VPP' })).toBeTruthy()
   })
 
   it('opens features straight away once the answers are complete', async () => {
@@ -246,17 +288,24 @@ describe('improve-flow profile', () => {
     return { onSave, onReset, user: userEvent.setup() }
   }
 
-  it('picks the VPP from the Plans list', async () => {
-    const { onSave, user } = renderProfile(ready({ vppProvider: '' }))
-    const household = screen.getByRole('region', { name: 'Your home and VPP' })
-    await user.click(within(household).getByRole('button', { name: 'Edit' }))
-    await user.click(within(household).getByPlaceholderText('Search VPP providers'))
+  it('picks the VPP on What if', async () => {
+    const onSave = vi.fn()
+    const user = userEvent.setup()
+    render(
+      <WhatIfView
+        profile={ready({ vppProvider: '' })}
+        hasProfile
+        bundle={bundle}
+        methodologyError=""
+        onSaveProfile={onSave}
+        onStartSetup={vi.fn()}
+        onLogoClick={vi.fn()}
+        hideSetupNavigation
+      />,
+    )
+    await user.click(screen.getByPlaceholderText('Search VPP providers'))
     const brands = vppProviderOptions(bundle)
-    expect(brands.length).toBeGreaterThan(0)
-    for (const brand of brands) expect(within(household).getByRole('option', { name: brand })).toBeTruthy()
-    expect(within(household).getByRole('option', { name: 'Not listed' })).toBeTruthy()
-    await user.click(within(household).getByRole('option', { name: brands[0] }))
-    await user.click(within(household).getByRole('button', { name: 'Save' }))
+    await user.click(screen.getByRole('option', { name: brands[0] }))
     expect(onSave.mock.calls[0][0]).toMatchObject({ vppProvider: brands[0] })
   })
 
@@ -273,15 +322,14 @@ describe('improve-flow profile', () => {
 
   it('shows the answers and saves an edited section', async () => {
     const { onSave, user } = renderProfile()
-    const household = screen.getByRole('region', { name: 'Your home and VPP' })
-    expect(within(household).getByText('Tesla Energy Plan')).toBeTruthy()
+    const household = screen.getByRole('region', { name: 'From your bill' })
+    expect(within(household).getByText('3101')).toBeTruthy()
     await user.click(within(household).getByRole('button', { name: 'Edit' }))
-    const people = within(household).getByLabelText('How many people live in your house?')
-    await user.clear(people)
-    await user.type(people, '5')
+    expect(within(household).getByRole('heading', { name: 'Upload your electricity bill' })).toBeTruthy()
+    await uploadBillPdf(user)
     await user.click(within(household).getByRole('button', { name: 'Save' }))
     expect(onSave).toHaveBeenCalledOnce()
-    expect(onSave.mock.calls[0][0]).toMatchObject({ people: '5' })
+    expect(onSave.mock.calls[0][0]).toMatchObject({ monthlyKwh: '357' })
   })
 
   it('edits the What if baseline and checks it first', async () => {
@@ -372,16 +420,32 @@ describe('resetting the improve profile', () => {
     expect(screen.getByText('Your improve profile was reset.')).toBeTruthy()
     expect(screen.getByRole('button', { name: 'Access Features' })).toBeTruthy()
     const after = loadProfile()
-    expect(after).toMatchObject({ vppProvider: '', postcode: '', monthlyKwh: '', batteryModel: '', improveUpdated: null })
+    expect(after).toMatchObject({
+      vppProvider: 'Tesla Energy Plan',
+      postcode: '',
+      monthlyKwh: '',
+      batteryModel: '',
+      improveUpdated: null,
+    })
     expect(localStorage.getItem(GOALS_STORAGE_KEY)).toBeNull()
     expect(loadReminders()).toEqual([])
   })
 
-  it('keeps answers saved by the explore form and clears only the VPP', async () => {
-    const explore = saveProfile(ready({ vppProvider: '' }))
+  it('keeps answers saved by the explore form when improve only added a VPP', async () => {
+    const explore = saveProfile({
+      ...emptyProfile(),
+      ...BASELINE_PROFILE,
+      lastUpdated: '2026-10-01T00:00:00.000Z',
+      fieldSources: { postcode: 'user', monthlyKwh: 'user' },
+    })
     saveProfile({ ...explore, vppProvider: 'Tesla Energy Plan' }, 'improve')
     await resetFromProfile()
-    expect(loadProfile()).toMatchObject({ vppProvider: '', postcode: '3101', monthlyKwh: '540', improveUpdated: null })
+    expect(loadProfile()).toMatchObject({
+      vppProvider: 'Tesla Energy Plan',
+      postcode: '3101',
+      monthlyKwh: '540',
+      improveUpdated: null,
+    })
     expect(loadProfile().lastUpdated).toBe(explore.lastUpdated)
     expect(screen.getByRole('button', { name: 'Complete profile' })).toBeTruthy()
   })

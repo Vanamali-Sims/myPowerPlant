@@ -1242,6 +1242,85 @@
   gap: 1.75rem;
 }
 
+.goals.goals--setup-board {
+  width: 100%;
+  max-width: none;
+  margin: 0;
+  padding: 3rem 3.5rem 2.5rem;
+  gap: 1.75rem;
+}
+
+.goals.goals--setup-board .goals-head {
+  width: 100%;
+  max-width: 1240px;
+  margin-inline: auto;
+}
+
+.goals.goals--form-board {
+  width: 100%;
+  max-width: none;
+  margin: 0;
+  padding: 3rem 3.5rem 2.5rem;
+  gap: 2rem;
+}
+
+.goals.goals--form-board .goals-head {
+  width: 100%;
+  max-width: 1240px;
+  margin-inline: auto;
+}
+
+.goals.goals--form-board .goals-notice--setup {
+  margin-inline: auto;
+}
+
+.goals.goals--form-board .goals-head__eyebrow {
+  font-size: 0.875rem;
+  letter-spacing: 0.12em;
+  color: #a8441a;
+}
+
+.goals.goals--form-board .goals-head__title {
+  font-size: clamp(2rem, 4vw, 2.875rem);
+}
+
+.goals-notice .ui-callout {
+  align-items: center;
+  gap: 0.65rem 1rem;
+}
+
+.goals-notice .ui-callout > div {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.goals-notice .ui-callout--action {
+  justify-content: flex-start;
+}
+
+.goals-notice__dismiss.ui-btn {
+  width: auto;
+  flex-shrink: 0;
+  margin-left: auto;
+  min-height: 2.25rem;
+  padding: 0.35rem 0.85rem;
+  font-size: 0.875rem;
+}
+
+.goals-notice--setup {
+  width: 100%;
+  max-width: 1240px;
+}
+
+.goals--setup-board .goals-notice--setup {
+  margin-inline: auto;
+}
+
+.goals-notice--setup .ui-callout {
+  width: 100%;
+  max-width: 36rem;
+}
+
 .goals-head {
   display: flex;
   flex-direction: column;

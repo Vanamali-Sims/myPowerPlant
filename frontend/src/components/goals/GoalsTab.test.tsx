@@ -48,17 +48,32 @@ afterEach(() => {
 describe('Goals tab', () => {
   it('lists Goals between What if and Reminders in the Rain rail', () => {
     const ids = RAIN_NAV.map((item) => item.id)
-    expect(ids).toEqual(['home', 'whatif', 'goals', 'reminders', 'profile'])
+    expect(ids).toEqual(['home', 'whatif', 'goals', 'reminders'])
   })
 
   it('has a text label and opens the Goals page as the current page', async () => {
     const user = userEvent.setup()
     saveJourney('rain')
-    saveProfile({ ...emptyProfile(), ...BASELINE_PROFILE, vppProvider: 'Tesla Energy Plan' }, 'improve')
+    saveProfile(
+      {
+        ...emptyProfile(),
+        ...BASELINE_PROFILE,
+        vppProvider: 'Tesla Energy Plan',
+        fieldSources: {
+          postcode: 'bill',
+          monthlyKwh: 'bill',
+          monthlyBill: 'bill',
+          provider: 'bill',
+        },
+      },
+      'improve',
+    )
     render(<App />)
     const rail = screen.getByRole('complementary', { name: 'App' })
     const buttons = Array.from(rail.querySelectorAll('nav button')).map((node) => node.textContent)
-    expect(buttons).toEqual(['Home', 'What if', 'Goals', 'Reminders', 'Profile'])
+    expect(buttons).toEqual(['Home', 'What if', 'Goals', 'Reminders'])
+    expect(screen.getByRole('button', { name: 'Profile' })).toBeTruthy()
+    expect(screen.getByRole('button', { name: 'Path' })).toBeTruthy()
 
     await user.click(screen.getByRole('button', { name: 'Goals' }))
     const goals = screen.getByRole('button', { name: 'Goals' })

@@ -41,6 +41,9 @@ export function WhatIfHouseholdTab({
 }: Props) {
   return (
     <>
+      {!profile.people.trim() ? (
+        <p className="whatif-meta">How many people live in your home? Set this for household comparisons.</p>
+      ) : null}
       <WhatIfStepperRow
         label="People"
         saved={profile.people}

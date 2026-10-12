@@ -99,6 +99,7 @@ export const batteryModels = [
 
 export const energyProviders = [
   'AGL Energy',
+  'Powershop',
   'Origin Energy',
   'EnergyAustralia',
   'Red Energy',

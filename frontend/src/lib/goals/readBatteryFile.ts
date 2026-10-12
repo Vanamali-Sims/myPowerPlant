@@ -7,6 +7,9 @@
 import { MAX_FILE_BYTES, type BatterySourceId } from '../../constants/batterySources'
 import { getAdapter } from './adapters'
 import type { ReadLimits, ReadResult } from './adapters/types'
+import { detectSource } from './detectSource'
+
+const SOURCE_TRY_ORDER: BatterySourceId[] = ['tesla', 'amber']
 
 /**
  * checkFile
@@ -48,4 +51,27 @@ export async function readBatteryFile(
   const body = text.charCodeAt(0) === 0xfeff ? text.slice(1) : text
   if (!body.trim()) return { ok: false, reason: 'empty_file' }
   return adapter(text, limits, sourceId)
+}
+
+/**
+ * readBatteryFileAuto
+ * @returns The first successful read, trying a filename hint then each known reader
+ *
+ * Tesla and Amber exports share the same template today; the person is not asked
+ * to pick a brand.
+ */
+export async function readBatteryFileAuto(file: File, limits: ReadLimits): Promise<ReadResult> {
+  const order: BatterySourceId[] = []
+  const guess = detectSource(file.name)
+  if (guess) order.push(guess)
+  for (const id of SOURCE_TRY_ORDER) {
+    if (!order.includes(id)) order.push(id)
+  }
+  let last: ReadResult | null = null
+  for (const sourceId of order) {
+    const result = await readBatteryFile(file, sourceId, limits)
+    if (result.ok) return result
+    last = result
+  }
+  return last ?? { ok: false, reason: 'malformed_csv' }
 }
