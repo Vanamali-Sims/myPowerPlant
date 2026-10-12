@@ -7,7 +7,7 @@
  * through confetti.create with useWorker off, and never under reduced motion.
  * jsdom has no <dialog> showModal or close, so a stand-in is added here.
  */
-import { cleanup, render, screen, within } from '@testing-library/react'
+import { cleanup, fireEvent, render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 
@@ -194,7 +194,10 @@ describe('level-up message when a goal is reached (AC1)', () => {
         .split(' ')
         .map((id) => document.getElementById(id)?.textContent ?? '')
         .join(' ')
-      const lowest = /Allowed range: \$?([\d,.]+)/.exec(described)?.[1].replace(/,/g, '') ?? '1'
+      const lowest =
+        /^\$?([\d,.]+)/.exec(described.trim())?.[1].replace(/,/g, '') ??
+        /^([\d,.]+)/.exec(described.trim())?.[1].replace(/,/g, '') ??
+        '1'
       await user.clear(input)
       await user.type(input, lowest)
     }
@@ -245,8 +248,9 @@ describe('taking the next step (AC3)', () => {
 
     await user.clear(savings)
     await user.type(savings, String(Math.floor(total)))
-    await user.click(screen.getByRole('button', { name: 'Save goals' }))
+    fireEvent.blur(savings)
     expect(screen.getByRole('alert').textContent).toBe('This is below the allowed range.')
+    expect(screen.getByRole('button', { name: 'Save goals' })).toHaveProperty('disabled', true)
 
     await user.clear(savings)
     await user.type(savings, String(Math.floor(total) + 50))
@@ -285,7 +289,7 @@ describe('taking the next step (AC3)', () => {
     await user.upload(input, new File([csvFor(`${recent}-01`, last)], 'recent.csv'))
     await user.click(screen.getByRole('button', { name: 'Read file' }))
     await user.click(await screen.findByRole('button', { name: 'Continue' }))
-    expect(screen.getByText(new RegExp(`^Based on ${formatMonthLabel(recent)}; your range may shift`))).toBeTruthy()
+    expect(screen.getByText(new RegExp(`Based on ${formatMonthLabel(recent)} · may shift`))).toBeTruthy()
 
     const savings = screen.getByLabelText('Savings goal (AUD)') as HTMLInputElement
     const total = stored().completedGoals[0].totalAtReach as number

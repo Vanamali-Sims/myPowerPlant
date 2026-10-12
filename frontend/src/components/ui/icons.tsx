@@ -288,6 +288,17 @@ export function MicIcon(props: IconProps) {
   )
 }
 
+export function TrashIcon(props: IconProps) {
+  return (
+    <svg {...icon(props)}>
+      <path d="M5.5 7h13" />
+      <path d="M8 7V5.5h8V7" />
+      <path d="M7.5 7l.75 11h8.5l.75-11" />
+      <path d="M10 10.5v6M14 10.5v6" />
+    </svg>
+  )
+}
+
 export function CloseIcon(props: IconProps) {
   return (
     <svg {...icon(props)}>
