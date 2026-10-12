@@ -164,6 +164,16 @@ describe('first visit in the app', () => {
     expect(story()).toBeNull()
     const heading = screen.getByRole('heading', { level: 1, name: /Your battery could be/ })
     expect(document.activeElement).toBe(heading)
+
+    // The first-visit tutorial takes over from the story, then hands focus back.
+    // One frame finds the targets, the next places the dialog.
+    act(() => vi.advanceTimersByTime(20))
+    act(() => vi.advanceTimersByTime(20))
+    const tutorial = screen.getByRole('dialog', { name: 'Path' })
+    expect(document.querySelector('.app-under-intro')?.hasAttribute('inert')).toBe(true)
+    fireEvent.keyDown(tutorial, { key: 'Escape' })
+    expect(screen.queryByRole('dialog', { name: 'Path' })).toBeNull()
+    expect(document.activeElement).toBe(heading)
     expect(document.querySelector('.app-under-intro')?.hasAttribute('inert')).toBe(false)
   })
 

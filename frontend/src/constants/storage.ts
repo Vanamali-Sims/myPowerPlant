@@ -12,6 +12,9 @@ export const JOURNEY_STORAGE_KEY = 'mypowerplant.journey'
 /** Reminders downloaded from the Reminders tab, listed on the improve-flow profile. */
 export const REMINDERS_STORAGE_KEY = 'mypowerplant.reminders'
 
+/** Which flow tutorials were finished or skipped, so each shows once. */
+export const TUTORIAL_STORAGE_KEY = 'mypowerplant.tutorials'
+
 /** Reject a stored blob larger than this so a tampered key cannot fill the origin quota. */
 export const PROFILE_MAX_JSON_BYTES = 8192
 
