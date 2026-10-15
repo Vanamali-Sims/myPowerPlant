@@ -35,7 +35,7 @@ export const TUTORIAL_STEPS: Record<TutorialFlow, TutorialStep[]> = {
     {
       id: 'path',
       target: TUTORIAL_TARGETS.path,
-      title: 'Path',
+      title: 'Role',
       body: 'Switch to improving your setup, or start over on this device. Nothing changes until you confirm.',
       placement: 'right',
     },
@@ -58,7 +58,7 @@ export const TUTORIAL_STEPS: Record<TutorialFlow, TutorialStep[]> = {
     {
       id: 'path',
       target: TUTORIAL_TARGETS.path,
-      title: 'Path',
+      title: 'Role',
       body: 'Switch to exploring VPPs, or start over on this device. Nothing changes until you confirm.',
       placement: 'right',
     },
@@ -82,6 +82,7 @@ export const TUTORIAL_COPY = {
 
 /** The robot in the bottom corner and its menu. */
 export const ASSISTANT_COPY = {
+  boltName: 'Bolt',
   menuLabel: 'Assistant',
   actions: 'Actions',
   tutorial: 'Tutorial',

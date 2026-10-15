@@ -91,3 +91,40 @@
 .flow-controls .callout {
   margin-top: 1rem;
 }
+
+.flow-controls__confirm {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+}
+
+.flow-controls__confirm-title {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 1rem;
+  font-weight: 600;
+  line-height: 1.35;
+}
+
+.flow-controls__confirm-body {
+  margin: 0;
+  font-size: 0.88rem;
+  line-height: 1.45;
+  color: var(--ink-secondary);
+}
+
+.flow-controls__confirm-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.15rem;
+}
+
+.flow-controls--dialog .flow-controls__confirm-actions {
+  flex-direction: column;
+  align-items: stretch;
+}
+
+.flow-controls--dialog .flow-controls__confirm-actions .ui-btn {
+  width: 100%;
+}

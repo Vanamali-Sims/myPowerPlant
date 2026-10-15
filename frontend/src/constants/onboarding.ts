@@ -46,35 +46,43 @@ export const BRAND_INTRO = {
   skipHint: 'Click anywhere to skip',
 } as const
 
-/** Screen 2: "Which describes you?" choice. */
+/** How long Bolt's centre hello stays up before fading away (first visit only). */
+export const BOLT_HELLO_DISPLAY_MS = 4_500
+
+/** Screen 2: split path choice (new to VPPs vs already in one). */
 export const PATH_CHOICE = {
-  title: 'Which describes you?',
+  title: 'Choose a path',
   replay: 'Replay intro',
+  /** Spoken by Bolt after the logo lands, then swapped on hover. */
+  bolt: {
+    name: 'Bolt',
+    hello: "Hi, I'm Bolt — I'll be showing you around.",
+    explore: "Let's see how a VPP can help you save.",
+    improve: "Let's maximise what your VPP can offer before the next peak.",
+  },
   explore: {
     eyebrow: 'New to VPPs',
     title: ['Get started', 'with VPPs'],
-    body: 'See if a VPP is worth it, model your home and simulate savings, and get recommended plans.',
     action: 'Explore getting started',
   },
   improve: {
     eyebrow: 'Already in VPP',
-    title: ['Improve my', 'VPP experience'],
-    body: 'Try get reminders, goal tracker, and what if scenarios before peak events.',
+    title: ['Unlock my full', 'VPP potential'],
     action: 'Improve my setup',
   },
 } as const
 
 export const FLOW_CONTROLS = {
-  railLabel: 'Path',
-  title: 'Path & data on this device',
-  lede: 'Your answers and goals stay in this browser only. You can change path or wipe everything here.',
+  railLabel: 'Role',
+  title: 'Role & data on this device',
+  lede: 'Saved in this browser only. Switch role or reset to start over.',
   switchToExplore: 'Switch to exploring VPPs',
   switchToImprove: 'Switch to improving my VPP setup',
   resetAll: 'Reset everything on this device',
-  resetConfirmTitle: 'Reset all data on this device?',
-  resetConfirmBody:
-    'This clears your household profile, goals, and history on this device, then starts you from the beginning. We do not keep a server copy.',
+  resetConfirmTitle: 'Reset everything on this device?',
+  resetConfirmBody: 'Clears profile, goals, and history here. Nothing is kept on a server.',
   resetConfirmAction: 'Reset all data',
+  resetCancel: 'Cancel',
 }
 
 export const RECOMMENDATIONS_PAGE = {

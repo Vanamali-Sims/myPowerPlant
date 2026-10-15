@@ -94,6 +94,12 @@
 
 .tutorial__body {
   margin: 0 0 1rem;
+  padding: 0;
+  border: 0;
+}
+
+.tutorial__quote {
+  margin: 0;
   font-size: 0.95rem;
   line-height: 1.5;
   color: var(--ink-secondary);
