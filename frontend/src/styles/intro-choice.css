@@ -1,5 +1,5 @@
 /*
- * Screens 1 and 2: "Which describes you?" split, with the brand intro on top.
+ * Screens 1 and 2: path-choice split, with the brand intro on top.
  * The line-art story intro (.ic-intro--story) plays over the explore home.
  * Timings follow the designs; colours come from tokens.css, plus the intros'
  * warm highlight (--ic-glow) and sun gold (--ic-sun), which have no token.
@@ -36,7 +36,7 @@
   flex-direction: column;
   justify-content: center;
   gap: 18px;
-  padding: 310px clamp(24px, 6vw, 96px) 90px;
+  padding: 340px clamp(24px, 6vw, 96px) 90px;
   border: none;
   text-align: left;
   font: inherit;
@@ -103,9 +103,19 @@
   color: var(--accent-deep);
 }
 
-.ic-half--imp .ic-eyebrow,
-.ic-half--imp .ic-go {
+.ic-half--imp .ic-eyebrow {
   color: var(--terra-200);
+}
+
+.ic-half__stack {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  transition: transform 450ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.ic-half__stack.is-raised {
+  transform: translateY(-50px);
 }
 
 .ic-title {
@@ -115,34 +125,26 @@
   letter-spacing: -0.02em;
 }
 
-.ic-body {
-  max-width: 470px;
-  font-size: 18px;
-  line-height: 1.55;
-  color: var(--ink-soft);
+.ic-half__bolt {
+  margin-top: 36px;
 }
 
-.ic-half--imp .ic-body {
-  color: var(--paper-soft);
-}
-
-.ic-go {
-  display: inline-flex;
-  align-items: center;
-  gap: 10px;
-  margin-top: 8px;
-  font-size: 16px;
-  font-weight: 700;
-  color: var(--accent-deep);
-  opacity: 0;
-  transform: translateX(-8px);
-  transition: opacity 0.35s ease, transform 0.35s ease;
-}
-
-.ic-half:hover .ic-go,
-.ic-half:focus-visible .ic-go {
+.ic-split--explore .ic-half--new::before,
+.ic-split--explore .ic-half--new:focus-visible::before {
   opacity: 1;
-  transform: none;
+}
+
+.ic-split--improve .ic-half--imp::before,
+.ic-split--improve .ic-half--imp:focus-visible::before {
+  opacity: 1;
+}
+
+.ic-split--explore .ic-half--imp {
+  filter: brightness(0.78);
+}
+
+.ic-split--improve .ic-half--new {
+  filter: brightness(0.93) saturate(0.9);
 }
 
 .ic-arrow,
@@ -167,6 +169,119 @@
   text-align: center;
 }
 
+.ic-bolt-layer {
+  position: fixed;
+  left: 0;
+  top: 0;
+  z-index: 40;
+  pointer-events: none;
+  will-change: transform;
+}
+
+.ic-guide__tilt {
+  transform-origin: 26px 26px;
+}
+
+.ic-guide {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  opacity: 0;
+  transform: translateY(14px) scale(0.92);
+  pointer-events: none;
+}
+
+.ic-bolt-layer .ic-guide {
+  pointer-events: auto;
+  opacity: 1;
+  transform: none;
+}
+
+.ic-bolt-layer .ic-guide.is-in {
+  opacity: 0;
+  transform: translateY(14px) scale(0.92);
+  animation: ic-guide-in 0.65s cubic-bezier(0.3, 1.3, 0.5, 1) 0.08s forwards;
+}
+
+.ic-guide.is-in {
+  animation: ic-guide-in 0.65s cubic-bezier(0.3, 1.3, 0.5, 1) 0.08s forwards;
+}
+
+.ic-half__bolt .ic-guide {
+  opacity: 1;
+  transform: none;
+}
+
+.ic-guide__bot {
+  flex-shrink: 0;
+  filter: drop-shadow(0 8px 18px rgba(23, 50, 42, 0.22));
+}
+
+.ic-guide__say {
+  position: relative;
+  margin: 0;
+  max-width: min(420px, 68vw);
+  padding: 12px 20px 14px;
+  border-radius: var(--radius-pill);
+  background: var(--surface);
+  box-shadow: 0 10px 30px rgba(23, 50, 42, 0.12);
+  font-family: var(--font-display);
+  font-size: clamp(16px, 1.5vw, 20px);
+  line-height: 1.35;
+  color: var(--ink);
+  text-align: left;
+  overflow: visible;
+  cursor: default;
+}
+
+.ic-guide__say--anchored {
+  border-radius: 8px 26px 26px 26px;
+}
+
+.ic-guide__say--anchored::before {
+  display: none;
+}
+
+.ic-guide__say:not(.ic-guide__say--anchored)::before {
+  content: '';
+  position: absolute;
+  left: -5px;
+  top: 50%;
+  width: 12px;
+  height: 12px;
+  background: var(--surface);
+  transform: translateY(-50%) rotate(45deg);
+}
+
+.ic-guide__inner {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  animation: ic-guide-inner-out 120ms ease;
+}
+
+.ic-guide__line {
+  margin: 0;
+  display: block;
+}
+
+.ic-guide__line.is-swap-in {
+  animation: ic-guide-line-in 200ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.ic-guide__cta.is-swap-in-delayed {
+  animation: ic-guide-line-in 200ms cubic-bezier(0.22, 1, 0.36, 1) 80ms both;
+}
+
+.ic-guide__cta {
+  margin-top: 2px;
+}
+
+.ic-guide__say[role='button']:focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: 3px;
+}
+
 /* The app logo already has its own rounded square, so the box only clips and sizes it. */
 .ic-mark {
   display: flex;
@@ -189,28 +304,6 @@
 /* The intro's own logo lands here at the end, so this one waits until the intro clears. */
 .ic-mark.is-awaiting-intro {
   visibility: hidden;
-}
-
-.ic-question {
-  margin: 0;
-  padding: 10px 20px;
-  border-radius: var(--radius-pill);
-  background: var(--surface);
-  box-shadow: 0 10px 30px rgba(23, 50, 42, 0.12);
-  font-family: var(--font-display);
-  font-size: 22px;
-  font-weight: 400;
-  line-height: 1.3;
-  color: var(--ink);
-}
-
-.ic-question:focus {
-  outline: none;
-}
-
-.ic-question:focus-visible {
-  outline: 3px solid var(--accent);
-  outline-offset: 3px;
 }
 
 .ic-replay {
@@ -916,6 +1009,37 @@
   }
 }
 
+@keyframes ic-guide-in {
+  from {
+    opacity: 0;
+    transform: translateY(16px) scale(0.92);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes ic-guide-inner-out {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0.35;
+  }
+}
+
+@keyframes ic-guide-line-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
 @keyframes ic-breathe {
   0%,
   100% {
@@ -934,7 +1058,7 @@
   }
 
   .ic-half--new {
-    padding-top: 300px;
+    padding-top: 280px;
   }
 
   .ic-half--imp {
@@ -942,8 +1066,7 @@
     padding-bottom: 120px;
   }
 
-  .ic-go {
-    opacity: 1;
+  .ic-half__stack.is-raised {
     transform: none;
   }
 }
@@ -956,7 +1079,22 @@
 
   .ic-half,
   .ic-half::before,
-  .ic-go {
+  .ic-half__stack,
+  .ic-bolt-layer,
+  .ic-guide.is-in,
+  .ic-guide__say,
+  .ic-guide__cta {
     transition: none;
+    animation: none;
+  }
+
+  .ic-guide.is-in,
+  .ic-half__bolt .ic-guide {
+    opacity: 1;
+    transform: none;
+  }
+
+  .ic-page--reduced-motion .ic-bolt-layer {
+    transition: opacity 150ms ease;
   }
 }

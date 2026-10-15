@@ -233,9 +233,9 @@ export function Tutorial({ steps, onClose, fallbackFocus }: Props) {
             </h2>
           </div>
         </div>
-        <p id={bodyId} className="tutorial__body">
-          {step.body}
-        </p>
+        <blockquote id={bodyId} className="tutorial__body">
+          <p className="tutorial__quote">&ldquo;{step.body}&rdquo;</p>
+        </blockquote>
         <div className="tutorial__actions">
           <Button variant="ghost" className="tutorial__skip" onClick={() => onClose('skipped')}>
             {TUTORIAL_COPY.skip}

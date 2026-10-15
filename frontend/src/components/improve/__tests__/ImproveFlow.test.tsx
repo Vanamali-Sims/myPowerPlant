@@ -164,10 +164,13 @@ describe('improve home', () => {
     expect(dashboard.getByText('Set a savings and a carbon goal to grow your tree.')).toBeTruthy()
     expect(dashboard.getByText('Add your setup to fill in your dashboard.')).toBeTruthy()
 
+    for (const label of ['What if', 'Goals', 'Reminders']) {
+      expect(rail().getByRole('button', { name: label }).className).toContain('is-locked')
+    }
     for (const name of [
-      'Open What if: test a scenario',
-      'Open Goals: set and track goals',
-      'Open Reminders: never miss an event',
+      'Open What if: test a scenario. Complete your setup to unlock.',
+      'Open Goals: set and track goals. Complete your setup to unlock.',
+      'Open Reminders: never miss an event. Complete your setup to unlock.',
     ]) {
       expect(screen.getByRole('link', { name })).toBeTruthy()
     }
@@ -218,11 +221,21 @@ describe('improve home', () => {
   })
 })
 
+describe('locked improve features', () => {
+  it('trembles the rail and shows Bolt when Goals is tapped before setup', async () => {
+    const user = renderApp()
+    await user.click(rail().getByRole('button', { name: 'Goals' }))
+    expect(rail().getByRole('button', { name: 'Goals' }).className).toContain('is-trembling')
+    expect(screen.getByText(/complete your profile to unlock those features/i)).toBeTruthy()
+    expect(screen.queryByRole('heading', { level: 1, name: 'Your home and VPP' })).toBeNull()
+  })
+})
+
 describe('access-features form', () => {
   // Types into every field of the form, so it gets more time when the whole suite runs at once.
   it('opens before a feature when answers are missing, then lands on that feature', async () => {
     const user = renderApp()
-    await user.click(screen.getByRole('link', { name: 'Open Goals: set and track goals' }))
+    await user.click(screen.getByRole('button', { name: 'Access Features' }))
     expect(screen.getByRole('heading', { level: 1, name: 'Your home and VPP' })).toBeTruthy()
 
     await uploadBillPdf(user)
@@ -235,7 +248,8 @@ describe('access-features form', () => {
     await user.selectOptions(screen.getByLabelText('Which VPP joined'), 'Not listed')
     await user.click(screen.getByRole('button', { name: 'Save changes' }))
 
-    // Goals loads lazily, which can take a moment when the whole suite runs at once.
+    expect(screen.getByRole('heading', { level: 1, name: 'Unlock the full potential of your VPP.' })).toBeTruthy()
+    await user.click(rail().getByRole('button', { name: 'Goals' }))
     expect(
       await screen.findByRole('heading', { level: 1, name: 'Grow your savings. Grow your tree.' }, { timeout: 5000 }),
     ).toBeTruthy()
@@ -272,7 +286,7 @@ describe('answers shared between flows', () => {
   it('keeps the answers when switching to the explore flow', async () => {
     saveProfile(ready(), 'improve')
     const user = renderApp()
-    await user.click(rail().getByRole('button', { name: 'Path' }))
+    await user.click(rail().getByRole('button', { name: 'Role' }))
     await user.click(screen.getByRole('button', { name: 'Switch to exploring VPPs' }))
     expect(loadProfile()).toMatchObject({ vppProvider: 'Tesla Energy Plan', postcode: '3101' })
   })

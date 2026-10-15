@@ -16,6 +16,12 @@ export const IMPROVE_HERO = {
   hint: 'Get started in just 2 minutes.',
 } as const
 
+/** Shown by Bolt when What if, Goals, or Reminders are tapped before setup is complete. */
+export const IMPROVE_LOCKED_FEATURES = {
+  boltMessage:
+    "You've got to complete your profile to unlock those features and your full potential, mate.",
+} as const
+
 /** Used where a profile answer has not been given yet. */
 export const IMPROVE_SETUP_CARD = {
   missing: 'Not added yet',

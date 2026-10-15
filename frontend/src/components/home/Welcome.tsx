@@ -65,7 +65,7 @@ export function Welcome({ hasProfile, onGetStarted, onViewDashboard, onLogoClick
               {WELCOME_HERO.titleLead} <em>{WELCOME_HERO.titleEmphasis}</em>
             </h1>
             <p className="welcome-hero__lede">{WELCOME_HERO.lede}</p>
-            <Button variant="primary" className="welcome__cta" onClick={simulate}>
+            <Button variant="primary" className="welcome__cta onboarding-cta-nudge" onClick={simulate}>
               {WELCOME_HERO.cta}
             </Button>
           </div>

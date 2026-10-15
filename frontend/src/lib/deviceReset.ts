@@ -6,6 +6,7 @@ import { clearGoals } from './goals/goalsStorage'
 import { clearJourney } from './journeyStorage'
 import { clearStoredProfile } from './profileStorage'
 import { clearReminders } from './reminderStorage'
+import { clearBoltHelloSeen } from './boltIntroStorage'
 import { clearTutorialSeen } from './tutorialStorage'
 
 export function clearAllDeviceData(): void {
@@ -14,4 +15,5 @@ export function clearAllDeviceData(): void {
   clearReminders()
   clearJourney()
   clearTutorialSeen()
+  clearBoltHelloSeen()
 }
