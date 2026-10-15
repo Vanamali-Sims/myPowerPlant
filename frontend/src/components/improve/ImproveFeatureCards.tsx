@@ -1,6 +1,8 @@
 import { IMPROVE_FEATURES, type ImproveFeatureId } from '../../constants/improve'
+import { LockIcon } from '../ui/icons'
 
 type Props = {
+  locked?: boolean
   onOpenFeature: (id: ImproveFeatureId) => void
 }
 
@@ -119,22 +121,29 @@ function Preview({ id }: { id: ImproveFeatureId }) {
   return <RemindersPreview />
 }
 
-export function ImproveFeatureCards({ onOpenFeature }: Props) {
+export function ImproveFeatureCards({ locked = false, onOpenFeature }: Props) {
   return (
     <ul className="improve-feature-cards">
       {IMPROVE_FEATURES.map((feature) => (
         <li key={feature.id} className="improve-feature-cards__item">
           <a
-            className={`improve-feature-card improve-feature-card--${feature.id}`}
+            className={`improve-feature-card improve-feature-card--${feature.id}${
+              locked ? ' improve-feature-card--locked' : ''
+            }`}
             href={`#${feature.id}`}
             onClick={(event) => {
               event.preventDefault()
               onOpenFeature(feature.id)
             }}
-            aria-label={feature.ariaLabel}
+            aria-label={locked ? `${feature.ariaLabel}. Complete your setup to unlock.` : feature.ariaLabel}
           >
             <div className="improve-feature-card__preview" aria-hidden="true">
               <Preview id={feature.id} />
+              {locked ? (
+                <span className="improve-feature-card__lock">
+                  <LockIcon width={22} height={22} />
+                </span>
+              ) : null}
             </div>
             <div className="improve-feature-card__body">
               <div className="improve-feature-card__head">

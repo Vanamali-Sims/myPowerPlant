@@ -63,7 +63,7 @@ describe('unsaved setup answers', () => {
     await user.type(postcode, '1234')
 
     // Leave for the improve flow without finishing.
-    await user.click(rail().getByRole('button', { name: 'Path' }))
+    await user.click(rail().getByRole('button', { name: 'Role' }))
     await user.click(screen.getByRole('button', { name: 'Switch to improving my VPP setup' }))
     await user.click(rail().getByRole('button', { name: 'What if' }))
 

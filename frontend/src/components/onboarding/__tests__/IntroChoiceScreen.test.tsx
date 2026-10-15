@@ -259,11 +259,11 @@ describe('first visit in the app', () => {
 
     // Switch to improve, then reset everything from Path.
     const rail = () => within(screen.getByRole('complementary', { name: 'App' }))
-    fireEvent.click(rail().getByRole('button', { name: 'Path' }))
+    fireEvent.click(rail().getByRole('button', { name: 'Role' }))
     fireEvent.click(screen.getByRole('button', { name: 'Switch to improving my VPP setup' }))
     act(() => vi.advanceTimersByTime(100))
     expect(story()).toBeNull()
-    fireEvent.click(rail().getByRole('button', { name: 'Path' }))
+    fireEvent.click(rail().getByRole('button', { name: 'Role' }))
     fireEvent.click(screen.getByRole('button', { name: 'Reset everything on this device' }))
     fireEvent.click(screen.getByRole('button', { name: 'Reset all data' }))
 
@@ -296,10 +296,10 @@ describe('first visit in the app', () => {
     // One frame finds the targets, the next places the dialog.
     act(() => vi.advanceTimersByTime(20))
     act(() => vi.advanceTimersByTime(20))
-    const tutorial = screen.getByRole('dialog', { name: 'Path' })
+    const tutorial = screen.getByRole('dialog', { name: 'Role' })
     expect(document.querySelector('.app-under-intro')?.hasAttribute('inert')).toBe(true)
     fireEvent.keyDown(tutorial, { key: 'Escape' })
-    expect(screen.queryByRole('dialog', { name: 'Path' })).toBeNull()
+    expect(screen.queryByRole('dialog', { name: 'Role' })).toBeNull()
     expect(document.activeElement).toBe(heading)
     expect(document.querySelector('.app-under-intro')?.hasAttribute('inert')).toBe(false)
   })

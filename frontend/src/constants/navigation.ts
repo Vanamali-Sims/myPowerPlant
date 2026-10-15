@@ -11,7 +11,7 @@ import {
   DashboardIcon,
   HomeIcon,
   ProfileIcon,
-  ResetIcon,
+  RoleIcon,
   ShieldIcon,
   TargetIcon,
 } from '../components/ui/icons'
@@ -51,8 +51,8 @@ export const MATT_NAV: NavItem[] = [
 export const PATH_RAIL_ITEM: NavItem = {
   id: 'path',
   label: FLOW_CONTROLS.railLabel,
-  icon: ResetIcon,
-  unavailableMessage: 'Path controls are not available here.',
+  icon: RoleIcon,
+  unavailableMessage: 'Role controls are not available here.',
 }
 
 export const PROFILE_RAIL_ITEM: NavItem = {

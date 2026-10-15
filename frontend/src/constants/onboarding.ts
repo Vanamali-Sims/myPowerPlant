@@ -73,9 +73,9 @@ export const PATH_CHOICE = {
 } as const
 
 export const FLOW_CONTROLS = {
-  railLabel: 'Path',
-  title: 'Path & data on this device',
-  lede: 'Your answers and goals stay in this browser only. You can change path or wipe everything here.',
+  railLabel: 'Role',
+  title: 'Role & data on this device',
+  lede: 'Your answers and goals stay in this browser only. You can change role or wipe everything here.',
   switchToExplore: 'Switch to exploring VPPs',
   switchToImprove: 'Switch to improving my VPP setup',
   resetAll: 'Reset everything on this device',

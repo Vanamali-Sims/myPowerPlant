@@ -337,7 +337,8 @@ function App() {
     !tutorialSeen[tutorialPageFlow] &&
     !tutorialUnavailable.includes(tutorialPageFlow) &&
     !exploreIntroPlaying &&
-    !flowControlsOpen
+    !flowControlsOpen &&
+    (tutorialPageFlow !== 'improve' || improveReady)
       ? tutorialPageFlow
       : null
   const tutorialFlow = tutorialReplay ?? tutorialAutoFlow
@@ -404,6 +405,7 @@ function App() {
           showRail={showRail}
           active={shellActive()}
           hasProfile={hasProfile}
+          featuresReady={improveReady}
           onNavigate={goTo}
           onLogoClick={goHome}
           onOpenPathControls={showPathRail ? () => setFlowControlsOpen(true) : undefined}

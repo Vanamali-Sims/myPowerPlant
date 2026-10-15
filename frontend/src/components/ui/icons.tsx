@@ -210,6 +210,16 @@ export function ResetIcon(props: IconProps) {
   )
 }
 
+/** Two-way arrows for switching explore vs improve role on the rail. */
+export function RoleIcon(props: IconProps) {
+  return (
+    <svg {...icon(props)}>
+      <path d="M7 9h10l-3-3" />
+      <path d="M17 15H7l3 3" />
+    </svg>
+  )
+}
+
 export function CheckIcon(props: IconProps) {
   return (
     <svg {...icon(props)}>

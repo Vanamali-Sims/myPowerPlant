@@ -24,6 +24,8 @@ type Props = {
   active: AppNavId | null
   showRail: boolean
   hasProfile: boolean
+  /** Rain improve flow: What if, Goals, and Reminders unlock after setup is complete. */
+  featuresReady?: boolean
   onNavigate: (id: AppNavId) => void
   onLogoClick: () => void
   onOpenPathControls?: () => void
@@ -42,6 +44,7 @@ export function AppShell({
   active,
   showRail,
   hasProfile,
+  featuresReady = true,
   onNavigate,
   onLogoClick,
   onOpenPathControls,
@@ -53,9 +56,19 @@ export function AppShell({
   const [openPopover, setOpenPopover] = useTransientPopover()
   const { setRef: setNavRef, box: navBox } = useSlidingHighlight(active, '.app-rail__item.is-active')
 
+  function isImproveFeature(id: AppNavId) {
+    return id === 'whatif' || id === 'goals' || id === 'reminders'
+  }
+
+  function isFeatureLocked(id: AppNavId) {
+    return journey === 'rain' && !featuresReady && isImproveFeature(id)
+  }
+
   function isAvailable(id: AppNavId) {
-    // Rain features open the access-features form first when answers are missing.
-    if (journey === 'rain') return true
+    if (journey === 'rain') {
+      if (isImproveFeature(id)) return featuresReady
+      return true
+    }
     if (id === 'path') return true
     if (id === 'home' || id === 'dashboard' || id === 'recommendations') return true
     return hasProfile
@@ -68,6 +81,11 @@ export function AppShell({
       onOpenPathControls()
       return
     }
+    if (isFeatureLocked(item.id)) {
+      setOpenPopover(null)
+      onNavigate(item.id)
+      return
+    }
     if (!isAvailable(item.id)) {
       setOpenPopover(item.id)
       return
@@ -76,7 +94,7 @@ export function AppShell({
     onNavigate(item.id)
   }
 
-  /** Rail items the tutorial points at: Path, and the improve features as one group. */
+  /** Rail items the tutorial points at: Role, and the improve features as one group. */
   function tourTarget(id: AppNavId) {
     if (id === 'path') return TUTORIAL_TARGETS.path
     if (journey === 'rain' && (id === 'whatif' || id === 'goals' || id === 'reminders')) {
@@ -87,6 +105,7 @@ export function AppShell({
 
   function renderRailItem(item: NavItem, activeId: AppNavId | null) {
     const Icon = item.icon
+    const locked = isFeatureLocked(item.id)
     const available = isAvailable(item.id)
     return (
       <div key={item.id} className="popover-anchor app-rail__item-wrap">
@@ -94,11 +113,11 @@ export function AppShell({
           type="button"
           className={`app-rail__item${activeId === item.id ? ' is-active' : ''}${
             available ? '' : ' is-unavailable'
-          }`}
+          }${locked ? ' is-locked' : ''}`}
           onClick={() => handleClick(item)}
           aria-current={activeId === item.id ? 'page' : undefined}
-          aria-disabled={!available}
-          title={available ? item.label : item.unavailableMessage}
+          aria-disabled={!available && !locked}
+          title={locked ? item.unavailableMessage : available ? item.label : item.unavailableMessage}
           data-tour={tourTarget(item.id)}
         >
           <Icon />

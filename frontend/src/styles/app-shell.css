@@ -142,6 +142,11 @@
     cursor: not-allowed;
   }
 
+  .app-rail__item.is-locked {
+    opacity: 0.55;
+    cursor: pointer;
+  }
+
   .app-rail__item:hover {
     color: var(--on-deep);
     background: var(--euc-800);

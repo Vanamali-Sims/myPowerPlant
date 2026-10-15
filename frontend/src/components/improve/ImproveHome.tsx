@@ -272,7 +272,7 @@ export function ImproveHome({ profile, bundle, onOpenForm, onOpenFeature, onLogo
           <h2 id="improve-features-title" className="improve-features-band__title" tabIndex={-1}>
             {IMPROVE_FEATURES_HEADING.title}
           </h2>
-          <ImproveFeatureCards onOpenFeature={onOpenFeature} />
+          <ImproveFeatureCards locked={!ready} onOpenFeature={onOpenFeature} />
         </div>
       </section>
     </div>
