@@ -15,6 +15,9 @@ export const REMINDERS_STORAGE_KEY = 'mypowerplant.reminders'
 /** Which flow tutorials were finished or skipped, so each shows once. */
 export const TUTORIAL_STORAGE_KEY = 'mypowerplant.tutorials'
 
+/** Bolt's one-time hello on the path-choice screen (this browser session). */
+export const BOLT_HELLO_STORAGE_KEY = 'mypowerplant.boltHello'
+
 /** Reject a stored blob larger than this so a tampered key cannot fill the origin quota. */
 export const PROFILE_MAX_JSON_BYTES = 8192
 

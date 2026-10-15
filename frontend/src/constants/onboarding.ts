@@ -46,20 +46,28 @@ export const BRAND_INTRO = {
   skipHint: 'Click anywhere to skip',
 } as const
 
+/** How long Bolt's centre hello stays up before fading away (first visit only). */
+export const BOLT_HELLO_DISPLAY_MS = 4_500
+
 /** Screen 2: split path choice (new to VPPs vs already in one). */
 export const PATH_CHOICE = {
   title: 'Choose a path',
   replay: 'Replay intro',
+  /** Spoken by Bolt after the logo lands, then swapped on hover. */
+  bolt: {
+    name: 'Bolt',
+    hello: "Hi, I'm Bolt — I'll be showing you around.",
+    explore: "Let's see if a VPP is worth it for your home.",
+    improve: "Let's get more from your VPP before the next peak.",
+  },
   explore: {
     eyebrow: 'New to VPPs',
     title: ['Get started', 'with VPPs'],
-    body: 'See if a VPP is worth it, model your home and simulate savings, and get recommended plans.',
     action: 'Explore getting started',
   },
   improve: {
     eyebrow: 'Already in VPP',
     title: ['Improve my', 'VPP experience'],
-    body: 'Try get reminders, goal tracker, and what if scenarios before peak events.',
     action: 'Improve my setup',
   },
 } as const

@@ -11,6 +11,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import App from '../../../App'
 import { loadJourney } from '../../../lib/journeyStorage'
 import { markTutorialSeen } from '../../../lib/tutorialStorage'
+import { BOLT_HELLO_DISPLAY_MS } from '../../../constants/onboarding'
 import { EXPLORE_INTRO_MS } from '../ExploreIntro'
 import { IntroChoiceScreen } from '../IntroChoiceScreen'
 
@@ -18,11 +19,27 @@ let reduce = false
 
 beforeEach(() => {
   reduce = false
+  localStorage.clear()
+  sessionStorage.clear()
   vi.useFakeTimers()
+  vi.stubGlobal(
+    'ResizeObserver',
+    class {
+      observe() {}
+      unobserve() {}
+      disconnect() {}
+    },
+  )
   vi.stubGlobal(
     'matchMedia',
     vi.fn((query: string) => ({
-      matches: query.includes('reduced-motion') ? reduce : false,
+      matches: query.includes('reduced-motion')
+        ? reduce
+        : query.includes('max-width: 767px')
+          ? false
+          : query.includes('hover')
+            ? true
+            : false,
       media: query,
       addEventListener: vi.fn(),
       removeEventListener: vi.fn(),
@@ -100,6 +117,7 @@ describe('Screen 1: the intro', () => {
     expect(onIntroDone).toHaveBeenCalledOnce()
     expect(document.activeElement).toBe(heading())
     expect(document.querySelector('.ic-split')?.hasAttribute('inert')).toBe(false)
+    expect(screen.getByText(/Hi, I'm Bolt/)).toBeTruthy()
   })
 
   it.each([
@@ -139,17 +157,63 @@ describe('Screen 2: path choice', () => {
     const { onExplore, onImprove } = renderScreen(false)
     const explore = screen.getByRole('button', { name: /Get started\s*with VPPs/ })
     expect(within(explore).getByText('New to VPPs')).toBeTruthy()
-    expect(explore.textContent).toContain('See if a VPP is worth it')
-    expect(explore.textContent).toContain('Explore getting started')
     fireEvent.click(explore)
     expect(onExplore).toHaveBeenCalledOnce()
 
     const improve = screen.getByRole('button', { name: /Improve my\s*VPP experience/ })
     expect(within(improve).getByText('Already in VPP')).toBeTruthy()
-    expect(improve.textContent).toContain('Try get reminders')
-    expect(improve.textContent).toContain('Improve my setup')
     fireEvent.click(improve)
     expect(onImprove).toHaveBeenCalledOnce()
+  })
+
+  it('introduces Bolt after the logo, then he speaks a call to action on each side', () => {
+    renderScreen(false)
+    act(() => vi.advanceTimersByTime(0))
+    expect(screen.getByText(/Hi, I'm Bolt — I'll be showing you around/)).toBeTruthy()
+
+    fireEvent.pointerEnter(screen.getByRole('button', { name: /Get started\s*with VPPs/ }))
+    act(() => vi.advanceTimersByTime(150))
+    expect(screen.getByText("Let's see if a VPP is worth it for your home.")).toBeTruthy()
+    expect(screen.getByRole('link', { name: /Explore getting started/ })).toBeTruthy()
+
+    fireEvent.pointerEnter(screen.getByRole('button', { name: /Improve my\s*VPP experience/ }))
+    act(() => vi.advanceTimersByTime(150))
+    expect(screen.getByText("Let's get more from your VPP before the next peak.")).toBeTruthy()
+    expect(screen.getByRole('link', { name: /Improve my setup/ })).toBeTruthy()
+  })
+
+  it('keeps Bolt hidden while the intro is still playing', () => {
+    renderScreen()
+    expect(screen.queryByText(/Hi, I'm Bolt/)).toBeNull()
+    expect(document.querySelector('.ic-bolt-layer')).toBeNull()
+  })
+
+  it('resets Bolt when replaying the intro without showing the hello again', () => {
+    renderScreen(false)
+    fireEvent.pointerEnter(screen.getByRole('button', { name: /Get started\s*with VPPs/ }))
+    act(() => vi.advanceTimersByTime(150))
+    expect(screen.getByText("Let's see if a VPP is worth it for your home.")).toBeTruthy()
+    fireEvent.click(screen.getByRole('button', { name: 'Replay intro' }))
+    expect(screen.queryByText("Let's see if a VPP is worth it for your home.")).toBeNull()
+    fireEvent.keyDown(intro() as HTMLElement, { key: 'Escape' })
+    act(() => vi.advanceTimersByTime(1_100))
+    expect(screen.queryByText(/Hi, I'm Bolt — I'll be showing you around/)).toBeNull()
+    expect(document.querySelector('.ic-bolt-layer')).toBeNull()
+  })
+
+  it('hides the centre hello after a few seconds on first visit', () => {
+    renderScreen(false)
+    act(() => vi.advanceTimersByTime(0))
+    expect(screen.getByText(/Hi, I'm Bolt — I'll be showing you around/)).toBeTruthy()
+    act(() => vi.advanceTimersByTime(BOLT_HELLO_DISPLAY_MS))
+    expect(screen.queryByText(/Hi, I'm Bolt — I'll be showing you around/)).toBeNull()
+    expect(document.querySelector('.ic-bolt-layer')).toBeNull()
+  })
+
+  it('does not show the centre hello when it was already seen this session', () => {
+    sessionStorage.setItem('mypowerplant.boltHello', '1')
+    renderScreen(false)
+    expect(screen.queryByText(/Hi, I'm Bolt — I'll be showing you around/)).toBeNull()
   })
 })
 

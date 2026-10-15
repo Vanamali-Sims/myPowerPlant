@@ -1,14 +1,17 @@
 /**
  * Screens 1 and 2: the brand intro (orbiting homes, the logo, and the
  * MyPowerPlant wordmark) plays over the path-choice split. The
- * logo then lands on the choice header.
+ * logo then lands on the choice header, and Bolt introduces himself.
  *
  * The intro can be skipped with a click, Enter, Space, or Escape, and replayed.
  * With reduced motion it does not play at all.
  */
-import { useRef, type CSSProperties } from 'react'
-import { BRAND_INTRO, PATH_CHOICE } from '../../constants/onboarding'
+import { useCallback, useEffect, useRef, useState, type CSSProperties } from 'react'
+import { BOLT_HELLO_DISPLAY_MS, BRAND_INTRO, PATH_CHOICE } from '../../constants/onboarding'
+import { hasSeenBoltHello, markBoltHelloSeen } from '../../lib/boltIntroStorage'
 import { MyPowerPlantMark } from '../ui/MyPowerPlantMark'
+import { PathChoiceBolt, PathChoiceBoltFloating } from './PathChoiceBolt'
+import { useBoltHintState, usePathChoiceBoltGuide } from './usePathChoiceBoltGuide'
 import { useIntroPlayback } from './useIntroPlayback'
 
 type Props = {
@@ -53,14 +56,6 @@ function delay(seconds: number, duration?: number): CSSProperties {
   return duration === undefined
     ? { animationDelay: `${seconds}s` }
     : { animationDelay: `${seconds}s`, animationDuration: `${duration}s` }
-}
-
-function Arrow() {
-  return (
-    <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" className="ic-arrow">
-      <path d="M5 12h14M13 6l6 6-6 6" />
-    </svg>
-  )
 }
 
 /** The orbiting homes, the pulses, the logo, the wordmark, and the slogan. Decorative. */
@@ -111,6 +106,12 @@ function BrandIntro() {
   )
 }
 
+function liveMessage(hint: 'idle' | 'explore' | 'improve') {
+  if (hint === 'explore') return `${PATH_CHOICE.bolt.explore} ${PATH_CHOICE.explore.action}`
+  if (hint === 'improve') return `${PATH_CHOICE.bolt.improve} ${PATH_CHOICE.improve.action}`
+  return ''
+}
+
 /**
  * IntroChoiceScreen
  * @param props.playIntro - Whether the intro plays first
@@ -119,7 +120,7 @@ function BrandIntro() {
  * @returns JSX.Element
  *
  * While the intro shows, the choice underneath is inert so focus stays on the
- * intro. When it ends, focus moves to the path-choice heading.
+ * intro. When it ends, Bolt introduces himself and focus moves to the heading.
  */
 export function IntroChoiceScreen({ playIntro, onIntroDone, onExplore, onImprove }: Props) {
   const headingRef = useRef<HTMLHeadingElement>(null)
@@ -131,44 +132,160 @@ export function IntroChoiceScreen({ playIntro, onIntroDone, onExplore, onImprove
     focusAfter: () => headingRef.current,
   })
 
+  const { committed, setPointerHint, setFocusHint, releaseFocus, resetHints } = useBoltHintState({
+    resetKey: run,
+  })
+
+  const [centerHello, setCenterHello] = useState(false)
+
+  const dismissCenterHello = useCallback(() => {
+    setCenterHello((showing) => {
+      if (showing) markBoltHelloSeen()
+      return false
+    })
+  }, [])
+
+  const boltEnabled = !showIntro
+
+  // Centre hello runs once per device, right after the logo intro hands off to the choice.
+  useEffect(() => {
+    if (showIntro) {
+      setCenterHello(false)
+      return
+    }
+    if (hasSeenBoltHello()) return
+    setCenterHello(true)
+  }, [showIntro])
+
+  useEffect(() => {
+    if (!centerHello || committed !== 'idle') return
+    const timer = window.setTimeout(dismissCenterHello, BOLT_HELLO_DISPLAY_MS)
+    return () => window.clearTimeout(timer)
+  }, [centerHello, committed, dismissCenterHello])
+
+  function onPointerHint(hint: 'idle' | 'explore' | 'improve') {
+    if (hint !== 'idle') dismissCenterHello()
+    setPointerHint(hint)
+  }
+
+  function onFocusHint(hint: 'explore' | 'improve') {
+    dismissCenterHello()
+    setFocusHint(hint)
+  }
+  const {
+    markRef,
+    exploreStackRef,
+    improveStackRef,
+    guideRef,
+    translate,
+    tilt,
+    travel,
+    reducedMotion,
+    staticLayout,
+  } = usePathChoiceBoltGuide({ enabled: boltEnabled, committed })
+
+  const splitClass =
+    committed === 'explore'
+      ? 'ic-split--explore'
+      : committed === 'improve'
+        ? 'ic-split--improve'
+        : ''
+
+  function handleReplay() {
+    resetHints()
+    setCenterHello(false)
+    replay()
+  }
+
+  const showFloatingBolt =
+    boltEnabled && !staticLayout && (committed !== 'idle' || centerHello)
+  const boltHint = committed !== 'idle' ? committed : 'idle'
+
   return (
-    <div className="ic-page">
-      <div className="ic-split" inert={showIntro || undefined}>
-        <button type="button" className="ic-half ic-half--new" onClick={onExplore}>
-          <span className="ic-eyebrow">{PATH_CHOICE.explore.eyebrow}</span>
-          <span className="ic-title">
-            {PATH_CHOICE.explore.title[0]}
-            <br />
-            {PATH_CHOICE.explore.title[1]}
-          </span>
-          <span className="ic-more">
-            <span className="ic-body">{PATH_CHOICE.explore.body}</span>
-            <span className="ic-go">
-              {PATH_CHOICE.explore.action}
-              <Arrow />
+    <div className={`ic-page${reducedMotion ? ' ic-page--reduced-motion' : ''}`}>
+      <div
+        className={`ic-split ${splitClass}`.trim()}
+        inert={showIntro || undefined}
+        onPointerLeave={() => onPointerHint('idle')}
+      >
+        <button
+          type="button"
+          className="ic-half ic-half--new"
+          onClick={onExplore}
+          onPointerEnter={() => onPointerHint('explore')}
+          onFocus={() => onFocusHint('explore')}
+          onBlur={() => {
+            window.setTimeout(() => {
+              const active = document.activeElement
+              if (guideRef.current?.contains(active)) return
+              releaseFocus('explore')
+            }, 0)
+          }}
+        >
+          <div
+            ref={exploreStackRef}
+            className={`ic-half__stack${committed === 'explore' ? ' is-raised' : ''}`}
+          >
+            <span className="ic-eyebrow">{PATH_CHOICE.explore.eyebrow}</span>
+            <span className="ic-title">
+              {PATH_CHOICE.explore.title[0]}
+              <br />
+              {PATH_CHOICE.explore.title[1]}
             </span>
-          </span>
+          </div>
+          {staticLayout ? (
+            <div className="ic-half__bolt">
+              <PathChoiceBolt
+                hint="explore"
+                anchored
+                smiling
+                onExplore={onExplore}
+                onImprove={onImprove}
+              />
+            </div>
+          ) : null}
         </button>
-        <button type="button" className="ic-half ic-half--imp" onClick={onImprove}>
-          <span className="ic-eyebrow">{PATH_CHOICE.improve.eyebrow}</span>
-          <span className="ic-title">
-            {PATH_CHOICE.improve.title[0]}
-            <br />
-            {PATH_CHOICE.improve.title[1]}
-          </span>
-          <span className="ic-more">
-            <span className="ic-body">{PATH_CHOICE.improve.body}</span>
-            <span className="ic-go">
-              {PATH_CHOICE.improve.action}
-              <Arrow />
+        <button
+          type="button"
+          className="ic-half ic-half--imp"
+          onClick={onImprove}
+          onPointerEnter={() => onPointerHint('improve')}
+          onFocus={() => onFocusHint('improve')}
+          onBlur={() => {
+            window.setTimeout(() => {
+              const active = document.activeElement
+              if (guideRef.current?.contains(active)) return
+              releaseFocus('improve')
+            }, 0)
+          }}
+        >
+          <div
+            ref={improveStackRef}
+            className={`ic-half__stack${committed === 'improve' ? ' is-raised' : ''}`}
+          >
+            <span className="ic-eyebrow">{PATH_CHOICE.improve.eyebrow}</span>
+            <span className="ic-title">
+              {PATH_CHOICE.improve.title[0]}
+              <br />
+              {PATH_CHOICE.improve.title[1]}
             </span>
-          </span>
+          </div>
+          {staticLayout ? (
+            <div className="ic-half__bolt">
+              <PathChoiceBolt
+                hint="improve"
+                anchored
+                smiling
+                onExplore={onExplore}
+                onImprove={onImprove}
+              />
+            </div>
+          ) : null}
         </button>
       </div>
 
       <div className="ic-header" inert={showIntro || undefined}>
-        {/* Hidden while the intro plays: the intro's logo shrinks onto this spot, then this takes over. */}
-        <span className={`ic-mark${showIntro ? ' is-awaiting-intro' : ''}`}>
+        <span ref={markRef} className={`ic-mark${showIntro ? ' is-awaiting-intro' : ''}`}>
           <MyPowerPlantMark width={48} height={48} className="ic-logo-img" />
         </span>
         <h1 ref={headingRef} tabIndex={-1} className="visually-hidden">
@@ -176,8 +293,30 @@ export function IntroChoiceScreen({ playIntro, onIntroDone, onExplore, onImprove
         </h1>
       </div>
 
+      {showFloatingBolt ? (
+        <>
+          <p className="visually-hidden" aria-live="polite">
+            {liveMessage(committed)}
+          </p>
+          <PathChoiceBoltFloating
+            key={run}
+            guideRef={guideRef}
+            translate={translate}
+            tilt={tilt}
+            travel={travel}
+            hint={boltHint}
+            smiling={committed !== 'idle'}
+            enter={centerHello && committed === 'idle'}
+            anchored={committed !== 'idle'}
+            reducedMotion={reducedMotion}
+            onExplore={onExplore}
+            onImprove={onImprove}
+          />
+        </>
+      ) : null}
+
       {reduced ? null : (
-        <button type="button" className="ic-replay" onClick={replay} inert={showIntro || undefined}>
+        <button type="button" className="ic-replay" onClick={handleReplay} inert={showIntro || undefined}>
           <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24">
             <path d="M3 12a9 9 0 1 0 3-6.7L3 8" />
             <path d="M3 3v5h5" />
