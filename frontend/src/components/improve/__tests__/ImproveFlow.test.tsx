@@ -221,13 +221,21 @@ describe('improve home', () => {
   })
 })
 
+describe('locked improve features', () => {
+  it('trembles the rail and shows Bolt when Goals is tapped before setup', async () => {
+    const user = renderApp()
+    await user.click(rail().getByRole('button', { name: 'Goals' }))
+    expect(rail().getByRole('button', { name: 'Goals' }).className).toContain('is-trembling')
+    expect(screen.getByText(/complete your profile to unlock those features/i)).toBeTruthy()
+    expect(screen.queryByRole('heading', { level: 1, name: 'Your home and VPP' })).toBeNull()
+  })
+})
+
 describe('access-features form', () => {
   // Types into every field of the form, so it gets more time when the whole suite runs at once.
   it('opens before a feature when answers are missing, then lands on that feature', async () => {
     const user = renderApp()
-    await user.click(
-      screen.getByRole('link', { name: 'Open Goals: set and track goals. Complete your setup to unlock.' }),
-    )
+    await user.click(screen.getByRole('button', { name: 'Access Features' }))
     expect(screen.getByRole('heading', { level: 1, name: 'Your home and VPP' })).toBeTruthy()
 
     await uploadBillPdf(user)
@@ -240,7 +248,8 @@ describe('access-features form', () => {
     await user.selectOptions(screen.getByLabelText('Which VPP joined'), 'Not listed')
     await user.click(screen.getByRole('button', { name: 'Save changes' }))
 
-    // Goals loads lazily, which can take a moment when the whole suite runs at once.
+    expect(screen.getByRole('heading', { level: 1, name: 'Unlock the full potential of your VPP.' })).toBeTruthy()
+    await user.click(rail().getByRole('button', { name: 'Goals' }))
     expect(
       await screen.findByRole('heading', { level: 1, name: 'Grow your savings. Grow your tree.' }, { timeout: 5000 }),
     ).toBeTruthy()

@@ -94,6 +94,29 @@
   border-color: #eadfcf;
 }
 
+@keyframes improve-feature-tremble {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  20% {
+    transform: translateX(-5px);
+  }
+  40% {
+    transform: translateX(5px);
+  }
+  60% {
+    transform: translateX(-4px);
+  }
+  80% {
+    transform: translateX(4px);
+  }
+}
+
+.improve-feature-card--trembling {
+  animation: improve-feature-tremble 0.48s ease-in-out;
+}
+
 .improve-feature-card__body {
   display: flex;
   flex-direction: column;

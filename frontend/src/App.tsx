@@ -29,6 +29,7 @@ import {
   ASSISTANT_COPY,
   DEFAULT_EVENT_TYPE,
   DEFAULT_REMINDER_PERIOD_DAYS,
+  IMPROVE_LOCKED_FEATURES,
   TUTORIAL_STEPS,
   type ImproveFeatureId,
   type TutorialFlow,
@@ -108,10 +109,18 @@ function App() {
   const [tutorialReplay, setTutorialReplay] = useState<TutorialFlow | null>(null)
   /** Flows with nothing to point at on this screen size, so they are not retried this visit. */
   const [tutorialUnavailable, setTutorialUnavailable] = useState<TutorialFlow[]>([])
+  /** Bolt line when locked improve features are tapped before setup is complete. */
+  const [boltSpeech, setBoltSpeech] = useState<string | null>(null)
 
   const hasProfile = Boolean(profile.lastUpdated)
   const rainJourney = journey === 'rain'
   const improveReady = isImproveReady(profile)
+
+  useEffect(() => {
+    if (!boltSpeech) return
+    const timer = window.setTimeout(() => setBoltSpeech(null), 7000)
+    return () => window.clearTimeout(timer)
+  }, [boltSpeech])
 
   useEffect(() => {
     let cancelled = false
@@ -225,10 +234,14 @@ function App() {
     setNotice('')
   }
 
-  /** Opens a feature, or the access-features form first when answers are missing. */
+  function signalLockedImproveFeatures() {
+    setBoltSpeech(IMPROVE_LOCKED_FEATURES.boltMessage)
+  }
+
+  /** Opens a feature, or prompts setup via Bolt when answers are missing. */
   function openFeature(feature: ImproveFeatureId) {
     if (!improveReady) {
-      startImproveSetup(feature)
+      signalLockedImproveFeatures()
       return
     }
     setView(feature)
@@ -410,6 +423,7 @@ function App() {
           onNavigate={goTo}
           onLogoClick={goHome}
           onOpenPathControls={showPathRail ? () => setFlowControlsOpen(true) : undefined}
+          onLockedImproveFeature={() => signalLockedImproveFeatures()}
           chat={
             showChat ? (
               <ChatDock
@@ -425,7 +439,8 @@ function App() {
             ) : showRail && rainJourney ? (
               <div className="chat-dock">
                 <AssistantBot
-                  smiling={tutorialFlow !== null}
+                  speech={boltSpeech}
+                  smiling={tutorialFlow !== null || Boolean(boltSpeech)}
                   items={[
                     {
                       id: 'tutorial',

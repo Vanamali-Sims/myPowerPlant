@@ -147,6 +147,32 @@
     cursor: pointer;
   }
 
+  @keyframes app-rail-tremble {
+    0%,
+    100% {
+      transform: translateX(0);
+    }
+    18% {
+      transform: translateX(-4px);
+    }
+    36% {
+      transform: translateX(4px);
+    }
+    54% {
+      transform: translateX(-3px);
+    }
+    72% {
+      transform: translateX(3px);
+    }
+    90% {
+      transform: translateX(-1px);
+    }
+  }
+
+  .app-rail__item.is-trembling {
+    animation: app-rail-tremble 0.48s ease-in-out;
+  }
+
   .app-rail__item:hover {
     color: var(--on-deep);
     background: var(--euc-800);

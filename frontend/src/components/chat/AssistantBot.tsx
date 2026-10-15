@@ -29,6 +29,8 @@ type Props = {
   items: AssistantItem[]
   /** Smile while a tutorial is running. */
   smiling?: boolean
+  /** Short line from Bolt (e.g. locked improve features). */
+  speech?: string | null
 }
 
 /**
@@ -43,7 +45,7 @@ type Props = {
  * Choosing an item returns focus to the robot first, so anything the item
  * opens can hand focus back to it.
  */
-export function AssistantBot({ items, smiling = false }: Props) {
+export function AssistantBot({ items, smiling = false, speech = null }: Props) {
   const [open, setOpen] = useState(false)
   /** Opened by a click: stays open when the mouse leaves. */
   const [pinned, setPinned] = useState(false)
@@ -123,6 +125,14 @@ export function AssistantBot({ items, smiling = false }: Props) {
         closeTimer.current = window.setTimeout(close, HOVER_CLOSE_MS)
       }}
     >
+      {speech ? (
+        <div className="assistant__speech" role="status" aria-live="polite">
+          <p className="assistant__speech-line">
+            <span className="visually-hidden">{ASSISTANT_COPY.boltName}. </span>
+            &ldquo;{speech}&rdquo;
+          </p>
+        </div>
+      ) : null}
       {open ? (
         <div id={menuId} className="assistant__menu" role="group" aria-label={ASSISTANT_COPY.menuLabel}>
           {items.map((item) => (
@@ -168,7 +178,7 @@ export function AssistantBot({ items, smiling = false }: Props) {
         onFocus={() => setNoticed(true)}
         onBlur={() => setNoticed(false)}
       >
-        <BotAvatar size={60} blink smiling={smiling || noticed} />
+        <BotAvatar size={60} blink smiling={smiling || noticed || Boolean(speech)} />
       </button>
     </div>
   )

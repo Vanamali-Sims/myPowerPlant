@@ -82,6 +82,7 @@ export const TUTORIAL_COPY = {
 
 /** The robot in the bottom corner and its menu. */
 export const ASSISTANT_COPY = {
+  boltName: 'Bolt',
   menuLabel: 'Assistant',
   actions: 'Actions',
   tutorial: 'Tutorial',

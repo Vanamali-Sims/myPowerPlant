@@ -1,7 +1,7 @@
 /**
  * Logged-in chrome: dark icon rail and wordmark.
  */
-import type { ReactNode } from 'react'
+import { useState, type ReactNode } from 'react'
 import {
   MATT_NAV,
   PATH_RAIL_ITEM,
@@ -29,6 +29,8 @@ type Props = {
   onNavigate: (id: AppNavId) => void
   onLogoClick: () => void
   onOpenPathControls?: () => void
+  /** Rain improve flow: locked What if / Goals / Reminders (setup not complete). */
+  onLockedImproveFeature?: (id: AppNavId) => void
   children: ReactNode
   chat?: ReactNode
 }
@@ -48,12 +50,14 @@ export function AppShell({
   onNavigate,
   onLogoClick,
   onOpenPathControls,
+  onLockedImproveFeature,
   children,
   chat,
 }: Props) {
   const profileItem = journey === 'rain' ? RAIN_PROFILE_RAIL_ITEM : PROFILE_RAIL_ITEM
   const nav = journey === 'rain' ? RAIN_NAV : MATT_NAV
   const [openPopover, setOpenPopover] = useTransientPopover()
+  const [tremblingId, setTremblingId] = useState<AppNavId | null>(null)
   const { setRef: setNavRef, box: navBox } = useSlidingHighlight(active, '.app-rail__item.is-active')
 
   function isImproveFeature(id: AppNavId) {
@@ -83,7 +87,9 @@ export function AppShell({
     }
     if (isFeatureLocked(item.id)) {
       setOpenPopover(null)
-      onNavigate(item.id)
+      setTremblingId(item.id)
+      window.setTimeout(() => setTremblingId((id) => (id === item.id ? null : id)), 480)
+      onLockedImproveFeature?.(item.id)
       return
     }
     if (!isAvailable(item.id)) {
@@ -113,7 +119,7 @@ export function AppShell({
           type="button"
           className={`app-rail__item${activeId === item.id ? ' is-active' : ''}${
             available ? '' : ' is-unavailable'
-          }${locked ? ' is-locked' : ''}`}
+          }${locked ? ' is-locked' : ''}${tremblingId === item.id ? ' is-trembling' : ''}`}
           onClick={() => handleClick(item)}
           aria-current={activeId === item.id ? 'page' : undefined}
           aria-disabled={!available && !locked}
