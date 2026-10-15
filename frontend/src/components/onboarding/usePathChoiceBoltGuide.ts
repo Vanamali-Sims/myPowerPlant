@@ -171,9 +171,16 @@ export function useBoltHintState({ resetKey }: HintControllerOptions) {
     setCommitted('idle')
   }, [clearTimers])
 
-  useEffect(() => {
-    resetHints()
-  }, [resetKey, resetHints])
+  // A new intro run drops any hover or focus hint. Adjusted while rendering so
+  // the previous hint cannot paint for a frame, and so this is not an effect.
+  const [appliedResetKey, setAppliedResetKey] = useState(resetKey)
+  if (appliedResetKey !== resetKey) {
+    setAppliedResetKey(resetKey)
+    clearTimers()
+    focusLock.current = null
+    setPending('idle')
+    setCommitted('idle')
+  }
 
   const setPointerHint = useCallback(
     (hint: BoltHint) => {

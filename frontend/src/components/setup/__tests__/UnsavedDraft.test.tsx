@@ -62,12 +62,16 @@ describe('unsaved setup answers', () => {
     await user.clear(postcode)
     await user.type(postcode, '1234')
 
-    // Leave for the improve flow without finishing.
+    // Leave for the improve flow without finishing. Locked features stay on the
+    // home and do not open a form that could carry the half-filled answers.
     await user.click(rail().getByRole('button', { name: 'Role' }))
     await user.click(screen.getByRole('button', { name: 'Switch to improving my VPP setup' }))
     await user.click(rail().getByRole('button', { name: 'What if' }))
+    expect(screen.queryByRole('heading', { level: 1, name: 'Your home and VPP' })).toBeNull()
+    expect(screen.queryByText(/1234/)).toBeNull()
 
-    // The improve form starts from what was saved (nothing yet), not the half-filled form.
+    // The setup form starts from what was saved (nothing yet), not the half-filled form.
+    await user.click(screen.getByRole('button', { name: 'Add my setup' }))
     const header = screen.getByRole('textbox', { name: 'Postcode' }) as HTMLInputElement
     expect(header.value).toBe('')
     expect(screen.queryByText(/1234/)).toBeNull()

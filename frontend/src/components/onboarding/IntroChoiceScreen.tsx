@@ -136,7 +136,15 @@ export function IntroChoiceScreen({ playIntro, onIntroDone, onExplore, onImprove
     resetKey: run,
   })
 
-  const [centerHello, setCenterHello] = useState(false)
+  // Centre hello runs once per device, right after the logo intro hands off to the choice.
+  // Tracked during render so a replay hides it and the handoff shows it, without an effect.
+  const [centerHello, setCenterHello] = useState(() => !showIntro && !hasSeenBoltHello())
+  const [trackedShowIntro, setTrackedShowIntro] = useState(showIntro)
+  if (showIntro !== trackedShowIntro) {
+    setTrackedShowIntro(showIntro)
+    if (showIntro) setCenterHello(false)
+    else if (!hasSeenBoltHello()) setCenterHello(true)
+  }
 
   const dismissCenterHello = useCallback(() => {
     setCenterHello((showing) => {
@@ -146,16 +154,6 @@ export function IntroChoiceScreen({ playIntro, onIntroDone, onExplore, onImprove
   }, [])
 
   const boltEnabled = !showIntro
-
-  // Centre hello runs once per device, right after the logo intro hands off to the choice.
-  useEffect(() => {
-    if (showIntro) {
-      setCenterHello(false)
-      return
-    }
-    if (hasSeenBoltHello()) return
-    setCenterHello(true)
-  }, [showIntro])
 
   useEffect(() => {
     if (!centerHello || committed !== 'idle') return
