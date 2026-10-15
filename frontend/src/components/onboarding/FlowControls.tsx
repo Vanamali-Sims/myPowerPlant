@@ -37,56 +37,81 @@ export function FlowControls({
 
   return (
     <section className={classes.join(' ')} aria-labelledby={inDialog ? undefined : 'flow-controls-title'}>
-      {inDialog ? (
+      {inDialog && !confirmReset ? (
         <p id="flow-controls-dialog-lede" className="flow-controls__lede">{FLOW_CONTROLS.lede}</p>
-      ) : (
+      ) : inDialog ? null : (
         <>
           <h2 id="flow-controls-title" className="flow-controls__title">{FLOW_CONTROLS.title}</h2>
           <p className="flow-controls__lede">{FLOW_CONTROLS.lede}</p>
         </>
       )}
-      <div className={`flow-controls__actions${inDialog ? ' flow-controls__actions--dialog' : ''}`}>
-        {variant === 'improve' ? (
-          <Button
-            variant={inDialog ? 'primary' : 'secondary'}
-            type="button"
-            onClick={onSwitchToExplore}
-          >
-            {FLOW_CONTROLS.switchToExplore}
-          </Button>
-        ) : (
-          <Button
-            variant={inDialog ? 'primary' : 'secondary'}
-            type="button"
-            onClick={onSwitchToImprove}
-          >
-            {FLOW_CONTROLS.switchToImprove}
-          </Button>
-        )}
-        <Button variant="danger" type="button" onClick={() => setConfirmReset(true)}>
-          {FLOW_CONTROLS.resetAll}
-        </Button>
-      </div>
       {confirmReset ? (
-        <Callout
-          tone="action"
-          title={FLOW_CONTROLS.resetConfirmTitle}
-          action={
+        inDialog ? (
+          <div className="flow-controls__confirm" role="alertdialog" aria-labelledby="flow-controls-reset-title">
+            <p id="flow-controls-reset-title" className="flow-controls__confirm-title">
+              {FLOW_CONTROLS.resetConfirmTitle}
+            </p>
+            <p className="flow-controls__confirm-body">{FLOW_CONTROLS.resetConfirmBody}</p>
+            <div className="flow-controls__confirm-actions">
+              <Button variant="secondary" type="button" onClick={() => setConfirmReset(false)}>
+                {FLOW_CONTROLS.resetCancel}
+              </Button>
+              <Button
+                variant="danger"
+                type="button"
+                onClick={() => {
+                  setConfirmReset(false)
+                  onResetDevice()
+                }}
+              >
+                {FLOW_CONTROLS.resetConfirmAction}
+              </Button>
+            </div>
+          </div>
+        ) : (
+          <Callout
+            tone="action"
+            title={FLOW_CONTROLS.resetConfirmTitle}
+            action={
+              <Button
+                variant="danger"
+                type="button"
+                onClick={() => {
+                  setConfirmReset(false)
+                  onResetDevice()
+                }}
+              >
+                {FLOW_CONTROLS.resetConfirmAction}
+              </Button>
+            }
+          >
+            {FLOW_CONTROLS.resetConfirmBody}
+          </Callout>
+        )
+      ) : (
+        <div className={`flow-controls__actions${inDialog ? ' flow-controls__actions--dialog' : ''}`}>
+          {variant === 'improve' ? (
             <Button
-              variant="danger"
+              variant={inDialog ? 'primary' : 'secondary'}
               type="button"
-              onClick={() => {
-                setConfirmReset(false)
-                onResetDevice()
-              }}
+              onClick={onSwitchToExplore}
             >
-              {FLOW_CONTROLS.resetConfirmAction}
+              {FLOW_CONTROLS.switchToExplore}
             </Button>
-          }
-        >
-          {FLOW_CONTROLS.resetConfirmBody}
-        </Callout>
-      ) : null}
+          ) : (
+            <Button
+              variant={inDialog ? 'primary' : 'secondary'}
+              type="button"
+              onClick={onSwitchToImprove}
+            >
+              {FLOW_CONTROLS.switchToImprove}
+            </Button>
+          )}
+          <Button variant="danger" type="button" onClick={() => setConfirmReset(true)}>
+            {FLOW_CONTROLS.resetAll}
+          </Button>
+        </div>
+      )}
     </section>
   )
 }

@@ -75,14 +75,14 @@ export const PATH_CHOICE = {
 export const FLOW_CONTROLS = {
   railLabel: 'Role',
   title: 'Role & data on this device',
-  lede: 'Your answers and goals stay in this browser only. You can change role or wipe everything here.',
+  lede: 'Saved in this browser only. Switch role or reset to start over.',
   switchToExplore: 'Switch to exploring VPPs',
   switchToImprove: 'Switch to improving my VPP setup',
   resetAll: 'Reset everything on this device',
-  resetConfirmTitle: 'Reset all data on this device?',
-  resetConfirmBody:
-    'This clears your household profile, goals, and history on this device, then starts you from the beginning. We do not keep a server copy.',
+  resetConfirmTitle: 'Reset everything on this device?',
+  resetConfirmBody: 'Clears profile, goals, and history here. Nothing is kept on a server.',
   resetConfirmAction: 'Reset all data',
+  resetCancel: 'Cancel',
 }
 
 export const RECOMMENDATIONS_PAGE = {
