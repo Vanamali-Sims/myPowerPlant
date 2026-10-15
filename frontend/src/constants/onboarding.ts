@@ -57,8 +57,8 @@ export const PATH_CHOICE = {
   bolt: {
     name: 'Bolt',
     hello: "Hi, I'm Bolt — I'll be showing you around.",
-    explore: "Let's see if a VPP is worth it for your home.",
-    improve: "Let's get more from your VPP before the next peak.",
+    explore: "Let's see how a VPP can help you save.",
+    improve: "Let's maximise what your VPP can offer before the next peak.",
   },
   explore: {
     eyebrow: 'New to VPPs',
@@ -67,7 +67,7 @@ export const PATH_CHOICE = {
   },
   improve: {
     eyebrow: 'Already in VPP',
-    title: ['Improve my', 'VPP experience'],
+    title: ['Unlock my full', 'VPP potential'],
     action: 'Improve my setup',
   },
 } as const

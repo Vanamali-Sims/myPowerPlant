@@ -160,7 +160,7 @@ describe('Screen 2: path choice', () => {
     fireEvent.click(explore)
     expect(onExplore).toHaveBeenCalledOnce()
 
-    const improve = screen.getByRole('button', { name: /Improve my\s*VPP experience/ })
+    const improve = screen.getByRole('button', { name: /Unlock my full\s*VPP potential/ })
     expect(within(improve).getByText('Already in VPP')).toBeTruthy()
     fireEvent.click(improve)
     expect(onImprove).toHaveBeenCalledOnce()
@@ -173,12 +173,12 @@ describe('Screen 2: path choice', () => {
 
     fireEvent.pointerEnter(screen.getByRole('button', { name: /Get started\s*with VPPs/ }))
     act(() => vi.advanceTimersByTime(150))
-    expect(screen.getByText("Let's see if a VPP is worth it for your home.")).toBeTruthy()
+    expect(screen.getByText("Let's see how a VPP can help you save.")).toBeTruthy()
     expect(screen.getByRole('link', { name: /Explore getting started/ })).toBeTruthy()
 
-    fireEvent.pointerEnter(screen.getByRole('button', { name: /Improve my\s*VPP experience/ }))
+    fireEvent.pointerEnter(screen.getByRole('button', { name: /Unlock my full\s*VPP potential/ }))
     act(() => vi.advanceTimersByTime(150))
-    expect(screen.getByText("Let's get more from your VPP before the next peak.")).toBeTruthy()
+    expect(screen.getByText("Let's maximise what your VPP can offer before the next peak.")).toBeTruthy()
     expect(screen.getByRole('link', { name: /Improve my setup/ })).toBeTruthy()
   })
 
@@ -192,9 +192,9 @@ describe('Screen 2: path choice', () => {
     renderScreen(false)
     fireEvent.pointerEnter(screen.getByRole('button', { name: /Get started\s*with VPPs/ }))
     act(() => vi.advanceTimersByTime(150))
-    expect(screen.getByText("Let's see if a VPP is worth it for your home.")).toBeTruthy()
+    expect(screen.getByText("Let's see how a VPP can help you save.")).toBeTruthy()
     fireEvent.click(screen.getByRole('button', { name: 'Replay intro' }))
-    expect(screen.queryByText("Let's see if a VPP is worth it for your home.")).toBeNull()
+    expect(screen.queryByText("Let's see how a VPP can help you save.")).toBeNull()
     fireEvent.keyDown(intro() as HTMLElement, { key: 'Escape' })
     act(() => vi.advanceTimersByTime(1_100))
     expect(screen.queryByText(/Hi, I'm Bolt — I'll be showing you around/)).toBeNull()
@@ -270,7 +270,7 @@ describe('first visit in the app', () => {
     // Back on the choice screen: skip the brand intro and choose improve.
     fireEvent.keyDown(intro() as HTMLElement, { key: 'Escape' })
     act(() => vi.advanceTimersByTime(1_100))
-    fireEvent.click(screen.getByRole('button', { name: /Improve my\s*VPP experience/ }))
+    fireEvent.click(screen.getByRole('button', { name: /Unlock my full\s*VPP potential/ }))
     act(() => vi.advanceTimersByTime(100))
     expect(story()).toBeNull()
   })
@@ -334,7 +334,7 @@ describe('first visit in the app', () => {
 
   it('opens Screen 3.1 from the right card, with no story intro', () => {
     skipIntro()
-    fireEvent.click(screen.getByRole('button', { name: /Improve my\s*VPP experience/ }))
+    fireEvent.click(screen.getByRole('button', { name: /Unlock my full\s*VPP potential/ }))
     expect(screen.getByRole('heading', { level: 1, name: 'Unlock the full potential of your VPP.' })).toBeTruthy()
     expect(story()).toBeNull()
     expect(loadJourney()).toBe('rain')
