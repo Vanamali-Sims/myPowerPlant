@@ -201,9 +201,8 @@ export function ImproveHome({ profile, bundle, onOpenForm, onOpenFeature, onLogo
             </h1>
             <p className="welcome-hero__lede">{IMPROVE_HERO.lede}</p>
             <div className="improve-hero__actions">
-              <Button variant="primary" className="welcome__cta improve-hero__cta" onClick={heroAction}>
+              <Button variant="primary" className="welcome__cta improve-hero__cta onboarding-cta-nudge" onClick={heroAction}>
                 {partial ? IMPROVE_HERO.completeProfile : IMPROVE_HERO.accessFeatures}
-                {partial ? null : <Arrow down />}
               </Button>
               <span className="improve-hero__hint">{IMPROVE_HERO.hint}</span>
             </div>

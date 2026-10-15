@@ -82,6 +82,16 @@ function seedRainImproveReady() {
   )
 }
 
+function seedExploreProfile() {
+  saveProfile(
+    {
+      ...emptyProfile(),
+      ...BASELINE_PROFILE,
+    },
+    'explore',
+  )
+}
+
 async function openHarness(props: { withBot?: boolean; withPath?: boolean } = {}) {
   const onClose = vi.fn()
   const user = userEvent.setup()
@@ -234,6 +244,7 @@ describe('Tutorial in the app', () => {
 
   it('shows the explore tutorial with Role then the robot, and remembers a skip', async () => {
     saveJourney('matt')
+    seedExploreProfile()
     const user = userEvent.setup()
     render(<App />)
     await screen.findByRole('dialog', { name: 'Role' }, APP_WAIT)
@@ -299,6 +310,13 @@ describe('Tutorial in the app', () => {
 
   it('does not auto-start the improve tutorial before setup is complete', async () => {
     saveJourney('rain')
+    render(<App />)
+    await nextFrames()
+    expect(screen.queryByRole('dialog')).toBeNull()
+  })
+
+  it('does not auto-start the explore tutorial before setup is complete', async () => {
+    saveJourney('matt')
     render(<App />)
     await nextFrames()
     expect(screen.queryByRole('dialog')).toBeNull()

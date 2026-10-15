@@ -274,21 +274,7 @@
 }
 
 .ic-guide__cta {
-  display: inline-block;
-  align-self: flex-start;
-  font-family: var(--font-body);
-  font-size: 16px;
-  font-weight: 600;
-  color: var(--accent-deep);
-  text-decoration: underline;
-  text-underline-offset: 4px;
-  cursor: pointer;
-}
-
-.ic-guide__cta:focus-visible {
-  outline: 3px solid var(--accent);
-  outline-offset: 3px;
-  border-radius: 4px;
+  margin-top: 2px;
 }
 
 .ic-guide__say[role='button']:focus-visible {

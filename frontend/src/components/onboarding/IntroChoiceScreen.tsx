@@ -206,7 +206,11 @@ export function IntroChoiceScreen({ playIntro, onIntroDone, onExplore, onImprove
       <div
         className={`ic-split ${splitClass}`.trim()}
         inert={showIntro || undefined}
-        onPointerLeave={() => onPointerHint('idle')}
+        onPointerLeave={(event) => {
+          const next = event.relatedTarget
+          if (next instanceof Node && guideRef.current?.contains(next)) return
+          onPointerHint('idle')
+        }}
       >
         <button
           type="button"
@@ -311,6 +315,14 @@ export function IntroChoiceScreen({ playIntro, onIntroDone, onExplore, onImprove
             reducedMotion={reducedMotion}
             onExplore={onExplore}
             onImprove={onImprove}
+            onLayerPointerEnter={() => {
+              if (committed === 'explore' || committed === 'improve') onPointerHint(committed)
+            }}
+            onLayerPointerLeave={(event) => {
+              const next = event.relatedTarget
+              if (next instanceof Element && next.closest('.ic-half')) return
+              onPointerHint('idle')
+            }}
           />
         </>
       ) : null}

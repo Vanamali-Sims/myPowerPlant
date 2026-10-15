@@ -945,6 +945,35 @@
   letter-spacing: 0.14em;
 }
 
+/* Primary “start onboarding” CTAs (explore hero, improve hero, path-choice Bolt). */
+.onboarding-cta {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: auto;
+  align-self: flex-start;
+  padding: 0.85rem 1.4rem;
+  border: none;
+  border-radius: var(--radius-pill);
+  background: var(--primary);
+  color: var(--ink);
+  font-family: var(--font-body);
+  font-size: 1rem;
+  font-weight: 600;
+  line-height: 1.2;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.onboarding-cta:hover {
+  background: var(--primary-hover);
+}
+
+.onboarding-cta:focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: 3px;
+}
+
 .welcome .welcome__cta {
   width: auto;
   align-self: flex-start;
@@ -1213,7 +1242,6 @@
 .welcome .improve-hero__cta {
   display: inline-flex;
   align-items: center;
-  gap: 0.5rem;
 }
 
 .improve-hero__hint {

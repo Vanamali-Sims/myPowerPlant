@@ -1,7 +1,7 @@
 /**
  * Bolt guide for the path-choice hero: BotAvatar plus the shared ic-guide bubble.
  */
-import { type RefObject } from 'react'
+import { type PointerEvent, type RefObject } from 'react'
 import { PATH_CHOICE } from '../../constants/onboarding'
 import { BotAvatar } from '../ui/BotAvatar'
 import type { BoltHint } from './usePathChoiceBoltGuide'
@@ -75,15 +75,6 @@ export function PathChoiceBolt({
           onClick={() => {
             if (action) activate()
           }}
-          onKeyDown={(event) => {
-            if (!action) return
-            if (event.key === 'Enter' || event.key === ' ') {
-              event.preventDefault()
-              activate()
-            }
-          }}
-          role={action ? 'button' : undefined}
-          tabIndex={action ? 0 : -1}
         >
           <div className="ic-guide__inner" key={hint}>
             <p className={`ic-guide__line${reducedMotion ? '' : ' is-swap-in'}`}>
@@ -91,18 +82,18 @@ export function PathChoiceBolt({
               {sentence(hint)}
             </p>
             {action ? (
-              <a
-                className={`ic-guide__cta${reducedMotion ? '' : ' is-swap-in-delayed'}`}
-                href="#"
+              <button
+                type="button"
+                className={`ic-guide__cta onboarding-cta onboarding-cta-nudge${
+                  reducedMotion ? '' : ' is-swap-in-delayed'
+                }`}
                 onClick={(event) => {
-                  event.preventDefault()
                   event.stopPropagation()
                   activate()
                 }}
               >
                 {action}
-                <span aria-hidden="true"> →</span>
-              </a>
+              </button>
             ) : null}
           </div>
         </div>
@@ -116,6 +107,8 @@ type FloatingProps = Props & {
   tilt: number
   travel: boolean
   guideRef: RefObject<HTMLDivElement | null>
+  onLayerPointerEnter?: () => void
+  onLayerPointerLeave?: (event: PointerEvent<HTMLDivElement>) => void
 }
 
 /**
@@ -128,6 +121,8 @@ export function PathChoiceBoltFloating({
   travel,
   guideRef,
   reducedMotion,
+  onLayerPointerEnter,
+  onLayerPointerLeave,
   ...boltProps
 }: FloatingProps) {
   const transition = reducedMotion
@@ -138,6 +133,8 @@ export function PathChoiceBoltFloating({
     <div
       ref={guideRef}
       className="ic-bolt-layer"
+      onPointerEnter={onLayerPointerEnter}
+      onPointerLeave={onLayerPointerLeave}
       style={{
         transform: `translate(${translate.x}px, ${translate.y}px)`,
         transition,

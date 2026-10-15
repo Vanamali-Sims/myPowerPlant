@@ -62,9 +62,9 @@ const GoalsView = lazy(() =>
   import('./components/goals/GoalsView').then((module) => ({ default: module.GoalsView })),
 )
 
-/** The home screens each flow's tutorial runs on: explore lands on welcome or dashboard. */
+/** Tutorials run after each flow's setup form is saved (dashboard / improve home). */
 function tutorialFlowFor(view: View, journey: UserJourney | null): TutorialFlow | null {
-  if (journey === 'matt' && (view === 'welcome' || view === 'dashboard')) return 'explore'
+  if (journey === 'matt' && view === 'dashboard') return 'explore'
   if (journey === 'rain' && view === 'rainHub') return 'improve'
   return null
 }
@@ -338,6 +338,7 @@ function App() {
     !tutorialUnavailable.includes(tutorialPageFlow) &&
     !exploreIntroPlaying &&
     !flowControlsOpen &&
+    (tutorialPageFlow !== 'explore' || hasProfile) &&
     (tutorialPageFlow !== 'improve' || improveReady)
       ? tutorialPageFlow
       : null

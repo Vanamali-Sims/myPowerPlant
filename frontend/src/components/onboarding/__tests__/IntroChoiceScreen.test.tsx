@@ -174,12 +174,12 @@ describe('Screen 2: path choice', () => {
     fireEvent.pointerEnter(screen.getByRole('button', { name: /Get started\s*with VPPs/ }))
     act(() => vi.advanceTimersByTime(150))
     expect(screen.getByText("Let's see how a VPP can help you save.")).toBeTruthy()
-    expect(screen.getByRole('link', { name: /Explore getting started/ })).toBeTruthy()
+    expect(screen.getByRole('button', { name: /Explore getting started/ })).toBeTruthy()
 
     fireEvent.pointerEnter(screen.getByRole('button', { name: /Unlock my full\s*VPP potential/ }))
     act(() => vi.advanceTimersByTime(150))
     expect(screen.getByText("Let's maximise what your VPP can offer before the next peak.")).toBeTruthy()
-    expect(screen.getByRole('link', { name: /Improve my setup/ })).toBeTruthy()
+    expect(screen.getByRole('button', { name: /Improve my setup/ })).toBeTruthy()
   })
 
   it('keeps Bolt hidden while the intro is still playing', () => {
@@ -292,16 +292,11 @@ describe('first visit in the app', () => {
     const heading = screen.getByRole('heading', { level: 1, name: /Your battery could be/ })
     expect(document.activeElement).toBe(heading)
 
-    // The first-visit tutorial takes over from the story, then hands focus back.
-    // One frame finds the targets, the next places the dialog.
+    // Explore tutorial waits until setup is saved on the dashboard, not on welcome.
     act(() => vi.advanceTimersByTime(20))
     act(() => vi.advanceTimersByTime(20))
-    const tutorial = screen.getByRole('dialog', { name: 'Role' })
-    expect(document.querySelector('.app-under-intro')?.hasAttribute('inert')).toBe(true)
-    fireEvent.keyDown(tutorial, { key: 'Escape' })
     expect(screen.queryByRole('dialog', { name: 'Role' })).toBeNull()
     expect(document.activeElement).toBe(heading)
-    expect(document.querySelector('.app-under-intro')?.hasAttribute('inert')).toBe(false)
   })
 
   it('ends the story intro on its own, at 3.5 seconds a caption', () => {
