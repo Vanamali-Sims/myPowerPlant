@@ -20,7 +20,7 @@ type EnergyRiverProps = {
  * @param props.timeframe - Daily / weekly / fortnightly
  * @param props.onTimeframe - Switch the dashboard scale
  * @param props.onSeePlans - Jump to VPP recommendations under this card
- * @returns Balance card: green header, light breakdown body, green steps band and yearly saving
+ * @returns One dark balance card: animated breakdown, then the steps, plans button and yearly saving
  */
 export function EnergyRiver({
   model,
@@ -80,15 +80,13 @@ export function EnergyRiver({
           </div>
         </header>
 
-        <div className="energy-balance__body">
-          <EnergyBreakdown
-            model={model}
-            dischargeLabel={stage.eyebrow}
-            dischargeHint={stage.hint}
-            headlineText={headline}
-            footer={<EnergyPath model={model} onSeePlans={onSeePlans} />}
-          />
-        </div>
+        <EnergyBreakdown
+          model={model}
+          dischargeLabel={stage.eyebrow}
+          dischargeHint={stage.hint}
+          headlineText={headline}
+          footer={<EnergyPath model={model} onSeePlans={onSeePlans} />}
+        />
       </article>
     </section>
   )

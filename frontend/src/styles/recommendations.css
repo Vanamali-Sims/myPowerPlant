@@ -33,24 +33,46 @@
 }
 
 .recommendations__enroll {
+  --energy-balance-bg: #1c2f29;
   scroll-margin-top: 1.25rem;
   margin-top: 0.5rem;
-  padding: 1.5rem 1.25rem;
-  border-radius: var(--radius-card);
-  background: var(--surface);
-  border: 1px solid var(--border);
-  box-shadow: 0 6px 24px rgba(30, 36, 32, 0.05);
+  padding: 1.5rem 1.35rem 1.65rem;
+  border-radius: 28px;
+  background: var(--energy-balance-bg);
+  color: var(--on-deep);
+  border: 1px solid rgb(255 255 255 / 0.06);
+  box-shadow: 0 12px 36px rgb(28 47 41 / 22%);
+}
+
+.recommendations__enroll .eyebrow {
+  color: #c9d4cc;
 }
 
 .recommendations__enroll h2 {
   font-size: 1.25rem;
   margin: 0.35rem 0 0.5rem;
+  color: var(--on-deep);
 }
 
 .recommendations__enroll-lede {
-  color: var(--ink-secondary);
+  color: var(--on-deep-muted);
   margin: 0 0 1.25rem;
   max-width: 36rem;
+}
+
+.recommendations__enroll .ui-field__label {
+  color: var(--on-deep);
+}
+
+.recommendations__enroll .ui-select {
+  background-color: rgb(255 255 255 / 0.1);
+  border-color: rgb(255 255 255 / 0.22);
+  color: var(--on-deep);
+  background-image: var(--select-chevron-on-dark, var(--select-chevron));
+}
+
+.recommendations__enroll .ui-select:focus {
+  outline-color: rgb(143 214 168 / 55%);
 }
 
 .recommendations__enroll-row {
@@ -103,7 +125,7 @@
   text-align: left;
   border: 1px solid var(--border);
   border-radius: var(--radius-card);
-  background: var(--surface);
+  background: var(--cream-card);
   padding: 0.85rem 0.9rem 0.95rem;
   cursor: pointer;
   transition:
@@ -120,8 +142,8 @@
 }
 
 .plans-browser__list-card.is-active {
-  border-color: var(--primary);
-  box-shadow: 0 8px 24px rgba(222, 106, 52, 0.12);
+  border-color: var(--euc-600);
+  box-shadow: 0 8px 24px rgb(42 68 58 / 18%);
 }
 
 .plans-browser__list-card-top {
@@ -165,11 +187,13 @@
 }
 
 .plans-browser__detail {
-  border-radius: var(--radius-card);
-  background: var(--surface);
-  border: 1px solid var(--border);
+  --energy-balance-bg: #1c2f29;
+  border-radius: 28px;
+  background: var(--energy-balance-bg);
+  color: var(--on-deep);
+  border: 1px solid rgb(255 255 255 / 0.06);
   overflow: hidden;
-  box-shadow: 0 10px 32px rgba(30, 36, 32, 0.06);
+  box-shadow: 0 12px 36px rgb(28 47 41 / 22%);
 }
 
 .plans-browser__detail-hero {
@@ -214,12 +238,13 @@
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 0.75rem;
   padding: 1.1rem 1.25rem;
-  border-bottom: 1px solid var(--border);
+  border-bottom: 1px solid rgb(255 255 255 / 0.1);
 }
 
 .plans-browser__stat .eyebrow {
   margin: 0 0 0.25rem;
   font-size: 0.62rem;
+  color: var(--on-deep-muted);
 }
 
 .plans-browser__stat-value {
@@ -227,15 +252,15 @@
   font-family: var(--font-display);
   font-size: 1.15rem;
   font-weight: 500;
-  color: var(--ink);
+  color: var(--on-deep);
 }
 
 .plans-browser__why {
   margin: 1rem 1.25rem;
   padding: 1rem 1.05rem;
   border-radius: 0.65rem;
-  background: var(--cream-card);
-  border: 1px solid var(--border);
+  background: #22382f;
+  border: 1px solid rgb(255 255 255 / 0.08);
 }
 
 .plans-browser__why-title {
@@ -244,7 +269,7 @@
   font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: var(--primary);
+  color: #8fd6a8;
 }
 
 .plans-browser__why-list {
@@ -262,13 +287,13 @@
   align-items: flex-start;
   font-size: 0.9rem;
   line-height: 1.45;
-  color: var(--ink-secondary);
+  color: var(--on-deep-muted);
 }
 
 .plans-browser__why-list svg {
   flex-shrink: 0;
   margin-top: 0.15rem;
-  color: var(--euc-600);
+  color: #8fd6a8;
 }
 
 .plans-browser__actions {

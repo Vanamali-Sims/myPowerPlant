@@ -96,13 +96,12 @@
 }
 
 .energy-balance {
+  --energy-balance-bg: #1c2f29;
   margin: 0;
-  padding: 0;
-  background: var(--surface);
-  color: var(--ink);
-  border: 1px solid var(--border);
+  padding: clamp(1.35rem, 3vw, 2.25rem) clamp(1.25rem, 3vw, 2.5rem);
+  background: var(--energy-balance-bg);
+  color: var(--on-deep);
   border-radius: 28px;
-  overflow: hidden;
 }
 
 .energy-balance__top {
@@ -111,65 +110,7 @@
   align-items: center;
   justify-content: space-between;
   gap: 0.75rem 1rem;
-  margin: 0;
-  padding: 1rem clamp(1.25rem, 3vw, 2.5rem);
-  background: var(--green-deep);
-  color: var(--on-deep);
-}
-
-.energy-balance__body {
-  padding: clamp(1.25rem, 3vw, 2rem) clamp(1.25rem, 3vw, 2.5rem) clamp(1.35rem, 3vw, 2.25rem);
-}
-
-.energy-balance__body .energy-breakdown {
-  margin-top: 0;
-  --ring-track: #e2e8e4;
-  --card-raised: var(--surface);
-  --card-border: var(--border);
-  --hero-bg: var(--surface);
-}
-
-.energy-balance__body .energy-ring__pct {
-  color: var(--ink);
-}
-
-.energy-balance__body .energy-ring__sub {
-  color: var(--ink-secondary);
-}
-
-.energy-balance__body .energy-breakdown__hint {
-  color: var(--ink-secondary);
-}
-
-.energy-balance__body .energy-card__label-row {
-  color: var(--ink-secondary);
-}
-
-.energy-balance__body .energy-card__value {
-  color: var(--ink);
-}
-
-.energy-balance__body .energy-card__hint {
-  color: var(--ink-secondary);
-}
-
-.energy-balance__body .energy-card__badge {
-  background: var(--surface);
-  border: 1px solid var(--border);
-}
-
-.energy-balance__body .energy-card.is-active {
-  background: var(--euc-50);
-  border-color: var(--euc-400);
-}
-
-.energy-balance__body .energy-card--vpp {
-  background: var(--euc-50);
-  border-color: rgb(94 155 110 / 45%);
-}
-
-.energy-balance__body .energy-card--vpp .energy-card__value {
-  color: var(--euc-700);
+  margin-bottom: 1.6rem;
 }
 
 .energy-balance__place {
@@ -178,7 +119,7 @@
   font-weight: 700;
   letter-spacing: 0.16em;
   text-transform: uppercase;
-  color: var(--terra-200);
+  color: #c9d4cc;
 }
 
 .energy-balance .ui-toggle--on-deep {
@@ -1552,13 +1493,11 @@
 
 /* —— Steps band under the balance card (components/dashboard/EnergyPath) —— */
 .energy-path {
-  --energy-balance-bg: #2a443a;
   grid-column: 1 / -1;
   display: grid;
   grid-template-columns: subgrid;
   align-items: stretch;
   min-height: 168px;
-  margin-top: 0.5rem;
   border-radius: 26px;
   background: #2a443a;
 }
