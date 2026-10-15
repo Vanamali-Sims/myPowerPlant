@@ -1,5 +1,5 @@
 /*
- * Screens 1 and 2: "Which describes you?" split, with the brand intro on top.
+ * Screens 1 and 2: path-choice split, with the brand intro on top.
  * The line-art story intro (.ic-intro--story) plays over the explore home.
  * Timings follow the designs; colours come from tokens.css, plus the intros'
  * warm highlight (--ic-glow) and sun gold (--ic-sun), which have no token.
@@ -115,10 +115,29 @@
   letter-spacing: -0.02em;
 }
 
+.ic-more {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 12px;
+  max-width: 520px;
+  opacity: 0;
+  transform: translateY(10px);
+  max-height: 0;
+  overflow: hidden;
+  transition: opacity 0.35s ease, transform 0.35s ease, max-height 0.4s ease;
+}
+
+.ic-half:hover .ic-more,
+.ic-half:focus-visible .ic-more {
+  opacity: 1;
+  transform: none;
+  max-height: 14rem;
+}
+
 .ic-body {
-  max-width: 470px;
-  font-size: 18px;
-  line-height: 1.55;
+  font-size: 21px;
+  line-height: 1.5;
   color: var(--ink-soft);
 }
 
@@ -130,19 +149,9 @@
   display: inline-flex;
   align-items: center;
   gap: 10px;
-  margin-top: 8px;
   font-size: 16px;
   font-weight: 700;
   color: var(--accent-deep);
-  opacity: 0;
-  transform: translateX(-8px);
-  transition: opacity 0.35s ease, transform 0.35s ease;
-}
-
-.ic-half:hover .ic-go,
-.ic-half:focus-visible .ic-go {
-  opacity: 1;
-  transform: none;
 }
 
 .ic-arrow,
@@ -162,7 +171,6 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 14px;
   pointer-events: none;
   text-align: center;
 }
@@ -189,28 +197,6 @@
 /* The intro's own logo lands here at the end, so this one waits until the intro clears. */
 .ic-mark.is-awaiting-intro {
   visibility: hidden;
-}
-
-.ic-question {
-  margin: 0;
-  padding: 10px 20px;
-  border-radius: var(--radius-pill);
-  background: var(--surface);
-  box-shadow: 0 10px 30px rgba(23, 50, 42, 0.12);
-  font-family: var(--font-display);
-  font-size: 22px;
-  font-weight: 400;
-  line-height: 1.3;
-  color: var(--ink);
-}
-
-.ic-question:focus {
-  outline: none;
-}
-
-.ic-question:focus-visible {
-  outline: 3px solid var(--accent);
-  outline-offset: 3px;
 }
 
 .ic-replay {
@@ -942,9 +928,11 @@
     padding-bottom: 120px;
   }
 
-  .ic-go {
+  .ic-more {
     opacity: 1;
     transform: none;
+    max-height: none;
+    overflow: visible;
   }
 }
 
@@ -956,7 +944,7 @@
 
   .ic-half,
   .ic-half::before,
-  .ic-go {
+  .ic-more {
     transition: none;
   }
 }

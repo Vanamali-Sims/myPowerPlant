@@ -1,8 +1,8 @@
 /**
  * @vitest-environment jsdom
  *
- * Screen tests for Screens 1 and 2: the brand intro over the "Which describes
- * you?" choice, and the story intro over the explore home. Timers are faked so
+ * Screen tests for Screens 1 and 2: the brand intro over the path-choice
+ * split, and the story intro over the explore home. Timers are faked so
  * the intros can be stepped through.
  */
 import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react'
@@ -47,7 +47,7 @@ function intro() {
 }
 
 function heading() {
-  return screen.getByRole('heading', { level: 1, name: 'Which describes you?' })
+  return screen.getByRole('heading', { level: 1, name: 'Choose a path' })
 }
 
 describe('Screen 1: the intro', () => {
@@ -134,17 +134,20 @@ describe('Screen 1: the intro', () => {
   })
 })
 
-describe('Screen 2: Which describes you?', () => {
+describe('Screen 2: path choice', () => {
   it('sends the left card to getting started and the right card to improving a setup', () => {
     const { onExplore, onImprove } = renderScreen(false)
     const explore = screen.getByRole('button', { name: /Get started\s*with VPPs/ })
     expect(within(explore).getByText('New to VPPs')).toBeTruthy()
+    expect(explore.textContent).toContain('See if a VPP is worth it')
     expect(explore.textContent).toContain('Explore getting started')
     fireEvent.click(explore)
     expect(onExplore).toHaveBeenCalledOnce()
 
     const improve = screen.getByRole('button', { name: /Improve my\s*VPP experience/ })
     expect(within(improve).getByText('Already in VPP')).toBeTruthy()
+    expect(improve.textContent).toContain('Try get reminders')
+    expect(improve.textContent).toContain('Improve my setup')
     fireEvent.click(improve)
     expect(onImprove).toHaveBeenCalledOnce()
   })

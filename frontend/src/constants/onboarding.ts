@@ -46,9 +46,9 @@ export const BRAND_INTRO = {
   skipHint: 'Click anywhere to skip',
 } as const
 
-/** Screen 2: "Which describes you?" choice. */
+/** Screen 2: split path choice (new to VPPs vs already in one). */
 export const PATH_CHOICE = {
-  title: 'Which describes you?',
+  title: 'Choose a path',
   replay: 'Replay intro',
   explore: {
     eyebrow: 'New to VPPs',

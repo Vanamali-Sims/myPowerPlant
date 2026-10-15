@@ -1,6 +1,6 @@
 /**
  * Screens 1 and 2: the brand intro (orbiting homes, the logo, and the
- * MyPowerPlant wordmark) plays over the "Which describes you?" choice. The
+ * MyPowerPlant wordmark) plays over the path-choice split. The
  * logo then lands on the choice header.
  *
  * The intro can be skipped with a click, Enter, Space, or Escape, and replayed.
@@ -119,7 +119,7 @@ function BrandIntro() {
  * @returns JSX.Element
  *
  * While the intro shows, the choice underneath is inert so focus stays on the
- * intro. When it ends, focus moves to the "Which describes you?" heading.
+ * intro. When it ends, focus moves to the path-choice heading.
  */
 export function IntroChoiceScreen({ playIntro, onIntroDone, onExplore, onImprove }: Props) {
   const headingRef = useRef<HTMLHeadingElement>(null)
@@ -141,10 +141,12 @@ export function IntroChoiceScreen({ playIntro, onIntroDone, onExplore, onImprove
             <br />
             {PATH_CHOICE.explore.title[1]}
           </span>
-          <span className="ic-body">{PATH_CHOICE.explore.body}</span>
-          <span className="ic-go">
-            {PATH_CHOICE.explore.action}
-            <Arrow />
+          <span className="ic-more">
+            <span className="ic-body">{PATH_CHOICE.explore.body}</span>
+            <span className="ic-go">
+              {PATH_CHOICE.explore.action}
+              <Arrow />
+            </span>
           </span>
         </button>
         <button type="button" className="ic-half ic-half--imp" onClick={onImprove}>
@@ -154,10 +156,12 @@ export function IntroChoiceScreen({ playIntro, onIntroDone, onExplore, onImprove
             <br />
             {PATH_CHOICE.improve.title[1]}
           </span>
-          <span className="ic-body">{PATH_CHOICE.improve.body}</span>
-          <span className="ic-go">
-            {PATH_CHOICE.improve.action}
-            <Arrow />
+          <span className="ic-more">
+            <span className="ic-body">{PATH_CHOICE.improve.body}</span>
+            <span className="ic-go">
+              {PATH_CHOICE.improve.action}
+              <Arrow />
+            </span>
           </span>
         </button>
       </div>
@@ -167,7 +171,7 @@ export function IntroChoiceScreen({ playIntro, onIntroDone, onExplore, onImprove
         <span className={`ic-mark${showIntro ? ' is-awaiting-intro' : ''}`}>
           <MyPowerPlantMark width={48} height={48} className="ic-logo-img" />
         </span>
-        <h1 ref={headingRef} tabIndex={-1} className="ic-question">
+        <h1 ref={headingRef} tabIndex={-1} className="visually-hidden">
           {PATH_CHOICE.title}
         </h1>
       </div>
