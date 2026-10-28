@@ -97,7 +97,7 @@ export const IMPROVE_FEATURES: {
   {
     id: 'whatif',
     eyebrow: 'What if',
-    pill: 'Sandbox · nothing changes',
+    pill: 'Nothing changes',
     title: 'Test a scenario',
     body:
       'See how your yearly VPP savings would change with a bigger battery, more panels, a different backup reserve or new daily use.',
@@ -107,7 +107,7 @@ export const IMPROVE_FEATURES: {
   {
     id: 'goals',
     eyebrow: 'Goals',
-    pill: 'Powers Your tree',
+    pill: 'Powers your tree',
     title: 'Set and track goals',
     body:
       'Pick a savings and carbon target, upload your battery file each month, and watch your tree grow as you get closer.',
@@ -117,7 +117,7 @@ export const IMPROVE_FEATURES: {
   {
     id: 'reminders',
     eyebrow: 'Reminders',
-    pill: 'Powers Next discharge day',
+    pill: 'Next discharge day',
     title: 'Never miss an event',
     body:
       'A solar forecast for the week shows the best days to share or opt out, with one-click calendar reminders.',

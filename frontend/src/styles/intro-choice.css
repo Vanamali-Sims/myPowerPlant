@@ -103,6 +103,11 @@
   color: var(--accent-deep);
 }
 
+/* Text is written in caps already, so "VPPs" keeps its lowercase s. */
+.ic-eyebrow--as-written {
+  text-transform: none;
+}
+
 .ic-half--imp .ic-eyebrow {
   color: var(--terra-200);
 }

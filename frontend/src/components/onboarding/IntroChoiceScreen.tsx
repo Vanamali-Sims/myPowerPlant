@@ -228,7 +228,7 @@ export function IntroChoiceScreen({ playIntro, onIntroDone, onExplore, onImprove
             ref={exploreStackRef}
             className={`ic-half__stack${committed === 'explore' ? ' is-raised' : ''}`}
           >
-            <span className="ic-eyebrow">{PATH_CHOICE.explore.eyebrow}</span>
+            <span className="ic-eyebrow ic-eyebrow--as-written">{PATH_CHOICE.explore.eyebrow}</span>
             <span className="ic-title">
               {PATH_CHOICE.explore.title[0]}
               <br />
