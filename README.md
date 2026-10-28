@@ -180,11 +180,7 @@ Repository variables:
 | `CLOUDFRONT_DISTRIBUTION_ID` | `aws cloudfront list-distributions` |
 | `ECR_REPOSITORY_URL` | Terraform output `ecr_repository_url` |
 
-Repository secret:
-
-| Name | Notes |
-| --- | --- |
-| `BASIC_AUTH_PASSWORD` | Shared password for the site. Set this before the deploy ever runs. If it is missing, Terraform deploys a password check that rejects everyone, even with the right password. |
+No repository secrets are needed.
 
 How CI signs in to AWS: it uses GitHub OIDC, set up in `terraform/oidc.tf`. Each run swaps a short lived GitHub token for temporary AWS credentials on the `mypowerplant-production-github-actions` role. That role only trusts this repository and only the `main` branch. No AWS access keys are stored in GitHub.
 
@@ -197,7 +193,7 @@ Everything runs in `ap-southeast-2`, apart from the CloudFront certificates, whi
 What Terraform manages:
 
 - A private S3 bucket for the frontend build, readable only by CloudFront.
-- A CloudFront distribution serving `mypowerplant.tech`, with a security headers policy and a small CloudFront Function. The function asks for a shared password before showing the site and also serves the frozen `iteration-1` and `iteration-2` builds.
+- A CloudFront distribution serving the public site at https://mypowerplant.tech, with https://d3rvyrwejm3499.cloudfront.net as a backup address for the same distribution. It has a security headers policy and a small CloudFront Function that serves the frozen `iteration-1` and `iteration-2` builds.
 - ACM certificates for `mypowerplant.tech` and `app.mypowerplant.tech`. Only the root domain certificate is attached to CloudFront now.
 - An ECR repository for the backend image, with rules that expire untagged images after 7 days and keep only the 10 newest tagged images.
 - The backend Lambda function, running the container image on arm64, plus its CloudWatch log group with 14 days of retention.
@@ -227,7 +223,7 @@ Things you have to do by hand:
   aws ssm put-parameter --name /mypowerplant-production/llm-api-key --type SecureString --value "YOUR_KEY" --overwrite
   ```
 
-- Add the GitHub variables and the `BASIC_AUTH_PASSWORD` secret listed above.
+- Add the GitHub variables listed above.
 - Add the certificate validation records (Terraform outputs `acm_validation_record` and `acm_root_validation_record`) and the root domain ALIAS record at the domain registrar.
 - Upload the frozen `iteration-1` and `iteration-2` builds to the frontend bucket. The deploy workflow leaves those folders alone.
 

@@ -55,58 +55,21 @@ resource "aws_cloudfront_response_headers_policy" "frontend_security" {
 }
 
 
-# Shared-password Basic Auth gate for the whole frontend. Runs on every
-# viewer request before cache/origin is touched. Accepts any username and
-# checks only the password half of the decoded credentials, since this
-# gates the site behind one shared password rather than per-user accounts.
-# After the check it also routes the /iteration-1/ and /iteration-2/
-# snapshots (see routeIterationSnapshot below).
-#
-# var.basic_auth_password is interpolated directly into the function
-# source below by Terraform before this is ever sent to AWS, so the
-# literal password only ever ends up here and in state, never in a
-# committed file. Supply it at apply time only, e.g.:
-#   TF_VAR_basic_auth_password="..." terraform apply
+# Viewer-request function that routes the /iteration-1/ and /iteration-2/
+# snapshots. It used to also check a shared password, which was removed so
+# the site is public. The resource address and AWS name keep "basic_auth"
+# on purpose: renaming would replace the function, and AWS refuses to
+# delete a function that the distribution still uses. It would also change
+# the ARN that the deploy role's policy in oidc.tf is scoped to.
 resource "aws_cloudfront_function" "basic_auth" {
   name    = "${local.name_prefix}-basic-auth"
   runtime = "cloudfront-js-2.0"
-  comment = "Shared-password Basic Auth gate for the frontend"
+  comment = "Routes the iteration-1 and iteration-2 snapshots"
   publish = true
 
   code = <<-EOT
     function handler(event) {
-        var request = event.request;
-        var headers = request.headers;
-        var expectedPassword = "${var.basic_auth_password}";
-
-        var authHeader = headers.authorization;
-        if (!authHeader || !authHeader.value || authHeader.value.indexOf("Basic ") !== 0) {
-            return unauthorized();
-        }
-
-        var encoded = authHeader.value.substring(6);
-        var decoded;
-        try {
-            decoded = atob(encoded);
-        } catch (e) {
-            return unauthorized();
-        }
-
-        var separatorIndex = decoded.indexOf(":");
-        if (separatorIndex === -1) {
-            return unauthorized();
-        }
-
-        // Everything after the first colon is the password; whatever
-        // username was sent is ignored. RFC 7617 forbids a colon in the
-        // username, so splitting on the first colon is correct even if
-        // the password itself contains one.
-        var password = decoded.substring(separatorIndex + 1);
-        if (password !== expectedPassword) {
-            return unauthorized();
-        }
-
-        return routeIterationSnapshot(request);
+        return routeIterationSnapshot(event.request);
     }
 
     // Frozen builds of past iterations live under /iteration-1/ and
@@ -138,16 +101,6 @@ resource "aws_cloudfront_function" "basic_auth" {
             request.uri = prefix + "index.html";
         }
         return request;
-    }
-
-    function unauthorized() {
-        return {
-            statusCode: 401,
-            statusDescription: "Unauthorized",
-            headers: {
-                "www-authenticate": { value: "Basic" }
-            }
-        };
     }
   EOT
 }

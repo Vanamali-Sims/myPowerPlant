@@ -65,21 +65,6 @@ variable "cloudfront_price_class" {
   default     = "PriceClass_All"
 }
 
-variable "basic_auth_password" {
-  description = <<-EOT
-    Shared password for HTTP Basic Auth on the frontend CloudFront
-    distribution (see the basic_auth CloudFront Function in
-    cloudfront.tf). Any username is accepted; only this password is
-    checked, since this gates the whole site behind one shared password
-    rather than per-user accounts. Never written to a .tf file or
-    committed. Supply it at apply time only, e.g.:
-      TF_VAR_basic_auth_password="..." terraform apply
-    or via a gitignored *.auto.tfvars file.
-  EOT
-  type        = string
-  sensitive   = true
-}
-
 variable "neon_database_url" {
   description = <<-EOT
     Full Neon Postgres connection string (postgresql+asyncpg://... including

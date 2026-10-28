@@ -8,7 +8,7 @@ Everything is in `ap-southeast-2`, except the certificates, which CloudFront req
 
 | Area | Resources | File |
 | --- | --- | --- |
-| Frontend | Private S3 bucket, CloudFront distribution on `mypowerplant.tech`, security headers policy, and a CloudFront Function for the shared password | `s3.tf`, `cloudfront.tf` |
+| Frontend | Private S3 bucket, CloudFront distribution on `mypowerplant.tech`, security headers policy, and a CloudFront Function that routes the iteration snapshots | `s3.tf`, `cloudfront.tf` |
 | Certificates | ACM certificates for `mypowerplant.tech` (in use) and `app.mypowerplant.tech` (the old domain, no longer attached) | `acm.tf` |
 | Backend | ECR repository, Lambda function running the container image on arm64, CloudWatch log group with 14 days of retention | `ecr.tf`, `lambda.tf` |
 | API | HTTP API Gateway with one catch-all route, throttled to 10 requests per second with a burst of 40 | `apigateway.tf` |
@@ -17,9 +17,11 @@ Everything is in `ap-southeast-2`, except the certificates, which CloudFront req
 
 The database is Neon Postgres, outside AWS. That is why there is no RDS, Aurora or VPC here.
 
-### The shared password
+### Public addresses and the CloudFront Function
 
-The whole site sits behind one shared password, checked by the CloudFront Function in `cloudfront.tf`. Any username works. Only the password is checked. The same function also serves the frozen `iteration-1` and `iteration-2` builds kept in the same bucket.
+The site is public, with no password. It is served at https://mypowerplant.tech, and https://d3rvyrwejm3499.cloudfront.net is a backup address for the same distribution. The backend allows both as CORS origins.
+
+The CloudFront Function in `cloudfront.tf` serves the frozen `iteration-1` and `iteration-2` builds kept in the same bucket. A bare `/iteration-1` redirects to `/iteration-1/`, and any path under it without a file extension gets that build's `index.html`. The function and its Terraform address are still named `basic_auth` from when it also checked a shared password. Renaming it would replace the function, which fails while the distribution uses it, so leave the name until that is planned separately.
 
 ### SSM parameters
 
@@ -54,9 +56,8 @@ terraform apply
 | --- | --- |
 | `lambda_image_tag` | Tag of an image already pushed to ECR. No default on purpose, so every apply says exactly which image it deploys. CI uses the full commit SHA. |
 | `neon_database_url` | Neon connection string. No default. Only really written on the first apply, see the SSM section above. |
-| `basic_auth_password` | The shared site password. No default. |
 
-Pass secrets with environment variables, for example `TF_VAR_basic_auth_password`, or a gitignored `secrets.auto.tfvars` file. Never put them in a `.tf` file.
+Pass secrets with environment variables, for example `TF_VAR_neon_database_url`, or a gitignored `secrets.auto.tfvars` file. Never put them in a `.tf` file.
 
 ## First deploy
 
@@ -79,7 +80,6 @@ docker buildx build --platform linux/arm64 --build-arg PLATFORM=linux/arm64 \
 
 # 3. Apply everything else
 TF_VAR_neon_database_url="postgresql+asyncpg://..." \
-TF_VAR_basic_auth_password="..." \
 terraform apply -var="lambda_image_tag=$TAG"
 ```
 
@@ -114,7 +114,7 @@ aws ssm put-parameter --name /mypowerplant-production/database-url --type Secure
 terraform apply -var="lambda_image_tag=CURRENT_LIVE_SHA"
 ```
 
-The apply still asks for `neon_database_url` and `basic_auth_password`. Any value works for `neon_database_url` here because it is ignored, but `basic_auth_password` must be the real password, or the site password changes.
+The apply still asks for `neon_database_url`. Any value works here because it is ignored.
 
 Because Terraform reads the value back from SSM at apply time, the Lambda keeps the old connection string until that apply runs.
 
@@ -160,11 +160,7 @@ Variables:
 | `CLOUDFRONT_DISTRIBUTION_ID` | `aws cloudfront list-distributions`. There is no Terraform output for it. |
 | `ECR_REPOSITORY_URL` | `terraform output ecr_repository_url` |
 
-Secret:
-
-| Name | Notes |
-| --- | --- |
-| `BASIC_AUTH_PASSWORD` | The shared site password. Set it before the workflow ever runs. If it is missing, GitHub passes an empty string, and Terraform deploys a password check that turns everyone away, even with the right password. |
+No secrets are needed.
 
 ### Image tags and rollback
 

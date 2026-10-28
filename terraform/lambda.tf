@@ -30,10 +30,10 @@ resource "aws_lambda_function" "backend" {
       # never disables or replaces it, adding an alias only adds another
       # way to reach the same distribution. So both stay permanently live
       # regardless of what's allowed here, and both are allowed: there is
-      # no access-control reason to drop the cloudfront.net origin (the
-      # Basic Auth CloudFront Function in cloudfront.tf gates both
-      # identically, since it's attached to the distribution's behavior,
-      # not to a specific domain), and keeping it gives a working fallback
+      # no access-control reason to drop the cloudfront.net origin (both
+      # serve the same public site, since the CloudFront Function in
+      # cloudfront.tf is attached to the distribution's behavior, not to a
+      # specific domain), and keeping it gives a working fallback
       # if the custom domain's DNS ever has an outage or a propagation
       # delay, without an emergency apply just to restore API access.
       CORS_ORIGINS = join(",", [
