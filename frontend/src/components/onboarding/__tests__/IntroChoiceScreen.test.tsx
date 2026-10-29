@@ -156,7 +156,7 @@ describe('Screen 2: path choice', () => {
   it('sends the left card to getting started and the right card to improving a setup', () => {
     const { onExplore, onImprove } = renderScreen(false)
     const explore = screen.getByRole('button', { name: /Get started\s*with VPPs/ })
-    expect(within(explore).getByText('New to VPPs')).toBeTruthy()
+    expect(within(explore).getByText('NEW TO VPPs')).toBeTruthy()
     fireEvent.click(explore)
     expect(onExplore).toHaveBeenCalledOnce()
 
