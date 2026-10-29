@@ -61,7 +61,7 @@ export const PATH_CHOICE = {
     improve: "Let's maximise what your VPP can offer before the next peak.",
   },
   explore: {
-    eyebrow: 'New to VPPs',
+    eyebrow: 'NEW TO VPPs',
     title: ['Get started', 'with VPPs'],
     action: 'Explore getting started',
   },

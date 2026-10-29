@@ -23,20 +23,8 @@
 #                             Terraform output: ecr_repository_url
 #
 # None of the above are secret values (an ARN, a URL, a bucket name, an
-# ID), so they are stored as repository variables, not secrets.
-#
-# Required repository secrets (Settings > Secrets and variables >
-# Actions > Secrets):
-#   BASIC_AUTH_PASSWORD       Shared password for the frontend's CloudFront
-#                             Function Basic Auth gate (see
-#                             terraform/variables.tf basic_auth_password
-#                             and the basic_auth function in
-#                             terraform/cloudfront.tf). Must be set before
-#                             this workflow ever runs terraform apply: an
-#                             unset secret resolves to an empty string, not
-#                             an error, which would deploy an always-401
-#                             function that locks out every request,
-#                             including with the correct password.
+# ID), so they are stored as repository variables, not secrets. No
+# repository secrets are needed.
 #
 # Image tagging: every push builds and pushes an image tagged with the
 # full git commit SHA, never latest or any other mutable tag. Terraform
@@ -105,8 +93,8 @@ jobs:
           aws-region: ${{ env.AWS_REGION }}
 
       # The iteration-1/ and iteration-2/ prefixes hold frozen builds of past
-      # iterations (uploaded by hand, routed by the basic_auth CloudFront
-      # Function), so --delete must leave them alone.
+      # iterations (uploaded by hand, routed by the CloudFront Function in
+      # terraform/cloudfront.tf), so --delete must leave them alone.
       - name: Sync build output to S3
         run: |
           aws s3 sync frontend/dist "s3://${{ vars.FRONTEND_BUCKET_NAME }}" --delete \
@@ -181,5 +169,4 @@ jobs:
         run: |
           terraform apply -auto-approve -input=false \
             -var="lambda_image_tag=${{ github.sha }}" \
-            -var="neon_database_url=ci-apply-placeholder-not-written-see-ssm-tf" \
-            -var="basic_auth_password=${{ secrets.BASIC_AUTH_PASSWORD }}"
+            -var="neon_database_url=ci-apply-placeholder-not-written-see-ssm-tf"
